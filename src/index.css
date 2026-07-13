@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+html, body {
+  overflow-x: clip;
+  position: relative;
+  width: 100%;
+}
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-silver-100: #f8f9fa;
+  --color-silver-200: #e9ecef;
+  --color-silver-300: #dee2e6;
+  --color-silver-400: #ced4da;
+  --color-silver-500: #adb5bd;
+  --color-silver-600: #6c757d;
+  --color-silver-700: #495057;
+  --color-silver-800: #343a40;
+  --color-silver-900: #212529;
+  
+  --color-rose-gold: #e5a5a5;
+  --color-rose-gold-dark: #db8e8e;
+
+  --color-luxury-primary: #FFFFFF;
+  --color-luxury-secondary: #FAFAFA;
+  --color-luxury-card: #FCFBF9;
+  --color-luxury-border: #E6E6E6;
+  --color-luxury-text: #111111;
+  --color-luxury-subtext: #555555;
+  --color-luxury-muted: #9CA3AF;
+  --color-luxury-chrome: #C7CCD1;
+  --color-luxury-gold: #D8C2A3;
+  --color-luxury-sage: #D6DFD8;
+  --color-luxury-rose: #E8D7D4;
+  --color-luxury-mist: #DCE8EF;
+  --color-luxury-taupe: #C8B8A6;
+}
+
+/* Custom utilities */
+.chrome-text {
+  background: linear-gradient(to right, #4a4a4a, #1a1a1a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.floating-card {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
