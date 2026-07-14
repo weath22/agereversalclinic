@@ -31,11 +31,11 @@ const CONSULTATIONS_KEY = 'clinical_consultations';
 const APPOINTMENTS_KEY = 'clinical_appointments';
 const INQUIRIES_KEY = 'clinical_inquiries';
 const HEADER_CONFIG_KEY = 'homepage_header_config';
-const HERO_CONFIG_KEY = 'homepage_hero_config';
-const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config';
+const HERO_CONFIG_KEY = 'homepage_hero_config_v2';
+const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config_v3';
 const TREATMENTS_CONFIG_KEY = 'homepage_treatments_config';
-const GALLERY_CONFIG_KEY = 'homepage_gallery_config';
-const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config';
+const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v3';
+const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v2';
 const AWARDS_CONFIG_KEY = 'homepage_awards_config';
 const LOCATIONS_CONFIG_KEY = 'homepage_locations_config';
 const TEAM_LEADERSHIP_CONFIG_KEY = 'homepage_team_leadership_config';
@@ -252,84 +252,84 @@ const DEFAULT_HERO_CONFIG: HeroConfig = {
   title: "Exceptional Results with Age Reversal",
   description: "Advanced dermatology care tailored to your unique skin. Where science meets compassion.",
   mediaType: "video",
-  mediaUrl: "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-woman-receiving-a-facial-treatment-40541-large.mp4"
+  mediaUrl: "https://pub-e6f425d799324ff19d004c8c518f4155.r2.dev/videos/raw/be84df26-4172-4917-8f6b-9f5486c5c6d6.mp4"
 };
 
 const DEFAULT_SPECIALIST_AREAS_CONFIG: SpecialistAreasConfig = {
   heading: "Explore our specialist areas",
-  description: "At The London Clinic, we offer advanced diagnostics, world-leading consultants and fast access to appointments - often within 48 hours - so your treatment can begin in days, not months. Whether you're worried about cancer, fatigue, weight loss, unexplained symptoms or a family medical history, we move quickly to get you the right help.",
+  description: "At Age Reversal Clinic, we offer advanced aesthetic diagnostics, world-leading practitioners, and fast access to appointments - often within 48 hours - so your transformation can begin in days, not months.",
   areas: [
     {
-      id: 'cancer-care',
-      title: 'Cancer care',
-      description: 'Expert consultants and advanced therapies for fast, world-class private cancer treatment.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXc7SORxoXUK7Kzbf256KDGjYoiGB3XeCLNYObBtlw7h8260KwmKxaiEQL7E2Wg3BTQhjpJs0Iw9GVYkNkpYhd4WPz_jdW6PA2i4yXAVvmrMoBCqMX479nyNRdb7X8GwVNjcQtb1OIG8li-NYXrs-55c2CPQIIew0siqNajiO8--wLogFbflBlElSPQ9GlaxJ2VmWkjKCbGUr2QX1FhpzqTBOU86kyynhHW4UjQMqKe-XDBVsXygiZM-ACB4nUWQl8J4dDjsBIEw'
+      id: 'face',
+      title: 'Facial Injectables',
+      description: 'Advanced clinical injectables and facial contouring tailored for natural lift, harmony, and structural rejuvenation.',
+      image: '/images/specialist_face_1784018617135.jpg'
     },
     {
-      id: 'eye-centre',
-      title: 'Eye Centre',
-      description: 'Rapid diagnostics and tailored treatment for cataracts, eye disease and complex conditions.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g'
+      id: 'skin',
+      title: 'Skin Rejuvenation',
+      description: 'State-of-the-art medical grade facials, laser therapies, and cellular treatments for luminous, clear skin.',
+      image: '/images/specialist_skin_1784018653420.jpg'
     },
     {
-      id: 'lung-centre',
-      title: 'Lung Centre',
-      description: 'Fast access to lung diagnostics, therapies and minimally invasive treatments.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w'
+      id: 'body',
+      title: 'Body Contouring',
+      description: 'High-definition body shaping using advanced clinical techniques, including dermal fillers and fat reduction.',
+      image: '/images/specialist_body_1784018636034.jpg'
     },
     {
-      id: 'breast',
-      title: 'Breast',
-      description: 'Expert breast diagnostics with advanced, comfortable imaging for symptoms or family history concerns.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUloxcWsT4NRCnTfn0RneF4Q4BwymxBAMsqFKJv9IIvSzEjhVsjT_MDtI4irgzGW0su__ZFlPbs8_2ebSsDU3aWDop2YR9ea2x21K8fdCKFFVUTyJj9U_xiYZFY63zL5Btb43hR-HaxmbiKFgUp8DqEgm5D4mrjpPpfVzplLWjcWFD75MC4S3cc8dnLB7CywLocC5PIZJPdVTfCwgrgG4WqwQZabVdZ8OAlRAeHeZCBxQt2rP-Gm1MJcgjtoht4nVH3CBwLsNAF8OI'
-    },
-    {
-      id: 'dermatology',
-      title: 'Dermatology & Acne',
-      description: 'Advanced clinical diagnostics and personalized therapies for persistent acne, cellular scarring.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX'
-    },
-    {
-      id: 'laser-skin',
-      title: 'Laser Skin Centre',
-      description: 'State-of-the-art fractional CO2 and picosecond laser technologies for complete resurfacing and pigments.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC'
-    },
-    {
-      id: 'facial-contouring',
-      title: 'Facial Contouring',
-      description: 'Precision aesthetic enhancements combining neuromodulators, fillers, and skin boosters for natural lift.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ'
-    },
-    {
-      id: 'hair-restoration',
+      id: 'hair',
       title: 'Hair Restoration',
-      description: 'Elite follicle stimulation, PRP and clinical growth induction therapies for healthy, robust hair.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW'
+      description: 'Elite follicle stimulation and clinical growth induction therapies for healthy, robust hair restoration.',
+      image: '/images/specialist_hair_1784018667926.jpg'
     },
     {
-      id: 'cellular-wellness',
-      title: 'Cellular Wellness',
-      description: 'Intravenous micronutrient therapies and custom cellular vitalizations tailored to bio-markers.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r'
+      id: 'fillers',
+      title: 'Dermal Fillers',
+      description: 'Premium hyaluronic acid formulations to restore volume, define contours, and soften deep lines.',
+      image: '/images/specialist_fillers_1784019006444.jpg'
     },
     {
-      id: 'longevity-screen',
-      title: 'Longevity Screening',
-      description: 'Pioneering early stage risk profiles, metabolic evaluations, and long-term vitality maps.',
-      image: 'https://lh3.googleusercontent.com/aida/AP1WRLsFtpFDuaNJSlvtgV5ykI3LUHSXc0rzKFYXGGNqkYq6ujIGrmaVAI-UUZWBC9h6l95unMnlba0hL6OSt_W08ItQlzC4HTVhrV4H7Itfm0m7scTAtpBiomP9SY89c7Uj0Q5mgYXMjovpZuGcczZeQepLx4ye1bw1emHNdm8GxyKyt8TftVi79q1QOO0MHef213jXO6KWOkNL6ufVfwZSrPS20twzy3Jy2_MEVCz9mR9pJVAW24L2KhOTQP9P'
+      id: 'exosome',
+      title: 'Exosome Therapy',
+      description: 'Cutting-edge cellular regeneration utilizing isolated exosomes for profound anti-aging and tissue repair.',
+      image: '/images/specialist_exosome_1784019018807.jpg'
     },
     {
-      id: 'body-sculpting',
-      title: 'Body Sculpting',
-      description: 'High-definition body shaping using advanced clinical electromagnetic waves and cryolipolysis.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR'
+      id: 'fat-reduction',
+      title: 'Fat Reduction',
+      description: 'Targeted, non-surgical lipid metabolization therapies for a refined and sculpted silhouette.',
+      image: '/images/specialist_fat_reduction_1784019032389.jpg'
     },
     {
-      id: 'clinical-facials',
-      title: 'Medical Grade Facials',
-      description: 'Intense dermal cleansing, microcurrent contouring, and medical peels with botanical antioxidants.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs'
+      id: 'rhinoplasty',
+      title: 'Non-Surgical Rhinoplasty',
+      description: 'Precision contouring to smooth dorsal humps and refine the nasal profile with zero downtime.',
+      image: '/images/specialist_rhinoplasty_1784019045714.jpg'
+    },
+    {
+      id: 'lips',
+      title: 'Lip Enhancement',
+      description: 'Artisanal lip augmentation designed to restore symmetry, add subtle volume, and define the vermillion border.',
+      image: '/images/specialist_lips_1784019060568.jpg'
+    },
+    {
+      id: 'laser',
+      title: 'Laser Skin Resurfacing',
+      description: 'Fractional ablative technology to dramatically improve texture, reduce scarring, and eliminate pigmentation.',
+      image: '/images/specialist_laser_1784019072484.jpg'
+    },
+    {
+      id: 'microneedling',
+      title: 'Clinical Micro-needling',
+      description: 'Controlled micro-injuries to stimulate endogenous collagen and elastin production for firmer skin.',
+      image: '/images/specialist_microneedling_1784019085019.jpg'
+    },
+    {
+      id: 'chemical-peel',
+      title: 'Medical Grade Peels',
+      description: 'Customized chemical exfoliation protocols to resolve acne, melasma, and severe photo-aging.',
+      image: '/images/specialist_chemical_peel_1784019097136.jpg'
     }
   ]
 };
@@ -357,14 +357,14 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
         {
           id: 'acne-1',
           title: 'Active Acne Clear-Up - 12 Wks',
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY'
+          beforeImage: '/images/acne_before_1784018006369.jpg',
+          afterImage: '/images/acne_after_1784018022796.jpg'
         },
         {
           id: 'acne-2',
           title: 'Atrophic Scar Smoothing - 6 Mths',
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLv5evIx7Bexs-9iJGxOP9dKFElgqCjw3duyD5PU_MlEubT0SyTO7PuZhJtmqUZf6JcUhS8jDhV8HW0kBhWUb4MYYalT72IO5pVBeVZs2593mjjAC6tI1ZOA1a9xGgg-M5J5waWMYO9uVD4zle9guZj31tQOME7032wvttEoahsd7HhWFooW0oUTyDgrytGK4oKIN0d2mGO5oLnx-NQ5sF7-OZHtA3a9_sCrUegKiXGZwpy_05469C2zVgo'
+          beforeImage: '/images/acne_before_1784018006369.jpg',
+          afterImage: '/images/acne_after_1784018022796.jpg'
         }
       ]
     },
@@ -375,8 +375,8 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
         {
           id: 'age-1',
           title: 'Deep Wrinkle Diminution - 16 Wks',
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLv5evIx7Bexs-9iJGxOP9dKFElgqCjw3duyD5PU_MlEubT0SyTO7PuZhJtmqUZf6JcUhS8jDhV8HW0kBhWUb4MYYalT72IO5pVBeVZs2593mjjAC6tI1ZOA1a9xGgg-M5J5waWMYO9uVD4zle9guZj31tQOME7032wvttEoahsd7HhWFooW0oUTyDgrytGK4oKIN0d2mGO5oLnx-NQ5sF7-OZHtA3a9_sCrUegKiXGZwpy_05469C2zVgo'
+          beforeImage: '/images/anti_aging_before_1784018038578.jpg',
+          afterImage: '/images/anti_aging_after_1784018054094.jpg'
         }
       ]
     },
@@ -387,8 +387,8 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
         {
           id: 'hair-1',
           title: 'Temporal Hairline Density - 6 Mths',
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM'
+          beforeImage: '/images/hair_before_1784018134600.jpg',
+          afterImage: '/images/hair_after_1784018152230.jpg'
         }
       ]
     }
@@ -396,31 +396,31 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
 };
 
 const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
-  heading: "Why choose The London Clinic?",
-  description: "Your health deserves the very best. Here’s why patients trust The London Clinic.",
+  heading: "Why choose Age Reversal Clinic London?",
+  description: "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
   pillars: [
     {
       id: 'p1',
-      title: "The UK’s largest independent hospital",
-      description: "More patients choose The London Clinic than any other.",
+      title: "London's Premier Aesthetic Destination",
+      description: "Situated in the heart of London, offering unparalleled luxury and clinical excellence.",
       iconName: "Building"
     },
     {
       id: 'p2',
       title: "Top-rated by real patients",
-      description: "4.86/5 from over 1,600 reviews on Doctify and over 4.5 rating on Google.",
-      iconName: "ThumbsUp"
+      description: "Exceptional results with a 4.9/5 rating from over 2,000 verified reviews.",
+      iconName: "Star"
     },
     {
       id: 'p3',
-      title: "Full intensive care on-site",
-      description: "World-class 13-bed ICU for expert support if your care becomes complex.",
-      iconName: "HeartPulse"
+      title: "Advanced Clinical Technologies",
+      description: "Equipped with state-of-the-art FDA-approved laser and imaging systems.",
+      iconName: "Sparkles"
     },
     {
       id: 'p4',
-      title: "Investing in clinical excellence",
-      description: "In collaboration with Northwestern, we equip our teams with cutting-edge medical equipment.",
+      title: "World-Class Medical Team",
+      description: "Our board-certified practitioners bring decades of specialized aesthetic expertise.",
       iconName: "Medal"
     }
   ]
