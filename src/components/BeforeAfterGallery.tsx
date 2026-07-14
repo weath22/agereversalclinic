@@ -85,25 +85,25 @@ function PolaroidComparison({ title, beforeImage, afterImage }: PolaroidComparis
 
 export default function BeforeAfterGallery() {
   const [config, setConfig] = useState<BeforeAfterGalleryConfig | null>(null);
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     setConfig(getBeforeAfterGalleryConfig());
   }, []);
 
-  useEffect(() => {
-    if (config && config.categories.length > 0 && !activeCategory) {
-      setActiveCategory(config.categories[0].id);
-    }
-  }, [config, activeCategory]);
-
   if (!config || config.categories.length === 0) {
     return null;
   }
 
-  const activeCategoryObj = config.categories.find(c => c.id === activeCategory) || config.categories[0];
-  const currentCategoryData = activeCategoryObj ? activeCategoryObj.pairs : [];
+  const allCategories = [
+    { id: 'all', name: 'All' },
+    ...config.categories
+  ];
+
+  const currentCategoryData = activeCategory === 'all'
+    ? config.categories.flatMap(c => c.pairs)
+    : (config.categories.find(c => c.id === activeCategory)?.pairs || []);
 
   const itemsPerPage = 4;
   const totalPages = Math.ceil(currentCategoryData.length / itemsPerPage);
@@ -145,7 +145,7 @@ export default function BeforeAfterGallery() {
           className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-x-visible justify-start md:justify-center gap-3 mb-16 max-w-3xl mx-auto pb-4 md:pb-0 px-4 md:px-0 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {config.categories.map((cat) => (
+          {allCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => {

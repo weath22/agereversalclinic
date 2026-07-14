@@ -32,9 +32,9 @@ const APPOINTMENTS_KEY = 'clinical_appointments';
 const INQUIRIES_KEY = 'clinical_inquiries';
 const HEADER_CONFIG_KEY = 'homepage_header_config';
 const HERO_CONFIG_KEY = 'homepage_hero_config_v2';
-const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config_v3';
+const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config_v4';
 const TREATMENTS_CONFIG_KEY = 'homepage_treatments_config';
-const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v3';
+const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v6';
 const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v2';
 const AWARDS_CONFIG_KEY = 'homepage_awards_config';
 const LOCATIONS_CONFIG_KEY = 'homepage_locations_config';
@@ -263,73 +263,25 @@ const DEFAULT_SPECIALIST_AREAS_CONFIG: SpecialistAreasConfig = {
       id: 'face',
       title: 'Facial Injectables',
       description: 'Advanced clinical injectables and facial contouring tailored for natural lift, harmony, and structural rejuvenation.',
-      image: '/images/specialist_face_1784018617135.jpg'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAOPTQtfj8J1bbB7SlVVRU6fYo2gWaZ-vP4FOmbQ0GK-wiSWxgFv7RrufflpNtjGP9Dk5eLV2kMfUIPVx1N4ETnRWMUGQ-pnWBcZCa97apM4cg71CV6hKaKDiQOlU26NKqLXuvzRkHrDNd-vXfy5u3MHCvpyxfbnHdk9lkm5vhjg9zIrK1aYJGwOOOPurVrXxbRr7FprgjD7ZzrUzhcc4DM6YdWc6J8P_jEx9W_ffwKfL2E8x3PIYt0_G8MTcbFUJlLtFYmgOa7s-OK'
     },
     {
       id: 'skin',
       title: 'Skin Rejuvenation',
       description: 'State-of-the-art medical grade facials, laser therapies, and cellular treatments for luminous, clear skin.',
-      image: '/images/specialist_skin_1784018653420.jpg'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2a_0Datjn8f2On3mNF7IY6_QgXkw0AQl1Il2WqYPqYqTU7wUKYRpJUg2xdA_d0B8SfBpbvVzzYOczvA85hXWv6hkb0snKG0UXUjP3EUDr0nkt_A_nINJJOIpGcQ2X_iD94V14qlhvJmRUp8In6cOEtlONSRSf5Kpdd8uA6VUX3SFIaBku4xsVbSvg9fE6K0FWVX-QGNWmY4jhYY70yZCEdfN_V3cezSz0jiycoy31X-hMxrw-bNoMrpEVo43FV1z8TnWKiqVpTdlK'
     },
     {
       id: 'body',
       title: 'Body Contouring',
       description: 'High-definition body shaping using advanced clinical techniques, including dermal fillers and fat reduction.',
-      image: '/images/specialist_body_1784018636034.jpg'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R'
     },
     {
       id: 'hair',
       title: 'Hair Restoration',
       description: 'Elite follicle stimulation and clinical growth induction therapies for healthy, robust hair restoration.',
-      image: '/images/specialist_hair_1784018667926.jpg'
-    },
-    {
-      id: 'fillers',
-      title: 'Dermal Fillers',
-      description: 'Premium hyaluronic acid formulations to restore volume, define contours, and soften deep lines.',
-      image: '/images/specialist_fillers_1784019006444.jpg'
-    },
-    {
-      id: 'exosome',
-      title: 'Exosome Therapy',
-      description: 'Cutting-edge cellular regeneration utilizing isolated exosomes for profound anti-aging and tissue repair.',
-      image: '/images/specialist_exosome_1784019018807.jpg'
-    },
-    {
-      id: 'fat-reduction',
-      title: 'Fat Reduction',
-      description: 'Targeted, non-surgical lipid metabolization therapies for a refined and sculpted silhouette.',
-      image: '/images/specialist_fat_reduction_1784019032389.jpg'
-    },
-    {
-      id: 'rhinoplasty',
-      title: 'Non-Surgical Rhinoplasty',
-      description: 'Precision contouring to smooth dorsal humps and refine the nasal profile with zero downtime.',
-      image: '/images/specialist_rhinoplasty_1784019045714.jpg'
-    },
-    {
-      id: 'lips',
-      title: 'Lip Enhancement',
-      description: 'Artisanal lip augmentation designed to restore symmetry, add subtle volume, and define the vermillion border.',
-      image: '/images/specialist_lips_1784019060568.jpg'
-    },
-    {
-      id: 'laser',
-      title: 'Laser Skin Resurfacing',
-      description: 'Fractional ablative technology to dramatically improve texture, reduce scarring, and eliminate pigmentation.',
-      image: '/images/specialist_laser_1784019072484.jpg'
-    },
-    {
-      id: 'microneedling',
-      title: 'Clinical Micro-needling',
-      description: 'Controlled micro-injuries to stimulate endogenous collagen and elastin production for firmer skin.',
-      image: '/images/specialist_microneedling_1784019085019.jpg'
-    },
-    {
-      id: 'chemical-peel',
-      title: 'Medical Grade Peels',
-      description: 'Customized chemical exfoliation protocols to resolve acne, melasma, and severe photo-aging.',
-      image: '/images/specialist_chemical_peel_1784019097136.jpg'
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH'
     }
   ]
 };
@@ -351,44 +303,56 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
   description: "Witness the transformative journeys of our patients. These unretouched, real clinical cases illustrate the precision-guided results we achieve daily across our specialist disciplines.",
   categories: [
     {
-      id: 'acne',
-      name: 'Acne & Scarring',
-      pairs: [
-        {
-          id: 'acne-1',
-          title: 'Active Acne Clear-Up - 12 Wks',
-          beforeImage: '/images/acne_before_1784018006369.jpg',
-          afterImage: '/images/acne_after_1784018022796.jpg'
-        },
-        {
-          id: 'acne-2',
-          title: 'Atrophic Scar Smoothing - 6 Mths',
-          beforeImage: '/images/acne_before_1784018006369.jpg',
-          afterImage: '/images/acne_after_1784018022796.jpg'
-        }
-      ]
-    },
-    {
-      id: 'antiaging',
+      id: 'anti-aging',
       name: 'Anti-Aging Rejuvenation',
       pairs: [
         {
-          id: 'age-1',
-          title: 'Deep Wrinkle Diminution - 16 Wks',
-          beforeImage: '/images/anti_aging_before_1784018038578.jpg',
-          afterImage: '/images/anti_aging_after_1784018054094.jpg'
+          id: 'pair-1',
+          title: 'Skin Treatment - 12 Wks',
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
+          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO'
+        },
+        {
+          id: 'pair-5',
+          title: 'Anti-Aging - 8 Wks',
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQHcq9zpePKkMqtIMFzx_zJA6A2MHoEn6csMvjhOOX7ANTgntEGIHbHHzkJdrRGuvr_rnNYa6j_vcZm7V9bkSv83qNQwd18XJJA14YTUOLU2diwqx3hP_e-l8axRA5ZOsfN1xGiRO0pPe2sb4cNQEz8psyAxBRjvefn1MvexT-2iAwkVKIyT8R_56LKMScwW7_sMvuBzMGXxdp0I1cFNoqfp7K5RhhrtrwcfrUPw1dRPmX60Zc0esbeUgaFqwO959IBqnu8sf8OA4w',
+          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCZoLjpjMEmJNM6EwzVC9AzZEWfQUVa-TmVyM-NgPL8ONCjzwY7nZ6rFqOxJ9jyK0OMnlIij8h8SOt93jaHfSglwGqtwAN3uabUuoux0yNyPzieFFX7iyB4YhjLSsBzd2BRDjEDVB1RlXcG4VC8SswApL8QbBnPLshzCzMX8LSdFYZsa0PRI6MM6b7I67HIl-B6YLhZAH5ZI9mcghNQsybRemIqmq4LWl9BCKjn5KaTyU1RyMrHYkwMgx1ABZOJ1-OJiLkjF-5mIKY0'
         }
       ]
     },
     {
-      id: 'hair',
+      id: 'acne-scarring',
+      name: 'Acne & Scarring',
+      pairs: [
+        {
+          id: 'pair-2',
+          title: 'Laser Therapy & Skin Revision',
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKPf3nijQRz9NaEd_b-5EiczAejYyrgh_dwMC6S-1-7Hi8EJJnt8_x2x-i1qG-qJ0BxvXbk_PeIeusHvMggQrPf2ijjCJ-yYtr-Ur19sJw4_NIIAlLMv1S2ct_OUVp3CJNba1hCLXrrPOcfhQAQUcgqZJFcuUL6Q4KXUwM1ALRAeo6Bb79xdI4FoLRUFAP9_MlbZ8tUedBAnuVrheDWpnRtLnB17gtdOx3OFGMbTVs5jhXXnZD6b-y7OCBnlBNOtqOPMcKxAdzDKRk',
+          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFNbqNx3wVVcZoA9IP87KJkDnMZI-8uRSd-RL2-LhuxC6ADEkgMcpBDJ22CU3U7a_ZOllNge5XasdFvVaBYUhCDohAZdRi0HT1ymJ1s_FMyiXt8pJl7NGhaLkKATrZlXl3B2mFW01fD4Mzp3ixyyLcDfCdjXdPi58MzBZ-GTgGk7w7Ks96hydwAbc4rURmQ3Pel8YEcOvxIX5UbwIKvB4OdEuyDc-z_RnH-USDoP7hJ2AJkw4zTdCS7FDF6Vo4RFbWikgnECIa4gKP'
+        }
+      ]
+    },
+    {
+      id: 'facial-harmony',
+      name: 'Facial Harmony',
+      pairs: [
+        {
+          id: 'pair-3',
+          title: 'Advanced Aesthetics',
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
+          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le'
+        }
+      ]
+    },
+    {
+      id: 'clinical-hair',
       name: 'Clinical Hair Restoration',
       pairs: [
         {
-          id: 'hair-1',
-          title: 'Temporal Hairline Density - 6 Mths',
-          beforeImage: '/images/hair_before_1784018134600.jpg',
-          afterImage: '/images/hair_after_1784018152230.jpg'
+          id: 'pair-4',
+          title: 'Vertical Comparison',
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
+          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd'
         }
       ]
     }
