@@ -188,7 +188,7 @@ export default function BeforeAfterGallery() {
   return (
     <section
       id="gallery"
-      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-luxury-secondary overflow-hidden relative border-y border-luxury-border"
+      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-transparent overflow-hidden relative border-t border-luxury-border/40"
     >
       {/* Subtle aesthetic canvas highlights for floating depth */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-luxury-primary rounded-full blur-[100px] pointer-events-none opacity-50" />
@@ -216,8 +216,8 @@ export default function BeforeAfterGallery() {
               onClick={() => handleCategorySelect(cat.id)}
               className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-sans text-[10px] sm:text-xs font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 snap-center whitespace-nowrap cursor-pointer ${
                 activeCategory === cat.id
-                  ? 'bg-black text-white border-black shadow-xs scale-102 font-medium'
-                  : 'bg-white text-luxury-subtext border-luxury-border hover:text-luxury-text hover:bg-luxury-card'
+                  ? 'bg-black text-white border-black shadow-sm scale-102 font-medium'
+                  : 'bg-white/80 backdrop-blur-md text-luxury-subtext border-luxury-border/80 hover:text-luxury-text hover:bg-white'
               }`}
             >
               {cat.name}

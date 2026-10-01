@@ -28,6 +28,7 @@ import ExploreTreatmentsView from './components/ExploreTreatmentsView';
 import NewsArticleView from './components/NewsArticleView';
 import ProfilePage from './components/ProfilePage';
 import AdminDashboard from './components/AdminDashboard';
+import AboutAgeReversal from './components/AboutAgeReversal';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { useEffect } from 'react';
 import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig } from './lib/adminStore';
@@ -40,6 +41,7 @@ export default function App() {
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [scrollTrigger, setScrollTrigger] = useState(0);
 
   // Dynamic homepage configs
@@ -126,6 +128,7 @@ export default function App() {
     setSelectedArticle(null);
     setSelectedConsultant(null);
     setIsExploreOpen(false);
+    setIsAboutOpen(false);
     setScrollTrigger(prev => prev + 1);
   };
 
@@ -165,6 +168,7 @@ export default function App() {
         activeSection={activeSection}
         setActiveSection={handleActiveSectionChange}
         headerConfig={headerConfig}
+        onAboutClick={() => setIsAboutOpen(true)}
       />
 
       <main className="flex-grow">
@@ -200,6 +204,8 @@ export default function App() {
               handleScrollToBooking(service);
             }}
           />
+        ) : isAboutOpen ? (
+          <AboutAgeReversal onViewProfile={setSelectedConsultant} />
         ) : (
           <>
             {/* 3. Hero Presentation Section */}
@@ -213,28 +219,57 @@ export default function App() {
               heroConfig={heroConfig}
             />
 
-            {/* Specialist Areas Section from uploaded image */}
-            <SpecialistAreas 
-              onExploreAllClick={() => setIsExploreOpen(true)}
-              onBookClick={handleScrollToBooking} 
-              onTreatmentClick={(name) => setSelectedTreatment(name)}
-              specialistAreasConfig={specialistAreasConfig}
-            />
+            {/* Specialist Areas with Sculptural Bust Background */}
+            <div className="relative overflow-hidden bg-[#faf9f8]">
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
+                  alt="Sculptural bust with pedestal in monochrome violet"
+                  className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
+                />
+                {/* Subtle, reduced whitish fade overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 backdrop-blur-[0.5px] pointer-events-none" />
+              </div>
 
-            {/* 5. Editorial Treatment Teasers Section */}
+              <div className="relative z-10">
+                <SpecialistAreas 
+                  onExploreAllClick={() => setIsExploreOpen(true)}
+                  onBookClick={handleScrollToBooking} 
+                  onTreatmentClick={(name) => setSelectedTreatment(name)}
+                  specialistAreasConfig={specialistAreasConfig}
+                />
+              </div>
+            </div>
+
+            {/* 5. Editorial Treatment Teasers Section (Escapes the background image) */}
             <Treatments 
               onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
               onTreatmentClick={(name) => setSelectedTreatment(name)}
               treatmentsConfig={treatmentsConfig}
             />
 
-            {/* 8. Breathtaking Interactive Before/After Gallery */}
-            <BeforeAfterGallery />
+            {/* Continuous Sculptural Bust Background from Before/After to Why Choose Us */}
+            <div className="relative overflow-hidden bg-[#faf9f8]">
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
+                  alt="Sculptural bust with pedestal in monochrome violet"
+                  className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
+                />
+                {/* Subtle, reduced whitish fade overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 backdrop-blur-[0.5px] pointer-events-none" />
+              </div>
 
-            {/* Why Choose Us Section */}
-            <WhyChooseUs />
+              <div className="relative z-10">
+                {/* 8. Breathtaking Interactive Before/After Gallery */}
+                <BeforeAfterGallery />
 
-            {/* 13.6 Awards & Recognition Auto-scrolling Section */}
+                {/* Why Choose Us Section */}
+                <WhyChooseUs />
+              </div>
+            </div>       
+
+            {/* 13.6 Awards & Recognition Auto-scrolling Section (Escapes the background for future custom styling) */}
             <AwardsShowcase />       
 
             {/* Our Locations and Preferred Consultation Sections from HTML request */}
@@ -243,29 +278,11 @@ export default function App() {
               onTreatmentClick={(name) => setSelectedTreatment(name)}
             />
 
-            {/* 12. Corporate Leadership & Team Board */}
-            <TeamLeadership onViewProfile={setSelectedConsultant} />
-
-            {/* 6. Dynamic Process Steps (Journey) */}
-            <Process />
-
-            {/* 7. Facility Interiors tour */}
-            <FacilityInteriors />
-
-            {/* 9. Star Reviews / Testimonials segment */}
-            <Testimonials />
-
             {/* 10. Limited Time Promotional Banners */}
             <SpecialOffers onClaimOffer={handleClaimOffer} />
 
             {/* 11. Skincare Essentials Shop Collection */}
             <SkincareCollection />
-
-            {/* 13. Brand Trust Indicator Line */}
-            <TrustBrands />
-
-            {/* 13.5 Accreditations & Certifications Section */}
-            <Accreditations />
 
             {/* Latest from The London Clinic Section */}
             <LatestNews onArticleClick={setSelectedArticle} />

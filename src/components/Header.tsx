@@ -9,6 +9,7 @@ interface HeaderProps {
   setActiveSection: (sec: string) => void;
   onTreatmentClick?: (treatmentName: string) => void;
   headerConfig?: HeaderConfig;
+  onAboutClick?: () => void;
 }
 
 interface MegaColumn {
@@ -26,7 +27,7 @@ interface NavItem {
   procedures?: { name: string; desc?: string; id?: string }[];
 }
 
-export default function Header({ onBookClick, activeSection, setActiveSection, onTreatmentClick, headerConfig }: HeaderProps) {
+export default function Header({ onBookClick, activeSection, setActiveSection, onTreatmentClick, headerConfig, onAboutClick }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -302,13 +303,13 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
   return (
     <header className={`sticky top-0 left-0 right-0 w-full self-start z-50 transition-transform duration-300 ease-in-out ${
       isVisible ? 'translate-y-0' : '-translate-y-full'
-    } ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-3' : 'bg-white py-5 shadow-sm'}`}>
+    } ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-3' : 'bg-white py-3 lg:py-5 shadow-sm'}`}>
       <div className="container mx-auto px-4 md:px-8 flex justify-between items-center">
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
           <img
             alt={`${headerConfig?.primaryName || 'Age Reversal'} Logo`}
-            className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            className="h-10 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             src={headerConfig?.logoUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"}
           />
           <div className="flex flex-col">
@@ -322,57 +323,59 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-4 lg:space-x-6 xl:space-x-8">
-          {navItems.map((item) => {
-            const isHovered = hoveredItem === item.id;
-            const isActive = activeSection === item.id;
+        <nav className="hidden lg:flex items-center space-x-3 lg:space-x-4 xl:space-x-5">
+          {navItems
+            .filter((item) => item.id !== 'minor-surgery-scars') // Hide Minor Surgery & Scars from desktop header nav
+            .map((item) => {
+              const isHovered = hoveredItem === item.id;
+              const isActive = activeSection === item.id;
 
-            return (
-              <div
-                key={item.id}
-                className="relative py-2"
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-              >
-                {item.href ? (
-                  <a
-                    href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleNavClick(item.id);
-                    }}
-                    className={`group relative inline-flex items-center text-sm lg:text-[15px] xl:text-base font-semibold tracking-wider uppercase transition-colors py-1 ${
-                      isActive ? 'text-black' : 'text-silver-700 hover:text-black'
-                    }`}
-                  >
-                    <span className="relative pb-1">
-                      {item.name}
-                      {/* Animated Underline: Expands from start (left) to end */}
-                      <span
-                        className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
-                          isActive ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
-                      />
-                    </span>
-                  </a>
-                ) : (
-                  <button
-                    className={`group relative inline-flex items-center text-sm lg:text-[15px] xl:text-base font-semibold tracking-wider uppercase transition-colors py-1 gap-1.5 cursor-pointer ${
-                      isActive || isHovered ? 'text-black' : 'text-silver-700 hover:text-black'
-                    }`}
-                  >
-                    <span className="relative pb-1">
-                      {item.name}
-                      {/* Animated Underline: Expands from start (left) to end */}
-                      <span
-                        className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
-                          isActive || isHovered ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
-                      />
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isHovered ? 'rotate-180 text-black' : 'text-silver-400 group-hover:text-black'}`} />
-                  </button>
-                )}
+              return (
+                <div
+                  key={item.id}
+                  className="relative py-2"
+                  onMouseEnter={() => setHoveredItem(item.id)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                >
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleNavClick(item.id);
+                      }}
+                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-semibold tracking-wider uppercase transition-colors py-1 ${
+                        isActive ? 'text-black' : 'text-silver-700 hover:text-black'
+                      }`}
+                    >
+                      <span className="relative pb-1">
+                        {item.name}
+                        {/* Animated Underline: Expands from start (left) to end */}
+                        <span
+                          className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
+                            isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                          }`}
+                        />
+                      </span>
+                    </a>
+                  ) : (
+                    <button
+                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-semibold tracking-wider uppercase transition-colors py-1 gap-1.5 cursor-pointer ${
+                        isActive || isHovered ? 'text-black' : 'text-silver-700 hover:text-black'
+                      }`}
+                    >
+                      <span className="relative pb-1">
+                        {item.name}
+                        {/* Animated Underline: Expands from start (left) to end */}
+                        <span
+                          className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
+                            isActive || isHovered ? 'w-full' : 'w-0 group-hover:w-full'
+                          }`}
+                        />
+                      </span>
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isHovered ? 'rotate-180 text-black' : 'text-silver-400 group-hover:text-black'}`} />
+                    </button>
+                  )}
 
                 {/* Standard Dropdown Menu (For Non-Mega items) */}
                 <AnimatePresence>
@@ -651,7 +654,14 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                           {/* About Age Reversal */}
                           <button
                             type="button"
-                            onClick={() => handlePageClick('leadership')}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              if (onAboutClick) {
+                                onAboutClick();
+                              } else {
+                                handlePageClick('leadership');
+                              }
+                            }}
                             className="flex w-full items-center justify-between px-0 py-1 text-left text-[22px] font-normal text-white hover:text-luxury-gold transition-colors cursor-pointer"
                           >
                             <span>About Age Reversal</span>

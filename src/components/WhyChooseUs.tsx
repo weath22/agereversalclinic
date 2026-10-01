@@ -57,7 +57,7 @@ export default function WhyChooseUs() {
   if (!config) return null;
 
   return (
-    <section className="bg-luxury-secondary pt-10 pb-12 sm:pt-16 sm:pb-16 md:py-24 lg:py-32 border-b border-luxury-border relative overflow-hidden">
+    <section className="bg-transparent pt-10 pb-12 sm:pt-16 sm:pb-16 md:py-24 lg:py-32 border-b border-luxury-border/30 relative overflow-hidden">
       {/* Subtle ambient lighting highlights */}
       <div className="absolute top-0 right-1/4 w-[450px] h-[450px] bg-luxury-primary rounded-full blur-[100px] pointer-events-none opacity-40" />
       <div className="absolute bottom-0 left-1/4 w-[450px] h-[450px] bg-luxury-gold/10 rounded-full blur-[100px] pointer-events-none opacity-30" />
@@ -66,7 +66,7 @@ export default function WhyChooseUs() {
         
         {/* Header Block (Responsive margins) */}
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
-          <span className="text-[10px] sm:text-xs font-sans font-medium text-luxury-muted uppercase tracking-[0.25em] block mb-2 sm:mb-3">
+          <span className="text-[10px] sm:text-xs font-sans font-medium text-luxury-gold uppercase tracking-[0.25em] block mb-2 sm:mb-3">
             Clinical Distinction
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-light text-luxury-text mb-3 sm:mb-5 tracking-tight leading-tight">

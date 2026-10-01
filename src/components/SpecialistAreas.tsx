@@ -48,7 +48,7 @@ export default function SpecialistAreas({
       {/* 1. Explore Specialist Areas Section (Reduced bottom spacing on mobile) */}
       <section
         id="specialist-areas"
-        className="pt-12 sm:pt-20 md:py-32 pb-6 sm:pb-12 md:pb-24 bg-luxury-secondary border-b border-luxury-border"
+        className="pt-12 sm:pt-20 md:py-32 pb-6 sm:pb-12 md:pb-24 bg-transparent border-b border-luxury-border/40"
       >
         <div className="container mx-auto px-4 md:px-12 max-w-7xl">
           {/* Header Layout */}
@@ -78,10 +78,10 @@ export default function SpecialistAreas({
             <div className="shrink-0">
               <button
                 onClick={() => (onExploreAllClick ? onExploreAllClick() : onBookClick('All Specialty Areas'))}
-                className="bg-white border border-luxury-border text-luxury-text px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-full hover:bg-luxury-card hover:border-luxury-gold/50 transition-colors duration-300 font-sans text-xs sm:text-sm font-medium tracking-wide flex items-center gap-2 cursor-pointer shadow-xs"
+                className="bg-white/95 backdrop-blur-md border border-luxury-border/80 text-silver-900 px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-full hover:bg-white hover:border-luxury-gold transition-all duration-300 font-sans text-xs sm:text-sm font-medium tracking-wide flex items-center gap-2 cursor-pointer shadow-sm"
               >
                 <span>See all treatment areas ({treatmentsList.length})</span>
-                <ChevronRight className="h-4 w-4 text-luxury-muted group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+                <ChevronRight className="h-4 w-4 text-silver-500 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
               </button>
             </div>
           </header>
@@ -99,7 +99,7 @@ export default function SpecialistAreas({
                   onClick={() =>
                     onTreatmentClick ? onTreatmentClick(treatment.title) : onBookClick(treatment.title)
                   }
-                  className="group bg-luxury-card overflow-hidden border border-luxury-border hover:border-luxury-chrome transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_4px_40px_-10px_rgba(0,0,0,0.03)] hover:shadow-lg hover:-translate-y-1 rounded-sm"
+                  className="group bg-white/95 backdrop-blur-md overflow-hidden border border-white/30 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_10px_35px_-5px_rgba(0,0,0,0.25)] hover:shadow-2xl hover:-translate-y-1 rounded-xl"
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-luxury-secondary relative">
                     <img

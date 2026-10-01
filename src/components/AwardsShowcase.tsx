@@ -37,8 +37,19 @@ export default function AwardsShowcase() {
   const scrollingAwards = [...config.awards, ...config.awards, ...config.awards, ...config.awards];
 
   return (
-    <section className="py-14 sm:py-20 md:py-28 bg-luxury-secondary border-y border-luxury-border overflow-hidden relative">
-      <div className="container mx-auto px-4 md:px-8 mb-10 sm:mb-14">
+    <section className="py-14 sm:py-20 md:py-28 bg-[#faf9f8] border-y border-luxury-border overflow-hidden relative">
+      {/* Background Image Layer */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtB50YnOlyADPuedg2qMzTGO8xfnwOcB7t2-m7_npkuSx1BTCC5UlaJwIdCO6x9ZxKYyMLa3yMXQul9a3Eqcb0D99YLu85cpSvpTEPjnGb1LASgnsPiZNc16H2bbqdwGvMNfakarMRTE7wT9V_i8C6YgRCdQCCE_ym_S8foYNXQtMhkCUQPh0nS01kyTovtyQCHAmrQD15ZBojWP5UyPQs3_I2UV1O9uA38vdL-97__HRpL4P8mETpoJKWggqKuB8N-w"
+          alt="Atelier Aura Prestigious Gold Sculptures and Laureate Trophies"
+          className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
+        />
+        {/* Subtle whitish fade overlay for aesthetic clarity & contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-8 mb-10 sm:mb-14 relative z-10">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light text-luxury-text mb-3 leading-tight tracking-tight">
             Awards & Clinical Recognition
@@ -53,7 +64,7 @@ export default function AwardsShowcase() {
       </div>
 
       {/* Scrolling Marquee Area */}
-      <div className="relative w-full flex overflow-x-hidden py-2 group/track">
+      <div className="relative z-10 w-full flex overflow-x-hidden py-2 group/track">
         <motion.div
           className="flex space-x-5 sm:space-x-7 shrink-0 pr-5 sm:pr-7"
           animate={{ x: ['0%', '-50%'] }}
@@ -70,7 +81,7 @@ export default function AwardsShowcase() {
             return (
               <div
                 key={`${award.id}-${index}`}
-                className="w-[260px] sm:w-[300px] md:w-[320px] shrink-0 bg-luxury-card rounded-2xl sm:rounded-3xl border border-luxury-border/80 shadow-[0_4px_30px_-10px_rgba(0,0,0,0.04)] hover:shadow-xl hover:border-luxury-gold/50 transition-all duration-500 overflow-hidden flex flex-col group cursor-pointer"
+                className="w-[260px] sm:w-[300px] md:w-[320px] shrink-0 bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-white/60 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.12)] hover:shadow-2xl hover:border-luxury-gold/60 transition-all duration-500 overflow-hidden flex flex-col group cursor-pointer"
               >
                 {/* 1. Award Image on top */}
                 <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden bg-luxury-secondary">
@@ -89,8 +100,8 @@ export default function AwardsShowcase() {
                   </div>
                 </div>
 
-                {/* 2. Details below the image (No icon item) */}
-                <div className="p-4 sm:p-5 flex flex-col justify-center bg-luxury-card">
+                {/* 2. Details below the image */}
+                <div className="p-4 sm:p-5 flex flex-col justify-center bg-white/90">
                   <span className="text-[10px] sm:text-[11px] font-sans font-semibold text-luxury-gold uppercase tracking-[0.16em] block mb-1.5 truncate">
                     {award.organization}
                   </span>

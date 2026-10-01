@@ -13,7 +13,7 @@ export default function TopBar({ onBookClick }: TopBarProps) {
           <span className="text-silver-200">Vaishali Nagar, Jaipur &amp; Harley Street, London</span>
         </div>
         <div className="hidden lg:block text-silver-300 font-light">
-          Welcome to Age Reversal Clinic • Expert Care &amp; Advanced Solutions
+          Welcome to Age Reversal Clinic
         </div>
         <div className="flex items-center space-x-6">
           <a href="tel:+919876543210" className="flex items-center space-x-1.5 hover:text-rose-gold transition-colors">
