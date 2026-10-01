@@ -63,7 +63,7 @@ export default function WhyChooseUsEditor() {
 
   if (!config) return null;
 
-  const handlePillarChange = (pillarId: string, field: 'title' | 'description' | 'iconName', value: string) => {
+  const handlePillarChange = (pillarId: string, field: 'title' | 'description' | 'iconName' | 'imageUrl' | 'badge', value: string) => {
     setConfig({
       ...config,
       pillars: config.pillars.map(p => 
@@ -181,6 +181,30 @@ export default function WhyChooseUsEditor() {
                       value={pillar.description}
                       onChange={(e) => handlePillarChange(pillar.id, 'description', e.target.value)}
                       placeholder="Give a short detail supporting this pillar..."
+                    />
+                  </div>
+
+                  {/* Badge Text */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Floating Badge</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700"
+                      value={pillar.badge || ''}
+                      onChange={(e) => handlePillarChange(pillar.id, 'badge', e.target.value)}
+                      placeholder="E.g., Harley St Flagship, 4.9/5 ★"
+                    />
+                  </div>
+
+                  {/* UI Image URL */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">UI Image URL</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono text-slate-600"
+                      value={pillar.imageUrl || ''}
+                      onChange={(e) => handlePillarChange(pillar.id, 'imageUrl', e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
                     />
                   </div>
                 </div>

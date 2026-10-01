@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { saveConsultation, saveInquiry, getOurLocationsConfig } from '../lib/adminStore';
-import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X } from 'lucide-react';
+import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { OurLocationsConfig } from '../types';
+import { OurLocationsConfig, LocationItemConfig } from '../types';
+import ContactDrawerModal from './ContactDrawerModal';
+import AppointmentDatePicker from './AppointmentDatePicker';
+
+import clinicDevonshire from '../assets/images/clinic_devonshire_1790684708217.jpg';
+import clinicHarleyStreet from '../assets/images/clinic_harley_street_1790684722879.jpg';
+
+const DEFAULT_LOCATION_IMAGES: Record<string, string> = {
+  'loc-1': clinicDevonshire,
+  'loc-2': clinicHarleyStreet,
+};
+
+const LOCATION_FALLBACKS = [clinicDevonshire, clinicHarleyStreet];
 
 interface TreatmentItem {
   id: string;
@@ -235,11 +247,81 @@ interface LocationsAndConsultationProps {
   onTreatmentClick?: (name: string) => void;
 }
 
+const DOCTOR_OPTIONS = [
+  { value: '', label: 'Select a specialist (Optional)' },
+  { value: 'dr-smith', label: 'Dr. Smith' },
+  { value: 'dr-jones', label: 'Dr. Jones' },
+  { value: 'dr-jaipur', label: 'Dr. Jaipur' },
+];
+
+const BEST_TIME_OPTIONS = [
+  { value: 'morning', label: 'Morning' },
+  { value: 'afternoon', label: 'Afternoon' },
+  { value: 'evening', label: 'Evening' },
+];
+
+const HEAR_ABOUT_US_OPTIONS = [
+  { value: 'search', label: 'Search Engine (Google)' },
+  { value: 'social', label: 'Social Media' },
+  { value: 'referral', label: 'Friend/Family Referral' },
+  { value: 'other', label: 'Other' },
+];
+
 export default function LocationsAndConsultation({ preselectedService, onTreatmentClick }: LocationsAndConsultationProps = {}) {
   const [selectedAreaId, setSelectedAreaId] = useState<string>('face');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
-  const [selectedTreatments, setSelectedTreatments] = useState<string[]>(['exosome']);
+  const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isTreatmentCardOpen, setIsTreatmentCardOpen] = useState<boolean>(false);
+  const [viewingTreatment, setViewingTreatment] = useState<TreatmentItem | null>(null);
+  const [openMenu, setOpenMenu] = useState<'area' | 'category' | 'treatment' | null>(null);
+  const [activeConsultMenu, setActiveConsultMenu] = useState<'doctor' | 'bestTime' | 'hearAboutUs' | null>(null);
+  const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down');
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+  const consultMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  const toggleMenu = (menu: 'area' | 'category' | 'treatment', e: React.MouseEvent<HTMLButtonElement>) => {
+    if (openMenu === menu) {
+      setOpenMenu(null);
+    } else {
+      const target = e.currentTarget;
+      const rect = target.getBoundingClientRect();
+      const scrollContainer = target.closest('.overflow-y-auto');
+      const containerRect = scrollContainer ? scrollContainer.getBoundingClientRect() : null;
+      const spaceBelow = containerRect ? (containerRect.bottom - rect.bottom) : (window.innerHeight - rect.bottom);
+      const spaceAbove = containerRect ? (rect.top - containerRect.top) : rect.top;
+
+      if (spaceBelow < 240 && spaceAbove > 140) {
+        setMenuDirection('up');
+      } else {
+        setMenuDirection('down');
+      }
+      setOpenMenu(menu);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+      if (consultMenuContainerRef.current && !consultMenuContainerRef.current.contains(event.target as Node)) {
+        setActiveConsultMenu(null);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenMenu(null);
+        setActiveConsultMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const addTreatment = (id: string) => {
     if (!selectedTreatments.includes(id)) {
@@ -248,8 +330,10 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   };
 
   const removeTreatment = (id: string) => {
-    if (selectedTreatments.length > 1) {
-      setSelectedTreatments(prev => prev.filter(t => t !== id));
+    setSelectedTreatments(prev => prev.filter(t => t !== id));
+    if (booking.procedure === id) {
+      setBooking(prev => ({ ...prev, procedure: '' }));
+      setIsTreatmentCardOpen(false);
     }
   };
 
@@ -286,20 +370,16 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     if (area && area.categories.length > 0) {
       const firstCat = area.categories[0];
       setSelectedCategoryId(firstCat.id);
-      if (firstCat.items.length > 0) {
-        setBooking(prev => ({ ...prev, procedure: firstCat.items[0].id }));
-      }
+      setBooking(prev => ({ ...prev, procedure: '' }));
+      setIsTreatmentCardOpen(false);
     }
   };
 
   // Handle Category Change
   const handleCategoryChange = (catId: string) => {
     setSelectedCategoryId(catId);
-    const area = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-    const cat = area?.categories.find(c => c.id === catId);
-    if (cat && cat.items.length > 0) {
-      setBooking(prev => ({ ...prev, procedure: cat.items[0].id }));
-    }
+    setBooking(prev => ({ ...prev, procedure: '' }));
+    setIsTreatmentCardOpen(false);
   };
 
   // Listen to preselected service changes
@@ -320,25 +400,24 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
         setSelectedCategoryId('injectables');
         setBooking(prev => ({
           ...prev,
-          procedure: 'exosome',
+          procedure: '',
           improvement: `Inquiry about ${preselectedService}`
         }));
-        setSelectedTreatments(['exosome']);
+        setSelectedTreatments([]);
       }
     } else {
       setSelectedAreaId('face');
       setSelectedCategoryId('injectables');
       setBooking(prev => ({
         ...prev,
-        procedure: 'exosome'
+        procedure: ''
       }));
-      setSelectedTreatments(['exosome']);
+      setSelectedTreatments([]);
     }
   }, [preselectedService]);
 
   const [locationsConfig, setLocationsConfig] = useState<OurLocationsConfig | null>(null);
-  const [inquiries, setInquiries] = useState<Record<string, { name: string; email: string; subject: string; message: string }>>({});
-  const [submittedInquiries, setSubmittedInquiries] = useState<Record<string, boolean>>({});
+  const [activeDrawerLocation, setActiveDrawerLocation] = useState<LocationItemConfig | null>(null);
 
   useEffect(() => {
     setLocationsConfig(getOurLocationsConfig());
@@ -395,25 +474,6 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     }
   }, [booking.date, booking.bestTime]);
 
-  const handleInquirySubmit = (locationId: string, locationName: string, e: React.FormEvent) => {
-    e.preventDefault();
-    const inquiry = inquiries[locationId] || { name: '', email: '', subject: '', message: '' };
-    saveInquiry({
-      location: locationName,
-      name: inquiry.name,
-      email: inquiry.email,
-      subject: inquiry.subject,
-      message: inquiry.message
-    });
-    setSubmittedInquiries(prev => ({ ...prev, [locationId]: true }));
-    setTimeout(() => {
-      setInquiries(prev => ({
-        ...prev,
-        [locationId]: { name: '', email: '', subject: '', message: '' }
-      }));
-    }, 1000);
-  };
-
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const selectedTreatmentsData = getSelectedTreatmentsData().map(item => ({
@@ -465,143 +525,82 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {locationsConfig?.locations.map((loc) => {
-              const inquiry = inquiries[loc.id] || { name: '', email: '', subject: '', message: '' };
-              const isSubmitted = submittedInquiries[loc.id] || false;
+            {locationsConfig?.locations.map((loc, idx) => {
+              const fallbackImg = DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length];
+              const displayImage = (loc.imageUrl && (loc.imageUrl.startsWith('http') || loc.imageUrl.startsWith('/')) && !loc.imageUrl.includes('Interactive') && !loc.imageUrl.includes('lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw')) ? loc.imageUrl : fallbackImg;
 
               return (
-                <div key={loc.id} className="flex flex-col bg-luxury-card rounded-[24px] overflow-hidden border border-luxury-border shadow-sm hover:border-luxury-gold transition-all duration-300 animate-fade-in">
+                <div key={loc.id} className="flex flex-col bg-luxury-card rounded-[24px] sm:rounded-[28px] overflow-hidden border border-luxury-border shadow-sm hover:border-luxury-gold/70 transition-all duration-500 animate-fade-in group">
                   
-                  {/* Map/Image Placeholder Banner */}
-                  <div className="aspect-[16/9] bg-luxury-secondary/30 flex flex-col items-center justify-center border-b border-white/40 group relative overflow-hidden">
-                    {loc.bannerType === 'Map' ? (
-                      <Map className="h-12 w-12 text-luxury-subtext mb-2 group-hover:scale-110 transition-transform duration-300" />
-                    ) : (
-                      <Building2 className="h-12 w-12 text-luxury-subtext mb-2 group-hover:scale-110 transition-transform duration-300" />
-                    )}
-                    <span className="text-xs font-bold font-sans tracking-wider text-luxury-subtext uppercase">{loc.imageUrl || 'Interactive Satellite View'}</span>
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent pointer-events-none" />
-                  </div>
+                  {/* Clinical Location Image with Overlayed Details (clinic name, location, opening time, telephone) */}
+                  <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden bg-luxury-secondary flex flex-col justify-between">
+                    <img
+                      src={displayImage}
+                      alt={loc.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
+                      referrerPolicy="no-referrer"
+                    />
 
-                  <div className="p-6 md:p-8 flex-grow flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-serif font-bold text-[22px] text-luxury-text mb-4">
+                    {/* Gradient scrim brought down so the upper architecture remains bright and clear */}
+                    <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-black/95 via-black/55 via-50% to-transparent pointer-events-none" />
+
+                    {/* Top pill badge */}
+                    <div className="relative z-10 p-3.5 sm:p-4 md:p-5 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-sans font-semibold tracking-wider uppercase bg-white/95 backdrop-blur-md text-luxury-text border border-white/80 shadow-xs">
+                        <Building2 className="h-3 w-3 text-luxury-gold" />
+                        <span>Clinical Facility</span>
+                      </span>
+                    </div>
+
+                    {/* Overlayed Details: Clinic Name, Location (Address), Opening Time, and Telephone */}
+                    <div className="relative z-10 p-4 sm:p-5 md:p-6 flex flex-col justify-end text-white">
+                      <h3 className="font-serif font-light text-xl sm:text-2xl md:text-[25px] text-white mb-2 leading-snug drop-shadow-sm group-hover:text-luxury-gold transition-colors duration-300">
                         {loc.name}
                       </h3>
                       
-                      <div className="space-y-3.5 mb-6">
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-5 w-5 text-luxury-text shrink-0 mt-0.5" />
-                          <p className="font-sans text-sm text-luxury-subtext leading-relaxed">
-                            {loc.address}
-                          </p>
+                      <div className="space-y-1.5 font-sans font-light text-xs sm:text-sm">
+                        <div className="flex items-start gap-2.5 text-white/95">
+                          <MapPin className="h-4 w-4 text-luxury-gold shrink-0 mt-0.5" />
+                          <span className="leading-relaxed drop-shadow-xs">{loc.address}</span>
                         </div>
-                        <div className="flex items-start gap-3">
-                          <Clock className="h-5 w-5 text-luxury-text shrink-0 mt-0.5" />
-                          <p className="font-sans text-sm text-luxury-subtext">
-                            {loc.hours}
-                          </p>
+                        <div className="flex items-center gap-2.5 text-white/85">
+                          <Clock className="h-4 w-4 text-luxury-gold shrink-0" />
+                          <span className="drop-shadow-xs">{loc.hours}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-white/85">
+                          <Phone className="h-4 w-4 text-luxury-gold shrink-0" />
+                          <a 
+                            href={`tel:${(loc.phone || (loc.id === 'loc-2' ? '+44 (0)20 7616 7693' : '+44 (0)20 7935 4444')).replace(/[^0-9+]/g, '')}`}
+                            className="drop-shadow-xs hover:text-luxury-gold transition-colors"
+                          >
+                            {loc.phone || (loc.id === 'loc-2' ? '+44 (0)20 7616 7693' : '+44 (0)20 7935 4444')}
+                          </a>
                         </div>
                       </div>
-
-                      <a 
-                        href={loc.mapsUrl}
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="inline-flex items-center gap-2 text-sm text-luxury-text hover:text-luxury-subtext font-bold font-sans transition-colors group"
-                      >
-                        <span>Get Directions</span>
-                        <ExternalLink className="h-4 w-4 stroke-[2.5] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </a>
                     </div>
+                  </div>
 
-                    {/* Quick Inquiry Form */}
-                    <div className="mt-8 pt-8 border-t border-luxury-border/40">
-                      <p className="font-sans font-bold text-sm text-luxury-text mb-4">Quick Inquiry</p>
-                      
-                      <AnimatePresence mode="wait">
-                        {!isSubmitted ? (
-                          <motion.form 
-                            key={`form-${loc.id}`}
-                            initial={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onSubmit={(e) => handleInquirySubmit(loc.id, loc.name, e)} 
-                            className="space-y-3"
-                          >
-                            <div className="grid grid-cols-2 gap-3">
-                              <input 
-                                type="text" 
-                                required
-                                placeholder="Name" 
-                                value={inquiry.name}
-                                onChange={(e) => setInquiries({
-                                  ...inquiries,
-                                  [loc.id]: { ...inquiry, name: e.target.value }
-                                })}
-                                className="w-full px-4 py-2.5 rounded-lg border border-luxury-border bg-luxury-secondary text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all"
-                              />
-                              <input 
-                                type="email" 
-                                required
-                                placeholder="Email" 
-                                value={inquiry.email}
-                                onChange={(e) => setInquiries({
-                                  ...inquiries,
-                                  [loc.id]: { ...inquiry, email: e.target.value }
-                                })}
-                                className="w-full px-4 py-2.5 rounded-lg border border-luxury-border bg-luxury-secondary text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all"
-                              />
-                            </div>
-                            <input 
-                              type="text" 
-                              required
-                              placeholder="Subject" 
-                              value={inquiry.subject}
-                              onChange={(e) => setInquiries({
-                                ...inquiries,
-                                [loc.id]: { ...inquiry, subject: e.target.value }
-                              })}
-                              className="w-full px-4 py-2.5 rounded-lg border border-luxury-border bg-luxury-secondary text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all"
-                            />
-                            <textarea 
-                              required
-                              placeholder="Message" 
-                              rows={2}
-                              value={inquiry.message}
-                              onChange={(e) => setInquiries({
-                                ...inquiries,
-                                [loc.id]: { ...inquiry, message: e.target.value }
-                              })}
-                              className="w-full px-4 py-2.5 rounded-lg border border-luxury-border bg-luxury-secondary text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all resize-none"
-                            />
-                            <button 
-                              type="submit"
-                              className="w-full bg-black hover:bg-black text-white py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                            >
-                              <Send className="h-3.5 w-3.5" />
-                              <span>Send Message</span>
-                            </button>
-                          </motion.form>
-                        ) : (
-                          <motion.div 
-                            key={`success-${loc.id}`}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-green-50 border border-green-200 p-4 rounded-xl text-center"
-                          >
-                            <Check className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                            <h4 className="font-bold text-green-900 text-sm">Message Sent Successfully</h4>
-                            <p className="text-xs text-green-700 mt-1">We will respond within 24 hours.</p>
-                            <button 
-                              onClick={() => setSubmittedInquiries(prev => ({ ...prev, [loc.id]: false }))}
-                              className="mt-3 text-xs text-luxury-text hover:underline font-bold"
-                            >
-                              Send another message
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                  {/* Standalone Action Items (Contact & Get Directions) */}
+                  <div className="p-4 sm:p-5 px-5 sm:px-6 flex items-center justify-between bg-luxury-card border-t border-luxury-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setActiveDrawerLocation(loc)}
+                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold font-sans text-luxury-text hover:text-luxury-gold transition-colors duration-200 cursor-pointer group"
+                    >
+                      <Mail className="h-3.5 w-3.5 text-luxury-gold group-hover:scale-110 transition-transform" />
+                      <span>Contact</span>
+                    </button>
+
+                    <a 
+                      href={loc.mapsUrl}
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold font-sans text-luxury-text hover:text-luxury-gold transition-colors duration-200 group cursor-pointer"
+                    >
+                      <span>Get Directions</span>
+                      <ExternalLink className="h-3.5 w-3.5 stroke-[2] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform text-luxury-gold" />
+                    </a>
                   </div>
                 </div>
               );
@@ -609,6 +608,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
           </div>
 
         </div>
+
+        {/* Standalone Reusable Contact Drawer Modal */}
+        <ContactDrawerModal
+          isOpen={!!activeDrawerLocation}
+          onClose={() => setActiveDrawerLocation(null)}
+          location={activeDrawerLocation}
+        />
       </section>
 
       {/* 2. Book Consultation Form Section */}
@@ -689,337 +695,588 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">
-                      Choose from our clinic's categories to locate your preferred specialist treatment.
+                      Select From Our Clinic's Specialist Treatments
                     </label>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Step 1: Area */}
-                    <div className="space-y-1.5">
-                      <div className="relative">
-                        <select
-                          value={selectedAreaId}
-                          onChange={(e) => handleAreaChange(e.target.value)}
-                          className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold cursor-pointer"
-                        >
-                          {CLINICAL_AREAS_DB.map(area => (
-                            <option key={area.id} value={area.id}>
-                              {area.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
 
-                    {/* Step 2: Category */}
-                    <div className="space-y-1.5">
-                      <div className="relative">
-                        <select
-                          value={selectedCategoryId}
-                          onChange={(e) => handleCategoryChange(e.target.value)}
-                          className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold cursor-pointer"
-                        >
-                          {CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId)?.categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          )) || <option value="">Select Category</option>}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Step 3: Specific Treatment */}
-                    <div className="space-y-1.5">
-                      <div className="relative">
-                        <select
-                          value={booking.procedure}
-                          onChange={(e) => setBooking({ ...booking, procedure: e.target.value })}
-                          className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold cursor-pointer"
-                        >
-                          {CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId)
-                            ?.categories.find(c => c.id === selectedCategoryId)
-                            ?.items.map(item => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} ({item.price})
-                              </option>
-                            )) || <option value="">Select Treatment</option>}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Clean Visual Hierarchy Flow Label matching the user request: "face: INJECTABLE TREATMENTS: Exosome" */}
-                  {(() => {
-                    const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-                    const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
-                    const itemObj = catObj?.items.find(i => i.id === booking.procedure);
-                    if (!areaObj || !catObj || !itemObj) return null;
-                    return (
-                      <div className="flex flex-wrap items-center gap-1.5 bg-luxury-card/70 border border-luxury-border/50 rounded-xl px-4 py-2.5 text-xs text-luxury-text font-medium font-mono shadow-inner">
-                        <span className="text-luxury-gold font-bold uppercase">{areaObj.id}</span>
-                        <span className="text-luxury-muted font-normal">:</span>
-                        <span className="text-luxury-subtext font-bold uppercase">{catObj.name}</span>
-                        <span className="text-luxury-muted font-normal">:</span>
-                        <span className="text-luxury-text font-bold">{itemObj.name}</span>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Clean Dynamic UI showing Selected Treatment details */}
-                  {(() => {
-                    const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-                    const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
-                    const currentTreatment = catObj?.items.find(i => i.id === booking.procedure);
-                    if (!currentTreatment) return null;
-                    return (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        key={currentTreatment.id}
-                        className="bg-gradient-to-br from-luxury-secondary/5 to-luxury-secondary/10 border border-luxury-text/20 rounded-2xl p-5 md:p-6 space-y-4"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-                          {/* Title & Category */}
-                          <div className="space-y-2">
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-subtext bg-black/10 px-2.5 py-1 rounded-full w-fit inline-block">
-                              {catObj.name}
-                            </span>
-                            <h4 
-                              onClick={() => onTreatmentClick?.(currentTreatment.name)}
-                              className="text-lg md:text-xl font-serif font-bold text-luxury-text hover:text-luxury-subtext transition-colors leading-snug cursor-pointer block hover:underline decoration-rose-gold decoration-2 underline-offset-4"
-                              title="Click to view full clinical details"
-                            >
-                              {currentTreatment.name}
-                            </h4>
-                            <p className="text-xs text-luxury-subtext leading-relaxed max-w-xl">
-                              {currentTreatment.desc}
-                            </p>
-                          </div>
-
-                          {/* Info Badges (Time & Price) */}
-                          <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-3 shrink-0 w-full md:w-auto">
-                            {/* Price Card */}
-                            <div 
-                              onClick={() => onTreatmentClick?.(currentTreatment.name)}
-                              title="Click to view treatment details"
-                              className="flex-1 md:flex-none flex items-center gap-3 bg-white border border-luxury-border/30 hover:border-luxury-text/60 px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md min-w-0 sm:min-w-[150px] cursor-pointer transition-all hover:bg-slate-50/80 active:scale-[0.98]"
-                            >
-                              <div className="p-2 bg-black text-luxury-gold rounded-lg shrink-0">
-                                <DollarSign className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[9px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Investment</span>
-                                <span className="text-sm font-bold text-luxury-text font-serif block truncate">{currentTreatment.price}</span>
-                              </div>
-                            </div>
-
-                            {/* Duration Card */}
-                            <div 
-                              onClick={() => onTreatmentClick?.(currentTreatment.name)}
-                              title="Click to view treatment details"
-                              className="flex-1 md:flex-none flex items-center gap-3 bg-white border border-luxury-border/30 hover:border-luxury-text/60 px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md min-w-0 sm:min-w-[150px] cursor-pointer transition-all hover:bg-slate-50/80 active:scale-[0.98]"
-                            >
-                              <div className="p-2 bg-black text-luxury-gold rounded-lg shrink-0">
-                                <Clock className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[9px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Duration</span>
-                                <span className="text-sm font-bold text-luxury-text block truncate">{currentTreatment.time}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Toggle Add to Selection Button */}
-                        <div className="pt-4 border-t border-luxury-text/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                          <p className="text-xs text-slate-500 font-sans">
-                            {selectedTreatments.includes(currentTreatment.id)
-                              ? "✓ This treatment is in your consultation plan."
-                              : "Would you like to add this treatment to your consultation?"}
-                          </p>
-                          {selectedTreatments.includes(currentTreatment.id) ? (
-                            <button
-                              type="button"
-                              disabled={selectedTreatments.length <= 1}
-                              onClick={() => removeTreatment(currentTreatment.id)}
-                              className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                                selectedTreatments.length <= 1
-                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent"
-                                  : "bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-150 cursor-pointer"
-                              }`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" /> Remove from Plan
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => addTreatment(currentTreatment.id)}
-                              className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-black hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                            >
-                              <Plus className="h-3.5 w-3.5" /> Add to Plan
-                            </button>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })()}
-
-                  {/* Selected Treatments Summary Card (Cart-like Item) */}
-                  {selectedTreatments.length > 0 && (
-                    <div 
+                  {/* When no treatment is added, display clean Add Treatment UI */}
+                  {selectedTreatments.length === 0 ? (
+                    <button
+                      type="button"
                       onClick={() => setIsDrawerOpen(true)}
-                      className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md hover:shadow-lg hover:from-black hover:to-black transition-all cursor-pointer border border-luxury-text/20 group"
+                      className="w-full bg-white hover:bg-slate-50/90 border-2 border-dashed border-luxury-border hover:border-luxury-gold/70 rounded-2xl p-5 sm:p-6 text-left transition-all duration-200 shadow-xs group flex items-center justify-between gap-4 cursor-pointer"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {/* Clean minimal circular badge for mobile screen only - star-like icon removed */}
-                        <div className="sm:hidden flex items-center justify-center w-6 h-6 rounded-full bg-luxury-gold text-luxury-text text-[11px] font-black shrink-0 shadow-sm">
-                          {selectedTreatments.length}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="p-3 rounded-xl bg-luxury-gold/10 text-luxury-gold border border-luxury-gold/20 group-hover:scale-105 transition-transform shrink-0">
+                          <Plus className="h-5 w-5" />
                         </div>
-                        {/* Desktop badge with Sparkles (star-like icon) */}
-                        <div className="hidden sm:block relative p-2.5 bg-luxury-gold/20 rounded-xl text-luxury-gold shrink-0 group-hover:scale-105 transition-transform">
-                          <Sparkles className="h-5 w-5" />
-                          <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-text text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-luxury-text">
-                            {selectedTreatments.length}
-                          </span>
-                        </div>
-                        <div className="text-left min-w-0">
-                          <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Consultation Plan</span>
-                          <span className="text-xs font-bold text-white block truncate">
-                            {selectedTreatments.length} Procedure{selectedTreatments.length > 1 ? 's' : ''} Selected
-                          </span>
+                        <div className="min-w-0">
+                          <h4 className="font-serif font-bold text-base text-luxury-text group-hover:text-luxury-subtext transition-colors">
+                            Add Treatment
+                          </h4>
+                          <p className="text-xs text-luxury-subtext truncate font-light mt-0.5">
+                            Tap to browse clinic categories and select specialist procedures
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                          <span className="text-[9px] uppercase tracking-wider text-luxury-gold/90 block font-extrabold">Total Est.</span>
-                          <span className="text-sm font-bold font-serif text-luxury-gold">
-                            ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                      <div className="hidden sm:flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-bold text-white bg-black group-hover:bg-luxury-text px-3.5 py-2 rounded-xl transition-colors shadow-xs flex items-center gap-1.5">
+                          <Plus className="h-3.5 w-3.5" /> Select
+                        </span>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* List of Added Treatments */}
+                      <div className="space-y-2.5">
+                        {getSelectedTreatmentsData().map((item) => (
+                          <div
+                            key={item.id}
+                            className="bg-white hover:bg-slate-50/80 border border-luxury-border/80 hover:border-luxury-gold/50 rounded-2xl p-4 transition-all duration-200 shadow-xs flex items-center justify-between gap-3 group"
+                          >
+                            <div 
+                              onClick={() => {
+                                setBooking(prev => ({ ...prev, procedure: item.id }));
+                                setIsTreatmentCardOpen(true);
+                              }}
+                              className="min-w-0 flex-1 cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-gold bg-luxury-gold/10 px-2.5 py-0.5 rounded">
+                                  {item.areaName} • {item.catName}
+                                </span>
+                              </div>
+                              <h4 className="font-serif font-bold text-sm sm:text-base text-luxury-text mt-1 truncate group-hover:text-luxury-subtext transition-colors">
+                                {item.name}
+                              </h4>
+                              <div className="flex items-center gap-3 mt-1 text-xs text-luxury-subtext">
+                                <span className="font-serif font-bold text-luxury-text">{item.price}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-luxury-muted" /> {item.time}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBooking(prev => ({ ...prev, procedure: item.id }));
+                                  setIsTreatmentCardOpen(true);
+                                }}
+                                title="View treatment details"
+                                className="text-xs font-bold text-luxury-text bg-luxury-secondary/80 hover:bg-luxury-secondary px-3 py-1.5 rounded-xl border border-luxury-border/50 transition-colors cursor-pointer hidden sm:inline-block"
+                              >
+                                Details
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeTreatment(item.id);
+                                }}
+                                title="Remove treatment"
+                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add Another Treatment Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsDrawerOpen(true)}
+                        className="w-full bg-slate-50/80 hover:bg-slate-100 border border-dashed border-luxury-border hover:border-luxury-gold/60 rounded-xl py-3 px-4 text-xs font-bold text-luxury-text flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 text-luxury-gold" />
+                        <span>Add Another Treatment</span>
+                      </button>
+
+                      {/* Consultation Plan Summary Bar */}
+                      <div 
+                        onClick={() => setIsDrawerOpen(true)}
+                        className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md hover:shadow-lg transition-all cursor-pointer border border-luxury-text/20 group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Clean minimal circular badge for mobile screen only */}
+                          <div className="sm:hidden flex items-center justify-center w-6 h-6 rounded-full bg-luxury-gold text-luxury-text text-[11px] font-black shrink-0 shadow-sm">
+                            {selectedTreatments.length}
+                          </div>
+                          {/* Desktop badge with Sparkles */}
+                          <div className="hidden sm:block relative p-2.5 bg-luxury-gold/20 rounded-xl text-luxury-gold shrink-0 group-hover:scale-105 transition-transform">
+                            <Sparkles className="h-5 w-5" />
+                            <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-text text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-luxury-text">
+                              {selectedTreatments.length}
+                            </span>
+                          </div>
+                          <div className="text-left min-w-0">
+                            <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Consultation Plan</span>
+                            <span className="text-xs font-bold text-white block truncate">
+                              {selectedTreatments.length} Procedure{selectedTreatments.length > 1 ? 's' : ''} Selected
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-right">
+                            <span className="text-[9px] uppercase tracking-wider text-luxury-gold/90 block font-extrabold">Total Est.</span>
+                            <span className="text-sm font-bold font-serif text-luxury-gold">
+                              ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="hidden sm:inline-block bg-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold hover:bg-white/15 transition-all text-white border border-white/5 uppercase tracking-wide shrink-0">
+                            Review
                           </span>
                         </div>
-                        {/* Hiding the review button entirely on mobile for a clean minimal layout */}
-                        <span className="hidden sm:inline-block bg-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold hover:bg-white/15 transition-all text-white border border-white/5 uppercase tracking-wide shrink-0">
-                          Review
-                        </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Custom Bottom Mobile Drawer for Selected Treatments */}
+                  {/* Custom Bottom Drawer for Category Selection & Selected Treatments */}
                   <AnimatePresence>
                     {isDrawerOpen && (
-                      <div className="fixed inset-0 z-50">
+                      <div className="fixed inset-0 z-[9999]">
                         {/* Backdrop Overlay */}
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          onClick={() => setIsDrawerOpen(false)}
+                          transition={{ duration: 0.18 }}
+                          onClick={() => {
+                            setOpenMenu(null);
+                            setIsDrawerOpen(false);
+                          }}
                           className="fixed inset-0 bg-black/60 backdrop-blur-sm"
                         />
-                        {/* Slide-Up Drawer */}
+                        {/* Slide-Up Drawer: Opens from a bit below (y: 28) for high performance on low-end devices */}
                         <motion.div
-                          initial={{ y: "100%" }}
-                          animate={{ y: 0 }}
-                          exit={{ y: "100%" }}
-                          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                          className="fixed bottom-0 left-0 right-0 md:max-w-xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-50 max-h-[85vh] overflow-hidden"
+                          initial={{ opacity: 0, y: 28 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 20 }}
+                          transition={{ duration: 0.22, ease: "easeOut" }}
+                          className="fixed bottom-0 left-0 right-0 md:max-w-2xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[88vh] overflow-hidden"
                         >
-                          {/* Drag Handle */}
-                          <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto my-3.5 shrink-0 cursor-pointer hover:bg-slate-300 transition-colors" onClick={() => setIsDrawerOpen(false)} />
+                          
                           
                           {/* Header */}
-                          <div className="px-6 pb-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                          <div className="px-5 sm:px-6 pt-4 pb-1 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div>
-                              <h4 className="font-serif font-bold text-lg text-luxury-text">Your Consultation Plan</h4>
-                              <p className="text-xs text-slate-500">Review, add, or prune selected clinical treatments</p>
+                              <h4 className="font-serif font-bold text-lg text-luxury-text">Choose Specialist Treatment</h4>
+                              <p className="text-xs text-slate-500">Select clinical preferred treatment</p>
                             </div>
                             <button
                               type="button"
-                              onClick={() => setIsDrawerOpen(false)}
-                              className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-full transition-all"
+                              onClick={() => {
+                                setOpenMenu(null);
+                                setIsDrawerOpen(false);
+                              }}
+                              className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-full transition-all cursor-pointer"
                             >
                               <X className="h-5 w-5" />
                             </button>
                           </div>
 
                           {/* Content */}
-                          <div className="p-6 overflow-y-auto space-y-4 flex-1">
-                            {getSelectedTreatmentsData().map((item) => (
-                              <div 
-                                key={item.id}
-                                className="flex items-center justify-between gap-4 bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-sm hover:border-slate-200 transition-all"
-                              >
-                                <div className="space-y-1 min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide bg-slate-200/50 px-2 py-0.5 rounded">
-                                      {item.areaName}
+                          <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                            {/* 3-Step Selection Flow inside Drawer */}
+                            <div ref={menuContainerRef} className="grid grid-cols-1 md:grid-cols-3 gap-3.5 relative">
+                              {/* Step 1: Area */}
+                              {(() => {
+                                const currentArea = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId) || CLINICAL_AREAS_DB[0];
+                                return (
+                                  <div className="space-y-1.5 relative">
+                                    <span className="text-[10px] font-bold text-luxury-muted uppercase tracking-wider block">
+                                      Step 1 • Anatomical Area
                                     </span>
-                                    <span className="text-[9px] font-bold text-luxury-gold uppercase tracking-wide truncate bg-luxury-gold/10 px-2 py-0.5 rounded">
-                                      {item.catName}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleMenu('area', e)}
+                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                        openMenu === 'area' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                                      }`}
+                                    >
+                                      <span className="truncate">{currentArea?.name || 'Select Area'}</span>
+                                      <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${openMenu === 'area' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {openMenu === 'area' && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          transition={{ duration: 0.12 }}
+                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-56 overflow-y-auto py-1.5 ${
+                                            menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                          }`}
+                                        >
+                                          {CLINICAL_AREAS_DB.map(area => {
+                                            const isSelected = area.id === selectedAreaId;
+                                            return (
+                                              <button
+                                                key={area.id}
+                                                type="button"
+                                                onClick={() => {
+                                                  handleAreaChange(area.id);
+                                                  setOpenMenu(null);
+                                                }}
+                                                className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                                  isSelected 
+                                                    ? 'bg-luxury-secondary/90 font-bold text-luxury-text' 
+                                                    : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                                }`}
+                                              >
+                                                <span className="truncate">{area.name}</span>
+                                                {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                              </button>
+                                            );
+                                          })}
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Step 2: Category */}
+                              {(() => {
+                                const currentCategories = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId)?.categories || [];
+                                const currentCategory = currentCategories.find(c => c.id === selectedCategoryId) || currentCategories[0];
+                                return (
+                                  <div className="space-y-1.5 relative">
+                                    <span className="text-[10px] font-bold text-luxury-muted uppercase tracking-wider block">
+                                      Step 2 • Treatment Category
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleMenu('category', e)}
+                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                        openMenu === 'category' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                                      }`}
+                                    >
+                                      <span className="truncate">{currentCategory?.name || 'Select Category'}</span>
+                                      <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${openMenu === 'category' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {openMenu === 'category' && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          transition={{ duration: 0.12 }}
+                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-56 overflow-y-auto py-1.5 ${
+                                            menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                          }`}
+                                        >
+                                          {currentCategories.length === 0 ? (
+                                            <div className="px-4 py-3 text-xs text-luxury-muted text-center">No categories available</div>
+                                          ) : (
+                                            currentCategories.map(cat => {
+                                              const isSelected = cat.id === selectedCategoryId;
+                                              return (
+                                                <button
+                                                  key={cat.id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    handleCategoryChange(cat.id);
+                                                    setOpenMenu(null);
+                                                  }}
+                                                  className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                                    isSelected 
+                                                      ? 'bg-luxury-secondary/90 font-bold text-luxury-text' 
+                                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                                  }`}
+                                                >
+                                                  <span className="truncate">{cat.name}</span>
+                                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                                </button>
+                                              );
+                                            })
+                                          )}
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Step 3: Specific Treatment */}
+                              {(() => {
+                                const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
+                                const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
+                                const currentItems = catObj?.items || [];
+                                const currentItem = booking.procedure ? currentItems.find(i => i.id === booking.procedure) : null;
+                                return (
+                                  <div className="space-y-1.5 relative">
+                                    <span className="text-[10px] font-bold text-luxury-muted uppercase tracking-wider block">
+                                      Step 3 • Specific Treatment
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => toggleMenu('treatment', e)}
+                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                        openMenu === 'treatment' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 truncate min-w-0 pr-2">
+                                        <span className={`truncate ${!currentItem ? 'text-luxury-subtext font-normal' : ''}`}>
+                                          {currentItem?.name || 'Select Treatment'}
+                                        </span>
+                                        {currentItem?.price && (
+                                          <span className="text-[10px] font-bold text-luxury-gold bg-luxury-gold/10 px-1.5 py-0.5 rounded shrink-0">
+                                            {currentItem.price}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${openMenu === 'treatment' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {openMenu === 'treatment' && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
+                                          transition={{ duration: 0.12 }}
+                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-60 overflow-y-auto py-1.5 divide-y divide-luxury-border/30 ${
+                                            menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                          }`}
+                                        >
+                                          {currentItems.length === 0 ? (
+                                            <div className="px-4 py-3 text-xs text-luxury-muted text-center">No treatments available</div>
+                                          ) : (
+                                            currentItems.map(item => {
+                                              const isSelected = item.id === booking.procedure;
+                                              return (
+                                                <button
+                                                  key={item.id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setBooking({ ...booking, procedure: item.id });
+                                                    addTreatment(item.id);
+                                                    setOpenMenu(null);
+                                                    setIsTreatmentCardOpen(true);
+                                                  }}
+                                                  className={`w-full px-4 py-2.5 text-left transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                                                    isSelected 
+                                                      ? 'bg-luxury-secondary/90 text-luxury-text' 
+                                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text'
+                                                  }`}
+                                                >
+                                                  <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className={`text-xs sm:text-sm truncate ${isSelected ? 'font-bold text-luxury-text' : 'font-medium'}`}>
+                                                        {item.name}
+                                                      </span>
+                                                      <span className="text-[10px] font-bold text-luxury-gold bg-luxury-gold/10 px-1.5 py-0.5 rounded shrink-0">
+                                                        {item.price}
+                                                      </span>
+                                                    </div>
+                                                    {item.desc && (
+                                                      <p className="text-[11px] text-luxury-muted line-clamp-1 mt-0.5 font-light truncate">
+                                                        {item.desc}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-1.5" />}
+                                                </button>
+                                              );
+                                            })
+                                          )}
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+
+                            {/* Consultation Plan item placed with/below the select treatment selections */}
+                            {selectedTreatments.length > 0 && (
+                              <div 
+                                onClick={() => {
+                                  if (booking.procedure) {
+                                    setIsTreatmentCardOpen(true);
+                                  }
+                                }}
+                                className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md border border-luxury-text/20 cursor-pointer"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="sm:hidden flex items-center justify-center w-6 h-6 rounded-full bg-luxury-gold text-luxury-text text-[11px] font-black shrink-0 shadow-sm">
+                                    {selectedTreatments.length}
+                                  </div>
+                                  <div className="hidden sm:block relative p-2.5 bg-luxury-gold/20 rounded-xl text-luxury-gold shrink-0">
+                                    <Sparkles className="h-5 w-5" />
+                                    <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-text text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-luxury-text">
+                                      {selectedTreatments.length}
                                     </span>
                                   </div>
-                                  <h5 className="font-sans font-bold text-sm text-luxury-text">
-                                    {item.name}
-                                  </h5>
-                                  <p className="text-xs text-luxury-subtext/80 leading-relaxed line-clamp-2">
-                                    {item.desc}
-                                  </p>
-                                  <div className="flex items-center gap-3 text-xs text-slate-500 font-semibold pt-1">
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" /> {item.time}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="flex items-center gap-1 font-bold text-luxury-text">
-                                      <DollarSign className="h-3 w-3 text-slate-400 shrink-0" /> {item.price}
+                                  <div className="text-left min-w-0">
+                                    <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Consultation Plan</span>
+                                    <span className="text-xs font-bold text-white block truncate">
+                                      {selectedTreatments.length} Procedure{selectedTreatments.length > 1 ? 's' : ''} Selected
                                     </span>
                                   </div>
                                 </div>
-
-                                {/* Remove button */}
-                                {selectedTreatments.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeTreatment(item.id)}
-                                    className="p-2.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all border border-slate-200/50 hover:border-rose-100 shrink-0 shadow-sm"
-                                    title="Remove treatment"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <div className="text-right">
+                                    <span className="text-[9px] uppercase tracking-wider text-luxury-gold/90 block font-extrabold">Total Est.</span>
+                                    <span className="text-sm font-bold font-serif text-luxury-gold">
+                                      ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                            ))}
-                          </div>
-
-                          {/* Footer */}
-                          <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-4 shrink-0 rounded-t-2xl shadow-inner">
-                            <div className="flex items-center justify-between">
-                              <div className="space-y-0.5">
-                                <span className="text-xs uppercase tracking-wider text-slate-500 font-extrabold block">
-                                  Estimated Investment Total
-                                </span>
-                                <span className="text-xs text-slate-400 block font-medium">
-                                  {selectedTreatments.length} procedure{selectedTreatments.length > 1 ? 's' : ''} in plan
-                                </span>
-                              </div>
-                              <span className="font-serif font-bold text-xl text-luxury-text">
-                                ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
-                              </span>
-                            </div>
-                            
-                            <button
-                              type="button"
-                              onClick={() => setIsDrawerOpen(false)}
-                              className="w-full bg-black hover:bg-black text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                              Confirm Plan & Close Drawer
-                            </button>
+                            )}
                           </div>
                         </motion.div>
                       </div>
                     )}
                   </AnimatePresence>
-                </div>
+
+                  {/* Clean Mobile Drawer Sheet for Selected Treatment Card Details (Without a header) */}
+                  <AnimatePresence>
+                    {isTreatmentCardOpen && booking.procedure && (() => {
+                      const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
+                      const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
+                      const currentTreatment = catObj?.items.find(i => i.id === booking.procedure);
+                      if (!currentTreatment || !catObj) return null;
+
+                      return (
+                        <div className="fixed inset-0 z-[10000]">
+                          {/* Backdrop Overlay */}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.18 }}
+                            onClick={() => setIsTreatmentCardOpen(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                          />
+
+                          {/* Clean Mobile Drawer Sheet without Header - Details render directly on modal */}
+                          <motion.div
+                            initial={{ opacity: 0, y: 28 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.22, ease: "easeOut" }}
+                            className="fixed bottom-0 left-0 right-0 md:max-w-xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[85vh] overflow-y-auto p-5 sm:p-6 space-y-4"
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+                              {/* Title & Category */}
+                              <div className="space-y-1.5">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-subtext bg-black/10 px-2.5 py-0.5 rounded-full w-fit inline-block">
+                                  {catObj.name}
+                                </span>
+                                <h4 
+                                  onClick={() => {
+                                    setIsTreatmentCardOpen(false);
+                                    setIsDrawerOpen(false);
+                                    onTreatmentClick?.(currentTreatment.name);
+                                  }}
+                                  className="text-base sm:text-lg font-serif font-bold text-luxury-text hover:text-luxury-subtext transition-colors leading-snug cursor-pointer block hover:underline decoration-rose-gold decoration-2 underline-offset-4"
+                                  title="Click to view full clinical details"
+                                >
+                                  {currentTreatment.name}
+                                </h4>
+                                <p className="text-xs text-luxury-subtext leading-relaxed max-w-xl">
+                                  {currentTreatment.desc}
+                                </p>
+                              </div>
+
+                              {/* Info Badges (Time & Price) */}
+                              <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-2.5 shrink-0 w-full md:w-auto">
+                                {/* Price Card */}
+                                <div 
+                                  onClick={() => {
+                                    setIsTreatmentCardOpen(false);
+                                    setIsDrawerOpen(false);
+                                    onTreatmentClick?.(currentTreatment.name);
+                                  }}
+                                  title="Click to view treatment details"
+                                  className="flex-1 md:flex-none flex items-center gap-2.5 bg-luxury-secondary/30 border border-luxury-border/40 hover:border-luxury-text/60 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-sm min-w-0 sm:min-w-[140px] cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
+                                >
+                                  <div className="p-1.5 bg-black text-luxury-gold rounded-lg shrink-0">
+                                    <DollarSign className="h-3.5 w-3.5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="text-[8.5px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Investment</span>
+                                    <span className="text-xs sm:text-sm font-bold text-luxury-text font-serif block truncate">{currentTreatment.price}</span>
+                                  </div>
+                                </div>
+
+                                {/* Duration Card */}
+                                <div 
+                                  onClick={() => {
+                                    setIsTreatmentCardOpen(false);
+                                    setIsDrawerOpen(false);
+                                    onTreatmentClick?.(currentTreatment.name);
+                                  }}
+                                  title="Click to view treatment details"
+                                  className="flex-1 md:flex-none flex items-center gap-2.5 bg-luxury-secondary/30 border border-luxury-border/40 hover:border-luxury-text/60 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-sm min-w-0 sm:min-w-[140px] cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
+                                >
+                                  <div className="p-1.5 bg-black text-luxury-gold rounded-lg shrink-0">
+                                    <Clock className="h-3.5 w-3.5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="text-[8.5px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Duration</span>
+                                    <span className="text-xs sm:text-sm font-bold text-luxury-text block truncate">{currentTreatment.time}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Toggle Add to Selection Button */}
+                            <div className="pt-3 border-t border-luxury-text/10 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                              <p className="text-xs text-slate-500 font-sans">
+                                {selectedTreatments.includes(currentTreatment.id)
+                                  ? "✓ This treatment is in your consultation plan."
+                                  : "Would you like to add this treatment to your consultation?"}
+                              </p>
+                              {selectedTreatments.includes(currentTreatment.id) ? (
+                                <button
+                                  type="button"
+                                  disabled={selectedTreatments.length <= 1}
+                                  onClick={() => removeTreatment(currentTreatment.id)}
+                                  className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                                    selectedTreatments.length <= 1
+                                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent"
+                                      : "bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-150 cursor-pointer"
+                                  }`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" /> Remove from Plan
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => addTreatment(currentTreatment.id)}
+                                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-black hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                                >
+                                  <Plus className="h-3.5 w-3.5" /> Add to Plan
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Clean action button at bottom of sheet */}
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setIsTreatmentCardOpen(false)}
+                                className="w-full py-2.5 bg-black hover:bg-black/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                              >
+                                Done
+                              </button>
+                            </div>
+                          </motion.div>
+                        </div>
+                      );
+                    })()}
+                  </AnimatePresence>
+              </div>
 
                 {/* Description what to improve */}
                 <div className="space-y-2">
@@ -1034,57 +1291,170 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                 </div>
 
                 {/* Doctor and Date Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Preferred Doctor</label>
-                    <select 
-                      value={booking.doctor}
-                      onChange={(e) => setBooking({ ...booking, doctor: e.target.value })}
-                      className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold"
-                    >
-                      <option value="">Select a specialist (Optional)</option>
-                      <option value="dr-smith">Dr. Smith</option>
-                      <option value="dr-jones">Dr. Jones</option>
-                      <option value="dr-jaipur">Dr. Jaipur</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Preferred Appointment Date</label>
-                    <input 
-                      type="date" 
+                <div ref={consultMenuContainerRef} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Custom Dropdown: Preferred Doctor */}
+                    <div className="space-y-2 relative">
+                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Preferred Doctor</label>
+                      <button
+                        type="button"
+                        onClick={() => setActiveConsultMenu(activeConsultMenu === 'doctor' ? null : 'doctor')}
+                        className={`w-full px-5 py-4 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                          activeConsultMenu === 'doctor' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                        }`}
+                      >
+                        <span className={`truncate ${!booking.doctor ? 'text-luxury-subtext font-normal' : ''}`}>
+                          {DOCTOR_OPTIONS.find(d => d.value === booking.doctor)?.label || 'Select a specialist (Optional)'}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'doctor' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeConsultMenu === 'doctor' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
+                          >
+                            {DOCTOR_OPTIONS.map((doc) => {
+                              const isSelected = booking.doctor === doc.value;
+                              return (
+                                <button
+                                  key={doc.value || 'none'}
+                                  type="button"
+                                  onClick={() => {
+                                    setBooking({ ...booking, doctor: doc.value });
+                                    setActiveConsultMenu(null);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-luxury-secondary/90 font-bold text-luxury-text'
+                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                  }`}
+                                >
+                                  <span className="truncate">{doc.label}</span>
+                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <AppointmentDatePicker
                       value={booking.date}
-                      onChange={(e) => setBooking({ ...booking, date: e.target.value })}
-                      className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-medium"
+                      onChange={(dateStr) => setBooking({ ...booking, date: dateStr })}
+                      label="Preferred Appointment Date"
+                      placeholder="Select appointment date"
                     />
                   </div>
-                </div>
 
-                {/* Best reach time and feedback medium */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Best Time to Reach You</label>
-                    <select 
-                      value={booking.bestTime}
-                      onChange={(e) => setBooking({ ...booking, bestTime: e.target.value })}
-                      className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold"
-                    >
-                      <option value="morning">Morning</option>
-                      <option value="afternoon">Afternoon</option>
-                      <option value="evening">Evening</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">How did you hear about us?</label>
-                    <select 
-                      value={booking.hearAboutUs}
-                      onChange={(e) => setBooking({ ...booking, hearAboutUs: e.target.value })}
-                      className="w-full px-5 py-4 rounded-xl border border-luxury-border bg-white text-sm text-luxury-text focus:border-luxury-text focus:ring-1 focus:ring-luxury-text outline-none transition-all font-semibold"
-                    >
-                      <option value="search">Search Engine (Google)</option>
-                      <option value="social">Social Media</option>
-                      <option value="referral">Friend/Family Referral</option>
-                      <option value="other">Other</option>
-                    </select>
+                  {/* Best reach time and feedback medium */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Custom Dropdown: Best Time to Reach You */}
+                    <div className="space-y-2 relative">
+                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Best Time to Reach You</label>
+                      <button
+                        type="button"
+                        onClick={() => setActiveConsultMenu(activeConsultMenu === 'bestTime' ? null : 'bestTime')}
+                        className={`w-full px-5 py-4 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                          activeConsultMenu === 'bestTime' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {BEST_TIME_OPTIONS.find(t => t.value === booking.bestTime)?.label || 'Morning'}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'bestTime' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeConsultMenu === 'bestTime' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
+                          >
+                            {BEST_TIME_OPTIONS.map((time) => {
+                              const isSelected = booking.bestTime === time.value;
+                              return (
+                                <button
+                                  key={time.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setBooking({ ...booking, bestTime: time.value });
+                                    setActiveConsultMenu(null);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-luxury-secondary/90 font-bold text-luxury-text'
+                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                  }`}
+                                >
+                                  <span className="truncate">{time.label}</span>
+                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Custom Dropdown: How did you hear about us? */}
+                    <div className="space-y-2 relative">
+                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">How did you hear about us?</label>
+                      <button
+                        type="button"
+                        onClick={() => setActiveConsultMenu(activeConsultMenu === 'hearAboutUs' ? null : 'hearAboutUs')}
+                        className={`w-full px-5 py-4 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                          activeConsultMenu === 'hearAboutUs' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                        }`}
+                      >
+                        <span className="truncate">
+                          {HEAR_ABOUT_US_OPTIONS.find(h => h.value === booking.hearAboutUs)?.label || 'Search Engine (Google)'}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'hearAboutUs' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeConsultMenu === 'hearAboutUs' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
+                          >
+                            {HEAR_ABOUT_US_OPTIONS.map((opt) => {
+                              const isSelected = booking.hearAboutUs === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setBooking({ ...booking, hearAboutUs: opt.value });
+                                    setActiveConsultMenu(null);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-luxury-secondary/90 font-bold text-luxury-text'
+                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                  }`}
+                                >
+                                  <span className="truncate">{opt.label}</span>
+                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </div>
 

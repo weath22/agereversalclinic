@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import TopBar from './components/TopBar';
+import HotSaleBanner from './components/HotSaleBanner';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import SpecialistAreas from './components/SpecialistAreas';
@@ -19,6 +20,7 @@ import LatestNews from './components/LatestNews';
 import AwardsShowcase from './components/AwardsShowcase';
 import DoctorAppointment from './components/DoctorAppointment';
 import LocationsAndConsultation from './components/LocationsAndConsultation';
+import SocialVideoShowcase from './components/SocialVideoShowcase';
 import FloatingMenu from './components/FloatingMenu';
 import Footer from './components/Footer';
 import ServicePageView from './components/ServicePageView';
@@ -103,6 +105,21 @@ export default function App() {
     handleScrollToBooking(mappedService);
   };
 
+  const handleViewOffers = () => {
+    setIsExploreOpen(false);
+    setSelectedArticle(null);
+    setSelectedConsultant(null);
+    setSelectedTreatment(null);
+    setActiveSection('offers');
+    setScrollTrigger(prev => prev + 1);
+    setTimeout(() => {
+      const el = document.getElementById('offers');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   const handleActiveSectionChange = (section: string) => {
     setActiveSection(section);
     setSelectedTreatment(null);
@@ -137,6 +154,9 @@ export default function App() {
       
       {/* 1. Top Informational Banner Ribbon */}
       <TopBar onBookClick={() => handleScrollToBooking()} />
+
+      {/* Promotional Countdown Hot Sale Banner (Below Info Bar, Above Header) */}
+      <HotSaleBanner onOffersClick={handleViewOffers} />
 
       {/* 2. Sticky Brand Header & Primary Nav */}
       <Header 
@@ -252,6 +272,9 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* 14.5 Social Media Reels / Video Showcase */}
+      <SocialVideoShowcase />
 
       {/* 15. Footnotes and Sitemap */}
       <Footer />

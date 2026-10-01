@@ -84,6 +84,12 @@ export const SPECIALIST_AREAS = [
     title: 'Medical Grade Facials',
     description: 'Intense dermal cleansing, microcurrent contouring, and medical peels with botanical antioxidants.',
     image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs'
+  },
+  {
+    id: 'minor-surgery-scars',
+    title: 'Minor Surgery & Scars',
+    description: 'Bespoke clinical minor surgical excision of moles, cysts, and advanced medical scar revision therapies.',
+    image: '/src/assets/images/minor_surgery_scars_1790825907886.jpg'
   }
 ];
 

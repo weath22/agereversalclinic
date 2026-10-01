@@ -35,7 +35,7 @@ const HERO_CONFIG_KEY = 'homepage_hero_config_v2';
 const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config_v4';
 const TREATMENTS_CONFIG_KEY = 'homepage_treatments_config';
 const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v6';
-const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v2';
+const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v3';
 const AWARDS_CONFIG_KEY = 'homepage_awards_config';
 const LOCATIONS_CONFIG_KEY = 'homepage_locations_config';
 const TEAM_LEADERSHIP_CONFIG_KEY = 'homepage_team_leadership_config';
@@ -366,26 +366,34 @@ const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
     {
       id: 'p1',
       title: "London's Premier Aesthetic Destination",
-      description: "Situated in the heart of London, offering unparalleled luxury and clinical excellence.",
-      iconName: "Building"
+      description: "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
+      iconName: "Building",
+      badge: "Harley St Flagship",
+      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY"
     },
     {
       id: 'p2',
       title: "Top-rated by real patients",
-      description: "Exceptional results with a 4.9/5 rating from over 2,000 verified reviews.",
-      iconName: "Star"
+      description: "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
+      iconName: "Star",
+      badge: "4.9/5 ★ (2,000+ Reviews)",
+      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww"
     },
     {
       id: 'p3',
       title: "Advanced Clinical Technologies",
-      description: "Equipped with state-of-the-art FDA-approved laser and imaging systems.",
-      iconName: "Sparkles"
+      description: "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
+      iconName: "Sparkles",
+      badge: "FDA-Cleared Tech",
+      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLvbGkim0rHF7Ruf3smBfq7BlZDg7FTbjFo3KTx21CJ86qX2T7gThqEfQmaS69rYUNtNQrnGPXJIOJTcoIOz_hCdUGzS-Cyeio7-DWxIyZZVQH95grNa2bbhnLGjt5IANWtQWycAC7JKxw6K1syY9H1W4ty0-Mpc3D-dH4coJR0zr5IaxigQ7G2BRK9YnWheyv8CjvRuSu4fbTW4fj4AP8QhZU3p2G1Rg0ztNQS13w1SZT_7bU3qioomJ9_f"
     },
     {
       id: 'p4',
       title: "World-Class Medical Team",
-      description: "Our board-certified practitioners bring decades of specialized aesthetic expertise.",
-      iconName: "Medal"
+      description: "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
+      iconName: "Medal",
+      badge: "GMC Registered",
+      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLsFtpFDuaNJSlvtgV5ykI3LUHSXc0rzKFYXGGNqkYq6ujIGrmaVAI-UUZWBC9h6l95unMnlba0hL6OSt_W08ItQlzC4HTVhrV4H7Itfm0m7scTAtpBiomP9SY89c7Uj0Q5mgYXMjovpZuGcczZeQepLx4ye1bw1emHNdm8GxyKyt8TftVi79q1QOO0MHef213jXO6KWOkNL6ufVfwZSrPS20twzy3Jy2_MEVCz9mR9pJVAW24L2KhOTQP9P"
     }
   ]
 };
@@ -399,28 +407,28 @@ const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
       title: 'Dermatology Clinic of the Year',
       year: '2025',
       organization: 'Aesthetic Medicine Awards',
-      iconName: 'Trophy'
+      imageUrl: '/src/assets/images/award_dermatology_clinic_1790683429721.jpg'
     },
     {
       id: 'aw-2',
       title: 'Best Non-Surgical Rejuvenation',
       year: '2025',
       organization: 'Global Cosmetic Congress',
-      iconName: 'Sparkles'
+      imageUrl: '/src/assets/images/award_rejuvenation_1790683444883.jpg'
     },
     {
       id: 'aw-3',
       title: 'Patient Safety Excellence Award',
       year: '2024',
       organization: 'British Health Standards',
-      iconName: 'ShieldCheck'
+      imageUrl: '/src/assets/images/award_patient_safety_1790683459184.jpg'
     },
     {
       id: 'aw-4',
       title: 'Best Laser Skin Clinic',
       year: '2024',
       organization: 'International Laser Association',
-      iconName: 'Award'
+      imageUrl: '/src/assets/images/award_laser_clinic_1790683474325.jpg'
     }
   ]
 };
@@ -434,18 +442,20 @@ const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
       name: "The London Clinic - Main Hospital",
       address: "20 Devonshire Place, London W1G 6BW",
       hours: "Open 24 hours for inpatient care",
+      phone: "+44 (0)20 7935 4444",
       mapsUrl: "https://maps.google.com/?q=20+Devonshire+Place,+London+W1G+6BW",
-      bannerType: "Map",
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw"
+      bannerType: "Clinic",
+      imageUrl: "/src/assets/images/clinic_devonshire_1790684708217.jpg"
     },
     {
       id: 'loc-2',
       name: "The London Clinic - Harley Street",
       address: "116 Harley Street, London W1G 7JL",
       hours: "Mon - Fri: 8:00 AM - 8:00 PM",
+      phone: "+44 (0)20 7616 7693",
       mapsUrl: "https://maps.google.com/?q=116+Harley+Street,+London+W1G+7JL",
-      bannerType: "Building",
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw"
+      bannerType: "Clinic",
+      imageUrl: "/src/assets/images/clinic_harley_street_1790684722879.jpg"
     }
   ]
 };
@@ -588,7 +598,13 @@ const DEFAULT_FOOTER_CONFIG: FooterConfig = {
     instagram: "#"
   },
   links: [
-    { name: 'Home', href: '#home' }
+    { name: "Services", href: "#services" },
+    { name: "Treatments", href: "#treatments" },
+    { name: "Before & Afters", href: "#gallery" },
+    { name: "Reviews", href: "#reviews" },
+    { name: "Skincare Essentials", href: "#essentials" },
+    { name: "Book Appointment", href: "#contact" },
+    { name: "Staff Portal", href: "#admin" }
   ]
 };
 

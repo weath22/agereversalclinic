@@ -112,7 +112,7 @@ export default function FloatingMenu() {
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 flex flex-col items-end">
       
       {/* Live Chat Window */}
       <AnimatePresence>

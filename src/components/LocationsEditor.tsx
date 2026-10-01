@@ -56,6 +56,7 @@ export default function LocationsEditor() {
           name: 'New Custom Consult Room',
           address: '100 Devonshire Place, London W1G 6BW',
           hours: 'Mon - Fri: 9:00 AM - 5:00 PM',
+          phone: '+44 (0)20 7935 4444',
           mapsUrl: 'https://maps.google.com/?q=London',
           bannerType: 'Clinic',
           imageUrl: 'Diagnostic Consultation Suite'
@@ -71,7 +72,7 @@ export default function LocationsEditor() {
     });
   };
 
-  const handleLocFieldChange = (locId: string, field: 'name' | 'address' | 'hours' | 'mapsUrl' | 'bannerType' | 'imageUrl', value: string) => {
+  const handleLocFieldChange = (locId: string, field: 'name' | 'address' | 'hours' | 'phone' | 'mapsUrl' | 'bannerType' | 'imageUrl', value: string) => {
     setConfig({
       ...config,
       locations: config.locations.map(l => 
@@ -206,13 +207,13 @@ export default function LocationsEditor() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase block">Image Label Text</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block">Clinical Image URL</label>
                         <input
                           type="text"
                           className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none"
                           value={loc.imageUrl}
                           onChange={(e) => handleLocFieldChange(loc.id, 'imageUrl', e.target.value)}
-                          placeholder="E.g., Diagnostic Suite"
+                          placeholder="Image URL or /src/assets/images/..."
                         />
                       </div>
                     </div>
@@ -236,6 +237,17 @@ export default function LocationsEditor() {
                         value={loc.hours}
                         onChange={(e) => handleLocFieldChange(loc.id, 'hours', e.target.value)}
                         placeholder="E.g., Mon - Fri: 8:00 AM - 8:00 PM"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block">Telephone Number</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs text-slate-600 font-medium"
+                        value={loc.phone || ''}
+                        onChange={(e) => handleLocFieldChange(loc.id, 'phone', e.target.value)}
+                        placeholder="E.g., +44 (0)20 7935 4444"
                       />
                     </div>
 

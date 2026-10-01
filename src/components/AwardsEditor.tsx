@@ -11,23 +11,10 @@ import {
   Check, 
   RefreshCw, 
   Trophy, 
-  Star, 
-  ShieldCheck, 
-  Heart, 
-  Sparkles, 
-  Award,
-  Plus,
-  Trash2
+  Plus, 
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
-
-const ICON_OPTIONS = [
-  { value: 'Trophy', label: 'Trophy', icon: Trophy },
-  { value: 'Star', label: 'Star', icon: Star },
-  { value: 'ShieldCheck', label: 'Shield Check', icon: ShieldCheck },
-  { value: 'Heart', label: 'Heart', icon: Heart },
-  { value: 'Sparkles', label: 'Sparkles', icon: Sparkles },
-  { value: 'Award', label: 'Award Badge', icon: Award }
-];
 
 export default function AwardsEditor() {
   const [config, setConfig] = useState<AwardsConfig | null>(null);
@@ -78,7 +65,7 @@ export default function AwardsEditor() {
     });
   };
 
-  const handleAwardFieldChange = (awardId: string, field: 'title' | 'organization' | 'year' | 'iconName', value: string) => {
+  const handleAwardFieldChange = (awardId: string, field: 'title' | 'organization' | 'year' | 'iconName' | 'imageUrl', value: string) => {
     setConfig({
       ...config,
       awards: config.awards.map(a => 
@@ -154,9 +141,6 @@ export default function AwardsEditor() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {config.awards.map((award, index) => {
-              const selectedIconObj = ICON_OPTIONS.find(io => io.value === award.iconName) || ICON_OPTIONS[0];
-              const IconComponent = selectedIconObj.icon;
-
               return (
                 <div key={award.id} className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80 space-y-4 relative flex flex-col justify-between">
                   <div>
@@ -176,24 +160,15 @@ export default function AwardsEditor() {
 
                     {/* Form Fields */}
                     <div className="space-y-3.5">
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase block">Icon Option</label>
-                          <select
-                            className="w-full bg-white px-2.5 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none"
-                            value={award.iconName}
-                            onChange={(e) => handleAwardFieldChange(award.id, 'iconName', e.target.value)}
-                          >
-                            {ICON_OPTIONS.map(io => (
-                              <option key={io.value} value={io.value}>{io.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1 flex flex-col justify-end items-center">
-                          <div className="p-2.5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                            <IconComponent className="h-5 w-5 text-[#003334]" />
-                          </div>
-                        </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block">Award Image URL</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600"
+                          value={award.imageUrl || ''}
+                          onChange={(e) => handleAwardFieldChange(award.id, 'imageUrl', e.target.value)}
+                          placeholder="Image URL (e.g. /src/assets/images/...)"
+                        />
                       </div>
 
                       <div className="space-y-1">

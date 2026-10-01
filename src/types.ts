@@ -201,6 +201,8 @@ export interface WhyChooseUsPillar {
   title: string;
   description: string;
   iconName: string; // 'Building' | 'ThumbsUp' | 'HeartPulse' | 'Medal' | 'Shield' | 'Star' etc
+  imageUrl?: string;
+  badge?: string;
 }
 
 export interface WhyChooseUsConfig {
@@ -215,7 +217,8 @@ export interface AwardItemConfig {
   title: string;
   year: string;
   organization: string;
-  iconName: string; // 'Trophy' | 'Star' | 'ShieldCheck' | 'Heart' | 'Sparkles' | 'Award' etc
+  iconName?: string; // 'Trophy' | 'Star' | 'ShieldCheck' | 'Heart' | 'Sparkles' | 'Award' etc
+  imageUrl?: string;
 }
 
 export interface AwardsConfig {
@@ -230,6 +233,7 @@ export interface LocationItemConfig {
   name: string;
   address: string;
   hours: string;
+  phone?: string;
   mapsUrl: string;
   bannerType: string; // 'Map' | 'Building' | 'Clinic'
   imageUrl: string;

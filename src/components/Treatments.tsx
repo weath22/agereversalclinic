@@ -1,6 +1,6 @@
 import { TREATMENTS, TREATMENT_IMAGES } from '../data';
 import { motion } from 'motion/react';
-import { Sparkles, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { TreatmentsConfig } from '../types';
 
 interface TreatmentsProps {
@@ -9,18 +9,29 @@ interface TreatmentsProps {
   treatmentsConfig?: TreatmentsConfig;
 }
 
+// Default comprehensive clinical treatment list for aesthetic harmony
+const CLINICAL_TREATMENT_ITEMS = [
+  { id: '1', name: 'Facial Injectables & Volume Contouring' },
+  { id: '2', name: 'Morpheus8 RF & Deep Skin Tightening' },
+  { id: '3', name: 'Ultherapy Non-Surgical SMAS Lift' },
+  { id: '4', name: 'Precision Lip & Facial Dermal Fillers' },
+  { id: '5', name: 'Polynucleotide & Exosome Cellular Therapy' },
+  { id: '6', name: 'Fractional CO2 Laser & Skin Resurfacing' },
+  { id: '7', name: 'Minor Surgery & Scars' }
+];
+
 export default function Treatments({ onBookClick, onTreatmentClick, treatmentsConfig }: TreatmentsProps) {
   // Motion settings for list stagger
   const listContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.08 }
     }
   };
 
   const listItemVariants = {
-    hidden: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, x: -15 },
     visible: {
       opacity: 1,
       x: 0,
@@ -28,45 +39,49 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
     }
   };
 
+  const activeTreatments = treatmentsConfig?.treatments && treatmentsConfig.treatments.length >= 4
+    ? treatmentsConfig.treatments
+    : CLINICAL_TREATMENT_ITEMS;
+
   return (
-    <section id="treatments" className="py-24 md:py-32 bg-luxury-primary overflow-hidden">
+    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-luxury-primary overflow-hidden">
       <div className="container mx-auto px-4 md:px-8">
-        <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+        <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-20">
           
-          {/* Left Column: Text & Editorial Content */}
-          <div className="w-full lg:w-5/12 lg:max-w-[380px] relative">
-            <div className="relative mb-6 lg:mb-2">
-              <span className="absolute -top-10 left-0 text-5xl md:text-6xl lg:text-3xl font-serif italic text-luxury-border select-none opacity-60 uppercase">
+          {/* Left Column: Text & Editorial Content (Properly scaled for mobile screens) */}
+          <div className="w-full lg:w-5/12 lg:max-w-[420px] relative">
+            <div className="relative mb-4 sm:mb-6">
+              <span className="absolute -top-6 sm:-top-8 md:-top-10 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-luxury-border select-none opacity-50 uppercase tracking-wider">
                 {treatmentsConfig?.editorialHeading || "rejuvenation"}
               </span>
-              <h2 className="text-3xl md:text-4xl lg:text-2xl font-light font-serif text-luxury-text leading-tight uppercase relative z-10 pt-4 lg:pt-1">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-light font-serif text-luxury-text leading-tight uppercase relative z-10 pt-2 sm:pt-3">
                 {treatmentsConfig?.editorialSub || "Begin your transformation"}
               </h2>
             </div>
             
-            <div className="w-12 h-[1px] bg-luxury-gold mb-8 lg:mb-6" />
+            <div className="w-12 h-[1px] bg-luxury-gold mb-4 sm:mb-6" />
 
-            <p className="text-luxury-subtext font-sans font-light mb-8 lg:mb-8 leading-relaxed text-base lg:text-sm lg:leading-relaxed">
+            <p className="text-luxury-subtext font-sans font-light mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
               {treatmentsConfig?.description || "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual."}
             </p>
 
-            {/* Treatment list */}
+            {/* Treatment list with full text visibility on mobile screens */}
             <motion.ul 
               variants={listContainerVariants}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: '-100px' }}
-              className="space-y-4 lg:space-y-3 mb-10 lg:mb-8"
+              viewport={{ once: true, margin: '-50px' }}
+              className="space-y-3 sm:space-y-3.5 mb-6 sm:mb-8"
             >
-              {(treatmentsConfig?.treatments || TREATMENTS).map((treatment) => (
+              {activeTreatments.map((treatment) => (
                 <motion.li 
                   key={treatment.id}
                   variants={listItemVariants}
                   onClick={() => onTreatmentClick?.(treatment.name)}
                   className="flex items-center space-x-3 group cursor-pointer"
                 >
-                  <span className="w-2.5 h-2.5 rounded-full border border-luxury-muted group-hover:border-luxury-gold group-hover:scale-125 transition-all duration-300 shrink-0" />
-                  <span className="text-luxury-text font-sans font-light group-hover:text-luxury-subtext transition-colors duration-300 text-sm md:text-base lg:text-sm">
+                  <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full border border-luxury-muted group-hover:border-luxury-gold group-hover:scale-125 transition-all duration-300 shrink-0" />
+                  <span className="text-luxury-text font-sans font-normal sm:font-light group-hover:text-luxury-subtext transition-colors duration-300 text-sm sm:text-base leading-snug">
                     {treatment.name}
                   </span>
                 </motion.li>
@@ -75,7 +90,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
 
             <button
               onClick={onBookClick}
-              className="bg-black text-white px-8 py-3.5 rounded-full shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-sans font-normal tracking-wide flex items-center space-x-2 w-fit group text-sm md:text-base lg:text-sm"
+              className="bg-black text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 w-fit group text-xs sm:text-sm cursor-pointer active:scale-95"
             >
               <Calendar className="h-4 w-4 text-luxury-chrome group-hover:scale-110 transition-transform" strokeWidth={1.5} />
               <span>Schedule Spa Day</span>
@@ -205,7 +220,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 </div>
               </motion.div>
             </div>
-          </div></div>
+          </div>
+        </div>
       </div>
     </section>
   );
