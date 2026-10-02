@@ -30,6 +30,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AboutAgeReversal from './components/AboutAgeReversal';
 import { ShopPageView } from './components/shop/ShopPageView';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
+import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
 import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig } from './lib/adminStore';
 
@@ -44,6 +45,8 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [shopRangeFilter, setShopRangeFilter] = useState<string | undefined>(undefined);
+  const [selectedShopProduct, setSelectedShopProduct] = useState<ShopProduct | null>(null);
+  const [returnArticle, setReturnArticle] = useState<Article | null>(null);
   const [scrollTrigger, setScrollTrigger] = useState(0);
 
   // Dynamic homepage configs
@@ -129,11 +132,45 @@ export default function App() {
     setSelectedTreatment(null);
     setSelectedArticle(null);
     setSelectedConsultant(null);
+    setSelectedShopProduct(null);
+    setReturnArticle(null);
     setIsExploreOpen(false);
     setIsAboutOpen(false);
     setIsShopOpen(false);
     setShopRangeFilter(undefined);
     setScrollTrigger(prev => prev + 1);
+  };
+
+  const handleOpenProduct = (product: ShopProduct) => {
+    setReturnArticle(selectedArticle);
+    setSelectedArticle(null);
+    setSelectedConsultant(null);
+    setSelectedTreatment(null);
+    setIsAboutOpen(false);
+    setIsExploreOpen(false);
+    setShopRangeFilter(undefined);
+    setSelectedShopProduct(product);
+    setIsShopOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackFromProduct = () => {
+    if (returnArticle) {
+      const articleToRestore = returnArticle;
+      setIsShopOpen(false);
+      setSelectedShopProduct(null);
+      setReturnArticle(null);
+      setSelectedArticle(articleToRestore);
+      setTimeout(() => {
+        const el = document.getElementById('article-recommended-products');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    } else {
+      setSelectedShopProduct(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Robust scroll behavior when clicking navigation sections
@@ -179,6 +216,8 @@ export default function App() {
           setSelectedArticle(null);
           setSelectedTreatment(null);
           setIsAboutOpen(false);
+          setReturnArticle(null);
+          setSelectedShopProduct(null);
           setShopRangeFilter(rangeFilter);
           setIsShopOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -208,6 +247,7 @@ export default function App() {
             onBookClick={() => handleScrollToBooking()}
             onArticleClick={setSelectedArticle}
             onViewProfile={() => setSelectedConsultant(selectedArticle.author)}
+            onProductClick={handleOpenProduct}
           />
         ) : selectedTreatment ? (
           <ServicePageView
@@ -223,9 +263,24 @@ export default function App() {
         ) : isShopOpen ? (
           <ShopPageView
             initialRangeFilter={shopRangeFilter}
+            initialSelectedProduct={selectedShopProduct}
+            productBackLabel={returnArticle ? 'Article' : undefined}
+            onBackFromProduct={returnArticle ? handleBackFromProduct : undefined}
             onClose={() => {
               setIsShopOpen(false);
               setShopRangeFilter(undefined);
+              setSelectedShopProduct(null);
+              if (returnArticle) {
+                const articleToRestore = returnArticle;
+                setReturnArticle(null);
+                setSelectedArticle(articleToRestore);
+                setTimeout(() => {
+                  const el = document.getElementById('article-recommended-products');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }, 100);
+              }
             }}
             onBookClick={handleScrollToBooking}
           />

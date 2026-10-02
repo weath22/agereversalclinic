@@ -1,4 +1,5 @@
 import React from 'react';
+import { UserCheck, ArrowRight } from 'lucide-react';
 
 interface ConsultantProfileProps {
   authorName: string;
@@ -7,30 +8,35 @@ interface ConsultantProfileProps {
 
 export default function ConsultantProfile({ authorName, onViewProfile }: ConsultantProfileProps) {
   return (
-    <div className="mt-16 pt-8 border-t border-[#bfc8c8]/40 max-w-sm mr-auto">
-      <div className="bg-[#f8f9ff] p-6 rounded-2xl shadow-sm flex flex-col items-start gap-4">
-        <div className="flex items-center gap-4 w-full">
-          <div className="w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
+    <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-luxury-border max-w-md mr-auto">
+      <div className="bg-[#faf7f2] p-4 sm:p-5 rounded-2xl border border-[#e8dcc8] shadow-xs flex flex-col items-start gap-3 sm:gap-4 transition-all hover:shadow-md">
+        <div className="flex items-center gap-3 sm:gap-4 w-full">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-xs bg-luxury-secondary">
             <img 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2v_Qy0F12eTq307-F4t22D5-5B2vF5W5vE9p6hB9aJ6pU2yH6eZ5f-L6r3q8c9U4F8C9zK2L2eJ7qH1a_P8X9sE8hR2W8B1c2Q7K9wM7cR3X2Y7J3vL2D4aH5Y6R4W5F6E3B8D9H4F2K5M9J2P3L9Y8X7P3H6K7N8B2" 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDddaCi7PsPNTwV7AiEWxAoBSKDc9x7oJb4yFMVO41f99W4wxnnsgcI6AzvsOCf4kSCE8EDCAOgvLeEfBhBAJqjpM00DsGFv8_3x2tYtIe6sFTplMAF9SLyrwFaIWhlfrTIF4wOh7dR5swda_bf9ss9jn1vOr5QOYEgWeCxEODworWQ1wvIOUWEoW4mKN15tNvMocfNZjw7xG4qU0sKbOB2UrkHu3YPQoq-WswAXNY-4y2nGG1mBgta8XV5lBlewVQ242-xoDTjIW1l" 
               alt={authorName}
               className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
               referrerPolicy="no-referrer"
             />
           </div>
           <div className="text-left flex-1">
-            <h4 className="text-xs font-bold text-[#236963] uppercase tracking-wider mb-0.5">Written by Consultant</h4>
-            <h3 className="text-lg font-serif font-bold text-[#003334]">{authorName}</h3>
+            <span className="text-[10px] font-sans font-medium text-luxury-gold uppercase tracking-[0.18em] block mb-0.5">
+              Medical Consultant
+            </span>
+            <h3 className="text-base sm:text-lg font-serif font-normal text-luxury-text leading-snug">
+              {authorName}
+            </h3>
           </div>
         </div>
-        <p className="text-[#3f4849] font-sans text-sm leading-relaxed text-left">
-          {authorName} is a highly respected specialist at The London Clinic with over 15 years of clinical experience.
+        <p className="text-luxury-subtext font-sans text-xs sm:text-sm leading-relaxed text-left font-light">
+          {authorName} is a premier clinical specialist at The London Cosmetic Clinic with extensive expertise in bespoke dermatology and facial rejuvenation protocols.
         </p>
         <button 
           onClick={onViewProfile}
-          className="text-[#003334] font-bold text-xs border-b border-[#003334] pb-0.5 hover:text-[#236963] hover:border-[#236963] transition-colors uppercase tracking-wider self-start cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-luxury-text hover:text-black border-b border-luxury-gold pb-0.5 uppercase tracking-wider transition-colors cursor-pointer group"
         >
-          View Profile
+          <span>View Consultant Profile</span>
+          <ArrowRight className="w-3.5 h-3.5 text-luxury-gold group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

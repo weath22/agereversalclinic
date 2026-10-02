@@ -100,8 +100,11 @@ export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroPr
       </div>
 
       {/* Background Decorative Gradient on the left side (Desktop only) */}
-      <div className="absolute top-0 left-0 w-1/2 h-full bg-luxury-primary pointer-events-none hidden md:block z-0" />
+      <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-luxury-primary via-luxury-primary to-transparent pointer-events-none hidden md:block z-0" />
       
+      {/* Subtle Luxury Gold Ambient Bloom */}
+      <div className="absolute top-1/4 -left-20 w-[450px] h-[450px] bg-gradient-to-br from-[#D8C2A3]/15 to-transparent rounded-full blur-3xl pointer-events-none hidden md:block z-0" />
+
       <div className="container mx-auto px-4 md:px-8 relative z-10 flex flex-col md:flex-row min-h-0 md:min-h-[calc(100vh-140px)] items-center gap-6 md:gap-12 py-2 md:py-4">
         
         {/* Left Column: Heading and Description */}
@@ -131,47 +134,47 @@ export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroPr
           >
             <button
               onClick={onBookClick}
-              className="bg-white text-black md:bg-black md:text-white px-6 sm:px-9 py-3.5 sm:py-4 rounded-full hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 text-sm sm:text-base group cursor-pointer shadow-md"
+              className="bg-black hover:bg-neutral-900 text-white px-7 sm:px-9 py-3.5 sm:py-4 rounded-full border border-luxury-gold/50 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 text-sm sm:text-base group cursor-pointer"
             >
               <span>Book Appointment</span>
-              <Calendar className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-black md:text-luxury-chrome group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+              <Calendar className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-luxury-gold group-hover:scale-110 transition-transform" strokeWidth={1.5} />
             </button>
             <button
               onClick={onExploreClick}
-              className="bg-black/40 backdrop-blur-md md:bg-white border border-white/30 md:border-luxury-border text-white md:text-luxury-text px-6 sm:px-9 py-3.5 sm:py-4 rounded-full hover:bg-white/20 md:hover:bg-luxury-secondary transition-colors duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer"
+              className="bg-black/40 backdrop-blur-md md:bg-white/90 border border-white/30 md:border-luxury-border hover:border-luxury-gold/60 text-white md:text-luxury-text px-7 sm:px-9 py-3.5 sm:py-4 rounded-full hover:bg-white/20 md:hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
             >
               <span>Explore</span>
-              <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-white/80 md:text-luxury-muted group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
+              <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-white/80 md:text-luxury-muted group-hover:text-luxury-gold group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </button>
           </motion.div>
 
           <motion.div 
             variants={itemVariants}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-white/20 md:border-luxury-border pt-4 sm:pt-6 md:pt-10"
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-white/20 md:border-luxury-border/80 pt-4 sm:pt-6 md:pt-10"
           >
             <div className="flex -space-x-3 sm:-space-x-4 shrink-0">
               <img 
                 alt="Patient 1" 
-                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/40 md:border-luxury-primary object-cover" 
+                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/60 md:border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4"
               />
               <img 
                 alt="Patient 2" 
-                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/40 md:border-luxury-primary object-cover" 
+                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/60 md:border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
               />
               <img 
                 alt="Patient 3" 
-                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/40 md:border-luxury-primary object-cover" 
+                className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white/60 md:border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs"
               />
             </div>
             <div className="min-w-0">
               <p className="text-xs sm:text-sm font-sans font-medium text-white md:text-luxury-text mb-0.5 md:mb-1">Trusted by 10,000+ patients</p>
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <div className="flex text-amber-400 space-x-0.5">
+                <div className="flex text-luxury-gold space-x-0.5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 fill-current text-amber-400 md:text-silver-950" />
+                    <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 fill-luxury-gold text-luxury-gold" />
                   ))}
                 </div>
                 <span className="text-xs sm:text-sm font-sans font-light text-white/80 md:text-luxury-subtext">4.9 (1,200+ reviews)</span>

@@ -304,7 +304,7 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
   return (
     <header className={`sticky top-0 left-0 right-0 w-full self-start z-50 transition-transform duration-300 ease-in-out ${
       isVisible ? 'translate-y-0' : '-translate-y-full'
-    } ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-3' : 'bg-white py-3 lg:py-5 shadow-sm'}`}>
+    } ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-3 border-b border-luxury-border/60' : 'bg-white py-3 lg:py-4.5 shadow-xs border-b border-luxury-border/40'}`}>
       <div className="container mx-auto px-4 md:px-8 flex justify-between items-center">
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
@@ -314,10 +314,10 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
             src={headerConfig?.logoUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"}
           />
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-silver-900 leading-none flex items-center gap-1">
+            <span className="text-lg lg:text-xl font-serif font-light tracking-tight text-luxury-text leading-none flex items-center gap-1">
               {headerConfig?.primaryName || "Age Reversal"}
             </span>
-            <span className="text-[10px] font-bold text-silver-500 tracking-[0.3em] uppercase leading-none mt-1">
+            <span className="text-[9px] lg:text-[10px] font-sans font-medium text-luxury-gold tracking-[0.3em] uppercase leading-none mt-1">
               {headerConfig?.secondaryName || "Clinic"}
             </span>
           </div>
@@ -345,15 +345,15 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                         e.preventDefault();
                         handleNavClick(item.id);
                       }}
-                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-semibold tracking-wider uppercase transition-colors py-1 ${
-                        isActive ? 'text-black' : 'text-silver-700 hover:text-black'
+                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-sans font-medium tracking-wider uppercase transition-colors py-1 ${
+                        isActive ? 'text-luxury-text font-semibold' : 'text-luxury-subtext hover:text-luxury-text'
                       }`}
                     >
                       <span className="relative pb-1">
                         {item.name}
-                        {/* Animated Underline: Expands from start (left) to end */}
+                        {/* Animated Underline: Expands in gold */}
                         <span
-                          className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
+                          className={`absolute bottom-0 left-0 h-[2px] bg-luxury-gold rounded-full transition-all duration-300 ease-out ${
                             isActive ? 'w-full' : 'w-0 group-hover:w-full'
                           }`}
                         />
@@ -368,20 +368,20 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                           onShopClick();
                         }
                       }}
-                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-semibold tracking-wider uppercase transition-colors py-1 gap-1.5 cursor-pointer ${
-                        isActive || isHovered ? 'text-black' : 'text-silver-700 hover:text-black'
+                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-sans font-medium tracking-wider uppercase transition-colors py-1 gap-1.5 cursor-pointer ${
+                        isActive || isHovered ? 'text-luxury-text font-semibold' : 'text-luxury-subtext hover:text-luxury-text'
                       }`}
                     >
                       <span className="relative pb-1">
                         {item.name}
-                        {/* Animated Underline: Expands from start (left) to end */}
+                        {/* Animated Underline: Expands in gold */}
                         <span
-                          className={`absolute bottom-0 left-0 h-[2px] bg-black rounded-full transition-all duration-300 ease-out ${
+                          className={`absolute bottom-0 left-0 h-[2px] bg-luxury-gold rounded-full transition-all duration-300 ease-out ${
                             isActive || isHovered ? 'w-full' : 'w-0 group-hover:w-full'
                           }`}
                         />
                       </span>
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isHovered ? 'rotate-180 text-black' : 'text-silver-400 group-hover:text-black'}`} />
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isHovered ? 'rotate-180 text-luxury-gold' : 'text-luxury-muted group-hover:text-luxury-gold'}`} />
                     </button>
                   )}
 
@@ -393,13 +393,13 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.98 }}
                       transition={{ duration: 0.15 }}
-                      className={`absolute top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-silver-200/80 p-4 z-50 flex flex-col gap-1 overflow-hidden ${
+                      className={`absolute top-full mt-2 w-72 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-luxury-border/80 p-4 z-50 flex flex-col gap-1 overflow-hidden ${
                         item.id === 'more' || item.id === 'shop'
                           ? 'right-0'
                           : 'left-1/2 -translate-x-1/2'
                       }`}
                     >
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-silver-400 via-rose-gold to-silver-600" />
+                      <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-luxury-gold/40 via-luxury-gold to-luxury-gold/40" />
                       {item.procedures.map((proc) => (
                         <button
                           key={proc.name}
@@ -413,13 +413,13 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                               handleProcedureClick(proc.name);
                             }
                           }}
-                          className="w-full text-left p-2.5 rounded-lg hover:bg-silver-100/50 transition-all group flex flex-col cursor-pointer"
+                          className="w-full text-left p-2.5 rounded-xl hover:bg-luxury-secondary transition-all group flex flex-col cursor-pointer"
                         >
-                          <span className="text-xs font-bold text-silver-900 group-hover:text-black transition-colors">
+                          <span className="text-xs font-sans font-medium text-luxury-text group-hover:text-luxury-gold transition-colors">
                             {proc.name}
                           </span>
                           {proc.desc && (
-                            <span className="text-[10px] text-silver-500 mt-0.5 line-clamp-1">
+                            <span className="text-[10px] text-luxury-muted mt-0.5 line-clamp-1 font-light">
                               {proc.desc}
                             </span>
                           )}
@@ -437,9 +437,9 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
         <div className="hidden md:flex items-center space-x-4">
           <button
             onClick={() => onBookClick()}
-            className="bg-gradient-to-r from-silver-800 to-black text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg hover:from-black hover:to-silver-900 transition-all font-medium flex items-center space-x-2 text-sm group"
+            className="bg-black hover:bg-neutral-900 text-white border border-luxury-gold/40 px-6 py-2.5 rounded-full shadow-xs hover:shadow-md transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-xs uppercase group cursor-pointer"
           >
-            <Calendar className="h-4 w-4 text-silver-300 group-hover:scale-110 transition-transform" />
+            <Calendar className="h-3.5 w-3.5 text-luxury-gold group-hover:scale-110 transition-transform" strokeWidth={1.5} />
             <span>Book Appointment</span>
           </button>
         </div>
@@ -448,20 +448,20 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
         <div className="flex items-center space-x-2 lg:hidden">
           <button
             onClick={() => onBookClick()}
-            className="bg-gradient-to-r from-silver-800 to-black text-white p-1 rounded-lg shadow-sm"
+            className="bg-black text-white p-2 rounded-full border border-luxury-gold/30 shadow-xs cursor-pointer"
             aria-label="Book appointment"
           >
-            <Calendar className="h-5.5 w-5.5" />
+            <Calendar className="h-4.5 w-4.5 text-luxury-gold" strokeWidth={1.5} />
           </button>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-1 text-silver-900 hover:text-black transition-colors cursor-pointer"
+            className="p-1.5 text-luxury-text hover:text-luxury-gold transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
-              <X className="h-6 w-6" strokeWidth={2.25} />
+              <X className="h-6 w-6" strokeWidth={2} />
             ) : (
-              <Menu className="h-6 w-6" strokeWidth={2.25} />
+              <Menu className="h-6 w-6" strokeWidth={2} />
             )}
           </button>
         </div>
@@ -478,21 +478,21 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
             transition={{ duration: 0.2 }}
             onMouseEnter={() => setHoveredItem(activeMegaItem.id)}
             onMouseLeave={() => setHoveredItem(null)}
-            className="absolute left-1/2 -translate-x-1/2 top-full w-[78vw] max-w-6xl bg-[#f4f5f6]/95 backdrop-blur-md border border-silver-200/80 rounded-2xl shadow-2xl z-40 py-8 px-8 mt-2"
+            className="absolute left-1/2 -translate-x-1/2 top-full w-[78vw] max-w-6xl bg-white/95 backdrop-blur-md border border-luxury-border/80 rounded-2xl shadow-2xl z-40 py-8 px-8 mt-2"
           >
-            {/* Top decorative gradient line */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-silver-400 via-rose-gold to-silver-600 rounded-t-2xl" />
+            {/* Top decorative gold line */}
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-luxury-gold/30 via-luxury-gold to-luxury-gold/30 rounded-t-2xl" />
             
             <div>
               <div className="grid grid-cols-12 gap-8">
                 
                 {/* Left Column: Image and Category Title */}
-                <div className="col-span-2 flex flex-col pr-4 border-r border-silver-200/50">
-                  <span className="text-sm font-extrabold uppercase tracking-widest text-black mb-3">
+                <div className="col-span-2 flex flex-col pr-4 border-r border-luxury-border/60">
+                  <span className="text-xs font-serif font-medium uppercase tracking-[0.18em] text-luxury-text mb-3">
                     {activeMegaItem.name}
                   </span>
                   {activeMegaItem.imageUrl && (
-                    <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden shadow-md border border-silver-200/80 group">
+                    <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden shadow-md border border-luxury-border/60 group">
                       <img 
                         src={activeMegaItem.imageUrl} 
                         alt={`${activeMegaItem.name} aesthetics`}
@@ -508,7 +508,7 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                   {activeMegaItem.megaColumns?.map((col) => {
                     return (
                       <div key={col.title} className="flex flex-col">
-                        <span className="text-xs font-black tracking-wider text-black mb-3 border-b border-silver-200/60 pb-1.5 select-none">
+                        <span className="text-[11px] font-sans font-semibold tracking-wider text-luxury-text mb-3 border-b border-luxury-border/80 pb-1.5 select-none">
                           {col.title}
                         </span>
                         <div className="flex flex-col gap-1">
@@ -516,7 +516,7 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                             <button
                               key={subItem}
                               onClick={() => handleProcedureClick(subItem)}
-                              className="text-left text-[11px] xl:text-xs text-zinc-600 hover:text-black hover:font-medium transition-all py-1 cursor-pointer truncate"
+                              className="text-left text-[11px] xl:text-xs text-luxury-subtext hover:text-luxury-gold hover:translate-x-0.5 transition-all py-1 cursor-pointer truncate"
                               title={subItem}
                             >
                               {subItem}

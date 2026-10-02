@@ -20,12 +20,18 @@ interface ShopPageViewProps {
   onClose: () => void;
   onBookClick?: (serviceName?: string) => void;
   initialRangeFilter?: string;
+  initialSelectedProduct?: ShopProduct | null;
+  onBackFromProduct?: () => void;
+  productBackLabel?: string;
 }
 
 export const ShopPageView: React.FC<ShopPageViewProps> = ({
   onClose,
   onBookClick,
   initialRangeFilter,
+  initialSelectedProduct,
+  onBackFromProduct,
+  productBackLabel,
 }) => {
   const [filters, setFilters] = useState<FilterState>({
     range: initialRangeFilter ? [initialRangeFilter] : [],
@@ -40,7 +46,13 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isOrderMenuOpen, setIsOrderMenuOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(initialSelectedProduct || null);
+
+  useEffect(() => {
+    if (initialSelectedProduct) {
+      setSelectedProduct(initialSelectedProduct);
+    }
+  }, [initialSelectedProduct]);
   const [notification, setNotification] = useState<string | null>(null);
   const mobileOrderMenuRef = useRef<HTMLDivElement>(null);
   const desktopOrderMenuRef = useRef<HTMLDivElement>(null);
@@ -263,11 +275,17 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
       <div className="bg-white/85 backdrop-blur-md border-b border-[#D8C2A3]/40 py-3.5 px-4 sm:px-8 sticky top-0 z-30 shadow-[0_2px_15px_-3px_rgba(216,194,163,0.15)]">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (selectedProduct && onBackFromProduct) {
+                onBackFromProduct();
+              } else {
+                onClose();
+              }
+            }}
             className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#7a6242] hover:text-black transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Clinic</span>
+            <span>{selectedProduct && productBackLabel ? `Back to ${productBackLabel}` : 'Back to Clinic'}</span>
           </button>
 
           <div className="flex items-center gap-4">
@@ -286,9 +304,14 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
       {selectedProduct ? (
         <ProductDetailView
           product={selectedProduct}
+          backLabel={productBackLabel}
           onBack={() => {
-            setSelectedProduct(null);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (onBackFromProduct) {
+              onBackFromProduct();
+            } else {
+              setSelectedProduct(null);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           onAddToCart={handleAddToCart}
         />

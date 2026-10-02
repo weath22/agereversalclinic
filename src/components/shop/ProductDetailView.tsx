@@ -5,12 +5,14 @@ interface ProductDetailViewProps {
   product: ShopProduct;
   onBack: () => void;
   onAddToCart: (product: ShopProduct, quantity: number) => void;
+  backLabel?: string;
 }
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   product,
   onBack,
   onAddToCart,
+  backLabel,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const isVoucher = product.type === 'Voucher';
@@ -68,7 +70,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 <path d="m12 19-7-7 7-7" />
                 <path d="M19 12H5" />
               </svg>
-              <small>Back</small>
+              <small>{backLabel ? `Back to ${backLabel}` : 'Back'}</small>
             </button>
           </div>
 
@@ -82,7 +84,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     onClick={onBack}
                     className="hover:text-black transition-colors cursor-pointer hover:underline"
                   >
-                    Products
+                    {backLabel || 'Products'}
                   </button>
                 </span>
                 <span id="dupa" className="px-0 text-sm text-[#bda380] lg:px-2">/</span>

@@ -10,23 +10,23 @@ interface ArticleContentProps {
 export default function ArticleContent({ article, onViewProfile }: ArticleContentProps) {
   return (
     <div className="bg-white">
-      <div className="max-w-3xl mx-auto px-4 py-16 md:py-24">
-        <div className="prose prose-lg max-w-none text-[#3f4849] font-sans">
-          <p className="text-xl md:text-2xl text-[#003334] font-medium mb-10 leading-relaxed">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 md:py-20">
+        <div className="prose prose-sm sm:prose-base md:prose-lg max-w-none text-luxury-subtext font-sans font-light">
+          <p className="text-base sm:text-lg md:text-xl text-luxury-text font-serif italic mb-6 sm:mb-8 leading-relaxed">
             {article.description}
           </p>
-          <p className="mb-6 leading-relaxed">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          <p className="mb-5 sm:mb-6 leading-relaxed text-xs sm:text-sm md:text-base text-luxury-subtext">
+            Every clinical procedure and patient pathway at The London Cosmetic Clinic begins with a thorough diagnostic assessment. We combine leading dermatological technology with tailored treatment protocols to achieve natural, refined, and lasting outcomes.
           </p>
-          <h3 className="text-2xl font-serif text-[#003334] font-bold mt-12 mb-6">A Commitment to Excellence</h3>
-          <p className="mb-6 leading-relaxed">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.
+          <h3 className="text-lg sm:text-xl md:text-2xl font-serif text-luxury-text font-normal mt-8 sm:mt-10 mb-3 sm:mb-4">A Commitment to Clinical Excellence</h3>
+          <p className="mb-5 sm:mb-6 leading-relaxed text-xs sm:text-sm md:text-base text-luxury-subtext">
+            Our medical specialists utilize scientifically proven modalities, from bio-remodeling injectables to precision cellular renewal therapies. Each bespoke protocol honors individual facial harmony and anatomical integrity.
           </p>
-          <blockquote className="border-l-4 border-[#236963] pl-6 my-10 italic text-xl md:text-2xl text-[#003334] font-serif leading-relaxed bg-[#f8f9ff] py-6 pr-6 rounded-r-xl">
-            "Our primary focus has always been delivering exceptional patient care through innovative treatments and a compassionate approach that sets new standards in medical excellence."
+          <blockquote className="border-l-2 border-luxury-gold pl-4 sm:pl-6 my-6 sm:my-8 italic text-sm sm:text-base md:text-lg text-luxury-text font-serif leading-relaxed bg-[#faf8f5] py-4 pr-4 rounded-r-xl">
+            "Our primary focus is delivering exceptional aesthetic care through innovative treatments and a compassionate, doctor-led approach that sets the benchmark in medical aesthetics."
           </blockquote>
-          <p className="mb-6 leading-relaxed">
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+          <p className="mb-5 sm:mb-6 leading-relaxed text-xs sm:text-sm md:text-base text-luxury-subtext">
+            Through ongoing research and collaboration with world-renowned aesthetic physicians, we continuously refine our minimally invasive techniques to ensure minimal downtime and maximum patient satisfaction.
           </p>
         </div>
 
