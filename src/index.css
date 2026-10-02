@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Lato:wght@300;400;700;900&display=swap');
 @import "tailwindcss";
 
 html, body {
@@ -11,6 +11,14 @@ html, body {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", Georgia, serif;
   --font-mono: "JetBrains Mono", monospace;
+  --font-Lato: "Lato", "Inter", sans-serif;
+
+  --color-noir-100: #e5e5e5;
+  --color-noir-200: #cccccc;
+  --color-noir-700: #333333;
+  --color-noir-800: #1a1a1a;
+  --color-noir-900: #0f0f0f;
+  --color-grey: #f3f4f6;
   
   --color-silver-100: #f8f9fa;
   --color-silver-200: #e9ecef;

@@ -12,7 +12,6 @@ import FacilityInteriors from './components/FacilityInteriors';
 import BeforeAfterGallery from './components/BeforeAfterGallery';
 import Testimonials from './components/Testimonials';
 import SpecialOffers from './components/SpecialOffers';
-import SkincareCollection from './components/SkincareCollection';
 import TeamLeadership from './components/TeamLeadership';
 import TrustBrands from './components/TrustBrands';
 import Accreditations from './components/Accreditations';
@@ -29,6 +28,7 @@ import NewsArticleView from './components/NewsArticleView';
 import ProfilePage from './components/ProfilePage';
 import AdminDashboard from './components/AdminDashboard';
 import AboutAgeReversal from './components/AboutAgeReversal';
+import { ShopPageView } from './components/shop/ShopPageView';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { useEffect } from 'react';
 import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig } from './lib/adminStore';
@@ -42,6 +42,8 @@ export default function App() {
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [shopRangeFilter, setShopRangeFilter] = useState<string | undefined>(undefined);
   const [scrollTrigger, setScrollTrigger] = useState(0);
 
   // Dynamic homepage configs
@@ -129,6 +131,8 @@ export default function App() {
     setSelectedConsultant(null);
     setIsExploreOpen(false);
     setIsAboutOpen(false);
+    setIsShopOpen(false);
+    setShopRangeFilter(undefined);
     setScrollTrigger(prev => prev + 1);
   };
 
@@ -145,7 +149,7 @@ export default function App() {
       }, 150);
       return () => clearTimeout(scrollTimer);
     }
-  }, [activeSection, scrollTrigger, selectedTreatment, selectedArticle, selectedConsultant, isExploreOpen]);
+  }, [activeSection, scrollTrigger, selectedTreatment, selectedArticle, selectedConsultant, isExploreOpen, isShopOpen]);
 
 
   if (isAdminOpen) {
@@ -169,6 +173,16 @@ export default function App() {
         setActiveSection={handleActiveSectionChange}
         headerConfig={headerConfig}
         onAboutClick={() => setIsAboutOpen(true)}
+        onShopClick={(rangeFilter) => {
+          setSelectedConsultant(null);
+          setIsExploreOpen(false);
+          setSelectedArticle(null);
+          setSelectedTreatment(null);
+          setIsAboutOpen(false);
+          setShopRangeFilter(rangeFilter);
+          setIsShopOpen(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <main className="flex-grow">
@@ -206,6 +220,15 @@ export default function App() {
           />
         ) : isAboutOpen ? (
           <AboutAgeReversal onViewProfile={setSelectedConsultant} />
+        ) : isShopOpen ? (
+          <ShopPageView
+            initialRangeFilter={shopRangeFilter}
+            onClose={() => {
+              setIsShopOpen(false);
+              setShopRangeFilter(undefined);
+            }}
+            onBookClick={handleScrollToBooking}
+          />
         ) : (
           <>
             {/* 3. Hero Presentation Section */}
@@ -241,14 +264,30 @@ export default function App() {
               </div>
             </div>
 
-            {/* 5. Editorial Treatment Teasers Section (Escapes the background image) */}
+            {/* 5. Editorial Treatment Teasers Section (Using the luxury background) */}
             <Treatments 
               onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
               onTreatmentClick={(name) => setSelectedTreatment(name)}
               treatmentsConfig={treatmentsConfig}
             />
 
-            {/* Continuous Sculptural Bust Background from Before/After to Why Choose Us */}
+            {/* 8. Breathtaking Interactive Before/After Gallery */}
+            <div className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]">
+              {/* Soft Fade Overlay (Matches Treatment component) */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+
+              {/* Luminous Ambient Light Glow */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-white/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-10 -left-20 w-[550px] h-[550px] bg-white/25 rounded-full blur-3xl" />
+              </div>
+
+              <div className="relative z-10">
+                <BeforeAfterGallery />
+              </div>
+            </div>
+
+            {/* Why Choose Us Section with Sculptural Bust Purple Aura Background */}
             <div className="relative overflow-hidden bg-[#faf9f8]">
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img
@@ -261,10 +300,6 @@ export default function App() {
               </div>
 
               <div className="relative z-10">
-                {/* 8. Breathtaking Interactive Before/After Gallery */}
-                <BeforeAfterGallery />
-
-                {/* Why Choose Us Section */}
                 <WhyChooseUs />
               </div>
             </div>       
@@ -280,9 +315,6 @@ export default function App() {
 
             {/* 10. Limited Time Promotional Banners */}
             <SpecialOffers onClaimOffer={handleClaimOffer} />
-
-            {/* 11. Skincare Essentials Shop Collection */}
-            <SkincareCollection />
 
             {/* Latest from The London Clinic Section */}
             <LatestNews onArticleClick={setSelectedArticle} />

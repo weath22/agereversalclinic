@@ -44,24 +44,33 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
     : CLINICAL_TREATMENT_ITEMS;
 
   return (
-    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-luxury-primary overflow-hidden">
-      <div className="container mx-auto px-4 md:px-8">
+    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200">
+      {/* Soft Fade Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+
+      {/* Luminous Ambient Light Glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-white/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 -left-20 w-[550px] h-[550px] bg-white/25 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-20">
           
           {/* Left Column: Text & Editorial Content (Properly scaled for mobile screens) */}
           <div className="w-full lg:w-5/12 lg:max-w-[420px] relative">
             <div className="relative mb-4 sm:mb-6">
-              <span className="absolute -top-6 sm:-top-8 md:-top-10 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-luxury-border select-none opacity-50 uppercase tracking-wider">
+              <span className="absolute -top-6 sm:-top-8 md:-top-10 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-black/15 select-none uppercase tracking-wider">
                 {treatmentsConfig?.editorialHeading || "rejuvenation"}
               </span>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-light font-serif text-luxury-text leading-tight uppercase relative z-10 pt-2 sm:pt-3">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-light font-serif text-slate-950 leading-tight uppercase relative z-10 pt-2 sm:pt-3">
                 {treatmentsConfig?.editorialSub || "Begin your transformation"}
               </h2>
             </div>
             
-            <div className="w-12 h-[1px] bg-luxury-gold mb-4 sm:mb-6" />
+            <div className="w-12 h-[1.5px] bg-slate-950 mb-4 sm:mb-6" />
 
-            <p className="text-luxury-subtext font-sans font-light mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
+            <p className="text-slate-950 font-sans font-normal mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
               {treatmentsConfig?.description || "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual."}
             </p>
 
@@ -80,8 +89,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   onClick={() => onTreatmentClick?.(treatment.name)}
                   className="flex items-center space-x-3 group cursor-pointer"
                 >
-                  <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full border border-luxury-muted group-hover:border-luxury-gold group-hover:scale-125 transition-all duration-300 shrink-0" />
-                  <span className="text-luxury-text font-sans font-normal sm:font-light group-hover:text-luxury-subtext transition-colors duration-300 text-sm sm:text-base leading-snug">
+                  <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full border-2 border-slate-950 group-hover:bg-slate-950 group-hover:scale-125 transition-all duration-300 shrink-0" />
+                  <span className="text-slate-950 font-sans font-medium group-hover:text-black transition-colors duration-300 text-sm sm:text-base leading-snug">
                     {treatment.name}
                   </span>
                 </motion.li>
@@ -90,9 +99,9 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
 
             <button
               onClick={onBookClick}
-              className="bg-black text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 w-fit group text-xs sm:text-sm cursor-pointer active:scale-95"
+              className="bg-slate-950 hover:bg-black text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 w-fit group text-xs sm:text-sm cursor-pointer active:scale-95 border border-white/40"
             >
-              <Calendar className="h-4 w-4 text-luxury-chrome group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+              <Calendar className="h-4 w-4 text-orange-200 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
               <span>Schedule Spa Day</span>
             </button>
           </div>
@@ -104,7 +113,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[4/3] border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-7 group relative overflow-hidden aspect-[4/3] border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Radiance Protocol" 
@@ -112,10 +121,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[0]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">DERMAL CARE</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">DERMAL CARE</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Radiance Protocol</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Radiance Protocol
                 </div>
               </motion.div>
@@ -124,7 +133,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-square md:aspect-auto border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-5 group relative overflow-hidden aspect-square md:aspect-auto border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Volume Definition" 
@@ -132,10 +141,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[1]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">FACIAL SCULPTING</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">FACIAL SCULPTING</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Volume Definition</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Precision Sculpting
                 </div>
               </motion.div>
@@ -144,7 +153,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-[4/3] md:aspect-square border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-5 group relative overflow-hidden aspect-[4/3] md:aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Symmetry Mastered" 
@@ -152,10 +161,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[2]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">BROW ARCHITECTURE</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BROW ARCHITECTURE</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Symmetry Mastered</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Brow Restoration
                 </div>
               </motion.div>
@@ -164,7 +173,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[16/9] md:aspect-auto border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-7 group relative overflow-hidden aspect-[16/9] md:aspect-auto border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Anatomical Precision" 
@@ -172,10 +181,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[3]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">BODY CONTOURING</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BODY CONTOURING</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Anatomical Precision</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Contour Refining
                 </div>
               </motion.div>
@@ -184,7 +193,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-6 group relative overflow-hidden aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Lash Extension Art" 
@@ -192,10 +201,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[4]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">OCULAR BEAUTY</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">OCULAR BEAUTY</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Lash Extension Art</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Lash Enhancement
                 </div>
               </motion.div>
@@ -204,7 +213,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square border border-luxury-border rounded-2xl cursor-pointer"
+                className="md:col-span-6 group relative overflow-hidden aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Advanced Portrait" 
@@ -212,10 +221,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                   src={TREATMENT_IMAGES[5]}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-luxury-gold mb-2">CLINICAL FACIAL</span>
+                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">CLINICAL FACIAL</span>
                   <h3 className="font-serif text-xl md:text-2xl font-light text-white">Advanced Aesthetics</h3>
                 </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/70 group-hover:opacity-0 transition-opacity">
+                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
                   Portrait Art
                 </div>
               </motion.div>

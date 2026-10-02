@@ -618,17 +618,27 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       </section>
 
       {/* 2. Book Consultation Form Section */}
-      <section id="preferred-consultation" className="py-24 bg-gradient-to-b from-luxury-primary via-[#f7f5f0] to-[#f0eee9] border-b border-luxury-border">
-        <div className="max-w-4xl mx-auto px-4">
+      <section 
+        id="preferred-consultation" 
+        className="py-24 bg-gradient-to-b from-[#fbf8f3] via-[#f6efe4] to-[#fbf9f5] text-stone-900 border-b border-[#D8C2A3]/40 relative overflow-hidden selection:bg-[#D8C2A3]/30"
+      >
+        {/* Luxury Gold & Champagne Ambient Lighting (Matches Shop Page Background) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[650px] bg-gradient-to-b from-[#D8C2A3]/50 via-[#ecdcc8]/30 to-transparent rounded-full blur-3xl opacity-90" />
+          <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#ecdcc8]/40 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 -left-40 w-[600px] h-[600px] bg-[#e4d2bc]/45 rounded-full blur-3xl" />
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 relative z-10">
           
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-serif font-light text-luxury-text mb-6 tracking-tight leading-tight">
+            <h2 className="text-3xl md:text-5xl font-serif font-light text-stone-900 mb-6 tracking-tight leading-tight">
               Book a Preferred Consultation
             </h2>
-            <p className="font-sans text-sm md:text-base text-luxury-subtext max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="font-sans text-sm md:text-base text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
               Take the first step towards world-class care. Fill out the form below and our team will contact you to finalize your appointment.
             </p>
-            <div className="w-12 h-[1px] bg-luxury-gold mx-auto mt-8" />
+            <div className="w-12 h-[1px] bg-[#a88d6b] mx-auto mt-8" />
           </div>
 
           <AnimatePresence mode="wait">

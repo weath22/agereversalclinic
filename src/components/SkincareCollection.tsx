@@ -6,7 +6,11 @@ import { Product } from '../types';
 import { getSkincareCollectionConfig } from '../lib/adminStore';
 import { useEffect } from 'react';
 
-export default function SkincareCollection() {
+interface SkincareCollectionProps {
+  onShopClick?: () => void;
+}
+
+export default function SkincareCollection({ onShopClick }: SkincareCollectionProps = {}) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [cart, setCart] = useState<Array<{ product: Product; quantity: number }>>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -198,6 +202,19 @@ export default function SkincareCollection() {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
+
+        {/* Explore Full Shop CTA */}
+        {onShopClick && (
+          <div className="text-center pt-8">
+            <button
+              onClick={onShopClick}
+              className="inline-flex items-center gap-2 bg-black hover:bg-neutral-800 text-white px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-md cursor-pointer hover:shadow-lg hover:scale-102"
+            >
+              <span>Explore Full Online Shop (23 Formulas)</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
 
         {/* Slide-out Shopping Cart Drawer */}
         <AnimatePresence>

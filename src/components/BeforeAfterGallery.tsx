@@ -186,24 +186,20 @@ export default function BeforeAfterGallery() {
   const visiblePairs = currentCategoryData.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <section
+    <section 
       id="gallery"
-      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-transparent overflow-hidden relative border-t border-luxury-border/40"
+      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-transparent overflow-hidden relative"
     >
-      {/* Subtle aesthetic canvas highlights for floating depth */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-luxury-primary rounded-full blur-[100px] pointer-events-none opacity-50" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-luxury-primary rounded-full blur-[100px] pointer-events-none opacity-50" />
-
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         {/* Title Block (Reduced mobile margins) */}
         <div className="text-center mb-6 sm:mb-10 md:mb-14 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-light text-luxury-text mb-3 sm:mb-5 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-light text-slate-950 mb-3 sm:mb-5 leading-tight">
             {config?.heading || "Before & After Results"}
           </h2>
-          <p className="font-sans text-xs sm:text-sm md:text-base text-luxury-subtext font-light max-w-2xl mx-auto leading-relaxed mb-4 sm:mb-6">
+          <p className="font-sans text-xs sm:text-sm md:text-base text-slate-900 font-normal max-w-2xl mx-auto leading-relaxed mb-4 sm:mb-6">
             {config?.description || "Witness the transformative journeys of our patients. These unretouched, real clinical cases illustrate the precision-guided results we achieve daily."}
           </p>
-          <div className="w-12 h-[1px] bg-luxury-gold mx-auto" />
+          <div className="w-12 h-[1.5px] bg-slate-950 mx-auto" />
         </div>
 
         {/* Category Selector Tabs (Reduced mobile margins) */}
@@ -216,8 +212,8 @@ export default function BeforeAfterGallery() {
               onClick={() => handleCategorySelect(cat.id)}
               className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-sans text-[10px] sm:text-xs font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 snap-center whitespace-nowrap cursor-pointer ${
                 activeCategory === cat.id
-                  ? 'bg-black text-white border-black shadow-sm scale-102 font-medium'
-                  : 'bg-white/80 backdrop-blur-md text-luxury-subtext border-luxury-border/80 hover:text-luxury-text hover:bg-white'
+                  ? 'bg-slate-950 text-white border-black shadow-sm scale-102 font-medium'
+                  : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
               }`}
             >
               {cat.name}
