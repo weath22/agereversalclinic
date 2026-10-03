@@ -20,23 +20,23 @@ export default function ConsultantProfile({ authorName, onViewProfile }: Consult
             />
           </div>
           <div className="text-left flex-1">
-            <span className="text-[10px] font-sans font-medium text-luxury-gold uppercase tracking-[0.18em] block mb-0.5">
+            <span className="text-xs font-sans font-medium text-luxury-gold uppercase tracking-[0.2em] block mb-1">
               Medical Consultant
             </span>
-            <h3 className="text-base sm:text-lg font-serif font-normal text-luxury-text leading-snug">
+            <h3 className="text-lg sm:text-xl font-serif font-normal text-luxury-text leading-snug">
               {authorName}
             </h3>
           </div>
         </div>
-        <p className="text-luxury-subtext font-sans text-xs sm:text-sm leading-relaxed text-left font-light">
+        <p className="text-luxury-subtext font-sans text-sm sm:text-base leading-relaxed text-left font-light">
           {authorName} is a premier clinical specialist at The London Cosmetic Clinic with extensive expertise in bespoke dermatology and facial rejuvenation protocols.
         </p>
         <button 
           onClick={onViewProfile}
-          className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-luxury-text hover:text-black border-b border-luxury-gold pb-0.5 uppercase tracking-wider transition-colors cursor-pointer group"
+          className="inline-flex items-center gap-2 text-xs sm:text-sm font-sans font-medium text-luxury-text hover:text-black border-b border-luxury-gold pb-0.5 uppercase tracking-wider transition-colors cursor-pointer group"
         >
           <span>View Consultant Profile</span>
-          <ArrowRight className="w-3.5 h-3.5 text-luxury-gold group-hover:translate-x-1 transition-transform" />
+          <ArrowRight className="w-4 h-4 text-luxury-gold group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
     </div>

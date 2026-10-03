@@ -11,6 +11,7 @@ interface HeaderProps {
   headerConfig?: HeaderConfig;
   onAboutClick?: () => void;
   onShopClick?: (rangeFilter?: string) => void;
+  onPricingClick?: (categoryFilter?: string) => void;
 }
 
 interface MegaColumn {
@@ -28,7 +29,16 @@ interface NavItem {
   procedures?: { name: string; desc?: string; id?: string }[];
 }
 
-export default function Header({ onBookClick, activeSection, setActiveSection, onTreatmentClick, headerConfig, onAboutClick, onShopClick }: HeaderProps) {
+export default function Header({
+  onBookClick,
+  activeSection,
+  setActiveSection,
+  onTreatmentClick,
+  headerConfig,
+  onAboutClick,
+  onShopClick,
+  onPricingClick,
+}: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -362,7 +372,11 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                   ) : (
                     <button
                       onClick={(e) => {
-                        if (item.id === 'shop' && onShopClick) {
+                        if (item.id === 'pricing' && onPricingClick) {
+                          e.preventDefault();
+                          setHoveredItem(null);
+                          onPricingClick();
+                        } else if (item.id === 'shop' && onShopClick) {
                           e.preventDefault();
                           setHoveredItem(null);
                           onShopClick();
@@ -404,7 +418,10 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                         <button
                           key={proc.name}
                           onClick={() => {
-                            if (item.id === 'shop' && onShopClick) {
+                            if (item.id === 'pricing' && onPricingClick) {
+                              setHoveredItem(null);
+                              onPricingClick();
+                            } else if (item.id === 'shop' && onShopClick) {
                               setHoveredItem(null);
                               onShopClick(proc.name);
                             } else if (proc.id) {
@@ -618,7 +635,15 @@ export default function Header({ onBookClick, activeSection, setActiveSection, o
                             return pricingItem ? (
                               <button
                                 type="button"
-                                onClick={() => setActiveMobileSubmenu(pricingItem)}
+                                onClick={() => {
+                                  setIsMobileMenuOpen(false);
+                                  setActiveMobileSubmenu(null);
+                                  if (onPricingClick) {
+                                    onPricingClick();
+                                  } else {
+                                    setActiveMobileSubmenu(pricingItem);
+                                  }
+                                }}
                                 className="flex w-full items-center justify-between px-0 py-1 text-left text-[22px] font-normal text-white hover:text-luxury-gold transition-colors cursor-pointer group"
                               >
                                 <span>Pricing</span>

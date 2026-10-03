@@ -29,6 +29,7 @@ import ProfilePage from './components/ProfilePage';
 import AdminDashboard from './components/AdminDashboard';
 import AboutAgeReversal from './components/AboutAgeReversal';
 import { ShopPageView } from './components/shop/ShopPageView';
+import { PricingPageView } from './components/pricing/PricingPageView';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
@@ -43,6 +44,8 @@ export default function App() {
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [pricingCategoryFilter, setPricingCategoryFilter] = useState<string | undefined>(undefined);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [shopRangeFilter, setShopRangeFilter] = useState<string | undefined>(undefined);
   const [selectedShopProduct, setSelectedShopProduct] = useState<ShopProduct | null>(null);
@@ -92,6 +95,7 @@ export default function App() {
 
   const handleScrollToBooking = (serviceName?: string) => {
     setIsExploreOpen(false);
+    setIsPricingOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     if (serviceName) {
@@ -114,6 +118,7 @@ export default function App() {
 
   const handleViewOffers = () => {
     setIsExploreOpen(false);
+    setIsPricingOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     setSelectedTreatment(null);
@@ -136,8 +141,10 @@ export default function App() {
     setReturnArticle(null);
     setIsExploreOpen(false);
     setIsAboutOpen(false);
+    setIsPricingOpen(false);
     setIsShopOpen(false);
     setShopRangeFilter(undefined);
+    setPricingCategoryFilter(undefined);
     setScrollTrigger(prev => prev + 1);
   };
 
@@ -148,6 +155,7 @@ export default function App() {
     setSelectedTreatment(null);
     setIsAboutOpen(false);
     setIsExploreOpen(false);
+    setIsPricingOpen(false);
     setShopRangeFilter(undefined);
     setSelectedShopProduct(product);
     setIsShopOpen(true);
@@ -216,10 +224,24 @@ export default function App() {
           setSelectedArticle(null);
           setSelectedTreatment(null);
           setIsAboutOpen(false);
+          setIsPricingOpen(false);
           setReturnArticle(null);
           setSelectedShopProduct(null);
           setShopRangeFilter(rangeFilter);
           setIsShopOpen(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onPricingClick={(categoryFilter) => {
+          setSelectedConsultant(null);
+          setIsExploreOpen(false);
+          setSelectedArticle(null);
+          setSelectedTreatment(null);
+          setIsAboutOpen(false);
+          setIsShopOpen(false);
+          setReturnArticle(null);
+          setSelectedShopProduct(null);
+          setPricingCategoryFilter(categoryFilter);
+          setIsPricingOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
@@ -260,6 +282,15 @@ export default function App() {
           />
         ) : isAboutOpen ? (
           <AboutAgeReversal onViewProfile={setSelectedConsultant} />
+        ) : isPricingOpen ? (
+          <PricingPageView
+            initialCategoryFilter={pricingCategoryFilter}
+            onClose={() => {
+              setIsPricingOpen(false);
+              setPricingCategoryFilter(undefined);
+            }}
+            onBookClick={handleScrollToBooking}
+          />
         ) : isShopOpen ? (
           <ShopPageView
             initialRangeFilter={shopRangeFilter}
@@ -342,16 +373,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* Why Choose Us Section with Sculptural Bust Purple Aura Background */}
-            <div className="relative overflow-hidden bg-[#faf9f8]">
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
-                  alt="Sculptural bust with pedestal in monochrome violet"
-                  className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
-                />
-                {/* Subtle, reduced whitish fade overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 backdrop-blur-[0.5px] pointer-events-none" />
+            {/* Why Choose Us Section with App's Theme Background */}
+            <div className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40">
+              {/* Soft Fade Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/20 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+
+              {/* Luxury Ambient Light Blooms */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-gradient-to-b from-[#D8C2A3]/30 via-[#ecdcc8]/20 to-transparent rounded-full blur-3xl" />
+                <div className="absolute top-1/3 -right-28 w-[500px] h-[500px] bg-[#ecdcc8]/25 rounded-full blur-3xl" />
+                <div className="absolute bottom-10 -left-28 w-[500px] h-[500px] bg-[#e4d2bc]/30 rounded-full blur-3xl" />
               </div>
 
               <div className="relative z-10">

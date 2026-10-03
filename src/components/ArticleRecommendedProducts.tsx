@@ -43,13 +43,13 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4">
           <div>
-            <span className="text-[11px] font-sans font-medium text-luxury-gold uppercase tracking-[0.24em] block mb-2">
+            <span className="text-xs sm:text-sm font-sans font-medium text-luxury-gold uppercase tracking-[0.24em] block mb-2">
               Medical-Grade Post-Care
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light text-luxury-text tracking-tight mb-2">
               Recommended Skincare Essentials
             </h2>
-            <p className="text-xs sm:text-sm text-luxury-subtext max-w-xl font-light leading-relaxed">
+            <p className="text-sm sm:text-base text-luxury-subtext max-w-xl font-light leading-relaxed">
               Clinical-grade serums and formulations recommended by our physicians to maintain and elevate treatment results at home.
             </p>
           </div>
@@ -57,10 +57,10 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
           {onShopClick && (
             <button
               onClick={onShopClick}
-              className="inline-flex items-center gap-2 text-xs font-sans font-medium text-luxury-text hover:text-black border-b border-luxury-gold pb-0.5 uppercase tracking-wider transition-colors cursor-pointer group shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-sans font-medium text-luxury-text hover:text-black border-b border-luxury-gold pb-0.5 uppercase tracking-wider transition-colors cursor-pointer group shrink-0 self-start sm:self-auto"
             >
               <span>Explore All Skincare</span>
-              <ArrowRight className="w-3.5 h-3.5 text-luxury-gold group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-luxury-gold group-hover:translate-x-1 transition-transform" />
             </button>
           )}
         </div>

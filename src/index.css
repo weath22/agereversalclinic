@@ -15,10 +15,12 @@ html, body {
 
   --color-noir-100: #e5e5e5;
   --color-noir-200: #cccccc;
+  --color-noir-300: #b3b3b3;
   --color-noir-700: #333333;
   --color-noir-800: #1a1a1a;
   --color-noir-900: #0f0f0f;
   --color-grey: #f3f4f6;
+  --color-access-lilac: #8b5cf6;
   
   --color-silver-100: #f8f9fa;
   --color-silver-200: #e9ecef;
@@ -32,6 +34,10 @@ html, body {
   
   --color-rose-gold: #e5a5a5;
   --color-rose-gold-dark: #db8e8e;
+  --color-mist: #eff2f5;
+  --color-access-purple: #111111;
+  --color-purple: #000000;
+  --color-noir-600: #6c757d;
 
   --color-luxury-primary: #FFFFFF;
   --color-luxury-secondary: #FAFAFA;

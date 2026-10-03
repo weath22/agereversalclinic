@@ -51,13 +51,13 @@ export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelated
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <span className="text-[11px] font-sans font-semibold text-slate-900 uppercase tracking-[0.24em] block mb-2">
+          <span className="text-xs sm:text-sm font-sans font-semibold text-slate-900 uppercase tracking-[0.24em] block mb-2">
             Recommended Procedures
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light text-slate-950 tracking-tight mb-3">
             Related Clinical Treatments
           </h2>
-          <p className="text-xs sm:text-sm text-slate-800 max-w-xl mx-auto font-light leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-800 max-w-xl mx-auto font-light leading-relaxed">
             Scientifically backed medical protocols designed to address the skin health concerns discussed in this article.
           </p>
           <div className="w-12 h-0.5 bg-slate-900/60 mx-auto mt-4 sm:mt-5" />
@@ -82,11 +82,11 @@ export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelated
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-slate-900 font-sans font-medium text-[9px] sm:text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full shadow-xs border border-white/80">
+                <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-slate-900 font-sans font-medium text-xs tracking-wider uppercase px-3 py-1 rounded-full shadow-xs border border-white/80">
                   {treatment.category}
                 </div>
-                <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-xs text-white font-sans text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-orange-200" />
+                <div className="absolute top-3 right-3 bg-black/75 backdrop-blur-xs text-white font-sans text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-orange-200" />
                   <span>{treatment.duration}</span>
                 </div>
               </div>
@@ -94,18 +94,18 @@ export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelated
               {/* Card Body */}
               <div className="p-4 sm:p-5 md:p-6 flex flex-col flex-grow justify-between">
                 <div>
-                  <h3 className="text-base sm:text-lg font-serif font-normal text-slate-950 mb-2 leading-snug">
+                  <h3 className="text-lg sm:text-xl font-serif font-normal text-slate-950 mb-2 leading-snug">
                     {treatment.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed mb-4 font-light line-clamp-2">
+                  <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-4 font-light line-clamp-2">
                     {treatment.description}
                   </p>
 
                   {/* Benefit highlights */}
-                  <div className="space-y-1.5 mb-5">
+                  <div className="space-y-2 mb-5">
                     {treatment.benefits.map((b, i) => (
-                      <div key={i} className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-800">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#e57042] shrink-0" />
+                      <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-slate-800">
+                        <CheckCircle2 className="w-4 h-4 text-[#e57042] shrink-0" />
                         <span>{b}</span>
                       </div>
                     ))}
@@ -113,13 +113,13 @@ export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelated
                 </div>
 
                 {/* Book button */}
-                <div className="pt-2 border-t border-slate-200/60">
+                <div className="pt-3 border-t border-slate-200/60">
                   <button
                     onClick={() => onBookClick(treatment.title)}
-                    className="w-full bg-slate-950 hover:bg-slate-800 text-white py-2.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider transition-all flex items-center justify-center gap-2 group/btn cursor-pointer shadow-xs active:scale-95"
+                    className="w-full bg-slate-950 hover:bg-slate-800 text-white py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-sans font-medium uppercase tracking-wider transition-all flex items-center justify-center gap-2 group/btn cursor-pointer shadow-xs active:scale-95"
                   >
                     <span>Book Consultation</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-orange-200 group-hover/btn:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 text-orange-200 group-hover/btn:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </div>
