@@ -3,8 +3,9 @@ import { saveAppointment } from '../lib/adminStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Phone, Calendar, Clock, Sparkles, CheckCircle, HelpCircle, DollarSign, Plus, Trash2, X } from 'lucide-react';
 import { TREATMENT_DETAILS_DB } from './treatments/treatmentData';
+import { CLINIC_DATA } from '../data/clinicInfo';
 
-import { CLINICAL_AREAS_DB, findTreatmentInDB } from './LocationsAndConsultation';
+import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
 
 interface DoctorAppointmentProps {
   preselectedService?: string;
@@ -209,7 +210,7 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
               </h2>
               
               <p className="text-silver-600 mb-8 leading-relaxed text-sm">
-                Dr. Faith Nzurike is a highly celebrated specialist dermatologist in Jaipur and London with over 10+ years of active experience in medical, surgical, and cosmetic dermatology. She is dedicated to delivering personalized, state-of-the-art non-invasive age-reversal treatments with total precision and care.
+                Dr. Faith Nzurike is a celebrated specialist dermatologist at {CLINIC_DATA.name} with over 10+ years of active experience in medical, surgical, and cosmetic dermatology. She is dedicated to delivering personalized, state-of-the-art non-invasive treatments with total precision and care.
               </p>
 
               {/* Achievements row */}

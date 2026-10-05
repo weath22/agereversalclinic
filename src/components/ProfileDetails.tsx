@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProfilePageConfig } from '../types';
+import { CLINIC_DATA } from '../data/clinicInfo';
 
 interface ProfileDetailsProps {
   authorName: string;
@@ -10,8 +11,8 @@ export default function ProfileDetails({ authorName, config }: ProfileDetailsPro
   const {
     bioTitle = 'Consultant Profile',
     bioParagraphs = [
-      "{authorName} is a highly respected specialist at The London Clinic, bringing over 15 years of clinical expertise to our practice. With a foundational background in advanced dermatology and a profound focus on regenerative aesthetics, they have pioneered numerous protocols that combine cutting-edge science with holistic patient care.",
-      "Graduating with honors from a top-tier medical institution, {authorName} completed comprehensive residency training before pursuing specialized fellowships in aesthetic medicine. Their approach is characterized by a meticulous attention to detail, ensuring that every treatment plan is deeply personalized to meet the unique physiological and aesthetic goals of the patient."
+      `{authorName} is a highly respected specialist at ${CLINIC_DATA.name}, bringing over 15 years of clinical expertise to our practice. With a foundational background in advanced dermatology and a profound focus on regenerative aesthetics, they have pioneered numerous protocols that combine cutting-edge science with holistic patient care.`,
+      "{authorName} completed comprehensive residency training before pursuing specialized fellowships in aesthetic medicine. Their approach is characterized by a meticulous attention to detail, ensuring that every treatment plan is deeply personalized to meet the unique physiological and aesthetic goals of the patient."
     ],
     bioQuote = '"My philosophy centers on enhancing natural beauty while restoring the skin\'s inherent health and vitality. I believe in utilizing advanced, evidence-based treatments to achieve subtle, durable, and highly impactful results for my patients."'
   } = config || {};

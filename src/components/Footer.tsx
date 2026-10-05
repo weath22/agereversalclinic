@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { getFooterConfig } from "../lib/adminStore";
+import { CLINIC_INFO } from "../data/clinicInfo";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -61,9 +62,9 @@ export default function Footer() {
               <span>Headquarters</span>
             </h4>
             <p className="text-[11px] sm:text-xs font-sans font-light tracking-[0.1em] uppercase leading-relaxed text-white/80">
-              LONDON COSMETIC CLINIC KNIGHTSBRIDGE,
+              {CLINIC_INFO.locations?.[0]?.name || "LONDON COSMETIC CLINIC KNIGHTSBRIDGE"},
               <br />
-              2ND FLOOR, 4 HARLEY STREET, LONDON, W1G 9PB
+              {CLINIC_INFO.locations?.[0]?.address || "2ND FLOOR, 4 HARLEY STREET"}, {CLINIC_INFO.locations?.[0]?.city || "LONDON"}, {CLINIC_INFO.locations?.[0]?.postalCode || "W1G 9PB"}
             </p>
             <div className="mt-5 text-[11px] text-white/40 font-light">
               In partnership with Jaipur Medical Chambers
@@ -74,7 +75,7 @@ export default function Footer() {
           <div className="flex flex-col items-center">
             <div className="mb-6 text-center">
               <img
-                alt="Clinic Emblem"
+                alt={`${CLINIC_INFO.clinicName} Emblem`}
                 className="h-16 w-auto mb-4 mx-auto transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjxq3WzjVonyYRXNXzK5c475rxgNujUJ0Cm9YnyMOaDn-cHHquCFSlgH51zEgGkVPBsUpIyK718k700FLjwoLlBP3LkU7j_c00e92k6nFndooqDaIr1Pr2xUHXnRpgbPjpIbQSLFhkE5dED9HuHvYEKB-plLBBj9pajUERxdBPCkT2TBLr8H_-ge7BRzNzPL6t4Pt06Rq9QLBy1bWAA1Dp6eDlqqEEPLDmxHYzNuCzpZVkp_JYmjp4xLxt5i0S4ge7kG8fwjWUL80z"
               />
@@ -95,28 +96,28 @@ export default function Footer() {
               </span>
               <div className="flex space-x-4">
                 <a
-                  href="#"
+                  href={CLINIC_INFO.socialLinks?.instagram || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Instagram"
                 >
                   <Instagram className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href="#"
+                  href={CLINIC_INFO.socialLinks?.facebook || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Facebook"
                 >
                   <Facebook className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href="#"
+                  href={CLINIC_INFO.socialLinks?.twitter || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Twitter"
                 >
                   <Twitter className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href="#"
+                  href={CLINIC_INFO.socialLinks?.youtube || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Youtube"
                 >
@@ -133,21 +134,21 @@ export default function Footer() {
               <span>Contact Desk</span>
             </h4>
             <a
-              href={`tel:${config.phone.replace(/[^0-9+]/g, '')}`}
+              href={`tel:${(config?.phone || CLINIC_INFO.primaryPhone).replace(/[^0-9+]/g, '')}`}
               className="text-lg md:text-xl font-sans font-light text-white hover:text-[#D8C2A3] mb-2 tracking-wide transition-colors"
             >
-              {config.phone}
+              {config?.phone || CLINIC_INFO.primaryPhone}
             </a>
             <p className="text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/70 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5 text-[#D8C2A3]" strokeWidth={1.5} />
-              <span>{config.hours}</span>
+              <span>{config?.hours || CLINIC_INFO.openingHoursSummary.weekdays}</span>
             </p>
             <a
-              href={`mailto:${config.email}`}
+              href={`mailto:${config?.email || CLINIC_INFO.primaryEmail}`}
               className="text-xs font-sans font-light text-white/70 hover:text-[#D8C2A3] mt-4 flex items-center gap-2 transition-colors"
             >
               <Mail className="h-3.5 w-3.5 text-[#D8C2A3]" strokeWidth={1.5} />
-              <span>{config.email}</span>
+              <span>{config?.email || CLINIC_INFO.primaryEmail}</span>
             </a>
           </div>
         </div>

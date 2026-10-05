@@ -1,46 +1,79 @@
-import React from 'react';
-import { Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
+import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
+import { PricingPackageSelector } from './pricing/PricingPackageSelector';
+import { CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ServiceBottomCTAProps {
   data: {
+    id?: string;
     title: string;
     price?: string;
+    imageUrl?: string;
+    beforeImage?: string;
+    description?: string;
+    badgeText?: string;
+    category?: string;
+    procedureTime?: string;
+    downtime?: string;
+    recommendedSessions?: string;
+    summary?: string;
   };
   onBook: (serviceName: string) => void;
 }
 
 export default function ServiceBottomCTA({ data, onBook }: ServiceBottomCTAProps) {
-  const handleBookClick = () => {
-    onBook(data.title);
+  const [notification, setNotification] = useState<string | null>(null);
+
+  // Resolve or synthesize the matching TreatmentPricingItem using Universal Hybrid Resolver
+  const treatmentPricingItem: TreatmentPricingItem = useMemo(() => {
+    return getHybridTreatmentPricing(
+      {
+        id: data.id || data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: data.title,
+        price: data.price || '£250',
+        time: data.procedureTime || '30 - 45 Mins',
+        desc: data.description || data.summary || 'Clinical treatment calibrated to your unique anatomy.',
+        badge: data.badgeText
+      },
+      data.category
+    );
+  }, [data]);
+
+  const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
+    const bookingServiceName = `${treatment.title} (${pkg.name})`;
+    setNotification(`Package "${pkg.name}" selected for ${treatment.title}`);
+    setTimeout(() => {
+      setNotification(null);
+      onBook(bookingServiceName);
+    }, 400);
   };
 
   return (
-    <div id="bottom-booking-cta" className="mt-16 bg-[#003334] text-white rounded-2xl p-6 md:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-lg border border-[#004b4d]">
-      <div className="space-y-2 max-w-xl">
-        <span className="text-[9px] font-extrabold text-[#c5a880] uppercase tracking-widest block">
-          Immediate Action
-        </span>
-        <h4 className="text-xl font-serif font-bold tracking-tight text-white">
-          Begin Your Journey With {data.title}
-        </h4>
-        <p className="text-xs text-white/80 leading-relaxed font-normal">
-          Book a personalized clinical diagnostic session. Our leading clinical practitioners will calibrate this protocol specifically to your skin profile.
-        </p>
-      </div>
-      
-      <div className="flex flex-col sm:items-end justify-center gap-3 shrink-0">
-        <div>
-          <span className="text-[9px] font-bold text-white/55 uppercase tracking-widest block">Starting From</span>
-          <span className="text-2xl font-semibold text-white tracking-tight">{data.price || '$150'}</span>
-        </div>
-        <button
-          onClick={handleBookClick}
-          className="w-full sm:w-auto px-8 py-3.5 bg-[#c5a880] hover:bg-[#b0936b] text-[#003334] font-black text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg cursor-pointer"
-          id="cta-book-btn"
-        >
-          <Calendar className="h-4 w-4" />
-          <span>Secure Booking</span>
-        </button>
+    <div id="bottom-booking-cta" className="my-6 sm:my-8 -mx-4 sm:mx-0">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm border border-luxury-gold/40"
+          >
+            <CheckCircle2 className="w-4 h-4 text-luxury-gold shrink-0" />
+            <span>{notification}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full sm:max-w-2xl sm:mx-auto">
+        {/* Exact Pricing Selector UI (reused directly) */}
+        <PricingPackageSelector
+          treatment={treatmentPricingItem}
+          onBookPackage={handleBookPackage}
+          showHeader={true}
+        />
       </div>
     </div>
   );

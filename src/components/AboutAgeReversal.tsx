@@ -4,6 +4,7 @@ import FacilityInteriors from './FacilityInteriors';
 import Testimonials from './Testimonials';
 import TrustBrands from './TrustBrands';
 import Accreditations from './Accreditations';
+import { CLINIC_DATA } from '../data/clinicInfo';
 
 interface AboutAgeReversalProps {
   onViewProfile?: (name: string) => void;
@@ -54,7 +55,7 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
           <div className="w-full md:w-1/2 flex flex-col justify-center max-w-xl relative z-10 text-left">
             <div className="inline-flex items-center space-x-2 bg-white/20 md:bg-silver-100 text-white md:text-silver-700 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider w-fit mb-4 md:mb-6 border border-white/20 md:border-transparent">
               <span className="w-2 h-2 rounded-full bg-rose-gold animate-pulse" />
-              <span>About Age Reversal Clinic</span>
+              <span>About {CLINIC_DATA.name}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white md:text-silver-900 leading-tight mb-3 sm:mb-4 md:mb-6 chrome-text drop-shadow-sm md:drop-shadow-none">
@@ -63,12 +64,14 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
             </h1>
 
             <p className="text-sm sm:text-base md:text-lg text-white/90 md:text-silver-600 mb-6 md:mb-8 leading-relaxed max-w-md font-normal md:font-medium drop-shadow-sm md:drop-shadow-none">
-              Grove Park’s premiere center for advanced diagnostics, visionary medical leadership, and bespoke regenerative therapies tailored to restore, elevate, and refine your skin architecture.
+              London’s premiere center for advanced diagnostics, visionary medical leadership, and bespoke regenerative therapies tailored to restore, elevate, and refine your skin architecture.
             </p>
 
             <div className="border-l-2 border-rose-gold pl-3 sm:pl-4 mb-6 md:mb-8">
               <span className="text-[9px] sm:text-[10px] font-extrabold text-white/70 md:text-silver-400 uppercase tracking-widest block">Clinical Excellence</span>
-              <span className="text-xs sm:text-sm font-semibold text-white md:text-silver-900">Grove Park, London Borough of Lewisham, UK</span>
+              <span className="text-xs sm:text-sm font-semibold text-white md:text-silver-900">
+                {CLINIC_DATA.locations[0] ? `${CLINIC_DATA.locations[0].name} • ${CLINIC_DATA.locations[0].address}` : 'Harley Street Flagship Clinic, London'}
+              </span>
             </div>
           </div>
         </div>

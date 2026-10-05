@@ -25,6 +25,7 @@ import {
   FloatingMenuConfig,
   ProfilePageConfig
 } from '../types';
+import { CLINIC_DATA } from '../data/clinicInfo';
 
 // Storage keys
 const CONSULTATIONS_KEY = 'clinical_consultations';
@@ -436,28 +437,18 @@ const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
 const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
   heading: "Our Locations",
   description: "Conveniently located in the heart of London's medical district, providing world-class care across multiple specialized facilities.",
-  locations: [
-    {
-      id: 'loc-1',
-      name: "The London Clinic - Main Hospital",
-      address: "20 Devonshire Place, London W1G 6BW",
-      hours: "Open 24 hours for inpatient care",
-      phone: "+44 (0)20 7935 4444",
-      mapsUrl: "https://maps.google.com/?q=20+Devonshire+Place,+London+W1G+6BW",
-      bannerType: "Clinic",
-      imageUrl: "/src/assets/images/clinic_devonshire_1790684708217.jpg"
-    },
-    {
-      id: 'loc-2',
-      name: "The London Clinic - Harley Street",
-      address: "116 Harley Street, London W1G 7JL",
-      hours: "Mon - Fri: 8:00 AM - 8:00 PM",
-      phone: "+44 (0)20 7616 7693",
-      mapsUrl: "https://maps.google.com/?q=116+Harley+Street,+London+W1G+7JL",
-      bannerType: "Clinic",
-      imageUrl: "/src/assets/images/clinic_harley_street_1790684722879.jpg"
-    }
-  ]
+  locations: CLINIC_DATA.locations.map((loc, idx) => ({
+    id: `loc-${idx + 1}`,
+    name: loc.name,
+    address: loc.address.includes(loc.city) ? `${loc.address}, ${loc.postalCode}` : `${loc.address}, ${loc.city}, ${loc.postalCode}`,
+    hours: loc.hours,
+    phone: loc.phone || CLINIC_DATA.phone,
+    mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(loc.address)}`,
+    bannerType: "Clinic",
+    imageUrl: idx === 0 
+      ? "/src/assets/images/clinic_harley_street_1790684722879.jpg" 
+      : "/src/assets/images/clinic_devonshire_1790684708217.jpg"
+  }))
 };
 
 const DEFAULT_TEAM_LEADERSHIP_CONFIG: TeamLeadershipConfig = {

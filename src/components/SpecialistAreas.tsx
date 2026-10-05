@@ -87,7 +87,7 @@ export default function SpecialistAreas({
           </header>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-6 sm:mb-10 md:mb-14">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-6 sm:mb-10 md:mb-14 -mx-1.5">
             <AnimatePresence mode="wait">
               {currentTreatments.map((treatment, idx) => (
                 <motion.article
@@ -110,19 +110,14 @@ export default function SpecialistAreas({
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
-                    {treatment.badge && (
+                    {treatment.category && (
                       <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs">
-                        {treatment.badge}
+                        {treatment.category}
                       </span>
                     )}
                   </div>
                   <div className="p-5 sm:p-6 md:p-7 flex-grow flex flex-col justify-between">
                     <div>
-                      {treatment.category && (
-                        <span className="text-[10px] uppercase tracking-widest text-luxury-muted font-medium block mb-1">
-                          {treatment.category}
-                        </span>
-                      )}
                       <div className="flex justify-between items-center mb-3">
                         <h3 className="font-serif font-normal text-lg sm:text-xl text-luxury-text group-hover:text-luxury-subtext transition-colors leading-tight">
                           {treatment.title}

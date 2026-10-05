@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SHOP_PRODUCTS } from '../data/shopProducts';
 import { ShopProduct } from '../types/shop';
 import { ProductCard } from './shop/ProductCard';
+import Pagination from './Pagination';
 
 interface ArticleRecommendedProductsProps {
   onShopClick?: () => void;
@@ -12,8 +13,15 @@ interface ArticleRecommendedProductsProps {
 
 export default function ArticleRecommendedProducts({ onShopClick, onProductClick }: ArticleRecommendedProductsProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const recommendedProducts = SHOP_PRODUCTS.slice(0, 4);
+  const itemsPerPage = 4;
+  const totalPages = Math.ceil(SHOP_PRODUCTS.length / itemsPerPage);
+
+  const currentProducts = SHOP_PRODUCTS.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleAddToCart = (product: ShopProduct) => {
     setToastMessage(`Added "${product.name}" to your list`);
@@ -25,6 +33,14 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
   const handleViewProduct = (product: ShopProduct) => {
     if (onProductClick) {
       onProductClick(product);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    const element = document.getElementById('article-recommended-products');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -50,7 +66,7 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
               Recommended Skincare Essentials
             </h2>
             <p className="text-sm sm:text-base text-luxury-subtext max-w-xl font-light leading-relaxed">
-              Clinical-grade serums and formulations recommended by our physicians to maintain and elevate treatment results at home.
+              Clinical-grade formulations recommended by our specialist to maintain and elevate treatment results
             </p>
           </div>
           
@@ -67,16 +83,36 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
 
         {/* Reusable Main Product Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 md:gap-6 items-stretch">
-          {recommendedProducts.map((product) => (
-            <div key={product.id} className="h-full flex">
-              <ProductCard
-                product={product}
-                onViewProduct={handleViewProduct}
-                onAddToCart={(prod) => handleAddToCart(prod)}
-              />
-            </div>
-          ))}
+          <AnimatePresence mode="wait">
+            {currentProducts.map((product) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+                className="h-full flex"
+              >
+                <ProductCard
+                  product={product}
+                  onViewProduct={handleViewProduct}
+                  onAddToCart={(prod) => handleAddToCart(prod)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
+
+        {/* Reusable Clinical Pagination Component */}
+        {totalPages > 1 && (
+          <div className="mt-8 sm:mt-12 flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* Added Notification Toast */}

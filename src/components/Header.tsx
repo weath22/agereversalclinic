@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Calendar, ChevronDown, ChevronRight, ChevronLeft, Gift, ThumbsUp, BookOpen, HelpCircle, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HeaderConfig } from '../types';
+import { CLINIC_INFO, CLINIC_DATA } from '../data/clinicInfo';
 
 interface HeaderProps {
   onBookClick: (serviceName?: string) => void;
@@ -12,6 +13,7 @@ interface HeaderProps {
   onAboutClick?: () => void;
   onShopClick?: (rangeFilter?: string) => void;
   onPricingClick?: (categoryFilter?: string) => void;
+  onTransformationsClick?: () => void;
 }
 
 interface MegaColumn {
@@ -38,6 +40,7 @@ export default function Header({
   onAboutClick,
   onShopClick,
   onPricingClick,
+  onTransformationsClick,
 }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
@@ -301,6 +304,10 @@ export default function Header({
   const handlePageClick = (id: string) => {
     setHoveredItem(null);
     setIsMobileMenuOpen(false);
+    if (id === 'gallery' && onTransformationsClick) {
+      onTransformationsClick();
+      return;
+    }
     setActiveSection(id);
     const element = document.getElementById(id);
     if (element) {
@@ -319,16 +326,16 @@ export default function Header({
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
           <img
-            alt={`${headerConfig?.primaryName || 'Age Reversal'} Logo`}
+            alt={`${headerConfig?.primaryName || CLINIC_DATA.name} Logo`}
             className="h-10 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             src={headerConfig?.logoUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"}
           />
           <div className="flex flex-col">
             <span className="text-lg lg:text-xl font-serif font-light tracking-tight text-luxury-text leading-none flex items-center gap-1">
-              {headerConfig?.primaryName || "Age Reversal"}
+              {headerConfig?.primaryName || CLINIC_DATA.name}
             </span>
             <span className="text-[9px] lg:text-[10px] font-sans font-medium text-luxury-gold tracking-[0.3em] uppercase leading-none mt-1">
-              {headerConfig?.secondaryName || "Clinic"}
+              {headerConfig?.secondaryName || "London"}
             </span>
           </div>
         </a>
@@ -843,15 +850,15 @@ export default function Header({
                             </g>
                           </svg>
                           <span className="text-[13px] font-normal text-white/50 leading-snug">
-                            Grove Park, London Borough of Lewisham, UK
+                            {CLINIC_INFO.locations?.[1]?.address || CLINIC_INFO.locations?.[0]?.address || 'Grove Park, London Borough of Lewisham, UK'}
                           </span>
                         </div>
 
                         {/* Contact Row */}
                         <div className="flex items-center space-x-3">
                           <Phone className="h-4.5 w-4.5 text-white/40 shrink-0" strokeWidth={1.75} />
-                          <a href="tel:+442088572000" className="text-[13px] font-normal text-luxury-gold hover:underline leading-none">
-                            +44 20 8857 2000
+                          <a href={CLINIC_INFO.phoneHref || `tel:${(CLINIC_INFO.primaryPhone || '+44 20 8857 2000').replace(/\s+/g, '')}`} className="text-[13px] font-normal text-luxury-gold hover:underline leading-none">
+                            {CLINIC_INFO.primaryPhone || '+44 20 8857 2000'}
                           </a>
                         </div>
                       </div>

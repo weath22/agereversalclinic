@@ -5,7 +5,7 @@ import {
   TreatmentDetail,
   DEFAULT_TREATMENT_DETAILS
 } from './treatments/treatmentData';
-import { CLINICAL_AREAS_DB } from './LocationsAndConsultation';
+import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import { 
   getTreatmentDetailsConfig, 
   saveTreatmentDetailsConfig 

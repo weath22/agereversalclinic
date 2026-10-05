@@ -1,0 +1,159 @@
+import { TreatmentPricingItem, TREATMENT_PRICING_DATA } from './treatmentPricing';
+import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
+import { ShopProduct } from '../types/shop';
+import { SHOP_PRODUCTS } from './shopProducts';
+
+export interface TransformationCase {
+  id: string;
+  title: string;
+  category: 'All' | 'Facial Rejuvenation' | 'Skin Texture & Scars' | 'Lifting & Contouring' | 'Regenerative Biotech' | 'Hair Density';
+  tag: string;
+  patientInfo: string;
+  duration: string;
+  sessions: number;
+  concern: string;
+  beforeImage: string;
+  afterImage: string;
+  galleryImages: string[];
+  recommendedTreatmentIds: string[];
+  recommendedProductIds: string[];
+}
+
+export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
+  {
+    id: 'case-laser-skincare',
+    title: 'Laser Skincare Services',
+    category: 'Skin Texture & Scars',
+    tag: 'Laser Resurfacing & Tone',
+    patientInfo: 'Clinical Series',
+    duration: '12 Weeks',
+    sessions: 3,
+    concern: 'Sun damage, pigmentation, enlarged pores, and uneven dermal texture.',
+    beforeImage: 'https://lexaesthetics.com/storage/2024/01/1.webp',
+    afterImage: 'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp',
+    galleryImages: [
+      'https://lexaesthetics.com/storage/2024/01/1.webp',
+      'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp',
+      'https://lexaesthetics.com/storage/2024/01/1-5.png',
+      'https://lexaesthetics.com/storage/2023/07/2.png',
+      'https://lexaesthetics.com/storage/2024/01/4-1.jpg',
+      'https://lexaesthetics.com/storage/2024/01/3-2.jpg',
+      'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-1.jpeg',
+      'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-2.jpeg'
+    ],
+    recommendedTreatmentIds: ['chemical-peel', 'exosome'],
+    recommendedProductIds: ['st-antioxidant-gel-cleanser', 'st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
+  },
+  {
+    id: 'case-exosome-rejuvenation',
+    title: 'Full Face Cellular Dermal Rejuvenation',
+    category: 'Regenerative Biotech',
+    tag: 'Cellular Regeneration',
+    patientInfo: 'Female, 44 Years',
+    duration: '12 Weeks',
+    sessions: 3,
+    concern: 'Photo-damage, periorbital fine lines, loss of dermal bounce and skin dehydration.',
+    beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
+    afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO',
+    galleryImages: [
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO',
+      'https://lexaesthetics.com/storage/2024/01/1.webp',
+      'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp'
+    ],
+    recommendedTreatmentIds: ['exosome', 'profhilo'],
+    recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
+  },
+  {
+    id: 'case-morpheus8-tightening',
+    title: 'Subdermal Jawline & Lower Face Tightening',
+    category: 'Lifting & Contouring',
+    tag: 'RF Microneedling',
+    patientInfo: 'Female, 51 Years',
+    duration: '16 Weeks',
+    sessions: 3,
+    concern: 'Lower face laxity, jowling along the mandibular angle, and neck dermal creping.',
+    beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
+    afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM',
+    galleryImages: [
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
+      'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM',
+      'https://lexaesthetics.com/storage/2024/01/4-1.jpg',
+      'https://lexaesthetics.com/storage/2024/01/3-2.jpg'
+    ],
+    recommendedTreatmentIds: ['morpheus8', 'ultherapy'],
+    recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-gel-cleanser']
+  },
+  {
+    id: 'case-polynucleotide-eyes-skin',
+    title: 'DNA Cellular Repair & Under-Eye Brightening',
+    category: 'Skin Texture & Scars',
+    tag: 'DNA Repair',
+    patientInfo: 'Female, 36 Years',
+    duration: '8 Weeks',
+    sessions: 3,
+    concern: 'Dark under-eye circles, periorbital hollows, and post-inflammatory erythema.',
+    beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
+    afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY',
+    galleryImages: [
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
+      'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY',
+      'https://lexaesthetics.com/storage/2024/01/1-5.png',
+      'https://lexaesthetics.com/storage/2023/07/2.png'
+    ],
+    recommendedTreatmentIds: ['polynucleotide', 'profhilo'],
+    recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
+  },
+  {
+    id: 'case-facial-harmony-contouring',
+    title: '3D Facial Profile Harmonisation & Lip Volume',
+    category: 'Facial Rejuvenation',
+    tag: 'Dermal Artistry',
+    patientInfo: 'Female, 33 Years',
+    duration: 'Single Stage + Review',
+    sessions: 1,
+    concern: 'Mild retrognathia (weak chin projection), thinning lips, and mild tear-trough depression.',
+    beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
+    afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le',
+    galleryImages: [
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le',
+      'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-1.jpeg',
+      'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-2.jpeg'
+    ],
+    recommendedTreatmentIds: ['lip-filler', 'dermal-fillers'],
+    recommendedProductIds: ['st-antioxidant-matte-day-cream', 'st-antioxidant-mini-matte-day-cream']
+  },
+  {
+    id: 'case-hair-restoration',
+    title: 'Clinical Follicle Density & Scalp Restoration',
+    category: 'Hair Density',
+    tag: 'Trichology Therapy',
+    patientInfo: 'Male, 38 Years',
+    duration: '20 Weeks',
+    sessions: 4,
+    concern: 'Androgenetic crown thinning, widening part line, and miniaturised hair follicles.',
+    beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
+    afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd',
+    galleryImages: [
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd',
+      'https://lexaesthetics.com/storage/2024/01/1.webp',
+      'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp'
+    ],
+    recommendedTreatmentIds: ['prp-hair', 'exosome'],
+    recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-gel-cleanser']
+  }
+];
+
+export function getRecommendedTreatmentsForCase(caseItem: TransformationCase): TreatmentPricingItem[] {
+  return caseItem.recommendedTreatmentIds
+    .map(id => getHybridTreatmentPricing(id))
+    .filter((t): t is TreatmentPricingItem => !!t);
+}
+
+export function getRecommendedProductsForCase(caseItem: TransformationCase): ShopProduct[] {
+  return caseItem.recommendedProductIds
+    .map(id => SHOP_PRODUCTS.find(p => p.id === id))
+    .filter((p): p is ShopProduct => !!p);
+}

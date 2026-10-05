@@ -2,7 +2,7 @@ import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS } from './treatments/treatmentData';
-import { CLINICAL_AREAS_DB } from './LocationsAndConsultation';
+import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import { getTreatmentDetailsConfig } from '../lib/adminStore';
 import BeforeAfterComparisonSlider from './BeforeAfterComparisonSlider';
 import SkinLayerTargets from './SkinLayerTargets';
@@ -103,12 +103,10 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
           {/* Section 3.1: Scientific Profile & Overview (Full Width row) */}
           <ServiceOverview data={data} />
 
-          {/* 4. Bottom Action Area */}
-          <section className="bg-white py-2 border-t border-silver-150 relative z-10">
-            <div className="max-w-7xl mx-auto px-4 md:px-8">
-              <ServiceBottomCTA data={data} onBook={onBook} />
-            </div>
-          </section>
+          {/* 4. Treatment Pricing & Package Selector */}
+          <div className="pt-8 pb-4 border-t border-silver-150 max-w-5xl mx-auto w-full">
+            <ServiceBottomCTA data={data} onBook={onBook} />
+          </div>
 
           {/* Section 3.1.5: How It Works? Dynamic Vertical Timeline */}
           <HowItWorksTimeline treatmentId={data.id} />

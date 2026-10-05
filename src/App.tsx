@@ -30,6 +30,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AboutAgeReversal from './components/AboutAgeReversal';
 import { ShopPageView } from './components/shop/ShopPageView';
 import { PricingPageView } from './components/pricing/PricingPageView';
+import { TransformationsPageView } from './components/transformations/TransformationsPageView';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
@@ -46,10 +47,12 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [pricingCategoryFilter, setPricingCategoryFilter] = useState<string | undefined>(undefined);
+  const [isTransformationsOpen, setIsTransformationsOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [shopRangeFilter, setShopRangeFilter] = useState<string | undefined>(undefined);
   const [selectedShopProduct, setSelectedShopProduct] = useState<ShopProduct | null>(null);
   const [returnArticle, setReturnArticle] = useState<Article | null>(null);
+  const [returnToTransformations, setReturnToTransformations] = useState(false);
   const [scrollTrigger, setScrollTrigger] = useState(0);
 
   // Dynamic homepage configs
@@ -96,6 +99,7 @@ export default function App() {
   const handleScrollToBooking = (serviceName?: string) => {
     setIsExploreOpen(false);
     setIsPricingOpen(false);
+    setIsTransformationsOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     if (serviceName) {
@@ -119,6 +123,7 @@ export default function App() {
   const handleViewOffers = () => {
     setIsExploreOpen(false);
     setIsPricingOpen(false);
+    setIsTransformationsOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     setSelectedTreatment(null);
@@ -139,16 +144,22 @@ export default function App() {
     setSelectedConsultant(null);
     setSelectedShopProduct(null);
     setReturnArticle(null);
+    setReturnToTransformations(false);
     setIsExploreOpen(false);
     setIsAboutOpen(false);
     setIsPricingOpen(false);
+    setIsTransformationsOpen(false);
     setIsShopOpen(false);
     setShopRangeFilter(undefined);
     setPricingCategoryFilter(undefined);
     setScrollTrigger(prev => prev + 1);
   };
 
-  const handleOpenProduct = (product: ShopProduct) => {
+  const handleOpenProduct = (product: ShopProduct, fromTransformations = false) => {
+    if (fromTransformations) {
+      setReturnToTransformations(true);
+      setIsTransformationsOpen(false);
+    }
     setReturnArticle(selectedArticle);
     setSelectedArticle(null);
     setSelectedConsultant(null);
@@ -163,7 +174,13 @@ export default function App() {
   };
 
   const handleBackFromProduct = () => {
-    if (returnArticle) {
+    if (returnToTransformations) {
+      setIsShopOpen(false);
+      setSelectedShopProduct(null);
+      setReturnToTransformations(false);
+      setIsTransformationsOpen(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (returnArticle) {
       const articleToRestore = returnArticle;
       setIsShopOpen(false);
       setSelectedShopProduct(null);
@@ -238,10 +255,24 @@ export default function App() {
           setSelectedTreatment(null);
           setIsAboutOpen(false);
           setIsShopOpen(false);
+          setIsTransformationsOpen(false);
           setReturnArticle(null);
           setSelectedShopProduct(null);
           setPricingCategoryFilter(categoryFilter);
           setIsPricingOpen(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onTransformationsClick={() => {
+          setSelectedConsultant(null);
+          setIsExploreOpen(false);
+          setSelectedArticle(null);
+          setSelectedTreatment(null);
+          setIsAboutOpen(false);
+          setIsShopOpen(false);
+          setIsPricingOpen(false);
+          setReturnArticle(null);
+          setSelectedShopProduct(null);
+          setIsTransformationsOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
@@ -252,6 +283,12 @@ export default function App() {
             authorName={selectedConsultant}
             onClose={() => setSelectedConsultant(null)}
             onBookClick={() => handleScrollToBooking()}
+          />
+        ) : isTransformationsOpen ? (
+          <TransformationsPageView
+            onClose={() => setIsTransformationsOpen(false)}
+            onBookClick={handleScrollToBooking}
+            onOpenProduct={(product) => handleOpenProduct(product, true)}
           />
         ) : isExploreOpen ? (
           <ExploreTreatmentsView
@@ -295,13 +332,16 @@ export default function App() {
           <ShopPageView
             initialRangeFilter={shopRangeFilter}
             initialSelectedProduct={selectedShopProduct}
-            productBackLabel={returnArticle ? 'Article' : undefined}
-            onBackFromProduct={returnArticle ? handleBackFromProduct : undefined}
+            productBackLabel={returnToTransformations ? 'Transformations' : returnArticle ? 'Article' : undefined}
+            onBackFromProduct={returnToTransformations || returnArticle ? handleBackFromProduct : undefined}
             onClose={() => {
               setIsShopOpen(false);
               setShopRangeFilter(undefined);
               setSelectedShopProduct(null);
-              if (returnArticle) {
+              if (returnToTransformations) {
+                setReturnToTransformations(false);
+                setIsTransformationsOpen(true);
+              } else if (returnArticle) {
                 const articleToRestore = returnArticle;
                 setReturnArticle(null);
                 setSelectedArticle(articleToRestore);
@@ -324,6 +364,19 @@ export default function App() {
                 const el = document.getElementById('specialist-areas');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
                 setActiveSection('specialist-areas');
+              }}
+              onTransformationsClick={() => {
+                setSelectedConsultant(null);
+                setIsExploreOpen(false);
+                setSelectedArticle(null);
+                setSelectedTreatment(null);
+                setIsAboutOpen(false);
+                setIsShopOpen(false);
+                setIsPricingOpen(false);
+                setReturnArticle(null);
+                setSelectedShopProduct(null);
+                setIsTransformationsOpen(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               heroConfig={heroConfig}
             />

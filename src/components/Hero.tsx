@@ -1,15 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowRight, Calendar, Star } from 'lucide-react';
+import { ArrowRight, Calendar, Star, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { HeroConfig } from '../types';
+import { CLINIC_DATA } from '../data/clinicInfo';
 
 interface HeroProps {
   onBookClick: () => void;
   onExploreClick: () => void;
+  onTransformationsClick?: () => void;
   heroConfig?: HeroConfig;
 }
 
-export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroProps) {
+export default function Hero({ onBookClick, onExploreClick, onTransformationsClick, heroConfig }: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -221,7 +223,7 @@ export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroPr
             variants={itemVariants}
             className="text-[34px] sm:text-4xl md:text-5xl lg:text-6xl xl:text-[68px] font-serif font-light text-luxury-text leading-[1.15] md:leading-tight mt-4 sm:mt-6 md:mt-0 mb-4 sm:mb-6 md:mb-8 whitespace-pre-line"
           >
-            {heroConfig?.title ? heroConfig.title : <>Exceptional Results<br />with <span className="italic text-luxury-gold">Age Reversal</span></>}
+            {heroConfig?.title ? heroConfig.title : <>Exceptional Results<br />with <span className="italic text-luxury-gold">{CLINIC_DATA.name}</span></>}
           </motion.h1>
 
           <motion.p 
@@ -244,18 +246,30 @@ export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroPr
             </button>
             <button
               onClick={onExploreClick}
-              className="bg-white/95 backdrop-blur-md border border-luxury-border hover:border-luxury-gold/60 text-luxury-text px-7 sm:px-9 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
+              className="bg-white/95 backdrop-blur-md border border-luxury-border hover:border-luxury-gold/60 text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
             >
               <span>Explore</span>
               <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-luxury-muted group-hover:text-luxury-gold group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </button>
+            {onTransformationsClick && (
+              <button
+                onClick={onTransformationsClick}
+                className="bg-gradient-to-r from-white via-luxury-secondary/70 to-white backdrop-blur-md border border-luxury-gold/60 hover:border-luxury-gold text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-sm sm:text-base group cursor-pointer shadow-xs"
+              >
+                <Sparkles className="h-4 w-4 text-luxury-gold group-hover:rotate-12 transition-transform" />
+                <span>Transformations</span>
+              </button>
+            )}
           </motion.div>
 
           <motion.div 
             variants={itemVariants}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-luxury-border/80 pt-4 sm:pt-6 md:pt-10"
+            onClick={onTransformationsClick}
+            className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-luxury-border/80 pt-4 sm:pt-6 md:pt-10 ${onTransformationsClick ? 'cursor-pointer group hover:opacity-95' : ''}`}
+            role={onTransformationsClick ? 'button' : undefined}
+            title={onTransformationsClick ? 'Click to view real patient transformations & results' : undefined}
           >
-            <div className="flex -space-x-3 sm:-space-x-4 shrink-0">
+            <div className="flex -space-x-3 sm:-space-x-4 shrink-0 group-hover:scale-105 transition-transform">
               <img 
                 alt="Patient 1" 
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
@@ -273,7 +287,16 @@ export default function Hero({ onBookClick, onExploreClick, heroConfig }: HeroPr
               />
             </div>
             <div className="min-w-0">
-              <p className="text-xs sm:text-sm font-sans font-medium text-luxury-text mb-0.5 md:mb-1">Trusted by 10,000+ patients</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs sm:text-sm font-sans font-medium text-luxury-text mb-0.5 md:mb-1 group-hover:text-black transition-colors">
+                  Trusted by 10,000+ patients
+                </p>
+                {onTransformationsClick && (
+                  <span className="text-[10px] font-sans font-semibold text-luxury-gold bg-luxury-gold/10 px-2 py-0.5 rounded-full border border-luxury-gold/30 hidden sm:inline-flex items-center gap-1 group-hover:bg-luxury-gold group-hover:text-black transition-colors">
+                    Transformations →
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <div className="flex text-luxury-gold space-x-0.5">
                   {[...Array(5)].map((_, i) => (

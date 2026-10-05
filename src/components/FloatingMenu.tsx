@@ -5,6 +5,7 @@ import { getFloatingMenuConfig, getChatSessions, saveChatSessions } from '../lib
 import { ChatSession, ChatMessage } from '../types';
 import { Phone, MessageCircle, MapPin, Mail, MessageSquare, X, Send, Headset } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { CLINIC_INFO } from '../data/clinicInfo';
 
 export default function FloatingMenu() {
   const [config, setConfig] = useState(getFloatingMenuConfig());
@@ -84,29 +85,34 @@ export default function FloatingMenu() {
   };
 
 
+  const activePhone = config?.phone || CLINIC_INFO.primaryPhone;
+  const activeEmail = config?.email || CLINIC_INFO.primaryEmail;
+  const activeAddress = config?.address || CLINIC_INFO.locations?.[0]?.address || '4 Harley Street, London';
+  const whatsappUrl = CLINIC_INFO.whatsappUrl || 'https://wa.me/442088572000';
+
   const actions = [
     {
       label: 'Call Now',
       icon: <Phone className="h-5 w-5 text-silver-700 group-hover:text-[#003334]" />,
-      href: `tel:${config.phone.replace(/[^0-9+]/g, '')}`,
+      href: `tel:${activePhone.replace(/[^0-9+]/g, '')}`,
       color: 'hover:bg-silver-100'
     },
     {
       label: 'WhatsApp',
       icon: <MessageCircle className="h-5 w-5 text-silver-700 group-hover:text-black" />,
-      href: 'https://wa.me/919876543210',
+      href: whatsappUrl,
       color: 'hover:bg-black'
     },
     {
       label: 'Location',
       icon: <MapPin className="h-5 w-5 text-silver-700 group-hover:text-[#003334]" />,
-      href: `https://maps.google.com/?q=${encodeURIComponent(config.address)}`,
+      href: CLINIC_INFO.locations?.[0]?.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(activeAddress)}`,
       color: 'hover:bg-silver-100'
     },
     {
       label: 'Email Us',
       icon: <Mail className="h-5 w-5 text-silver-700 group-hover:text-[#003334]" />,
-      href: `mailto:${config.email}`,
+      href: `mailto:${activeEmail}`,
       color: 'hover:bg-silver-100'
     }
   ];

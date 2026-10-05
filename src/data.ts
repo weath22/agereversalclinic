@@ -12,6 +12,8 @@ import {
   Article
 } from './types';
 
+export * from './data/clinicInfo';
+
 export const SPECIALIST_AREAS = [
   {
     id: 'cancer-care',
