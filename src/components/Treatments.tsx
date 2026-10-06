@@ -46,13 +46,15 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
   return (
     <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200">
       {/* Soft Fade Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
-      {/* Luminous Ambient Light Glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-white/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 -left-20 w-[550px] h-[550px] bg-white/25 rounded-full blur-3xl" />
-      </div>
+      {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-85" 
+        style={{
+          background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
+        }}
+      />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-20">

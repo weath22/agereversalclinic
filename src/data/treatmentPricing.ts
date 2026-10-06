@@ -630,7 +630,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     title: 'Mole & Lesion Removal',
     category: 'Minor Surgery & Scars',
     description: 'Safe clinical removal of benign facial and body skin lesions by GMC-registered aesthetic surgeons.',
-    image: '/src/assets/images/minor_surgery_scars_1790825907886.jpg',
+    image: '/src/assets/images/clinic/procedures/minor_surgery_scars.jpg',
     startingPrice: 290,
     currency: '£',
     procedureTime: '30 Mins',

@@ -29,8 +29,10 @@ export {
   getAllClinicalTreatments 
 };
 
-import clinicDevonshire from '../assets/images/clinic_devonshire_1790684708217.jpg';
-import clinicHarleyStreet from '../assets/images/clinic_harley_street_1790684722879.jpg';
+import { CLINIC_LOCATION_IMAGES } from '../data/clinicImages';
+
+const clinicDevonshire = CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].primary;
+const clinicHarleyStreet = CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary;
 
 const DEFAULT_LOCATION_IMAGES: Record<string, string> = {
   'loc-1': clinicDevonshire,

@@ -226,7 +226,7 @@ export default function Header({
       name: 'Minor Surgery & Scars',
       id: 'minor-surgery-scars',
       isMega: true,
-      imageUrl: '/src/assets/images/minor_surgery_scars_1790825907886.jpg',
+      imageUrl: '/src/assets/images/clinic/procedures/minor_surgery_scars.jpg',
       megaColumns: [
         {
           title: 'MINOR SURGERY',

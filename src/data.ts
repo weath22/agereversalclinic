@@ -91,7 +91,7 @@ export const SPECIALIST_AREAS = [
     id: 'minor-surgery-scars',
     title: 'Minor Surgery & Scars',
     description: 'Bespoke clinical minor surgical excision of moles, cysts, and advanced medical scar revision therapies.',
-    image: '/src/assets/images/minor_surgery_scars_1790825907886.jpg'
+    image: '/src/assets/images/clinic/procedures/minor_surgery_scars.jpg'
   }
 ];
 

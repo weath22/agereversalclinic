@@ -31,6 +31,7 @@ import AboutAgeReversal from './components/AboutAgeReversal';
 import { ShopPageView } from './components/shop/ShopPageView';
 import { PricingPageView } from './components/pricing/PricingPageView';
 import { TransformationsPageView } from './components/transformations/TransformationsPageView';
+import ClinicalSEOHead from './components/ClinicalSEOHead';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
@@ -214,12 +215,67 @@ export default function App() {
   }, [activeSection, scrollTrigger, selectedTreatment, selectedArticle, selectedConsultant, isExploreOpen, isShopOpen]);
 
 
+  // Dynamic SEO metadata based on current active view
+  let seoTitle: string | undefined;
+  let seoDescription: string | undefined;
+  let seoImage: string | undefined;
+  let seoPath = '';
+
+  if (selectedConsultant) {
+    seoTitle = `${selectedConsultant} | Medical Consultant`;
+    seoDescription = `Consultant profile, clinical qualifications, and medical specialties for ${selectedConsultant} at Age Reversal Clinics.`;
+    seoPath = `#consultant-${selectedConsultant.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  } else if (isTransformationsOpen) {
+    seoTitle = 'Before & After Transformations | Clinical Case Results';
+    seoDescription = 'Explore verified patient before and after results, clinical protocols, and recommended skincare regimens at Age Reversal Clinics.';
+    seoPath = '#transformations';
+  } else if (isExploreOpen) {
+    seoTitle = 'All Treatments & Clinical Categories';
+    seoDescription = 'Browse all aesthetic injectables, regenerative medicine, dermatology, and body contouring treatments at our London Harley Street clinic.';
+    seoPath = '#explore-treatments';
+  } else if (selectedArticle) {
+    seoTitle = `${selectedArticle.title} | Clinical Journal`;
+    seoDescription = selectedArticle.description || selectedArticle.title;
+    seoImage = selectedArticle.image;
+    seoPath = `#article-${selectedArticle.id}`;
+  } else if (selectedTreatment) {
+    seoTitle = `${selectedTreatment} | Treatment Details & Packages`;
+    seoDescription = `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${selectedTreatment} at Age Reversal Clinics.`;
+    seoPath = `#treatment-${selectedTreatment.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  } else if (isAboutOpen) {
+    seoTitle = 'About Our Clinic | Medical Heritage & Philosophy';
+    seoDescription = 'Learn about Age Reversal Clinics, our GMC-registered doctors, London Harley Street heritage, and clinical philosophy.';
+    seoPath = '#about';
+  } else if (isPricingOpen) {
+    seoTitle = 'Pricing & Treatment Packages | Transparent Clinical Rates';
+    seoDescription = 'Explore transparent single-session and multi-session package rates with savings badges at Age Reversal Clinics.';
+    seoPath = '#pricing';
+  } else if (isShopOpen) {
+    if (selectedShopProduct) {
+      seoTitle = `${selectedShopProduct.name} | Medical Skincare`;
+      seoDescription = selectedShopProduct.description;
+      seoImage = selectedShopProduct.image;
+      seoPath = `#product-${selectedShopProduct.id}`;
+    } else {
+      seoTitle = 'Medical Skincare Shop | Doctor-Formulated Formulations';
+      seoDescription = 'Browse physician-curated medical-grade active skincare, barrier recovery creams, and post-procedure soothing serums.';
+      seoPath = '#shop';
+    }
+  }
+
   if (isAdminOpen) {
     return <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />;
   }
 
   return (
     <div className="bg-silver-100 text-silver-800 antialiased min-h-screen flex flex-col relative selection:bg-rose-gold selection:text-silver-900">
+      {/* Dynamic Schema.org JSON-LD & OpenGraph Meta Injector */}
+      <ClinicalSEOHead
+        customTitle={seoTitle}
+        customDescription={seoDescription}
+        customImage={seoImage}
+        canonicalPath={seoPath}
+      />
       
       {/* 1. Top Informational Banner Ribbon */}
       <TopBar onBookClick={() => handleScrollToBooking()} />
@@ -382,15 +438,18 @@ export default function App() {
             />
 
             {/* Specialist Areas with Sculptural Bust Background */}
-            <div className="relative overflow-hidden bg-[#faf9f8]">
+            <div 
+              className="relative overflow-hidden bg-[#faf9f8]"
+              style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}
+            >
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
                   alt="Sculptural bust with pedestal in monochrome violet"
                   className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
                 />
-                {/* Subtle, reduced whitish fade overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 backdrop-blur-[0.5px] pointer-events-none" />
+                {/* Hardware-native alpha fade overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 pointer-events-none" />
               </div>
 
               <div className="relative z-10">
@@ -404,22 +463,29 @@ export default function App() {
             </div>
 
             {/* 5. Editorial Treatment Teasers Section (Using the luxury background) */}
-            <Treatments 
-              onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
-              onTreatmentClick={(name) => setSelectedTreatment(name)}
-              treatmentsConfig={treatmentsConfig}
-            />
+            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+              <Treatments 
+                onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
+                onTreatmentClick={(name) => setSelectedTreatment(name)}
+                treatmentsConfig={treatmentsConfig}
+              />
+            </div>
 
             {/* 8. Breathtaking Interactive Before/After Gallery */}
-            <div className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]">
+            <div 
+              className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]"
+              style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
+            >
               {/* Soft Fade Overlay (Matches Treatment component) */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
-              {/* Luminous Ambient Light Glow */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-white/30 rounded-full blur-3xl" />
-                <div className="absolute bottom-10 -left-20 w-[550px] h-[550px] bg-white/25 rounded-full blur-3xl" />
-              </div>
+              {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-85" 
+                style={{
+                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
+                }}
+              />
 
               <div className="relative z-10">
                 <BeforeAfterGallery />
@@ -427,16 +493,20 @@ export default function App() {
             </div>
 
             {/* Why Choose Us Section with App's Theme Background */}
-            <div className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40">
+            <div 
+              className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40"
+              style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
+            >
               {/* Soft Fade Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/20 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/25 to-white/50 pointer-events-none" />
 
-              {/* Luxury Ambient Light Blooms */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-gradient-to-b from-[#D8C2A3]/30 via-[#ecdcc8]/20 to-transparent rounded-full blur-3xl" />
-                <div className="absolute top-1/3 -right-28 w-[500px] h-[500px] bg-[#ecdcc8]/25 rounded-full blur-3xl" />
-                <div className="absolute bottom-10 -left-28 w-[500px] h-[500px] bg-[#e4d2bc]/30 rounded-full blur-3xl" />
-              </div>
+              {/* Luxury Ambient Light Blooms (GPU-optimized pre-computed radial gradients) */}
+              <div 
+                className="absolute inset-0 pointer-events-none opacity-90"
+                style={{
+                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 100% 35%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 0% 90%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)'
+                }}
+              />
 
               <div className="relative z-10">
                 <WhyChooseUs />
@@ -447,25 +517,35 @@ export default function App() {
             <AwardsShowcase />       
 
             {/* Our Locations and Preferred Consultation Sections from HTML request */}
-            <LocationsAndConsultation 
-              preselectedService={preferredService} 
-              onTreatmentClick={(name) => setSelectedTreatment(name)}
-            />
+            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '900px' }}>
+              <LocationsAndConsultation 
+                preselectedService={preferredService} 
+                onTreatmentClick={(name) => setSelectedTreatment(name)}
+              />
+            </div>
 
             {/* 10. Limited Time Promotional Banners */}
-            <SpecialOffers onClaimOffer={handleClaimOffer} />
+            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '600px' }}>
+              <SpecialOffers onClaimOffer={handleClaimOffer} />
+            </div>
 
             {/* Latest from The London Clinic Section */}
-            <LatestNews onArticleClick={setSelectedArticle} />
+            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}>
+              <LatestNews onArticleClick={setSelectedArticle} />
+            </div>
           </>
         )}
       </main>
 
       {/* 14.5 Social Media Reels / Video Showcase */}
-      <SocialVideoShowcase />
+      <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
+        <SocialVideoShowcase />
+      </div>
 
       {/* 15. Footnotes and Sitemap */}
-      <Footer />
+      <div style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>
+        <Footer />
+      </div>
 
       {/* 16. Persistent side action menu */}
       <FloatingMenu />

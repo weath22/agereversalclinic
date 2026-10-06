@@ -408,28 +408,28 @@ const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
       title: 'Dermatology Clinic of the Year',
       year: '2025',
       organization: 'Aesthetic Medicine Awards',
-      imageUrl: '/src/assets/images/award_dermatology_clinic_1790683429721.jpg'
+      imageUrl: '/src/assets/images/clinic/awards/award_dermatology.jpg'
     },
     {
       id: 'aw-2',
       title: 'Best Non-Surgical Rejuvenation',
       year: '2025',
       organization: 'Global Cosmetic Congress',
-      imageUrl: '/src/assets/images/award_rejuvenation_1790683444883.jpg'
+      imageUrl: '/src/assets/images/clinic/awards/award_rejuvenation.jpg'
     },
     {
       id: 'aw-3',
       title: 'Patient Safety Excellence Award',
       year: '2024',
       organization: 'British Health Standards',
-      imageUrl: '/src/assets/images/award_patient_safety_1790683459184.jpg'
+      imageUrl: '/src/assets/images/clinic/awards/award_patient_safety.jpg'
     },
     {
       id: 'aw-4',
       title: 'Best Laser Skin Clinic',
       year: '2024',
       organization: 'International Laser Association',
-      imageUrl: '/src/assets/images/award_laser_clinic_1790683474325.jpg'
+      imageUrl: '/src/assets/images/clinic/awards/award_laser.jpg'
     }
   ]
 };
@@ -445,9 +445,9 @@ const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
     phone: loc.phone || CLINIC_DATA.phone,
     mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(loc.address)}`,
     bannerType: "Clinic",
-    imageUrl: idx === 0 
-      ? "/src/assets/images/clinic_harley_street_1790684722879.jpg" 
-      : "/src/assets/images/clinic_devonshire_1790684708217.jpg"
+    imageUrl: loc.image || (idx === 0 
+      ? "/src/assets/images/clinic/locations/harley_street_flagship.jpg" 
+      : "/src/assets/images/clinic/locations/devonshire_place.jpg")
   }))
 };
 
