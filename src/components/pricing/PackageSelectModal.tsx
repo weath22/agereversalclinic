@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TreatmentPricingItem, PricingPackage } from '../../data/treatmentPricing';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, ChevronDown, ArrowLeft } from 'lucide-react';
@@ -18,17 +19,32 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
   backLabel,
   onBookPackage,
 }) => {
-  if (!treatment) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (!treatment) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [treatment]);
 
   // Set default selected package (popular one if available, otherwise first)
-  const defaultPopular = treatment.packages.find((p) => p.isPopular) || treatment.packages[0];
+  const defaultPopular = treatment?.packages.find((p) => p.isPopular) || treatment?.packages[0];
 
   const [selectedPkgId, setSelectedPkgId] = useState<string>(
-    defaultPopular?.id || treatment.packages[0]?.id || ''
+    defaultPopular?.id || treatment?.packages[0]?.id || ''
   );
 
   // Popular package is open by default for benefits
   const [openBenefitsIds, setOpenBenefitsIds] = useState<string[]>(() => {
+    if (!treatment) return [];
     const popularPkgs = treatment.packages.filter((p) => p.isPopular).map((p) => p.id);
     if (popularPkgs.length > 0) return popularPkgs;
     return treatment.packages[0] ? [treatment.packages[0].id] : [];
@@ -41,10 +57,13 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
     );
   };
 
+  if (!treatment) return null;
+  if (!mounted || typeof document === 'undefined') return null;
+
   const currentSelectedPackage =
     treatment.packages.find((p) => p.id === selectedPkgId) || treatment.packages[0];
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs">
         {/* Backdrop dismiss */}
@@ -53,7 +72,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0"
+          className="fixed inset-0 cursor-pointer"
         />
 
         {/* Modal/Drawer Dialog Window with Exact Requested Markup */}
@@ -62,7 +81,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 60, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="no-scrollbar fixed bottom-0 right-0 max-h-[88vh] rounded-t-2xl bg-white md:relative md:my-8 md:max-h-[85vh] md:rounded-2xl overflow-y-auto h-auto w-full md:w-full md:max-w-[480px] translate-y-0 md:translate-y-0 z-10 shadow-2xl"
+          className="no-scrollbar relative w-full md:max-w-[480px] max-h-[88vh] md:max-h-[85vh] rounded-t-2xl md:rounded-2xl bg-white overflow-y-auto h-auto z-10 shadow-2xl"
         >
           <div
             className="relative w-full text-left pb-1 lg:pb-3"
@@ -293,6 +312,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

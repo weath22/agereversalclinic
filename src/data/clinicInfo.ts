@@ -81,6 +81,9 @@ export interface ClinicData {
     youtube: string;
     linkedin?: string;
   };
+
+  // 8. Reviews & Rating Links
+  googleReviewUrl?: string;
 }
 
 export const CLINIC_DATA: ClinicData = {
@@ -212,7 +215,10 @@ export const CLINIC_DATA: ClinicData = {
     twitter: 'https://twitter.com',
     youtube: 'https://youtube.com',
     linkedin: 'https://linkedin.com'
-  }
+  },
+
+  // 8. Google Review URL (change anytime)
+  googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJ-3P3F6sEdkgRk612k05J2vM'
 };
 
 /**
@@ -226,6 +232,7 @@ export const CLINIC_INFO = {
   phoneHref: `tel:${CLINIC_DATA.phone.replace(/[^0-9+]/g, '')}`,
   primaryEmail: CLINIC_DATA.email,
   whatsappUrl: CLINIC_DATA.whatsapp,
+  googleReviewUrl: CLINIC_DATA.googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJ-3P3F6sEdkgRk612k05J2vM',
   welcomeMessage: `Welcome to ${CLINIC_DATA.name}`,
   openingHoursSummary: {
     weekdays: CLINIC_DATA.openingHours,

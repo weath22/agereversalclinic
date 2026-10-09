@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShopProduct } from '../../types/shop';
+import { Share2, Check } from 'lucide-react';
 
 interface ProductDetailViewProps {
   product: ShopProduct;
@@ -15,6 +16,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   backLabel,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const [copied, setCopied] = useState(false);
   const isVoucher = product.type === 'Voucher';
 
   const priceParts = product.price.toFixed(2).split('.');
@@ -33,6 +35,30 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
   const handleAdd = () => {
     onAddToCart(product, quantity);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `${product.name} | Medical Skincare`,
+      text: `${product.name} - ${product.description}`,
+      url: window.location.origin + window.location.pathname + `#product-${product.id}`,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User cancelled or share failed
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      } catch (err) {
+        // clipboard error
+      }
+    }
   };
 
   return (
@@ -218,8 +244,27 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       </div>
                     </div>
                   </button>
-                  <div className="text-center">
-                    <small className="text-[#8a7250] font-medium">Free shipping on orders over £50</small>
+                  {/* Share Product Button */}
+                  <div className="pt-1 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={handleShare}
+                      className="flex items-center gap-2 text-xs font-semibold text-[#8a7250] hover:text-black transition-colors px-3 py-1.5 rounded-full hover:bg-white/60 cursor-pointer border border-[#D8C2A3]/50"
+                      aria-label="Share product"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">Link copied to clipboard!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 className="w-3.5 h-3.5" />
+                          <span>Share this formulation</span>
+                        </>
+                      )}
+                    </button>
+                    <small className="text-[#8a7250] font-medium">Free UK delivery over £50</small>
                   </div>
                 </div>
               </div>

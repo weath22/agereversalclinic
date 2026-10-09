@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { saveAppointment } from '../lib/adminStore';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, Phone, Calendar, Clock, Sparkles, CheckCircle, HelpCircle, DollarSign, Plus, Trash2, X } from 'lucide-react';
@@ -29,6 +30,11 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
   const [selectedServices, setSelectedServices] = useState<string[]>(['exosome']);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const addService = (id: string) => {
     if (!selectedServices.includes(id)) {
@@ -507,119 +513,122 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
                   )}
 
                   {/* Custom Bottom Mobile Drawer for Selected Services */}
-                  <AnimatePresence>
-                    {isDrawerOpen && (
-                      <div className="fixed inset-0 z-50">
-                        {/* Backdrop Overlay */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          onClick={() => setIsDrawerOpen(false)}
-                          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-                        />
-                        {/* Slide-Up Drawer */}
-                        <motion.div
-                          initial={{ y: "100%" }}
-                          animate={{ y: 0 }}
-                          exit={{ y: "100%" }}
-                          transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                          className="fixed bottom-0 left-0 right-0 md:max-w-xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-50 max-h-[85vh] overflow-hidden"
-                        >
-                          {/* Drag Handle */}
-                          <div className="w-12 h-1.5 bg-silver-200 rounded-full mx-auto my-3 shrink-0 cursor-pointer hover:bg-silver-300 transition-colors" onClick={() => setIsDrawerOpen(false)} />
-                          
-                          {/* Header */}
-                          <div className="px-6 pb-4 border-b border-silver-100 flex items-center justify-between shrink-0">
-                            <div>
-                              <h4 className="font-serif font-bold text-base text-silver-900">Your Appointment Selection</h4>
-                              <p className="text-[11px] text-silver-500">Review, add, or prune selected clinical services</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setIsDrawerOpen(false)}
-                              className="p-1.5 bg-silver-50 hover:bg-silver-100 text-silver-500 rounded-full transition-all"
-                            >
-                              <X className="h-4.5 w-4.5" />
-                            </button>
-                          </div>
-
-                          {/* Content */}
-                          <div className="p-6 overflow-y-auto space-y-3.5 flex-1">
-                            {getSelectedServicesData().map((item) => (
-                              <div 
-                                key={item.id}
-                                className="flex items-center justify-between gap-4 bg-silver-50 border border-silver-100 p-3.5 rounded-xl shadow-sm"
-                              >
-                                <div className="space-y-1 min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[8px] font-bold text-silver-500 uppercase tracking-wide bg-silver-200/50 px-1.5 py-0.5 rounded">
-                                      {item.areaName}
-                                    </span>
-                                    <span className="text-[8px] font-bold text-amber-800 uppercase tracking-wide truncate bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                      {item.catName}
-                                    </span>
-                                  </div>
-                                  <h5 className="font-sans font-bold text-xs text-silver-900">
-                                    {item.name}
-                                  </h5>
-                                  <p className="text-[11px] text-silver-500 leading-relaxed line-clamp-2">
-                                    {item.desc}
-                                  </p>
-                                  <div className="flex items-center gap-2.5 text-[10px] text-silver-400 font-semibold pt-0.5">
-                                    <span className="flex items-center gap-0.5">
-                                      <Clock className="h-3 w-3 text-silver-400 shrink-0" /> {item.time}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="flex items-center gap-0.5 font-bold text-silver-800">
-                                      <DollarSign className="h-2.5 w-2.5 text-silver-400 shrink-0" /> {item.price}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Remove button */}
-                                {selectedServices.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeService(item.id)}
-                                    className="p-2 bg-white hover:bg-red-50 text-silver-400 hover:text-red-600 rounded-xl transition-all border border-silver-200/50 hover:border-red-100 shrink-0 shadow-sm"
-                                    title="Remove treatment"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Footer */}
-                          <div className="p-6 bg-silver-50 border-t border-silver-100 space-y-4 shrink-0 rounded-t-2xl shadow-inner">
-                            <div className="flex items-center justify-between">
-                              <div className="space-y-0.5">
-                                <span className="text-[10px] uppercase tracking-wider text-silver-500 font-extrabold block">
-                                  Estimated Investment Total
-                                </span>
-                                <span className="text-[10px] text-silver-400 block font-medium">
-                                  {selectedServices.length} treatment{selectedServices.length > 1 ? 's' : ''} in request
-                                </span>
-                              </div>
-                              <span className="font-serif font-bold text-lg text-silver-900">
-                                ${getSelectedServicesData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
-                              </span>
-                            </div>
+                  {mounted && typeof document !== 'undefined' && createPortal(
+                    <AnimatePresence>
+                      {isDrawerOpen && (
+                        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+                          {/* Backdrop Overlay */}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsDrawerOpen(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+                          />
+                          {/* Slide-Up Drawer */}
+                          <motion.div
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "100%" }}
+                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                            className="relative w-full md:max-w-xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-50 max-h-[85vh] overflow-hidden"
+                          >
+                            {/* Drag Handle */}
+                            <div className="w-12 h-1.5 bg-silver-200 rounded-full mx-auto my-3 shrink-0 cursor-pointer hover:bg-silver-300 transition-colors" onClick={() => setIsDrawerOpen(false)} />
                             
-                            <button
-                              type="button"
-                              onClick={() => setIsDrawerOpen(false)}
-                              className="w-full bg-silver-900 hover:bg-black text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                            >
-                              Confirm Selection & Close Drawer
-                            </button>
-                          </div>
-                        </motion.div>
-                      </div>
-                    )}
-                  </AnimatePresence>
+                            {/* Header */}
+                            <div className="px-6 pb-4 border-b border-silver-100 flex items-center justify-between shrink-0">
+                              <div>
+                                <h4 className="font-serif font-bold text-base text-silver-900">Your Appointment Selection</h4>
+                                <p className="text-[11px] text-silver-500">Review, add, or prune selected clinical services</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setIsDrawerOpen(false)}
+                                className="p-1.5 bg-silver-50 hover:bg-silver-100 text-silver-500 rounded-full transition-all"
+                              >
+                                <X className="h-4.5 w-4.5" />
+                              </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 overflow-y-auto space-y-3.5 flex-1">
+                              {getSelectedServicesData().map((item) => (
+                                <div 
+                                  key={item.id}
+                                  className="flex items-center justify-between gap-4 bg-silver-50 border border-silver-100 p-3.5 rounded-xl shadow-sm"
+                                >
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-[8px] font-bold text-silver-500 uppercase tracking-wide bg-silver-200/50 px-1.5 py-0.5 rounded">
+                                        {item.areaName}
+                                      </span>
+                                      <span className="text-[8px] font-bold text-amber-800 uppercase tracking-wide truncate bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                        {item.catName}
+                                      </span>
+                                    </div>
+                                    <h5 className="font-sans font-bold text-xs text-silver-900">
+                                      {item.name}
+                                    </h5>
+                                    <p className="text-[11px] text-silver-500 leading-relaxed line-clamp-2">
+                                      {item.desc}
+                                    </p>
+                                    <div className="flex items-center gap-2.5 text-[10px] text-silver-400 font-semibold pt-0.5">
+                                      <span className="flex items-center gap-0.5">
+                                        <Clock className="h-3 w-3 text-silver-400 shrink-0" /> {item.time}
+                                      </span>
+                                      <span>•</span>
+                                      <span className="flex items-center gap-0.5 font-bold text-silver-800">
+                                        <DollarSign className="h-2.5 w-2.5 text-silver-400 shrink-0" /> {item.price}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Remove button */}
+                                  {selectedServices.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeService(item.id)}
+                                      className="p-2 bg-white hover:bg-red-50 text-silver-400 hover:text-red-600 rounded-xl transition-all border border-silver-200/50 hover:border-red-100 shrink-0 shadow-sm"
+                                      title="Remove treatment"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-6 bg-silver-50 border-t border-silver-100 space-y-4 shrink-0 rounded-t-2xl shadow-inner">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                  <span className="text-[10px] uppercase tracking-wider text-silver-500 font-extrabold block">
+                                    Estimated Investment Total
+                                  </span>
+                                  <span className="text-[10px] text-silver-400 block font-medium">
+                                    {selectedServices.length} treatment{selectedServices.length > 1 ? 's' : ''} in request
+                                  </span>
+                                </div>
+                                <span className="font-serif font-bold text-lg text-silver-900">
+                                  ${getSelectedServicesData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                                </span>
+                              </div>
+                              
+                              <button
+                                type="button"
+                                onClick={() => setIsDrawerOpen(false)}
+                                className="w-full bg-silver-900 hover:bg-black text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                              >
+                                Confirm Selection & Close Drawer
+                              </button>
+                            </div>
+                          </motion.div>
+                        </div>
+                      )}
+                    </AnimatePresence>,
+                    document.body
+                  )}
                 </div>
 
                 {/* Date */}
@@ -682,75 +691,78 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
       </div>
 
       {/* Booking Success Modal */}
-      <AnimatePresence>
-        {showSuccessModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={resetForm}
-            />
+      {mounted && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showSuccessModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={resetForm}
+              />
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl max-w-md w-full text-center relative z-10 border border-silver-200"
-            >
-              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <CheckCircle className="h-8 w-8 sm:h-10 sm:h-10 text-emerald-500 stroke-[1.5]" />
-              </div>
-
-              <h4 className="text-xl sm:text-2xl font-serif font-bold text-silver-900 mb-2">
-                Booking Received
-              </h4>
-              <p className="text-silver-500 text-xs sm:text-sm mb-4 leading-relaxed px-1">
-                Thank you, <strong className="text-silver-900">{formData.name}</strong>. Your provisional slot on <strong className="text-silver-900">{formData.date} ({formData.time})</strong> has been reserved. Our clinic advisors will call you shortly on <strong className="text-silver-900">{formData.phone}</strong> to finalize.
-              </p>
-
-              {/* Selected Treatments list inside success modal */}
-              <div className="my-4 sm:my-5 bg-silver-50 border border-silver-200 rounded-xl sm:rounded-2xl p-4 text-left space-y-3 shadow-sm">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-silver-400 block border-b border-silver-200 pb-1.5">
-                  Treatment Request Summary ({selectedServices.length})
-                </span>
-                <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-                  {getSelectedServicesData().map((item) => (
-                    <div key={item.id} className="flex justify-between items-center gap-2.5 text-xs">
-                      <span className="font-semibold text-silver-800 truncate">{item.name}</span>
-                      <span className="font-serif font-bold text-amber-800 shrink-0">{item.price}</span>
-                    </div>
-                  ))}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl max-w-md w-full text-center relative z-10 border border-silver-200"
+              >
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <CheckCircle className="h-8 w-8 sm:h-10 sm:h-10 text-emerald-500 stroke-[1.5]" />
                 </div>
-                <div className="border-t border-silver-200 pt-1.5 flex justify-between items-center text-xs font-bold text-silver-900">
-                  <span>Total Investment:</span>
-                  <span className="font-serif text-[#c5a880]">
-                    ${getSelectedServicesData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+
+                <h4 className="text-xl sm:text-2xl font-serif font-bold text-silver-900 mb-2">
+                  Booking Received
+                </h4>
+                <p className="text-silver-500 text-xs sm:text-sm mb-4 leading-relaxed px-1">
+                  Thank you, <strong className="text-silver-900">{formData.name}</strong>. Your provisional slot on <strong className="text-silver-900">{formData.date} ({formData.time})</strong> has been reserved. Our clinic advisors will call you shortly on <strong className="text-silver-900">{formData.phone}</strong> to finalize.
+                </p>
+
+                {/* Selected Treatments list inside success modal */}
+                <div className="my-4 sm:my-5 bg-silver-50 border border-silver-200 rounded-xl sm:rounded-2xl p-4 text-left space-y-3 shadow-sm">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-silver-400 block border-b border-silver-200 pb-1.5">
+                    Treatment Request Summary ({selectedServices.length})
+                  </span>
+                  <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+                    {getSelectedServicesData().map((item) => (
+                      <div key={item.id} className="flex justify-between items-center gap-2.5 text-xs">
+                        <span className="font-semibold text-silver-800 truncate">{item.name}</span>
+                        <span className="font-serif font-bold text-amber-800 shrink-0">{item.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-silver-200 pt-1.5 flex justify-between items-center text-xs font-bold text-silver-900">
+                    <span>Total Investment:</span>
+                    <span className="font-serif text-[#c5a880]">
+                      ${getSelectedServicesData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Code Card */}
+                <div className="bg-silver-100 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl mb-5 sm:mb-6 border border-silver-200 inline-block w-full">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-silver-400 block mb-1">
+                    Clinical Confirmation Reference
+                  </span>
+                  <span className="text-lg sm:text-xl font-mono font-bold text-silver-800">
+                    {bookingRef}
                   </span>
                 </div>
-              </div>
 
-              {/* Code Card */}
-              <div className="bg-silver-100 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl mb-5 sm:mb-6 border border-silver-200 inline-block w-full">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-silver-400 block mb-1">
-                  Clinical Confirmation Reference
-                </span>
-                <span className="text-lg sm:text-xl font-mono font-bold text-silver-800">
-                  {bookingRef}
-                </span>
-              </div>
-
-              <button
-                onClick={resetForm}
-                className="w-full bg-silver-900 hover:bg-black text-white font-bold py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm transition-all shadow cursor-pointer"
-              >
-                Dismiss &amp; Return
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                <button
+                  onClick={resetForm}
+                  className="w-full bg-silver-900 hover:bg-black text-white font-bold py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm transition-all shadow cursor-pointer"
+                >
+                  Dismiss &amp; Return
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
     </section>
   );

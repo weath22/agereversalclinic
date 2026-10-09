@@ -1,6 +1,9 @@
 import { CLINIC_DATA } from '../data/clinicInfo';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import { TREATMENT_PRICING_DATA } from '../data/treatmentPricing';
+import { generateAllProductsSchema, generateSingleProductSchema, generateProductCatalogItemListSchema } from './shopSEO';
+
+export { generateAllProductsSchema, generateSingleProductSchema, generateProductCatalogItemListSchema };
 
 /**
  * 1. Generates Google-compliant Schema.org MedicalClinic & MedicalBusiness structured data
@@ -187,13 +190,15 @@ export const generateAllClinicalSchemas = () => {
   const clinicSchema = generateMedicalClinicSchema();
   const proceduresSchema = generateMedicalProceduresSchema();
   const faqSchema = generateClinicalFAQSchema();
+  const productSchemas = generateAllProductsSchema();
 
   return {
     '@context': 'https://schema.org',
     '@graph': [
       clinicSchema,
       faqSchema,
-      ...proceduresSchema
+      ...proceduresSchema,
+      ...productSchemas
     ]
   };
 };

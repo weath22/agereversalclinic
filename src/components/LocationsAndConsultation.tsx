@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { saveConsultation, saveInquiry, getOurLocationsConfig } from '../lib/adminStore';
 import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -67,6 +68,7 @@ const HEAR_ABOUT_US_OPTIONS = [
 ];
 
 export default function LocationsAndConsultation({ preselectedService, onTreatmentClick }: LocationsAndConsultationProps = {}) {
+  const [mounted, setMounted] = useState<boolean>(false);
   const [selectedAreaId, setSelectedAreaId] = useState<string>('face');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
@@ -81,6 +83,21 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down');
   const menuContainerRef = useRef<HTMLDivElement>(null);
   const consultMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when drawer or modal is open
+  useEffect(() => {
+    if (isDrawerOpen || isTreatmentCardOpen || activePricingModalTreatment) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isDrawerOpen, isTreatmentCardOpen, activePricingModalTreatment]);
 
   const toggleMenu = (menu: 'area' | 'category' | 'treatment', e: React.MouseEvent<HTMLButtonElement>) => {
     if (openMenu === menu) {
@@ -739,29 +756,30 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   )}
 
                   {/* Custom Bottom Drawer for Category Selection & Selected Treatments */}
-                  <AnimatePresence>
-                    {isDrawerOpen && (
-                      <div className="fixed inset-0 z-[9999]">
-                        {/* Backdrop Overlay */}
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.18 }}
-                          onClick={() => {
-                            setOpenMenu(null);
-                            setIsDrawerOpen(false);
-                          }}
-                          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-                        />
-                        {/* Slide-Up Drawer: Opens from a bit below (y: 28) for high performance on low-end devices */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 28 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
-                          transition={{ duration: 0.22, ease: "easeOut" }}
-                          className="fixed bottom-0 left-0 right-0 md:max-w-2xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[88vh] overflow-hidden"
-                        >
+                  {mounted && typeof document !== 'undefined' && createPortal(
+                    <AnimatePresence>
+                      {isDrawerOpen && (
+                        <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center">
+                          {/* Backdrop Overlay */}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.18 }}
+                            onClick={() => {
+                              setOpenMenu(null);
+                              setIsDrawerOpen(false);
+                            }}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+                          />
+                          {/* Slide-Up Drawer: On mobile docked at bottom of viewport, on desktop centered */}
+                          <motion.div
+                            initial={{ opacity: 0, y: 28 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.22, ease: "easeOut" }}
+                            className="relative w-full md:max-w-2xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[88vh] overflow-hidden"
+                          >
                           
                           
                           {/* Header */}
@@ -1071,36 +1089,39 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         </motion.div>
                       </div>
                     )}
-                  </AnimatePresence>
+                  </AnimatePresence>,
+                  document.body
+                )}
 
                   {/* Clean Mobile Drawer Sheet for Selected Treatment Card Details (Without a header) */}
-                  <AnimatePresence>
-                    {isTreatmentCardOpen && booking.procedure && (() => {
-                      const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-                      const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
-                      const currentTreatment = catObj?.items.find(i => i.id === booking.procedure);
-                      if (!currentTreatment || !catObj) return null;
+                  {mounted && typeof document !== 'undefined' && createPortal(
+                    <AnimatePresence>
+                      {isTreatmentCardOpen && booking.procedure && (() => {
+                        const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
+                        const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
+                        const currentTreatment = catObj?.items.find(i => i.id === booking.procedure);
+                        if (!currentTreatment || !catObj) return null;
 
-                      return (
-                        <div className="fixed inset-0 z-[10000]">
-                          {/* Backdrop Overlay */}
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.18 }}
-                            onClick={() => setIsTreatmentCardOpen(false)}
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-                          />
+                        return (
+                          <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center">
+                            {/* Backdrop Overlay */}
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.18 }}
+                              onClick={() => setIsTreatmentCardOpen(false)}
+                              className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+                            />
 
-                          {/* Clean Mobile Drawer Sheet without Header - Details render directly on modal */}
-                          <motion.div
-                            initial={{ opacity: 0, y: 28 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            transition={{ duration: 0.22, ease: "easeOut" }}
-                            className="fixed bottom-0 left-0 right-0 md:max-w-xl md:mx-auto bg-white rounded-t-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[85vh] overflow-y-auto p-5 sm:p-6 space-y-4"
-                          >
+                            {/* Clean Mobile Drawer Sheet without Header - Details render directly on modal */}
+                            <motion.div
+                              initial={{ opacity: 0, y: 28 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 20 }}
+                              transition={{ duration: 0.22, ease: "easeOut" }}
+                              className="relative w-full md:max-w-xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[85vh] overflow-y-auto p-5 sm:p-6 space-y-4"
+                            >
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
                               {/* Title & Category */}
                               <div className="space-y-1.5">
@@ -1210,7 +1231,9 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         </div>
                       );
                     })()}
-                  </AnimatePresence>
+                  </AnimatePresence>,
+                  document.body
+                )}
               </div>
 
                 {/* Description what to improve */}

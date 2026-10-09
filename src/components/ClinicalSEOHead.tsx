@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { CLINIC_DATA } from '../data/clinicInfo';
 import { generateAllClinicalSchemas } from '../lib/clinicalSEO';
+import { generateSingleProductSchema } from '../lib/shopSEO';
+import { ShopProduct } from '../types/shop';
 
 interface ClinicalSEOHeadProps {
   customTitle?: string;
   customDescription?: string;
   customImage?: string;
   canonicalPath?: string;
+  productData?: ShopProduct | null;
 }
 
 /**
@@ -45,18 +48,27 @@ export default function ClinicalSEOHead({
   customTitle,
   customDescription,
   customImage,
-  canonicalPath = ''
+  canonicalPath = '',
+  productData
 }: ClinicalSEOHeadProps) {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const pageTitle = customTitle 
+    let pageTitle = customTitle 
       ? `${customTitle} | ${CLINIC_DATA.name}`
       : `${CLINIC_DATA.name} | ${CLINIC_DATA.tagline}`;
 
-    const pageDescription = customDescription || CLINIC_DATA.metaDescription;
-    const pageImage = customImage || CLINIC_DATA.ogImage;
-    const pageUrl = `${CLINIC_DATA.canonicalUrl}${canonicalPath}`;
+    let pageDescription = customDescription || CLINIC_DATA.metaDescription;
+    let pageImage = customImage || CLINIC_DATA.ogImage;
+    let pageUrl = `${CLINIC_DATA.canonicalUrl}${canonicalPath}`;
+    const ogType = productData ? 'product' : 'website';
+
+    if (productData) {
+      pageTitle = `${productData.name} | ${productData.brand || productData.range} | ${CLINIC_DATA.name}`;
+      pageDescription = `${productData.description} Active Ingredients: ${productData.keyIngredients?.slice(0, 3).join(', ')}. Volume: ${productData.volume || 'Standard'}. Price: £${productData.price.toFixed(2)}`;
+      pageImage = productData.image;
+      pageUrl = `${CLINIC_DATA.canonicalUrl}/#product-${productData.id}`;
+    }
 
     // 1. Update Title & Standard Meta
     document.title = pageTitle;
@@ -69,8 +81,8 @@ export default function ClinicalSEOHead({
     // 2. Canonical URL
     setLinkTag('canonical', pageUrl);
 
-    // 3. OpenGraph / Social Share Card Meta Tags
-    setMetaTag('property', 'og:type', 'website');
+    // 3. OpenGraph / Social Share Card Meta Tags (WhatsApp, iMessage, Facebook, Slack)
+    setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:site_name', CLINIC_DATA.name);
     setMetaTag('property', 'og:title', pageTitle);
     setMetaTag('property', 'og:description', pageDescription);
@@ -78,13 +90,21 @@ export default function ClinicalSEOHead({
     setMetaTag('property', 'og:url', pageUrl);
     setMetaTag('property', 'og:locale', 'en_GB');
 
-    // 4. Twitter / X Card Meta Tags
+    // 4. Product-Specific OpenGraph Commerce Tags
+    if (productData) {
+      setMetaTag('property', 'product:price:amount', productData.price.toFixed(2));
+      setMetaTag('property', 'product:price:currency', productData.currency || 'GBP');
+      setMetaTag('property', 'product:brand', productData.brand || productData.range);
+      setMetaTag('property', 'product:availability', productData.inStock !== false ? 'in stock' : 'out of stock');
+    }
+
+    // 5. Twitter / X Card Meta Tags
     setMetaTag('name', 'twitter:card', 'summary_large_image');
     setMetaTag('name', 'twitter:title', pageTitle);
     setMetaTag('name', 'twitter:description', pageDescription);
     setMetaTag('name', 'twitter:image', pageImage);
 
-    // 5. Inject / Update Schema.org JSON-LD structured data script
+    // 6. Inject / Update Schema.org JSON-LD structured data script
     const schemaScriptId = 'clinical-schema-org-jsonld';
     let scriptElement = document.getElementById(schemaScriptId) as HTMLScriptElement | null;
     
@@ -95,13 +115,20 @@ export default function ClinicalSEOHead({
       document.head.appendChild(scriptElement);
     }
 
-    const allSchemas = generateAllClinicalSchemas();
-    scriptElement.textContent = JSON.stringify(allSchemas, null, 2);
+    if (productData) {
+      // Focused product Schema along with parent Clinic provider
+      const singleProductSchema = generateSingleProductSchema(productData);
+      scriptElement.textContent = JSON.stringify(singleProductSchema, null, 2);
+    } else {
+      // Master complete Schema graph (Clinic + FAQs + Procedures + Catalog)
+      const allSchemas = generateAllClinicalSchemas();
+      scriptElement.textContent = JSON.stringify(allSchemas, null, 2);
+    }
 
     return () => {
       // Cleanup is optional as SPA stays in-app
     };
-  }, [customTitle, customDescription, customImage, canonicalPath]);
+  }, [customTitle, customDescription, customImage, canonicalPath, productData]);
 
   return null;
 }

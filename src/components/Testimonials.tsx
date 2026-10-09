@@ -58,54 +58,54 @@ export default function Testimonials({ treatmentId, category }: TestimonialsProp
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ delay: idx * 0.1, duration: 0.5 }}
-              className="bg-silver-100 p-8 md:p-10 rounded-2xl relative shadow-sm border border-silver-200 hover:shadow-md transition-shadow flex flex-col justify-between"
+              className="bg-silver-100 p-4.5 sm:p-7 md:p-10 rounded-2xl relative shadow-sm border border-silver-200 hover:shadow-md transition-shadow flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-4">
+                <div className="flex items-start sm:items-center justify-between gap-2.5 sm:gap-3 mb-3.5 sm:mb-6">
+                  <div className="flex items-center space-x-2.5 sm:space-x-3.5 md:space-x-4 min-w-0 flex-1">
                     <img
                       alt={testimonial.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
+                      className="w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
                       src={testimonial.image}
                     />
-                    <div>
-                      <h3 className="text-lg font-bold text-silver-900">{testimonial.name}</h3>
-                      <p className="text-xs text-silver-500 font-semibold uppercase tracking-wider mt-0.5">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm sm:text-base md:text-lg font-bold text-silver-900 truncate leading-tight">{testimonial.name}</h3>
+                      <p className="text-[10px] sm:text-[11px] md:text-xs text-silver-500 font-semibold uppercase tracking-wider mt-0.5 truncate">
                         {testimonial.role}
                       </p>
                       
                       {/* Rating Stars */}
-                      <div className="flex text-rose-gold mt-1.5">
+                      <div className="flex items-center text-rose-gold mt-1 sm:mt-1.5 gap-0.5">
                         {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-current text-rose-gold" />
+                          <Star key={i} className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 fill-current text-rose-gold shrink-0" />
                         ))}
-                        <span className="ml-2 text-silver-800 font-bold text-xs">{testimonial.rating.toFixed(1)}</span>
+                        <span className="ml-1 sm:ml-1.5 text-silver-800 font-bold text-[10px] sm:text-xs">{testimonial.rating.toFixed(1)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Social Media Icon */}
-                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
+                  <div className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0 border border-silver-200/50">
                     {idx % 3 === 0 ? (
-                      <Instagram className="w-5 h-5 text-[#E1306C]" />
+                      <Instagram className="w-4 h-4 sm:w-5 sm:h-5 text-[#E1306C]" />
                     ) : idx % 3 === 1 ? (
-                      <Facebook className="w-5 h-5 text-[#1877F2]" />
+                      <Facebook className="w-4 h-4 sm:w-5 sm:h-5 text-[#1877F2]" />
                     ) : (
-                      // TikTok Icon
-                      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#000000">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v7.2c0 1.63-.37 3.25-1.11 4.7-1.18 2.27-3.23 3.96-5.69 4.63-2.47.66-5.16.49-7.5-.59-2.34-1.07-4.32-2.92-5.46-5.23-1.15-2.31-1.39-4.99-.7-7.44.69-2.45 2.15-4.63 4.2-6.13 2.05-1.51 4.54-2.28 7.08-2.2v4.06c-1.57-.1-3.13.25-4.49 1.02-1.35.77-2.43 1.95-3.08 3.39-.64 1.44-.79 3.06-.41 4.57.38 1.51 1.25 2.86 2.47 3.84 1.23.98 2.76 1.48 4.31 1.4 1.56-.08 3.04-.73 4.17-1.84 1.13-1.11 1.83-2.61 1.97-4.18.15-1.57-.24-3.15-1.08-4.47V.02z"/>
+                      // TikTok Icon - centered & proportionally fitted
+                      <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 text-black shrink-0" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.5 6.3 6.3 0 0 0 1.87-4.5V8.5a8.28 8.28 0 0 0 4.84 1.55v-3.36h-.94z"/>
                       </svg>
                     )}
                   </div>
                 </div>
 
-                <p className="text-silver-600 leading-relaxed italic text-sm md:text-base">
+                <p className="text-silver-600 leading-relaxed italic text-xs sm:text-sm md:text-base">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>
               </div>
 
               {/* Verified patient marker */}
-              <div className="mt-6 pt-4 border-t border-silver-200/50 flex items-center justify-between text-xs text-silver-400 font-semibold">
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-silver-200/50 flex items-center justify-between text-[10px] sm:text-[11px] text-silver-400 font-semibold tracking-wider">
                 <span>VERIFIED RECIPIENT</span>
                 <span>HARLEY STREET CLINIC</span>
               </div>

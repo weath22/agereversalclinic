@@ -14,6 +14,7 @@ interface HeaderProps {
   onShopClick?: (rangeFilter?: string) => void;
   onPricingClick?: (categoryFilter?: string) => void;
   onTransformationsClick?: () => void;
+  onReviewsClick?: () => void;
 }
 
 interface MegaColumn {
@@ -41,6 +42,7 @@ export default function Header({
   onShopClick,
   onPricingClick,
   onTransformationsClick,
+  onReviewsClick,
 }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
@@ -306,6 +308,10 @@ export default function Header({
     setIsMobileMenuOpen(false);
     if (id === 'gallery' && onTransformationsClick) {
       onTransformationsClick();
+      return;
+    }
+    if ((id === 'reviews' || id === 'testimonials') && onReviewsClick) {
+      onReviewsClick();
       return;
     }
     setActiveSection(id);

@@ -8,10 +8,11 @@ interface HeroProps {
   onBookClick: () => void;
   onExploreClick: () => void;
   onTransformationsClick?: () => void;
+  onReviewsClick?: () => void;
   heroConfig?: HeroConfig;
 }
 
-export default function Hero({ onBookClick, onExploreClick, onTransformationsClick, heroConfig }: HeroProps) {
+export default function Hero({ onBookClick, onExploreClick, onTransformationsClick, onReviewsClick, heroConfig }: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -264,10 +265,10 @@ export default function Hero({ onBookClick, onExploreClick, onTransformationsCli
 
           <motion.div 
             variants={itemVariants}
-            onClick={onTransformationsClick}
-            className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-luxury-border/80 pt-4 sm:pt-6 md:pt-10 ${onTransformationsClick ? 'cursor-pointer group hover:opacity-95' : ''}`}
-            role={onTransformationsClick ? 'button' : undefined}
-            title={onTransformationsClick ? 'Click to view real patient transformations & results' : undefined}
+            onClick={onReviewsClick || onTransformationsClick}
+            className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 border-t border-luxury-border/80 pt-4 sm:pt-6 md:pt-10 ${onReviewsClick || onTransformationsClick ? 'cursor-pointer group hover:opacity-95' : ''}`}
+            role={onReviewsClick || onTransformationsClick ? 'button' : undefined}
+            title={onReviewsClick ? 'Click to view verified patient reviews & stories' : onTransformationsClick ? 'Click to view real patient transformations & results' : undefined}
           >
             <div className="flex -space-x-3 sm:-space-x-4 shrink-0 group-hover:scale-105 transition-transform">
               <img 

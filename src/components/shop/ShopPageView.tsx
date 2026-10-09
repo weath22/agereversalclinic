@@ -6,6 +6,7 @@ import { ShopSidebarFilters } from './ShopSidebarFilters';
 import { ProductDetailView } from './ProductDetailView';
 import { ShopCartDrawer } from './ShopCartDrawer';
 import { ShopMobileFilterDrawer } from './ShopMobileFilterDrawer';
+import ClinicalSEOHead from '../ClinicalSEOHead';
 import { Search, ShoppingBag, ArrowLeft, CheckCircle2, SlidersHorizontal, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -243,6 +244,14 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fbf8f3] via-[#f6efe4] to-[#fbf9f5] text-stone-900 relative selection:bg-[#D8C2A3]/30">
+      {/* Dynamic Product / Shop Schema.org & OpenGraph Metadata */}
+      <ClinicalSEOHead
+        productData={selectedProduct}
+        customTitle={selectedProduct ? undefined : 'Medical Skincare Boutique | Active Formulations'}
+        customDescription={selectedProduct ? undefined : 'Explore physician-curated active medical skincare, barrier recovery creams, and post-procedure serums.'}
+        canonicalPath={selectedProduct ? `#product-${selectedProduct.id}` : '#shop'}
+      />
+
       {/* Luxury Gold & Champagne Ambient Lighting (Matches Header CTA Theme) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[650px] bg-gradient-to-b from-[#D8C2A3]/50 via-[#ecdcc8]/30 to-transparent rounded-full blur-3xl opacity-90" />

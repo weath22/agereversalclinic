@@ -31,6 +31,7 @@ import AboutAgeReversal from './components/AboutAgeReversal';
 import { ShopPageView } from './components/shop/ShopPageView';
 import { PricingPageView } from './components/pricing/PricingPageView';
 import { TransformationsPageView } from './components/transformations/TransformationsPageView';
+import { ReviewsPageView } from './components/reviews/ReviewsPageView';
 import ClinicalSEOHead from './components/ClinicalSEOHead';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
@@ -49,6 +50,7 @@ export default function App() {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [pricingCategoryFilter, setPricingCategoryFilter] = useState<string | undefined>(undefined);
   const [isTransformationsOpen, setIsTransformationsOpen] = useState(false);
+  const [isReviewsOpen, setIsReviewsOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [shopRangeFilter, setShopRangeFilter] = useState<string | undefined>(undefined);
   const [selectedShopProduct, setSelectedShopProduct] = useState<ShopProduct | null>(null);
@@ -68,6 +70,10 @@ export default function App() {
         setIsAdminOpen(true);
       } else {
         setIsAdminOpen(false);
+      }
+
+      if (window.location.hash === '#reviews') {
+        setIsReviewsOpen(true);
       }
     };
     
@@ -101,6 +107,7 @@ export default function App() {
     setIsExploreOpen(false);
     setIsPricingOpen(false);
     setIsTransformationsOpen(false);
+    setIsReviewsOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     if (serviceName) {
@@ -125,6 +132,7 @@ export default function App() {
     setIsExploreOpen(false);
     setIsPricingOpen(false);
     setIsTransformationsOpen(false);
+    setIsReviewsOpen(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
     setSelectedTreatment(null);
@@ -150,10 +158,26 @@ export default function App() {
     setIsAboutOpen(false);
     setIsPricingOpen(false);
     setIsTransformationsOpen(false);
+    setIsReviewsOpen(false);
     setIsShopOpen(false);
     setShopRangeFilter(undefined);
     setPricingCategoryFilter(undefined);
     setScrollTrigger(prev => prev + 1);
+  };
+
+  const handleOpenReviews = () => {
+    setSelectedConsultant(null);
+    setIsExploreOpen(false);
+    setSelectedArticle(null);
+    setSelectedTreatment(null);
+    setIsAboutOpen(false);
+    setIsShopOpen(false);
+    setIsPricingOpen(false);
+    setIsTransformationsOpen(false);
+    setReturnArticle(null);
+    setSelectedShopProduct(null);
+    setIsReviewsOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenProduct = (product: ShopProduct, fromTransformations = false) => {
@@ -229,6 +253,10 @@ export default function App() {
     seoTitle = 'Before & After Transformations | Clinical Case Results';
     seoDescription = 'Explore verified patient before and after results, clinical protocols, and recommended skincare regimens at Age Reversal Clinics.';
     seoPath = '#transformations';
+  } else if (isReviewsOpen) {
+    seoTitle = 'Patient Reviews & 5-Star Stories | Europe\'s Top Rated Clinic';
+    seoDescription = 'Explore verified patient reviews, 5-star ratings, and transformation feedback for Age Reversal Clinics London Harley Street.';
+    seoPath = '#reviews';
   } else if (isExploreOpen) {
     seoTitle = 'All Treatments & Clinical Categories';
     seoDescription = 'Browse all aesthetic injectables, regenerative medicine, dermatology, and body contouring treatments at our London Harley Street clinic.';
@@ -331,6 +359,7 @@ export default function App() {
           setIsTransformationsOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onReviewsClick={handleOpenReviews}
       />
 
       <main className="flex-grow">
@@ -339,6 +368,11 @@ export default function App() {
             authorName={selectedConsultant}
             onClose={() => setSelectedConsultant(null)}
             onBookClick={() => handleScrollToBooking()}
+          />
+        ) : isReviewsOpen ? (
+          <ReviewsPageView
+            onClose={() => setIsReviewsOpen(false)}
+            onBookClick={handleScrollToBooking}
           />
         ) : isTransformationsOpen ? (
           <TransformationsPageView
@@ -434,6 +468,7 @@ export default function App() {
                 setIsTransformationsOpen(true);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              onReviewsClick={handleOpenReviews}
               heroConfig={heroConfig}
             />
 
@@ -517,7 +552,7 @@ export default function App() {
             <AwardsShowcase />       
 
             {/* Our Locations and Preferred Consultation Sections from HTML request */}
-            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '900px' }}>
+            <div>
               <LocationsAndConsultation 
                 preselectedService={preferredService} 
                 onTreatmentClick={(name) => setSelectedTreatment(name)}
