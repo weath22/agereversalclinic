@@ -25,7 +25,19 @@ import {
   FloatingMenuConfig,
   ProfilePageConfig
 } from '../types';
-import { CLINIC_DATA } from '../data/clinicInfo';
+import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
+import siteCustomizations from '../data/siteCustomizations.json';
+
+// Helper to retrieve pre-deployment persisted configuration from siteCustomizations.json
+function getFileDefault<T>(key: string, hardcodedFallback: T): T {
+  if (siteCustomizations && typeof siteCustomizations === 'object' && key in siteCustomizations) {
+    const val = (siteCustomizations as Record<string, any>)[key];
+    if (val !== undefined && val !== null) {
+      return val as T;
+    }
+  }
+  return hardcodedFallback;
+}
 
 // Storage keys
 const CONSULTATIONS_KEY = 'clinical_consultations';
@@ -51,6 +63,7 @@ const LATEST_NEWS_CONFIG_KEY = 'homepage_latest_news_config';
 const FOOTER_CONFIG_KEY = 'homepage_footer_config';
 const FLOATING_MENU_CONFIG_KEY = 'homepage_floating_menu_config';
 const PROFILE_PAGE_CONFIG_KEY = 'profile_page_config';
+const CLINIC_INFO_DATA_KEY = 'clinic_info_data';
 
 
 // Initial Mock Consultations (LocationsAndConsultation)
@@ -236,8 +249,128 @@ function setStorageItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
+    // Asynchronously write changes directly to project source files on server disk
+    if (key.startsWith('homepage_') || key.startsWith('profile_')) {
+      syncConfigToFile(key, value);
+    }
   } catch (error) {
     console.error(`Error setting localStorage key "${key}":`, error);
+  }
+}
+
+/**
+ * Sync a single config item directly to project files on the server disk
+ */
+export function syncConfigToFile(key: string, data: any): void {
+  if (typeof window === 'undefined') return;
+  fetch('/api/admin/save-to-files', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, data })
+  }).then(res => res.json()).then(res => {
+    if (res.success) {
+      console.log(`[AdminStore] Successfully synced "${key}" directly to project files on disk!`);
+    }
+  }).catch(() => {
+    // Graceful offline fallback
+  });
+}
+
+/**
+ * Upload an image or media asset directly to public/uploads/ on disk
+ */
+export async function uploadAssetFile(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      try {
+        const res = await fetch('/api/admin/upload-asset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            dataUrl
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.url) {
+          resolve({ success: true, url: data.url });
+        } else {
+          resolve({ success: false, error: data.error || 'Failed to upload asset' });
+        }
+      } catch (e) {
+        resolve({ success: false, error: String(e) });
+      }
+    };
+    reader.onerror = () => resolve({ success: false, error: 'Failed to read file' });
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * List all project assets in src/assets/images and public/assets
+ */
+export async function listProjectAssets(): Promise<Array<{ name: string; url: string; size: number; mtime: string; location: string }>> {
+  try {
+    const res = await fetch('/api/admin/assets');
+    const data = await res.json();
+    if (data.success && Array.isArray(data.assets)) {
+      return data.assets;
+    }
+  } catch (e) {
+    console.error('Failed to list assets', e);
+  }
+  return [];
+}
+
+/**
+ * Sync all current admin store configs directly to src/data/siteCustomizations.json on disk
+ */
+export async function syncAllConfigsToFiles(): Promise<{ success: boolean; message: string; updatedAt?: string }> {
+  if (typeof window === 'undefined') {
+    return { success: false, message: 'Window is not defined' };
+  }
+  try {
+    const allConfigs = {
+      [HEADER_CONFIG_KEY]: getHeaderConfig(),
+      [HERO_CONFIG_KEY]: getHeroConfig(),
+      [SPECIALIST_AREAS_CONFIG_KEY]: getSpecialistAreasConfig(),
+      [TREATMENTS_CONFIG_KEY]: getTreatmentsConfig(),
+      [GALLERY_CONFIG_KEY]: getBeforeAfterGalleryConfig(),
+      [WHY_CHOOSE_US_CONFIG_KEY]: getWhyChooseUsConfig(),
+      [AWARDS_CONFIG_KEY]: getAwardsConfig(),
+      [LOCATIONS_CONFIG_KEY]: getOurLocationsConfig(),
+      [TEAM_LEADERSHIP_CONFIG_KEY]: getTeamLeadershipConfig(),
+      [PROCESS_CONFIG_KEY]: getProcessConfig(),
+      [FACILITY_INTERIORS_CONFIG_KEY]: getFacilityInteriorsConfig(),
+      [TESTIMONIALS_CONFIG_KEY]: getTestimonialsConfig(),
+      [SPECIAL_OFFERS_CONFIG_KEY]: getSpecialOffersConfig(),
+      [SKINCARE_COLLECTION_CONFIG_KEY]: getSkincareCollectionConfig(),
+      [TRUST_BRANDS_CONFIG_KEY]: getTrustBrandsConfig(),
+      [ACCREDITATIONS_CONFIG_KEY]: getAccreditationsConfig(),
+      [LATEST_NEWS_CONFIG_KEY]: getLatestNewsConfig(),
+      [FOOTER_CONFIG_KEY]: getFooterConfig(),
+      [FLOATING_MENU_CONFIG_KEY]: getFloatingMenuConfig(),
+      [PROFILE_PAGE_CONFIG_KEY]: getProfilePageConfig(),
+      [CLINIC_INFO_DATA_KEY]: getClinicData()
+    };
+
+    const res = await fetch('/api/admin/save-to-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allConfigs })
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return { success: true, message: json.message || 'Saved to disk successfully!', updatedAt: json.updatedAt };
+    } else {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, message: err.error || 'Server error saving to files.' };
+    }
+  } catch (err) {
+    return { success: false, message: 'Network error or dev server offline: ' + String(err) };
   }
 }
 
@@ -829,7 +962,7 @@ export function resetAdminStoreToDefaults(): void {
 // HOMEPAGE EDIT METHODS
 export function getHeaderConfig(): HeaderConfig {
   initializeAdminStore();
-  return getStorageItem<HeaderConfig>(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG);
+  return getStorageItem<HeaderConfig>(HEADER_CONFIG_KEY, getFileDefault(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG));
 }
 
 export function saveHeaderConfig(config: HeaderConfig): HeaderConfig {
@@ -839,7 +972,7 @@ export function saveHeaderConfig(config: HeaderConfig): HeaderConfig {
 
 export function getHeroConfig(): HeroConfig {
   initializeAdminStore();
-  return getStorageItem<HeroConfig>(HERO_CONFIG_KEY, DEFAULT_HERO_CONFIG);
+  return getStorageItem<HeroConfig>(HERO_CONFIG_KEY, getFileDefault(HERO_CONFIG_KEY, DEFAULT_HERO_CONFIG));
 }
 
 export function saveHeroConfig(config: HeroConfig): HeroConfig {
@@ -849,7 +982,7 @@ export function saveHeroConfig(config: HeroConfig): HeroConfig {
 
 export function getSpecialistAreasConfig(): SpecialistAreasConfig {
   initializeAdminStore();
-  return getStorageItem<SpecialistAreasConfig>(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG);
+  return getStorageItem<SpecialistAreasConfig>(SPECIALIST_AREAS_CONFIG_KEY, getFileDefault(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG));
 }
 
 export function saveSpecialistAreasConfig(config: SpecialistAreasConfig): SpecialistAreasConfig {
@@ -859,7 +992,7 @@ export function saveSpecialistAreasConfig(config: SpecialistAreasConfig): Specia
 
 export function getTreatmentsConfig(): TreatmentsConfig {
   initializeAdminStore();
-  return getStorageItem<TreatmentsConfig>(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG);
+  return getStorageItem<TreatmentsConfig>(TREATMENTS_CONFIG_KEY, getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG));
 }
 
 export function saveTreatmentsConfig(config: TreatmentsConfig): TreatmentsConfig {
@@ -869,7 +1002,7 @@ export function saveTreatmentsConfig(config: TreatmentsConfig): TreatmentsConfig
 
 export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
   initializeAdminStore();
-  return getStorageItem<BeforeAfterGalleryConfig>(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG);
+  return getStorageItem<BeforeAfterGalleryConfig>(GALLERY_CONFIG_KEY, getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG));
 }
 
 export function saveBeforeAfterGalleryConfig(config: BeforeAfterGalleryConfig): BeforeAfterGalleryConfig {
@@ -879,7 +1012,7 @@ export function saveBeforeAfterGalleryConfig(config: BeforeAfterGalleryConfig): 
 
 export function getWhyChooseUsConfig(): WhyChooseUsConfig {
   initializeAdminStore();
-  return getStorageItem<WhyChooseUsConfig>(WHY_CHOOSE_US_CONFIG_KEY, DEFAULT_WHY_CHOOSE_US_CONFIG);
+  return getStorageItem<WhyChooseUsConfig>(WHY_CHOOSE_US_CONFIG_KEY, getFileDefault(WHY_CHOOSE_US_CONFIG_KEY, DEFAULT_WHY_CHOOSE_US_CONFIG));
 }
 
 export function saveWhyChooseUsConfig(config: WhyChooseUsConfig): WhyChooseUsConfig {
@@ -889,7 +1022,7 @@ export function saveWhyChooseUsConfig(config: WhyChooseUsConfig): WhyChooseUsCon
 
 export function getAwardsConfig(): AwardsConfig {
   initializeAdminStore();
-  return getStorageItem<AwardsConfig>(AWARDS_CONFIG_KEY, DEFAULT_AWARDS_CONFIG);
+  return getStorageItem<AwardsConfig>(AWARDS_CONFIG_KEY, getFileDefault(AWARDS_CONFIG_KEY, DEFAULT_AWARDS_CONFIG));
 }
 
 export function saveAwardsConfig(config: AwardsConfig): AwardsConfig {
@@ -899,7 +1032,7 @@ export function saveAwardsConfig(config: AwardsConfig): AwardsConfig {
 
 export function getOurLocationsConfig(): OurLocationsConfig {
   initializeAdminStore();
-  return getStorageItem<OurLocationsConfig>(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG);
+  return getStorageItem<OurLocationsConfig>(LOCATIONS_CONFIG_KEY, getFileDefault(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG));
 }
 
 export function saveOurLocationsConfig(config: OurLocationsConfig): OurLocationsConfig {
@@ -909,7 +1042,7 @@ export function saveOurLocationsConfig(config: OurLocationsConfig): OurLocations
 
 export function getTeamLeadershipConfig(): TeamLeadershipConfig {
   initializeAdminStore();
-  return getStorageItem<TeamLeadershipConfig>(TEAM_LEADERSHIP_CONFIG_KEY, DEFAULT_TEAM_LEADERSHIP_CONFIG);
+  return getStorageItem<TeamLeadershipConfig>(TEAM_LEADERSHIP_CONFIG_KEY, getFileDefault(TEAM_LEADERSHIP_CONFIG_KEY, DEFAULT_TEAM_LEADERSHIP_CONFIG));
 }
 
 export function saveTeamLeadershipConfig(config: TeamLeadershipConfig): TeamLeadershipConfig {
@@ -919,7 +1052,7 @@ export function saveTeamLeadershipConfig(config: TeamLeadershipConfig): TeamLead
 
 export function getProcessConfig(): ProcessConfig {
   initializeAdminStore();
-  return getStorageItem<ProcessConfig>(PROCESS_CONFIG_KEY, DEFAULT_PROCESS_CONFIG);
+  return getStorageItem<ProcessConfig>(PROCESS_CONFIG_KEY, getFileDefault(PROCESS_CONFIG_KEY, DEFAULT_PROCESS_CONFIG));
 }
 
 export function saveProcessConfig(config: ProcessConfig): ProcessConfig {
@@ -929,7 +1062,7 @@ export function saveProcessConfig(config: ProcessConfig): ProcessConfig {
 
 export function getFacilityInteriorsConfig(): FacilityInteriorsConfig {
   initializeAdminStore();
-  return getStorageItem<FacilityInteriorsConfig>(FACILITY_INTERIORS_CONFIG_KEY, DEFAULT_FACILITY_INTERIORS_CONFIG);
+  return getStorageItem<FacilityInteriorsConfig>(FACILITY_INTERIORS_CONFIG_KEY, getFileDefault(FACILITY_INTERIORS_CONFIG_KEY, DEFAULT_FACILITY_INTERIORS_CONFIG));
 }
 
 export function saveFacilityInteriorsConfig(config: FacilityInteriorsConfig): FacilityInteriorsConfig {
@@ -939,7 +1072,7 @@ export function saveFacilityInteriorsConfig(config: FacilityInteriorsConfig): Fa
 
 export function getTestimonialsConfig(): TestimonialsConfig {
   initializeAdminStore();
-  return getStorageItem<TestimonialsConfig>(TESTIMONIALS_CONFIG_KEY, DEFAULT_TESTIMONIALS_CONFIG);
+  return getStorageItem<TestimonialsConfig>(TESTIMONIALS_CONFIG_KEY, getFileDefault(TESTIMONIALS_CONFIG_KEY, DEFAULT_TESTIMONIALS_CONFIG));
 }
 
 export function saveTestimonialsConfig(config: TestimonialsConfig): TestimonialsConfig {
@@ -949,7 +1082,7 @@ export function saveTestimonialsConfig(config: TestimonialsConfig): Testimonials
 
 export function getSpecialOffersConfig(): SpecialOffersConfig {
   initializeAdminStore();
-  return getStorageItem<SpecialOffersConfig>(SPECIAL_OFFERS_CONFIG_KEY, DEFAULT_SPECIAL_OFFERS_CONFIG);
+  return getStorageItem<SpecialOffersConfig>(SPECIAL_OFFERS_CONFIG_KEY, getFileDefault(SPECIAL_OFFERS_CONFIG_KEY, DEFAULT_SPECIAL_OFFERS_CONFIG));
 }
 
 export function saveSpecialOffersConfig(config: SpecialOffersConfig): SpecialOffersConfig {
@@ -957,11 +1090,9 @@ export function saveSpecialOffersConfig(config: SpecialOffersConfig): SpecialOff
   return config;
 }
 
-
-
 export function getSkincareCollectionConfig(): SkincareCollectionConfig {
   initializeAdminStore();
-  return getStorageItem<SkincareCollectionConfig>(SKINCARE_COLLECTION_CONFIG_KEY, DEFAULT_SKINCARE_COLLECTION_CONFIG);
+  return getStorageItem<SkincareCollectionConfig>(SKINCARE_COLLECTION_CONFIG_KEY, getFileDefault(SKINCARE_COLLECTION_CONFIG_KEY, DEFAULT_SKINCARE_COLLECTION_CONFIG));
 }
 
 export function saveSkincareCollectionConfig(config: SkincareCollectionConfig): SkincareCollectionConfig {
@@ -971,7 +1102,7 @@ export function saveSkincareCollectionConfig(config: SkincareCollectionConfig): 
 
 export function getTrustBrandsConfig(): TrustBrandsConfig {
   initializeAdminStore();
-  return getStorageItem<TrustBrandsConfig>(TRUST_BRANDS_CONFIG_KEY, DEFAULT_TRUST_BRANDS_CONFIG);
+  return getStorageItem<TrustBrandsConfig>(TRUST_BRANDS_CONFIG_KEY, getFileDefault(TRUST_BRANDS_CONFIG_KEY, DEFAULT_TRUST_BRANDS_CONFIG));
 }
 
 export function saveTrustBrandsConfig(config: TrustBrandsConfig): TrustBrandsConfig {
@@ -981,7 +1112,7 @@ export function saveTrustBrandsConfig(config: TrustBrandsConfig): TrustBrandsCon
 
 export function getAccreditationsConfig(): AccreditationsConfig {
   initializeAdminStore();
-  return getStorageItem<AccreditationsConfig>(ACCREDITATIONS_CONFIG_KEY, DEFAULT_ACCREDITATIONS_CONFIG);
+  return getStorageItem<AccreditationsConfig>(ACCREDITATIONS_CONFIG_KEY, getFileDefault(ACCREDITATIONS_CONFIG_KEY, DEFAULT_ACCREDITATIONS_CONFIG));
 }
 
 export function saveAccreditationsConfig(config: AccreditationsConfig): AccreditationsConfig {
@@ -991,7 +1122,7 @@ export function saveAccreditationsConfig(config: AccreditationsConfig): Accredit
 
 export function getLatestNewsConfig(): LatestNewsConfig {
   initializeAdminStore();
-  return getStorageItem<LatestNewsConfig>(LATEST_NEWS_CONFIG_KEY, DEFAULT_LATEST_NEWS_CONFIG);
+  return getStorageItem<LatestNewsConfig>(LATEST_NEWS_CONFIG_KEY, getFileDefault(LATEST_NEWS_CONFIG_KEY, DEFAULT_LATEST_NEWS_CONFIG));
 }
 
 export function saveLatestNewsConfig(config: LatestNewsConfig): LatestNewsConfig {
@@ -1001,7 +1132,7 @@ export function saveLatestNewsConfig(config: LatestNewsConfig): LatestNewsConfig
 
 export function getFooterConfig(): FooterConfig {
   initializeAdminStore();
-  return getStorageItem<FooterConfig>(FOOTER_CONFIG_KEY, DEFAULT_FOOTER_CONFIG);
+  return getStorageItem<FooterConfig>(FOOTER_CONFIG_KEY, getFileDefault(FOOTER_CONFIG_KEY, DEFAULT_FOOTER_CONFIG));
 }
 
 export function saveFooterConfig(config: FooterConfig): FooterConfig {
@@ -1011,7 +1142,7 @@ export function saveFooterConfig(config: FooterConfig): FooterConfig {
 
 export function getFloatingMenuConfig(): FloatingMenuConfig {
   initializeAdminStore();
-  return getStorageItem<FloatingMenuConfig>(FLOATING_MENU_CONFIG_KEY, DEFAULT_FLOATING_MENU_CONFIG);
+  return getStorageItem<FloatingMenuConfig>(FLOATING_MENU_CONFIG_KEY, getFileDefault(FLOATING_MENU_CONFIG_KEY, DEFAULT_FLOATING_MENU_CONFIG));
 }
 
 export function saveFloatingMenuConfig(config: FloatingMenuConfig): FloatingMenuConfig {
@@ -1172,3 +1303,72 @@ export function saveChatSessions(sessions: import('../types').ChatSession[]): vo
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(CHAT_SESSIONS_KEY, JSON.stringify(sessions));
 }
+
+// Clinic Master Data (clinicInfo.ts) Store Management
+export function getClinicData(): ClinicData {
+  return getStorageItem<ClinicData>(
+    CLINIC_INFO_DATA_KEY,
+    getFileDefault<ClinicData>('clinic_info_data', CLINIC_DATA)
+  );
+}
+
+// Alias for requested name: getClinicDataConfig()
+export function getClinicDataConfig(): ClinicData {
+  return getClinicData();
+}
+
+export function updateClinicData(data: ClinicData): ClinicData {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(CLINIC_INFO_DATA_KEY, JSON.stringify(data));
+    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
+  }
+  return data;
+}
+
+export async function saveClinicDataToFile(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string }> {
+  updateClinicData(data);
+  try {
+    const res = await fetch('/api/admin/clinic-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicData: data })
+    });
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to save clinic data to file:', err);
+    return { success: false, error: String(err) };
+  }
+}
+
+// Alias for requested name: saveClinicDataConfig(data)
+export async function saveClinicDataConfig(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string }> {
+  return saveClinicDataToFile(data);
+}
+
+export function resetClinicDataToDefault(): ClinicData {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(CLINIC_INFO_DATA_KEY);
+    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: CLINIC_DATA }));
+  }
+  return CLINIC_DATA;
+}
+
+// Sync clinic data from remote server on demand
+export async function fetchRemoteClinicData(): Promise<ClinicData | null> {
+  try {
+    const res = await fetch('/api/admin/clinic-data');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.clinicData) {
+        updateClinicData(json.clinicData);
+        return json.clinicData;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not fetch remote clinic data:', err);
+    return null;
+  }
+}
+

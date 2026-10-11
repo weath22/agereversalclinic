@@ -4,12 +4,14 @@ import { TREATMENT_PRICING_DATA, TreatmentPricingItem, PricingPackage } from '..
 import { PricingCard } from './pricing/PricingCard';
 import { PackageSelectModal } from './pricing/PackageSelectModal';
 import Pagination from './Pagination';
+import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 interface ArticleRelatedTreatmentsProps {
   onBookClick: (treatmentName?: string) => void;
 }
 
 export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelatedTreatmentsProps) {
+  const { addTreatment } = useTreatmentCart();
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -23,10 +25,8 @@ export default function ArticleRelatedTreatments({ onBookClick }: ArticleRelated
 
   const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
     setActivePackageModalTreatment(null);
-    const bookingServiceName = `${treatment.title} (${pkg.name})`;
-    if (onBookClick) {
-      onBookClick(bookingServiceName);
-    }
+    // Add to global treatment cart and open treatment plan drawer
+    addTreatment(treatment, pkg, 1, true);
   };
 
   const handlePageChange = (page: number) => {

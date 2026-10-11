@@ -21,7 +21,25 @@ import {
   getSpecialistAreasConfig,
   saveSpecialistAreasConfig,
   getTreatmentsConfig,
-  saveTreatmentsConfig
+  saveTreatmentsConfig,
+  getBeforeAfterGalleryConfig,
+  getWhyChooseUsConfig,
+  getAwardsConfig,
+  getOurLocationsConfig,
+  getTeamLeadershipConfig,
+  getProcessConfig,
+  getFacilityInteriorsConfig,
+  getTestimonialsConfig,
+  getSpecialOffersConfig,
+  getSkincareCollectionConfig,
+  getTrustBrandsConfig,
+  getAccreditationsConfig,
+  getLatestNewsConfig,
+  getFooterConfig,
+  getFloatingMenuConfig,
+  getProfilePageConfig,
+  syncAllConfigsToFiles,
+  uploadAssetFile
 } from '../lib/adminStore';
 import { 
   ConsultationRequest, 
@@ -102,6 +120,8 @@ import DoctorAppointmentsManager from './DoctorAppointmentsManager';
 import ClinicInquiriesManager from './ClinicInquiriesManager';
 import ChatSupportManager from './ChatSupportManager';
 import ProfileDetailsEditor from './ProfileDetailsEditor';
+import AssetsMediaManager from './AssetsMediaManager';
+import ClinicDataManager from './ClinicDataManager';
 
 
 interface AdminDashboardProps {
@@ -115,7 +135,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
   const [passcodeError, setPasscodeError] = useState('');
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'consultations' | 'appointments' | 'inquiries' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clinic-info' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isHomepageEditorsOpen, setIsHomepageEditorsOpen] = useState(false);
@@ -144,6 +164,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
   // Note editors
   const [internalNoteText, setInternalNoteText] = useState('');
   const [successToast, setSuccessToast] = useState('');
+  const [isSyncingFiles, setIsSyncingFiles] = useState(false);
 
   // Homepage Editor States
   const [hBrandName, setHBrandName] = useState('');
@@ -443,6 +464,56 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
     showToast('JSON export downloaded successfully');
   };
 
+  const handleBakeToSourceFiles = async () => {
+    setIsSyncingFiles(true);
+    try {
+      const res = await syncAllConfigsToFiles();
+      if (res.success) {
+        showToast('✅ Saved to project files! src/data/siteCustomizations.json updated on disk.');
+      } else {
+        showToast(`⚠️ Sync failed: ${res.message}`);
+      }
+    } catch (e) {
+      showToast(`⚠️ Error writing to files: ${String(e)}`);
+    } finally {
+      setIsSyncingFiles(false);
+    }
+  };
+
+  const handleExportSiteConfig = () => {
+    const allConfigs = {
+      header: getHeaderConfig(),
+      hero: getHeroConfig(),
+      specialistAreas: getSpecialistAreasConfig(),
+      treatments: getTreatmentsConfig(),
+      gallery: getBeforeAfterGalleryConfig(),
+      whyChooseUs: getWhyChooseUsConfig(),
+      awards: getAwardsConfig(),
+      locations: getOurLocationsConfig(),
+      team: getTeamLeadershipConfig(),
+      process: getProcessConfig(),
+      facility: getFacilityInteriorsConfig(),
+      testimonials: getTestimonialsConfig(),
+      offers: getSpecialOffersConfig(),
+      skincare: getSkincareCollectionConfig(),
+      trust: getTrustBrandsConfig(),
+      accreditations: getAccreditationsConfig(),
+      news: getLatestNewsConfig(),
+      footer: getFooterConfig(),
+      floating: getFloatingMenuConfig(),
+      profile: getProfilePageConfig(),
+      exportedAt: new Date().toISOString()
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allConfigs, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `clinic-site-customizations-${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast('Downloaded site customization JSON config file');
+  };
+
   const showToast = (msg: string) => {
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(''), 3000);
@@ -578,6 +649,15 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleBakeToSourceFiles}
+            disabled={isSyncingFiles}
+            className="flex items-center gap-1.5 bg-[#c5a880] text-[#003334] px-2.5 py-1.5 rounded-lg text-[10px] font-black shadow cursor-pointer disabled:opacity-50"
+            title="Save all changes directly to project files on disk before deployment"
+          >
+            <Database className={`h-3 w-3 ${isSyncingFiles ? 'animate-spin' : ''}`} />
+            <span>{isSyncingFiles ? 'Saving...' : 'Save Files'}</span>
+          </button>
+          <button
             onClick={() => setIsMobileNavOpen(true)}
             className="p-2 text-slate-200 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
             aria-label="Open navigation"
@@ -621,12 +701,14 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto no-scrollbar">
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
+            { id: 'clinic-info', label: 'Clinic Master Data', icon: Database },
             { id: 'consultations', label: 'Consultation Requests', count: consultations.length, icon: Users },
             { id: 'appointments', label: 'Faith Nzurike Slots', count: appointments.length, icon: Calendar },
             { id: 'inquiries', label: 'Clinic Inquiries', count: inquiries.length, icon: MessageSquare, badge: unreadInquiriesCount },
             { id: 'chat-support', label: 'Live Chat Support', icon: MessageSquare },
             { id: 'edit-service-details', label: 'Service Components Editor', icon: Layers },
-            { id: 'edit-profile-details', label: 'Profile Page Details', icon: User }
+            { id: 'edit-profile-details', label: 'Profile Page Details', icon: User },
+            { id: 'assets-media', label: 'Assets & Media Manager', icon: Image }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -816,6 +898,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
               <div className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] font-mono">The London Clinic Administration</div>
               <h1 className="font-serif font-black text-xl text-[#003334] capitalize">
                 {activeTab === 'overview' ? 'Dashboard Overview' : 
+                 activeTab === 'clinic-info' ? 'Clinic Master Data (src/data/clinicInfo.ts)' : 
                  activeTab === 'consultations' ? 'Consultation Requests' : 
                  activeTab === 'appointments' ? 'Faith Nzurike Slots' : 
                  activeTab === 'inquiries' ? 'Clinic Inquiries' : 
@@ -923,9 +1006,20 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                 </AnimatePresence>
               </div>
 
+              {/* Direct Save to Project Files */}
+              <button
+                onClick={handleBakeToSourceFiles}
+                disabled={isSyncingFiles}
+                className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-3.5 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                title="Save all customizations directly into project files on disk before deployment"
+              >
+                <Database className={`h-4 w-4 shrink-0 ${isSyncingFiles ? 'animate-spin' : ''}`} />
+                <span>{isSyncingFiles ? 'Saving...' : 'Save to Project Files'}</span>
+              </button>
+
               <div className="flex items-center gap-2 bg-[#003334]/5 border border-[#003334]/10 rounded-full px-3 py-1 text-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-mono text-[10px] text-slate-600 uppercase tracking-wider">Live Connection Stable</span>
+                <span className="font-mono text-[10px] text-slate-600 uppercase tracking-wider">Disk Sync Ready</span>
               </div>
             </div>
           </div>
@@ -934,12 +1028,12 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
         {/* Utility Stats / Environment Bar */}
         <div className="bg-[#0b3c3d] text-white text-[10px] uppercase tracking-wider font-semibold py-2 px-4 md:px-8 flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-3 font-mono">
-            <span>Env: <strong className="text-white">React Client SPA</strong></span>
+            <span>Env: <strong className="text-white">Full-Stack Server</strong></span>
             <span>•</span>
             <span>Total Records: <strong className="text-[#c5a880]">{consultations.length + appointments.length + inquiries.length}</strong></span>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <span className="text-[9px] bg-white/10 text-slate-200 px-2 py-0.5 rounded font-mono">UTC Sync</span>
+            <span className="text-[9px] bg-white/10 text-slate-200 px-2 py-0.5 rounded font-mono">Disk Sync Active</span>
           </div>
         </div>
 
@@ -949,6 +1043,44 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
+            {/* Pre-Deployment Customization Studio Banner */}
+            <div className="bg-gradient-to-r from-[#003334] via-[#044445] to-[#003334] text-white p-6 rounded-3xl border border-[#c5a880]/30 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] font-bold text-[#c5a880] uppercase tracking-wider font-mono">Pre-Deployment Customization Active</span>
+                </div>
+                <h3 className="text-lg font-serif font-bold text-white">Visual Customization & Real Project File Sync</h3>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  Every edit you make in any section editor is automatically written directly to <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">src/data/siteCustomizations.json</code> and uploaded assets to <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">public/uploads/</code> on disk. When you run <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">npm run build</code>, all customized content is compiled permanently into your deployment!
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  onClick={() => setActiveTab('clinic-info')}
+                  className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Edit clinicInfo.ts File</span>
+                </button>
+                <button
+                  onClick={handleBakeToSourceFiles}
+                  disabled={isSyncingFiles}
+                  className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow cursor-pointer disabled:opacity-50"
+                >
+                  <Database className={`h-4 w-4 shrink-0 ${isSyncingFiles ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingFiles ? 'Writing to Disk...' : 'Save to Project Files'}</span>
+                </button>
+                <button
+                  onClick={handleExportSiteConfig}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  title="Download JSON copy of all customizations"
+                >
+                  <Download className="h-4 w-4 text-[#c5a880]" />
+                  <span>Download Backup</span>
+                </button>
+              </div>
+            </div>
             {/* Overview KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow transition-shadow">
@@ -1341,8 +1473,14 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
           />
         )}
 
+        {/* TAB: CLINIC MASTER DATA (clinicInfo.ts) */}
+        {activeTab === 'clinic-info' && <ClinicDataManager />}
+
         {/* TAB: CHAT SUPPORT */}
         {activeTab === 'chat-support' && <ChatSupportManager />}
+
+        {/* TAB: ASSETS & MEDIA MANAGER */}
+        {activeTab === 'assets-media' && <AssetsMediaManager />}
 
         {/* TAB 5: NEXT.JS MIGRATION PLANNING SPEC */}
         {activeTab === 'migration' && (

@@ -1,15 +1,30 @@
+import { useState, useEffect } from 'react';
 import { MapPin, Phone, Facebook, Instagram, Twitter } from 'lucide-react';
-import { CLINIC_INFO } from '../data/clinicInfo';
+import { CLINIC_INFO, ClinicData } from '../data/clinicInfo';
+import { getClinicData } from '../lib/adminStore';
 
 interface TopBarProps {
   onBookClick: () => void;
 }
 
 export default function TopBar({ onBookClick }: TopBarProps) {
-  const phone = CLINIC_INFO.primaryPhone || '+44 20 8857 2000';
-  const phoneHref = CLINIC_INFO.phoneHref || `tel:${phone.replace(/\s+/g, '')}`;
-  const locationSummary = CLINIC_INFO.locations?.map((l) => l.shortName).join(' & ') || 'Grove Park & Harley Street Flagship';
-  const welcomeText = CLINIC_INFO.welcomeMessage || 'Welcome to Age Reversal Clinic';
+  const [clinicData, setClinicData] = useState<ClinicData>(getClinicData());
+
+  useEffect(() => {
+    setClinicData(getClinicData());
+    const handleUpdate = (e: any) => {
+      if (e.detail) {
+        setClinicData(e.detail);
+      }
+    };
+    window.addEventListener('clinic_data_changed', handleUpdate);
+    return () => window.removeEventListener('clinic_data_changed', handleUpdate);
+  }, []);
+
+  const phone = clinicData.phone || CLINIC_INFO.primaryPhone || '+44 20 8857 2000';
+  const phoneHref = `tel:${phone.replace(/[^0-9+]/g, '')}`;
+  const locationSummary = clinicData.locations?.map((l) => l.name).join(' & ') || CLINIC_INFO.locations?.map((l) => l.shortName).join(' & ') || 'Harley Street Flagship';
+  const welcomeText = `Welcome to ${clinicData.name || 'Age Reversal Clinic'}`;
 
   return (
     <div className="bg-black text-white py-2 text-xs md:text-sm transition-all border-b border-luxury-gold/25">

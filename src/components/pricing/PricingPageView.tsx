@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTreatmentCart } from '../../context/TreatmentCartContext';
 
 const SORT_OPTIONS: Array<{ id: 'featured' | 'price-asc' | 'price-desc' | 'name-asc'; label: string }> = [
   { id: 'featured', label: 'Featured Order' },
@@ -40,6 +41,12 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   onBookClick,
   initialCategoryFilter,
 }) => {
+  const {
+    addTreatment,
+    openTreatmentCart,
+    totalTreatmentCount,
+  } = useTreatmentCart();
+
   const [selectedCategory, setSelectedCategory] = useState<string>(
     initialCategoryFilter || 'All Procedures'
   );
@@ -110,14 +117,8 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
 
   const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
     setActivePackageModalTreatment(null);
-    const bookingServiceName = `${treatment.title} (${pkg.name})`;
-    setNotification(`Package "${pkg.name}" selected for ${treatment.title}`);
-    setTimeout(() => {
-      setNotification(null);
-      if (onBookClick) {
-        onBookClick(bookingServiceName);
-      }
-    }, 400);
+    // Add directly to global Treatment Cart and open the Treatment Plan drawer
+    addTreatment(treatment, pkg, 1, true);
   };
 
   return (
@@ -141,17 +142,28 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
             </span>
           </div>
 
-          {/* Right Action: Direct Consultation Booking */}
-          <button
-            onClick={() => {
-              if (onBookClick) onBookClick('Skincare Consultation');
-            }}
-            className="bg-black hover:bg-neutral-900 text-white px-4 sm:px-5 py-2 rounded-full border border-luxury-gold/50 shadow-xs transition-all text-xs sm:text-sm font-sans font-medium flex items-center gap-1.5 cursor-pointer"
-          >
-            <Calendar className="w-3.5 h-3.5 text-luxury-gold" />
-            <span className="hidden sm:inline">Book Consultation</span>
-            <span className="sm:hidden">Book</span>
-          </button>
+          {/* Right Actions: Treatment Plan Drawer Button + Direct Consultation Booking */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={openTreatmentCart}
+              className="flex items-center space-x-2 bg-white/95 border border-[#D8C2A3]/70 hover:border-black text-stone-900 px-3.5 sm:px-4 py-1.5 rounded-full shadow-xs transition-all text-xs font-semibold cursor-pointer relative"
+              aria-label="View Planned Treatments"
+            >
+              <Calendar className="h-3.5 w-3.5 text-[#a88d6b]" />
+              <span>Plan ({totalTreatmentCount})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (onBookClick) onBookClick('Skincare Consultation');
+              }}
+              className="bg-black hover:bg-neutral-900 text-white px-4 sm:px-5 py-2 rounded-full border border-luxury-gold/50 shadow-xs transition-all text-xs sm:text-sm font-sans font-medium flex items-center gap-1.5 cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-luxury-gold" />
+              <span className="hidden sm:inline">Book Consultation</span>
+              <span className="sm:hidden">Book</span>
+            </button>
+          </div>
         </div>
       </header>
 

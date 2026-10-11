@@ -291,7 +291,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                   </div>
                 </div>
 
-                {/* Add to Package Action Button */}
+                {/* Add to Treatment Plan Action Button */}
                 <div className="w-full pt-1 pb-2">
                   <button
                     type="button"
@@ -303,7 +303,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                     className="inline-flex items-center rounded-full justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 font-Lato duration-200 font-semibold antialiased focus:outline-none bg-noir-900 text-white sm:hover:bg-noir-800 disabled:bg-noir-700 disabled:sm:hover:bg-noir-700 px-6 py-2.5 sm:py-3 text-sm sm:text-base w-full whitespace-nowrap cursor-pointer shadow-md active:scale-[0.99]"
                   >
                     <div className="flex items-center space-x-2">
-                      <span>Add to Package →</span>
+                      <span>Add to Treatment Plan →</span>
                     </div>
                   </button>
                 </div>

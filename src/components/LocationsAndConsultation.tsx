@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { saveConsultation, saveInquiry, getOurLocationsConfig } from '../lib/adminStore';
+import { saveConsultation, saveInquiry, getOurLocationsConfig, getClinicData } from '../lib/adminStore';
 import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { OurLocationsConfig, LocationItemConfig } from '../types';
-import { CLINIC_DATA } from '../data/clinicInfo';
+import { CLINIC_DATA, ClinicData } from '../data/clinicInfo';
 import ContactDrawerModal from './ContactDrawerModal';
 import AppointmentDatePicker from './AppointmentDatePicker';
 import { PackageSelectModal } from './pricing/PackageSelectModal';
 import { TREATMENT_PRICING_DATA, TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
+import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 import { 
   CLINICAL_AREAS_DB, 
@@ -68,6 +69,7 @@ const HEAR_ABOUT_US_OPTIONS = [
 ];
 
 export default function LocationsAndConsultation({ preselectedService, onTreatmentClick }: LocationsAndConsultationProps = {}) {
+  const { addTreatment: addGlobalTreatment } = useTreatmentCart();
   const [mounted, setMounted] = useState<boolean>(false);
   const [selectedAreaId, setSelectedAreaId] = useState<string>('face');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
@@ -86,6 +88,37 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
   useEffect(() => {
     setMounted(true);
+
+    // Listen for treatment plan application events from the Treatment Cart Drawer
+    const handleApplyTreatmentPlan = (e: any) => {
+      if (e.detail?.treatmentPlan && Array.isArray(e.detail.treatmentPlan)) {
+        const planItems = e.detail.treatmentPlan;
+        const newIds: string[] = [];
+        const newPkgs: Record<string, PricingPackage> = {};
+
+        planItems.forEach((item: any) => {
+          if (item?.treatment?.id && item?.selectedPackage) {
+            newIds.push(item.treatment.id);
+            newPkgs[item.treatment.id] = item.selectedPackage;
+          }
+        });
+
+        if (newIds.length > 0) {
+          setSelectedTreatments(prev => Array.from(new Set([...prev, ...newIds])));
+          setSelectedTreatmentPackages(prev => ({ ...prev, ...newPkgs }));
+          setBooking(prev => ({
+            ...prev,
+            procedure: newIds[0],
+            notes: prev.notes ? `${prev.notes}\n[Treatment Plan: ${e.detail.servicesSummary || ''}]` : `[Treatment Plan: ${e.detail.servicesSummary || ''}]`,
+          }));
+        }
+      }
+    };
+
+    window.addEventListener('arc_apply_treatment_plan', handleApplyTreatmentPlan);
+    return () => {
+      window.removeEventListener('arc_apply_treatment_plan', handleApplyTreatmentPlan);
+    };
   }, []);
 
   // Lock body scroll when drawer or modal is open
@@ -170,6 +203,9 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       ...prev,
       procedure: treatmentItem.id
     }));
+    // Sync with global treatment cart
+    addGlobalTreatment(treatmentItem, selectedPackage, 1, false);
+
     setActivePricingModalTreatment(null);
     setIsDrawerOpen(false);
     setPricingReturnToDrawer(false);
@@ -287,13 +323,26 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
   const [locationsConfig, setLocationsConfig] = useState<OurLocationsConfig | null>(null);
   const [activeDrawerLocation, setActiveDrawerLocation] = useState<LocationItemConfig | null>(null);
+  const [clinicData, setClinicData] = useState<ClinicData>(getClinicData());
 
   useEffect(() => {
     setLocationsConfig(getOurLocationsConfig());
+    setClinicData(getClinicData());
+
+    const handleClinicDataChange = (e: any) => {
+      if (e.detail) {
+        setClinicData(e.detail);
+      }
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChange);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleClinicDataChange);
+    };
   }, []);
 
-  // Locations directly mapped from clinic info data file (src/data/clinicInfo.ts)
-  const activeLocations: LocationItemConfig[] = (CLINIC_DATA.locations || []).map((loc, idx) => {
+  // Locations directly mapped from clinic info data file (src/data/clinicInfo.ts) or reactive store
+  const activeLocations: LocationItemConfig[] = (clinicData.locations || []).map((loc, idx) => {
     const locId = `loc-${idx + 1}`;
     const fullAddress = loc.address.includes(loc.city)
       ? `${loc.address}, ${loc.postalCode}`
@@ -310,7 +359,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       name: loc.name,
       address: fullAddress,
       hours: loc.hours,
-      phone: loc.phone || CLINIC_DATA.phone,
+      phone: loc.phone || clinicData.phone || CLINIC_DATA.phone,
       mapsUrl: mapsUrl,
       bannerType: adminLoc?.bannerType || 'Clinic',
       imageUrl: (adminLoc?.imageUrl && adminLoc.imageUrl.startsWith('http') && !adminLoc.imageUrl.includes('Interactive'))

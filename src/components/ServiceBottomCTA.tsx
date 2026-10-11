@@ -4,6 +4,7 @@ import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
 import { PricingPackageSelector } from './pricing/PricingPackageSelector';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 interface ServiceBottomCTAProps {
   data: {
@@ -24,6 +25,7 @@ interface ServiceBottomCTAProps {
 }
 
 export default function ServiceBottomCTA({ data, onBook }: ServiceBottomCTAProps) {
+  const { addTreatment } = useTreatmentCart();
   const [notification, setNotification] = useState<string | null>(null);
 
   // Resolve or synthesize the matching TreatmentPricingItem using Universal Hybrid Resolver
@@ -42,12 +44,8 @@ export default function ServiceBottomCTA({ data, onBook }: ServiceBottomCTAProps
   }, [data]);
 
   const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
-    const bookingServiceName = `${treatment.title} (${pkg.name})`;
-    setNotification(`Package "${pkg.name}" selected for ${treatment.title}`);
-    setTimeout(() => {
-      setNotification(null);
-      onBook(bookingServiceName);
-    }, 400);
+    // Add to global treatment cart and open treatment plan drawer
+    addTreatment(treatment, pkg, 1, true);
   };
 
   return (

@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ShopProduct, FilterState, CartItem } from '../../types/shop';
+import { ShopProduct, FilterState } from '../../types/shop';
 import { SHOP_PRODUCTS } from '../../data/shopProducts';
 import { ProductCard } from './ProductCard';
 import { ShopSidebarFilters } from './ShopSidebarFilters';
 import { ProductDetailView } from './ProductDetailView';
-import { ShopCartDrawer } from './ShopCartDrawer';
 import { ShopMobileFilterDrawer } from './ShopMobileFilterDrawer';
 import ClinicalSEOHead from '../ClinicalSEOHead';
 import { Search, ShoppingBag, ArrowLeft, CheckCircle2, SlidersHorizontal, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useCart } from '../../context/CartContext';
 
 const SORT_OPTIONS: Array<{ id: FilterState['sort']; label: string; mobileLabel: string }> = [
   { id: 'featured', label: 'Featured Order', mobileLabel: 'Featured' },
@@ -43,8 +43,12 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
     sort: 'featured',
   });
 
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const {
+    addToCart,
+    openCart,
+    totalCartCount,
+  } = useCart();
+
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isOrderMenuOpen, setIsOrderMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(initialSelectedProduct || null);
@@ -193,40 +197,9 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
     });
   }, [filters]);
 
-  // Cart Handlers
+  // Cart Handlers using unified CartContext
   const handleAddToCart = (product: ShopProduct, quantity: number = 1) => {
-    setCart((prev) => {
-      const existingIndex = prev.findIndex((item) => item.product.id === product.id);
-      if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex].quantity += quantity;
-        return updated;
-      }
-      return [...prev, { product, quantity }];
-    });
-
-    setNotification(`${product.name} added to your bag`);
-    setTimeout(() => {
-      setNotification(null);
-    }, 3200);
-  };
-
-  const handleUpdateCartQuantity = (id: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.product.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[]
-    );
-  };
-
-  const handleRemoveCartItem = (id: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== id));
+    addToCart(product, quantity, false);
   };
 
   const handleResetFilters = () => {
@@ -239,8 +212,6 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
       sort: 'featured',
     });
   };
-
-  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fbf8f3] via-[#f6efe4] to-[#fbf9f5] text-stone-900 relative selection:bg-[#D8C2A3]/30">
@@ -271,7 +242,7 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{notification}</span>
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={openCart}
               className="text-rose-gold underline hover:text-white ml-2 text-xs font-bold uppercase cursor-pointer"
             >
               View Bag
@@ -299,8 +270,9 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
 
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={openCart}
               className="flex items-center space-x-2 bg-white/95 border border-[#D8C2A3]/70 hover:border-black text-stone-900 px-4 sm:px-5 py-1.5 rounded-full shadow-xs transition-all text-xs font-semibold cursor-pointer relative"
+              aria-label="Open Cart"
             >
               <ShoppingBag className="h-4 w-4 text-[#a88d6b]" />
               <span>Bag ({totalCartCount})</span>
@@ -521,21 +493,6 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
           </div>
         </section>
       )}
-
-      {/* Cart Drawer */}
-      <ShopCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cart={cart}
-        onUpdateQuantity={handleUpdateCartQuantity}
-        onRemoveItem={handleRemoveCartItem}
-        onCheckout={() => {
-          setIsCartOpen(false);
-          if (onBookClick) {
-            onBookClick('Skincare Order Inquiry & Consultation');
-          }
-        }}
-      />
 
       {/* Mobile Filter Drawer */}
       <ShopMobileFilterDrawer

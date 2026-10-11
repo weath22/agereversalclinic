@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Calendar, ChevronDown, ChevronRight, ChevronLeft, Gift, ThumbsUp, BookOpen, HelpCircle, Phone } from 'lucide-react';
+import { Menu, X, Calendar, ChevronDown, ChevronRight, ChevronLeft, Gift, ThumbsUp, BookOpen, HelpCircle, Phone, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HeaderConfig } from '../types';
 import { CLINIC_INFO, CLINIC_DATA } from '../data/clinicInfo';
+import { useCart } from '../context/CartContext';
 
 interface HeaderProps {
   onBookClick: (serviceName?: string) => void;
@@ -44,6 +45,7 @@ export default function Header({
   onTransformationsClick,
   onReviewsClick,
 }: HeaderProps) {
+  const { openCart, totalCartCount } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -463,8 +465,22 @@ export default function Header({
           })}
         </nav>
 
-        {/* CTA Button */}
-        <div className="hidden md:flex items-center space-x-4">
+        {/* CTA Button & Cart (Larger Screens Only - lg:flex) */}
+        <div className="hidden lg:flex items-center space-x-3 xl:space-x-4">
+          <button
+            onClick={openCart}
+            className="relative p-2.5 rounded-full border border-luxury-border/80 bg-white hover:bg-stone-50 text-luxury-text hover:text-black transition-all flex items-center gap-2 cursor-pointer shadow-xs group"
+            aria-label="Open clinical shopping cart"
+          >
+            <ShoppingBag className="h-4 w-4 text-luxury-muted group-hover:text-luxury-gold transition-colors" strokeWidth={1.5} />
+            <span className="hidden xl:inline text-xs font-sans font-medium tracking-wide">Bag</span>
+            {totalCartCount > 0 && (
+              <span className="bg-black text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center -ml-1 border border-luxury-gold/50">
+                {totalCartCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => onBookClick()}
             className="bg-black hover:bg-neutral-900 text-white border border-luxury-gold/40 px-6 py-2.5 rounded-full shadow-xs hover:shadow-md transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-xs uppercase group cursor-pointer"
@@ -474,7 +490,7 @@ export default function Header({
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Actions (Mobile Screens Only - lg:hidden, NO cart button on mobile) */}
         <div className="flex items-center space-x-2 lg:hidden">
           <button
             onClick={() => onBookClick()}

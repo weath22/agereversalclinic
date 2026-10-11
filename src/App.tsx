@@ -33,6 +33,8 @@ import { PricingPageView } from './components/pricing/PricingPageView';
 import { TransformationsPageView } from './components/transformations/TransformationsPageView';
 import { ReviewsPageView } from './components/reviews/ReviewsPageView';
 import ClinicalSEOHead from './components/ClinicalSEOHead';
+import { UniversalCartDrawer } from './components/shop/ShopCartDrawer';
+import { TreatmentCartDrawer } from './components/pricing/TreatmentCartDrawer';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
@@ -584,6 +586,12 @@ export default function App() {
 
       {/* 16. Persistent side action menu */}
       <FloatingMenu />
+
+      {/* 17. Universal Shopping Bag & Cart Drawer (Mounted at Root) */}
+      <UniversalCartDrawer />
+
+      {/* 18. Universal Clinical Treatment Plan Drawer (Mounted at Root) */}
+      <TreatmentCartDrawer />
 
     </div>
   );

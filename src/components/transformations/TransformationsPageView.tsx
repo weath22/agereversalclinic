@@ -5,10 +5,11 @@ import { CLINICAL_TRANSFORMATION_CASES, TransformationCase, getRecommendedTreatm
 import { PricingCard } from '../pricing/PricingCard';
 import { PackageSelectModal } from '../pricing/PackageSelectModal';
 import { ProductCard } from '../shop/ProductCard';
-import { ShopCartDrawer } from '../shop/ShopCartDrawer';
 import { TransformationCarousel } from './TransformationCarousel';
 import { TreatmentPricingItem, PricingPackage } from '../../data/treatmentPricing';
-import { ShopProduct, CartItem } from '../../types/shop';
+import { ShopProduct } from '../../types/shop';
+import { useCart } from '../../context/CartContext';
+import { useTreatmentCart } from '../../context/TreatmentCartContext';
 
 interface TransformationsPageViewProps {
   onClose: () => void;
@@ -28,8 +29,14 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategoryFilter || 'All');
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
   const [activeBottomSheet, setActiveBottomSheet] = useState<{ type: 'treatments' | 'products'; caseItem: TransformationCase } | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // Connect to unified CartContext & TreatmentCartContext
+  const { addToCart, openCart, totalCartCount } = useCart();
+  const {
+    addTreatment,
+    openTreatmentCart,
+    totalTreatmentCount,
+  } = useTreatmentCart();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const categories = ['All', 'Facial Rejuvenation', 'Skin Texture & Scars', 'Lifting & Contouring', 'Regenerative Biotech', 'Hair Density'];
@@ -39,41 +46,12 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
     return CLINICAL_TRANSFORMATION_CASES.filter(c => c.category === selectedCategory);
   }, [selectedCategory]);
 
-  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-
   const handleAddToCart = (product: ShopProduct) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product, quantity: 1 }];
-    });
-    setIsCartOpen(true);
+    addToCart(product, 1, false);
     setToastMessage(`Added "${product.name}" to your shopping bag`);
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
-  };
-
-  const handleUpdateCartQuantity = (productId: string, delta: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => {
-          if (item.product.id === productId) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter((item): item is CartItem => item !== null)
-    );
-  };
-
-  const handleRemoveCartItem = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
   const handleChoosePackage = (treatment: TreatmentPricingItem) => {
@@ -82,9 +60,8 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
 
   const handleBookPackage = (treatment: TreatmentPricingItem, selectedPackage: PricingPackage) => {
     setActivePackageModalTreatment(null);
-    if (onBookClick) {
-      onBookClick(`${treatment.title} (${selectedPackage.name})`);
-    }
+    // Add treatment to global treatment cart and open treatment plan drawer
+    addTreatment(treatment, selectedPackage, 1, true);
   };
 
   return (
@@ -117,7 +94,21 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsCartOpen(true)}
+              onClick={openTreatmentCart}
+              className="relative p-2 sm:px-3 sm:py-2 rounded-full border border-[#D8C2A3]/50 bg-white hover:bg-stone-50 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+              aria-label="View Planned Treatments"
+            >
+              <Calendar className="w-4 h-4 text-stone-800" />
+              <span className="hidden sm:inline text-xs font-medium text-stone-800">Plan</span>
+              {totalTreatmentCount > 0 && (
+                <span className="bg-black text-white text-[10px] font-bold rounded-full h-4.5 w-4.5 flex items-center justify-center -ml-0.5 border border-luxury-gold/50">
+                  {totalTreatmentCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={openCart}
               className="relative p-2 sm:px-3 sm:py-2 rounded-full border border-[#D8C2A3]/50 bg-white hover:bg-stone-50 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
               aria-label="View Shopping Bag"
             >
@@ -382,21 +373,6 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
           onBookPackage={handleBookPackage}
         />
       )}
-
-      {/* Cart Drawer */}
-      <ShopCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cart={cart}
-        onUpdateQuantity={handleUpdateCartQuantity}
-        onRemoveItem={handleRemoveCartItem}
-        onCheckout={() => {
-          setIsCartOpen(false);
-          if (onBookClick) {
-            onBookClick('Skincare & Clinical Treatment Plan');
-          }
-        }}
-      />
     </div>
   );
 };

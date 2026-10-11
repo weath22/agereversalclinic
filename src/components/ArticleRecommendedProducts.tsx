@@ -5,6 +5,7 @@ import { SHOP_PRODUCTS } from '../data/shopProducts';
 import { ShopProduct } from '../types/shop';
 import { ProductCard } from './shop/ProductCard';
 import Pagination from './Pagination';
+import { useCart } from '../context/CartContext';
 
 interface ArticleRecommendedProductsProps {
   onShopClick?: () => void;
@@ -12,6 +13,7 @@ interface ArticleRecommendedProductsProps {
 }
 
 export default function ArticleRecommendedProducts({ onShopClick, onProductClick }: ArticleRecommendedProductsProps) {
+  const { addToCart } = useCart();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -24,7 +26,9 @@ export default function ArticleRecommendedProducts({ onShopClick, onProductClick
   );
 
   const handleAddToCart = (product: ShopProduct) => {
-    setToastMessage(`Added "${product.name}" to your list`);
+    // Add directly to global centralized cart
+    addToCart(product, 1, false);
+    setToastMessage(`Added "${product.name}" to your shopping bag`);
     setTimeout(() => {
       setToastMessage(null);
     }, 2800);

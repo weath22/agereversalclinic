@@ -2,8 +2,8 @@
  * ============================================================================
  * CLINIC MASTER & SEO CONFIGURATION
  * ============================================================================
- * Edit this single file to update all clinic brand, contact, medical credentials,
- * and Schema.org Google SEO structured data across the entire application.
+ * Edit this file or customize via Admin Dashboard -> Clinic Master Data.
+ * Updates clinic brand, contact, credentials, locations & Google SEO structured data.
  * ============================================================================
  */
 
@@ -28,14 +28,12 @@ export interface ClinicLocation {
   longitude?: number;
   parkingAvailable?: boolean;
   wheelchairAccessible?: boolean;
-  // Configurable Image Assets
   image?: string;
   imageAlt?: string;
   gallery?: string[];
 }
 
 export interface ClinicData {
-  // 1. Core Brand & Meta Summary
   name: string;
   tagline: string;
   metaDescription: string;
@@ -43,7 +41,6 @@ export interface ClinicData {
   brandKeywords: string[];
   ogImage: string;
 
-  // 2. Brand Visual Assets & Logos
   logo: {
     icon: string;
     full?: string;
@@ -52,28 +49,23 @@ export interface ClinicData {
   exteriorPhoto?: string;
   interiorPhotos?: string[];
 
-  // 3. Direct Communication Channels
   phone: string;
   email: string;
   whatsapp: string;
   openingHours: string;
 
-  // 4. Commercial & Search Details (Schema.org / Google)
   priceRange: string;
   currency: string;
   acceptedPayments: string[];
   languagesSpoken: string[];
   medicalSpecialties: string[];
 
-  // 5. Clinical Accreditations & Registrations
   gmcRegistration?: string;
   cqcStatus?: string;
   accreditations: string[];
 
-  // 6. Clinic Facilities & Locations
   locations: ClinicLocation[];
 
-  // 7. Social Media Profiles
   socials: {
     facebook: string;
     instagram: string;
@@ -82,143 +74,119 @@ export interface ClinicData {
     linkedin?: string;
   };
 
-  // 8. Reviews & Rating Links
   googleReviewUrl?: string;
 }
 
 export const CLINIC_DATA: ClinicData = {
-  // 1. Core Brand & Meta Summary
-  name: 'Age Reversal Clinics',
-  tagline: 'Premier Medical, Surgical & Cosmetic Dermatology',
-  metaDescription:
-    'Award-winning Harley Street & London aesthetic dermatology clinic specializing in cellular exosomes, Profhilo, Morpheus8, ultrasound SMAS lifts, precision dermal contouring, and regenerative skincare.',
-  canonicalUrl: 'https://agereversalclinics.com',
-  brandKeywords: [
-    'Harley Street Dermatology Clinic London',
-    'Exosome Regenerative Therapy London',
-    'Profhilo Injectable Hydration London',
-    'Morpheus8 RF Microneedling Marylebone',
-    'Ultherapy Non-Surgical Face Lift',
-    'Precision Lip Enhancement London',
-    'Aesthetic Medical Doctors GMC Registered',
-    'Minor Skin Surgery and Scar Revision'
+  "name": "Age Reversal Clinics",
+  "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
+  "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
+  "canonicalUrl": "https://agereversalclinics.co.uk",
+  "brandKeywords": [
+    "dermatology clinic london",
+    "harley street dermatologist",
+    "anti-aging clinic london",
+    "botox harley street",
+    "aesthetic dermatology",
+    "Clinical aesthetics UK",
+    "Professional skincare clinic UK",
+    "Aesthetic medicine UK",
+    "Skin rejuvenation clinic UK",
+    "Non-surgical cosmetic treatments UK",
+    "Advanced aesthetics UK",
+    "Cosmetic skin clinic UK",
+    "Medical aesthetics UK",
+    "Aesthetic clinics UK"
   ],
-  ogImage: CLINIC_BANNER_IMAGES.ogSocialImage,
-
-  // 2. Brand Visual Assets & Logos (configured in src/data/clinicImages.ts)
-  logo: CLINIC_LOGOS,
-  exteriorPhoto: CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary,
-  interiorPhotos: CLINIC_INTERIOR_PHOTOS,
-
-  // 3. Direct Communication Channels
-  phone: '+44 20 8857 2000',
-  email: 'info@agereversalclinics.com',
-  whatsapp: 'https://wa.me/442088572000',
-  openingHours: 'Mon – Fri: 09:00 – 19:00 | Sat: 10:00 – 17:00',
-
-  // 4. Commercial & Search Details (Schema.org / Google)
-  priceRange: '£££',
-  currency: 'GBP',
-  acceptedPayments: [
-    'Cash',
-    'Credit Card',
-    'Debit Card',
-    'Visa',
-    'Mastercard',
-    'American Express',
-    'Apple Pay',
-    'Google Pay'
+  "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
+  "logo": {
+    "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+    "alt": "Age Reversal Clinics Logo",
+    "full": "/assets/1791726190127-arc-logo__2_.webp"
+  },
+  "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+  "interiorPhotos": [
+    "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
   ],
-  languagesSpoken: ['English', 'French', 'Arabic', 'Spanish'],
-  medicalSpecialties: [
-    'Dermatology',
-    'Aesthetic Medicine',
-    'Regenerative Medicine',
-    'Cosmetic Surgery',
-    'Trichology',
-    'Laser & Energy-Based Medicine'
+  "phone": "+44 (0) 20 7984159517",
+  "email": "agereversalbeautyspa@gmail.com",
+  "whatsapp": "https://wa.me/44207984159517",
+  "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
+  "priceRange": "£",
+  "currency": "GBP",
+  "acceptedPayments": [
+    "Cash",
+    "Credit Card",
+    "Debit Card",
+    "American Express",
+    "Bank Transfer",
+    "Private Medical Insurance"
   ],
-
-  // 5. Clinical Accreditations & Registrations
-  gmcRegistration: 'GMC Certified Medical Specialists',
-  cqcStatus: 'CQC Regulated & Compliant Private Facility',
-  accreditations: [
-    'General Medical Council (GMC) Registered Specialists',
-    'Care Quality Commission (CQC) Compliant Clinic',
-    'Save Face Accredited Aesthetic Clinic',
-    'British College of Aesthetic Medicine (BCAM) Member',
-    'Joint Council for Cosmetic Practitioners (JCCP)'
+  "languagesSpoken": [
+    "English",
+    "French"
   ],
-
-  // 6. Clinic Locations (linked with dedicated media in src/data/clinicImages.ts)
-  locations: [
+  "medicalSpecialties": [
+    "Dermatology",
+    "Cosmetic Dermatology",
+    "Aesthetic Medicine",
+    "Anti-Ageing Therapeutics",
+    "Laser Skin Resurfacing",
+    "Minor Skin Surgery"
+  ],
+  "gmcRegistration": "GMC Designated Medical Body #7492014",
+  "cqcStatus": "CQC Registered Provider (Good Rating)",
+  "accreditations": [
+    "Care Quality Commission (CQC) Registered",
+    "General Medical Council (GMC) Compliant",
+    "British Association of Dermatologists (BAD) Member",
+    "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
+    "Save Face Accredited Excellence"
+  ],
+  "locations": [
     {
-      id: 'harley-street-flagship',
-      name: 'Harley Street Flagship Clinic',
-      address: '4 Harley Street, Marylebone',
-      city: 'London',
-      postalCode: 'W1G 9PB',
-      country: 'United Kingdom',
-      phone: '+44 20 8857 2000',
-      hours: 'Mon – Fri: 09:00 – 19:00 | Sat: 10:00 – 17:00',
-      directionsUrl: 'https://maps.google.com/?q=4+Harley+Street+London+W1G+9PB',
-      latitude: 51.5173,
-      longitude: -0.1472,
-      parkingAvailable: true,
-      wheelchairAccessible: true,
-      image: CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary,
-      imageAlt: CLINIC_LOCATION_IMAGES['harley-street-flagship'].alt,
-      gallery: CLINIC_LOCATION_IMAGES['harley-street-flagship'].gallery
+      "id": "location-1791722960928",
+      "name": "Age Reversal Clinic",
+      "address": "Age Reversal Clinic Grove Park",
+      "city": "London",
+      "postalCode": "",
+      "country": "United Kingdom",
+      "phone": "+44 (0) 20 88572000",
+      "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
+      "directionsUrl": "",
+      "latitude": 51.5173,
+      "longitude": -0.1472,
+      "parkingAvailable": false,
+      "wheelchairAccessible": true,
+      "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
+      "imageAlt": ""
     },
     {
-      id: 'devonshire-place-clinic',
-      name: 'Devonshire Place Medical Suites',
-      address: '10 Devonshire Place, Marylebone',
-      city: 'London',
-      postalCode: 'W1G 6HH',
-      country: 'United Kingdom',
-      phone: '+44 20 8857 2000',
-      hours: 'Mon – Fri: 09:00 – 18:30',
-      directionsUrl: 'https://maps.google.com/?q=10+Devonshire+Place+London+W1G+6HH',
-      latitude: 51.5204,
-      longitude: -0.1495,
-      parkingAvailable: true,
-      wheelchairAccessible: true,
-      image: CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].primary,
-      imageAlt: CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].alt,
-      gallery: CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].gallery
-    },
-    {
-      id: 'grove-park-clinic',
-      name: 'Grove Park Clinic',
-      address: 'Grove Park, London Borough of Lewisham',
-      city: 'London',
-      postalCode: 'SE12 0AL',
-      country: 'United Kingdom',
-      phone: '+44 20 8857 2000',
-      hours: 'Mon – Fri: 09:00 – 18:00',
-      directionsUrl: 'https://maps.google.com/?q=Grove+Park+London+SE12',
-      latitude: 51.4312,
-      longitude: 0.0211,
-      parkingAvailable: true,
-      wheelchairAccessible: true,
-      image: CLINIC_LOCATION_IMAGES['grove-park-clinic'].primary,
-      imageAlt: CLINIC_LOCATION_IMAGES['grove-park-clinic'].alt,
-      gallery: CLINIC_LOCATION_IMAGES['grove-park-clinic'].gallery
+      "id": "location-1791728808656",
+      "name": "374 Baring Road London UK",
+      "address": "374 Baring Road Se12 0EF",
+      "city": "London",
+      "postalCode": "",
+      "country": "United Kingdom",
+      "phone": "+44 (0) 20 8857 2000",
+      "hours": "Mon – Sat: 09:00 – 19:00",
+      "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
+      "latitude": 51.5173,
+      "longitude": -0.1472,
+      "parkingAvailable": false,
+      "wheelchairAccessible": false,
+      "image": "/assets/1791729403362-arc-logo__1___2_.webp",
+      "imageAlt": ""
     }
   ],
-
-  // 7. Social Links
-  socials: {
-    facebook: 'https://facebook.com',
-    instagram: 'https://instagram.com/agereversalclinicuk',
-    twitter: 'https://twitter.com',
-    youtube: 'https://youtube.com',
-    linkedin: 'https://linkedin.com'
+  "socials": {
+    "facebook": "https://www.facebook.com/agereversalmedspa",
+    "instagram": "https://www.instagram.com/agereversalclinicuk/",
+    "twitter": "",
+    "youtube": "",
+    "linkedin": ""
   },
-
-  // 8. Google Review URL (change anytime)
-  googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJ-3P3F6sEdkgRk612k05J2vM'
+  "googleReviewUrl": ""
 };
 
 /**
@@ -229,7 +197,7 @@ export const CLINIC_INFO = {
   tagline: CLINIC_DATA.tagline,
   metaDescription: CLINIC_DATA.metaDescription,
   primaryPhone: CLINIC_DATA.phone,
-  phoneHref: `tel:${CLINIC_DATA.phone.replace(/[^0-9+]/g, '')}`,
+  phoneHref: `tel:${(CLINIC_DATA.phone || '').replace(/[^0-9+]/g, '')}`,
   primaryEmail: CLINIC_DATA.email,
   whatsappUrl: CLINIC_DATA.whatsapp,
   googleReviewUrl: CLINIC_DATA.googleReviewUrl || 'https://search.google.com/local/writereview?placeid=ChIJ-3P3F6sEdkgRk612k05J2vM',
@@ -239,7 +207,7 @@ export const CLINIC_INFO = {
     saturdays: 'Sat: 10:00 – 17:00',
     sundays: 'Sun: Closed'
   },
-  locations: CLINIC_DATA.locations.map((loc) => ({
+  locations: (CLINIC_DATA.locations || []).map((loc) => ({
     ...loc,
     id: loc.id || loc.name.toLowerCase().replace(/\s+/g, '-'),
     shortName: loc.name
