@@ -26,9 +26,9 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
 
-  const [selectedAreaId, setSelectedAreaId] = useState<string>('face');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
-  const [selectedServices, setSelectedServices] = useState<string[]>(['exosome']);
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('face-injectables');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('anti-wrinkle');
+  const [selectedServices, setSelectedServices] = useState<string[]>(['botox-1-area']);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
@@ -107,16 +107,16 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
         setFormData(prev => ({ ...prev, service: found.item.id }));
         setSelectedServices([found.item.id]);
       } else {
-        setSelectedAreaId('face');
-        setSelectedCategoryId('injectables');
-        setFormData(prev => ({ ...prev, service: 'exosome' }));
-        setSelectedServices(['exosome']);
+        setSelectedAreaId('face-injectables');
+        setSelectedCategoryId('anti-wrinkle');
+        setFormData(prev => ({ ...prev, service: 'botox-1-area' }));
+        setSelectedServices(['botox-1-area']);
       }
     } else {
-      setSelectedAreaId('face');
-      setSelectedCategoryId('injectables');
-      setFormData(prev => ({ ...prev, service: 'exosome' }));
-      setSelectedServices(['exosome']);
+      setSelectedAreaId('face-injectables');
+      setSelectedCategoryId('anti-wrinkle');
+      setFormData(prev => ({ ...prev, service: 'botox-1-area' }));
+      setSelectedServices(['botox-1-area']);
     }
   }, [preselectedService]);
 

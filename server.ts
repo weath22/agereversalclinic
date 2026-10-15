@@ -235,6 +235,57 @@ app.get('/api/admin/clinic-info', (_req, res) => {
 app.post('/api/admin/clinic-data', handleSaveClinicData);
 app.post('/api/admin/save-clinic-info', handleSaveClinicData);
 
+// API: Save treatment pricing data to siteCustomizations.json on disk
+app.post('/api/admin/treatment-pricing', (req, res) => {
+  try {
+    const { treatmentPricingData, data } = req.body;
+    const payload = treatmentPricingData || data || req.body;
+    if (!payload || !Array.isArray(payload)) {
+      return res.status(400).json({ success: false, error: 'Invalid treatment pricing data. Must be an array of treatments.' });
+    }
+
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    existing.treatment_pricing_data = payload;
+    existing.lastSynced = new Date().toISOString();
+    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    console.log(`[Admin] Successfully persisted ${payload.length} treatment pricing items to ${customizationsPath}`);
+
+    return res.json({
+      success: true,
+      message: 'Treatment pricing successfully persisted to disk in siteCustomizations.json',
+      count: payload.length,
+      updatedAt: existing.lastSynced
+    });
+  } catch (error) {
+    console.error('Error saving treatment pricing:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// GET /api/admin/treatment-pricing
+app.get('/api/admin/treatment-pricing', (_req, res) => {
+  try {
+    if (fs.existsSync(customizationsPath)) {
+      const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      if (customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data)) {
+        return res.json({ success: true, data: customizations.treatment_pricing_data });
+      }
+    }
+    return res.json({ success: true, data: null });
+  } catch (error) {
+    console.error('Error reading treatment pricing customizations:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
 // API: Get current persisted file config
 app.get('/api/admin/config', (_req, res) => {
   try {

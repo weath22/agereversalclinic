@@ -457,6 +457,20 @@ export default function App() {
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
                 setActiveSection('specialist-areas');
               }}
+              onPricingClick={() => {
+                setSelectedConsultant(null);
+                setIsExploreOpen(false);
+                setSelectedArticle(null);
+                setSelectedTreatment(null);
+                setIsAboutOpen(false);
+                setIsShopOpen(false);
+                setIsTransformationsOpen(false);
+                setReturnArticle(null);
+                setSelectedShopProduct(null);
+                setPricingCategoryFilter(undefined);
+                setIsPricingOpen(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               onTransformationsClick={() => {
                 setSelectedConsultant(null);
                 setIsExploreOpen(false);

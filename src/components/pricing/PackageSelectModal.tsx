@@ -6,6 +6,7 @@ import { Check, ChevronDown, ArrowLeft } from 'lucide-react';
 
 interface PackageSelectModalProps {
   treatment: TreatmentPricingItem | null;
+  initialPackageId?: string;
   onClose: () => void;
   onBack?: () => void;
   backLabel?: string;
@@ -14,6 +15,7 @@ interface PackageSelectModalProps {
 
 export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
   treatment,
+  initialPackageId,
   onClose,
   onBack,
   backLabel,
@@ -35,12 +37,21 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
     };
   }, [treatment]);
 
-  // Set default selected package (popular one if available, otherwise first)
-  const defaultPopular = treatment?.packages.find((p) => p.isPopular) || treatment?.packages[0];
+  // Set default selected package (specified, or popular one if available, otherwise first)
+  const [selectedPkgId, setSelectedPkgId] = useState<string>(() => {
+    if (initialPackageId) return initialPackageId;
+    const defaultPopular = treatment?.packages.find((p) => p.isPopular) || treatment?.packages[0];
+    return defaultPopular?.id || '';
+  });
 
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(
-    defaultPopular?.id || treatment?.packages[0]?.id || ''
-  );
+  useEffect(() => {
+    if (initialPackageId) {
+      setSelectedPkgId(initialPackageId);
+    } else if (treatment) {
+      const defaultPopular = treatment.packages.find((p) => p.isPopular) || treatment.packages[0];
+      setSelectedPkgId(defaultPopular?.id || '');
+    }
+  }, [treatment, initialPackageId]);
 
   // Popular package is open by default for benefits
   const [openBenefitsIds, setOpenBenefitsIds] = useState<string[]>(() => {
@@ -137,11 +148,28 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
             <div className="px-5 sm:px-6">
               <div className="space-y-2 pb-3 pt-2 sm:space-y-4 md:pt-0">
                 <div className="space-y-0 pb-2">
-                  {/* Treatment Title Header */}
+                  {/* Treatment Title Header & Unique Package Procedure/Downtime */}
                   <div className="relative pb-1.5 pt-1 lg:pb-0 lg:pt-3">
-                    <p className="no-margin text-sm sm:text-base text-noir-800 font-medium">
+                    <p className="no-margin text-sm sm:text-base text-noir-900 font-medium">
                       {treatment.title}
                     </p>
+                    {/* Unique Procedure & Downtime for the active package selection */}
+                    {(() => {
+                      const activePkg = treatment.packages.find((p) => p.id === selectedPkgId) || treatment.packages[0];
+                      const activeProcedureTime = activePkg?.procedureTime || treatment.procedureTime || '20-30 Mins';
+                      const activeDowntime = activePkg?.downtime || treatment.downtime || 'None';
+                      return (
+                        <div className="flex items-center gap-2 text-xs text-stone-600 mt-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                            <span className="text-stone-400">Procedure:</span> {activeProcedureTime}
+                          </span>
+                          <span className="text-stone-300">•</span>
+                          <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                            <span className="text-stone-400">Downtime:</span> {activeDowntime}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Package Option Items */}
@@ -222,6 +250,13 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                                 <small className="text-[10px] sm:text-xs">per session</small>
                               </p>
                             </div>
+                          </div>
+
+                          {/* Package-specific details*/}
+                          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500 mt-1 flex-wrap">
+                            {pkg.description && (
+                              <span className="text-stone-500 italic line-clamp-1">{pkg.description}</span>
+                            )}
                           </div>
 
                           {/* Collapsible Benefits Trigger & Drawer */}

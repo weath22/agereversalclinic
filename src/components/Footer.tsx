@@ -209,30 +209,23 @@ export default function Footer() {
           <p className="text-[10px] md:text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/50 mb-2 leading-relaxed">
             COPYRIGHT &copy; {currentYear} THE LONDON COSMETIC CLINIC. ALL
             RIGHTS RESERVED. <br className="sm:hidden" />
-            IN PARTNERSHIP WITH{" "}
-            <a
-              className="text-[#D8C2A3] hover:text-white transition-colors duration-300 font-medium"
-              href="#"
-            >
-              LONDON KELOID SCAR CLINIC
-            </a>
           </p>
 
-          <p className="text-[10px] text-white/30 mb-8 font-sans font-light">
-            Powered by DAB: Ecommerce Boutique Website Design &amp; Development
-          </p>
-
-          {/* Accessibility Statement Trigger - Details hidden by default */}
-          <div className="border-t border-white/10 pt-6 flex justify-center items-center">
-            <button
+           <button
               type="button"
               onClick={() => setIsAccessibilityOpen(true)}
-              className="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-[#D8C2A3] hover:bg-white/5 border border-white/10 hover:border-[#D8C2A3]/40 transition-all duration-300 font-sans cursor-pointer group py-1.5 px-4 rounded-full"
+              className="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-[#D8C2A3] hover:bg-white/5 border border-white/10 hover:border-[#D8C2A3]/40 transition-all duration-300 font-sans cursor-pointer group py-1.5 px-4 mb-3 rounded-full"
               aria-label="Open Accessibility Statement"
             >
               <Accessibility className="w-3.5 h-3.5 text-[#D8C2A3] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
               <span className="underline underline-offset-4 decoration-white/20 group-hover:decoration-[#D8C2A3]">Accessibility Statement</span>
             </button>
+
+          {/* Accessibility Statement Trigger - Details hidden by default */}
+          <div className="border-t border-white/10 pt-6 flex justify-center items-center">
+            <p className="text-[10px] text-white/30 mb-8 font-sans font-light">
+            Designed by WEALTH: Wealth Graphics Website Development
+          </p>
           </div>
         </div>
       </div>

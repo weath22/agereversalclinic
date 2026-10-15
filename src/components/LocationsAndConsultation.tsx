@@ -71,8 +71,8 @@ const HEAR_ABOUT_US_OPTIONS = [
 export default function LocationsAndConsultation({ preselectedService, onTreatmentClick }: LocationsAndConsultationProps = {}) {
   const { addTreatment: addGlobalTreatment } = useTreatmentCart();
   const [mounted, setMounted] = useState<boolean>(false);
-  const [selectedAreaId, setSelectedAreaId] = useState<string>('face');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('injectables');
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('face-injectables');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('anti-wrinkle');
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
   const [selectedTreatmentPackages, setSelectedTreatmentPackages] = useState<Record<string, PricingPackage>>({});
   const [activePricingModalTreatment, setActivePricingModalTreatment] = useState<TreatmentPricingItem | null>(null);
@@ -301,8 +301,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
         }));
         setSelectedTreatments([found.item.id]);
       } else {
-        setSelectedAreaId('face');
-        setSelectedCategoryId('injectables');
+        setSelectedAreaId('face-injectables');
+        setSelectedCategoryId('anti-wrinkle');
         setBooking(prev => ({
           ...prev,
           procedure: '',
@@ -311,8 +311,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
         setSelectedTreatments([]);
       }
     } else {
-      setSelectedAreaId('face');
-      setSelectedCategoryId('injectables');
+      setSelectedAreaId('face-injectables');
+      setSelectedCategoryId('anti-wrinkle');
       setBooking(prev => ({
         ...prev,
         procedure: ''
@@ -343,16 +343,23 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
   // Locations directly mapped from clinic info data file (src/data/clinicInfo.ts) or reactive store
   const activeLocations: LocationItemConfig[] = (clinicData.locations || []).map((loc, idx) => {
-    const locId = `loc-${idx + 1}`;
+    const locId = loc.id || `loc-${idx + 1}`;
     const fullAddress = loc.address.includes(loc.city)
       ? `${loc.address}, ${loc.postalCode}`
       : `${loc.address}, ${loc.city}, ${loc.postalCode}`;
     const mapsUrl = loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`;
-    const fallbackImg = DEFAULT_LOCATION_IMAGES[locId] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length];
+    const fallbackImg = DEFAULT_LOCATION_IMAGES[`loc-${idx + 1}`] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length];
 
     const adminLoc = locationsConfig?.locations?.find(
-      (al) => al.id === locId || al.name.toLowerCase() === loc.name.toLowerCase()
+      (al) => al.id === locId || al.id === `loc-${idx + 1}` || al.name.toLowerCase() === loc.name.toLowerCase()
     );
+
+    // Prioritize image uploaded directly on the clinic location (loc.image), then admin config, then fallback
+    const resolvedImageUrl = (loc.image && loc.image.trim().length > 0)
+      ? loc.image
+      : (adminLoc?.imageUrl && !adminLoc.imageUrl.includes('Interactive'))
+      ? adminLoc.imageUrl
+      : fallbackImg;
 
     return {
       id: locId,
@@ -362,9 +369,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       phone: loc.phone || clinicData.phone || CLINIC_DATA.phone,
       mapsUrl: mapsUrl,
       bannerType: adminLoc?.bannerType || 'Clinic',
-      imageUrl: (adminLoc?.imageUrl && adminLoc.imageUrl.startsWith('http') && !adminLoc.imageUrl.includes('Interactive'))
-        ? adminLoc.imageUrl
-        : fallbackImg,
+      imageUrl: resolvedImageUrl,
     };
   });
 
@@ -484,6 +489,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                       loading="lazy"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        const defaultImg = DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[0];
+                        if (target.src !== defaultImg) {
+                          target.src = defaultImg;
+                        }
+                      }}
                     />
 
                     {/* Gradient scrim brought down so the upper architecture remains bright and clear */}

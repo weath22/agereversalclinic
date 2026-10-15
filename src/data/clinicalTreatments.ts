@@ -22,242 +22,738 @@ export interface AreaItem {
   categories: CategoryItem[];
 }
 
+/**
+ * Authentic Clinical Areas & Consultation Hierarchy
+ * Strictly aligned with the official clinic brochure:
+ * 1. face-injectables (Anti-Wrinkle, Dermal Fillers, Skin Boosters, Lifting)
+ * 2. body-sculpting (Fat Dissolving, EMSCULPT, Cryo, Slimming Pen)
+ * 3. advanced-facials (Medical Facials, Mon & Fri Specials, Light Therapy)
+ * 4. hair-beauty (Hair Salon, Lashes & Brows, SPMU, Laser Hair Removal, IV Lounge & PRP)
+ */
 export const CLINICAL_AREAS_DB: AreaItem[] = [
+  // =========================================================================
+  // 1. FACE & INJECTABLES
+  // =========================================================================
   {
-    id: 'face',
-    name: 'Face',
+    id: 'face-injectables',
+    name: 'Face & Injectables',
     categories: [
       {
-        id: 'injectables',
-        name: 'INJECTABLE TREATMENTS',
+        id: 'anti-wrinkle',
+        name: 'Anti-Wrinkle Injections (Botox)',
         items: [
-          { id: 'exosome', name: 'Exosome Regenerative Therapy', price: '£650', time: '45 - 60 Mins', desc: 'Cellular-level skin rejuvenation using pure clinical-grade exosomes.' },
-          { id: 'migraines', name: 'Migraines Treatment', price: '£450', time: '30 Mins', desc: 'Targeted clinical neurotoxin therapy to alleviate chronic migraine pain.' },
-          { id: 'profhilo', name: 'Profhilo Injectable Hydration', price: '£450', time: '30 Mins', desc: 'Hyaluronic acid tissue remodeling for deep dermis hydration & firmness.' },
-          { id: 'polynucleotide', name: 'Polynucleotide Bio-Regeneration', price: '£490', time: '40 Mins', desc: 'DNA-level cell repair and under-eye renewal using purified nucleotides.' },
-          { id: 'jaw-reduction', name: 'Non-Surgical Jaw Reduction', price: '£480', time: '30 Mins', desc: 'Masseter muscle relaxation to slim the lower third of the face.' },
-          { id: 'gummy-smile', name: 'Gummy Smile Treatment', price: '£220', time: '15 Mins', desc: 'Subtle neurotoxin adjustments to lower the upper lip and balance smiles.' },
-          { id: 'eyebrow-lifting', name: 'Eyebrow Lifting', price: '£280', time: '20 Mins', desc: 'Non-surgical brow elevation to open and refresh the gaze.' },
-          { id: 'smoothing', name: 'Lines & Wrinkles Smoothing', price: '£350', time: '30 Mins', desc: 'Expert dynamic smoothing targeting forehead, frown lines, and crows feet.' },
-          { id: 'collagen-stimulator', name: 'Collagen Stimulator (Sculptra/Lanluma)', price: '£750', time: '45 Mins', desc: 'Deep poly-L-lactic acid stimulus to rebuild facial volume naturally.' }
+          {
+            id: 'botox-bunny-lines',
+            name: 'Bunny Lines',
+            price: '£160',
+            time: '20 Mins',
+            desc: 'Smooths fine wrinkles along the sides and bridge of the nose when smiling.'
+          },
+          {
+            id: 'botox-crows-feet',
+            name: "Crow's Feet",
+            price: '£160',
+            time: '20 Mins',
+            desc: 'Softens delicate lateral periorbital lines around the eye corners.'
+          },
+          {
+            id: 'botox-gummy-smile',
+            name: 'Gummy Smile',
+            price: '£160',
+            time: '15 Mins',
+            desc: 'Relaxes hyperactive upper lip elevators for a balanced, harmonious smile.'
+          },
+          {
+            id: 'botox-lip-flip',
+            name: 'Lip Flip',
+            price: '£160',
+            time: '15 Mins',
+            desc: 'Gently rolls the vermilion border outward for subtle upper lip enhancement.'
+          },
+          {
+            id: 'botox-puppet-lines',
+            name: 'Puppet Lines (DAO)',
+            price: '£160',
+            time: '20 Mins',
+            desc: 'Relaxes downward pulling muscles at the mouth corners to lift rested facial expression.'
+          },
+          {
+            id: 'botox-1-area',
+            name: '1 Area Full Treatment',
+            price: '£180',
+            time: '20 Mins',
+            desc: "Focused relaxation of one full area (Frown, Forehead, or Crow's Feet)."
+          },
+          {
+            id: 'botox-forehead',
+            name: 'Forehead Lines',
+            price: '£230',
+            time: '30 Mins',
+            desc: 'Smooths horizontal forehead expression creases while preserving natural brow animation.'
+          },
+          {
+            id: 'botox-2-areas',
+            name: '2 Areas Full Treatment',
+            price: '£250',
+            time: '30 Mins',
+            desc: 'Dual upper-face area synergy for smooth forehead, glabella, or eye contouring.'
+          },
+          {
+            id: 'botox-3-areas',
+            name: '3 Areas (Complete Upper Face)',
+            price: '£280',
+            time: '30 Mins',
+            desc: 'Comprehensive upper facial anti-ageing across Forehead, Frown lines, and Crow’s Feet.'
+          },
+          {
+            id: 'botox-neck-bands',
+            name: 'Neck Bands (Nefertiti Lift)',
+            price: '£290',
+            time: '30 Mins',
+            desc: 'Relaxes downward platysmal pulling bands along the neck and defined jawline.'
+          },
+          {
+            id: 'botox-jaw-slimming',
+            name: 'Jaw Slimming (Masseter)',
+            price: '£320',
+            time: '30 Mins',
+            desc: 'Slims broad lower facial angles and alleviates teeth grinding / clenching.'
+          },
+          {
+            id: 'botox-extended-neck-bands',
+            name: 'Extended Neck Bands',
+            price: '£370',
+            time: '35 Mins',
+            desc: 'Comprehensive multi-band platysmal therapy across the entire neck and lower border.'
+          }
         ]
       },
       {
-        id: 'fillers',
-        name: 'DERMAL FILLERS FOR FACE',
+        id: 'dermal-fillers',
+        name: 'Dermal Fillers (1ml)',
         items: [
-          { id: 'temple-filler', name: 'Temple Filler', price: '£420', time: '30 Mins', desc: 'Rebuilding temporal support to soften shadows and smooth lateral brows.' },
-          { id: 'forehead-filler', name: 'Forehead Filler', price: '£480', time: '45 Mins', desc: 'Premium structural hydration to smooth forehead contouring.' },
-          { id: 'earlobe-filler', name: 'Earlobe Filler', price: '£250', time: '20 Mins', desc: 'Restoring volume to stretched or drooping lobes for support.' },
-          { id: 'frown-treatment', name: 'Frown Line Filler', price: '£350', time: '20 Mins', desc: 'Direct precision filling for set-in glabella lines.' },
-          { id: 'jawline-contouring', name: 'Contouring the Jaw Line', price: '£580', time: '45 Mins', desc: 'Sculpting mandibular angles to build a sleek, refined jaw profile.' },
-          { id: 'chin-enhancement', name: 'Chin Enhancement', price: '£390', time: '30 Mins', desc: 'Proportional chin projection to restore profile alignment.' },
-          { id: 'cheek-enhancement', name: 'Cheek Enhancement', price: '£480', time: '30 Mins', desc: 'Midface lateral support restoring soft feminine or masculine contours.' },
-          { id: 'teartrough-darkcircles', name: 'Eye Bag, Dark Circles & Tear Trough', price: '£550', time: '45 Mins', desc: 'Extremely precise micro-filler placement to correct under-eye shadow lines.' },
-          { id: 'nasolabial-folds', name: 'Nose to Mouth Lines, Folds & Wrinkles', price: '£390', time: '30 Mins', desc: 'Hydrating deep nasolabial creases to soften shadow casting.' },
-          { id: 'rhinoplasty', name: 'Non-Surgical Rhinoplasty', price: '£650', time: '45 Mins', desc: 'Liquid nose contouring using high-cohesivity fillers to smooth bridges.' },
-          { id: 'lip', name: 'Precision Lip Enhancement', price: '£380', time: '30 - 45 Mins', desc: 'Bespoke lip shaping emphasizing proportion, border, and vermillion hydration.' },
-          { id: 'filler-dissolving', name: 'Dermal Filler Dissolving', price: '£250', time: '30 Mins', desc: 'Safe hyaluronidase dissolution to correct migrated or over-filled areas.' }
+          {
+            id: 'filler-cheeks-soft',
+            name: 'Cheeks Soft Volumisation (1ml)',
+            price: '£290',
+            time: '30 Mins',
+            desc: 'Gentle mid-face volume restoration to lift tired cheeks and soften nasolabial folds.'
+          },
+          {
+            id: 'filler-lips',
+            name: 'Lip Enhancement (1ml)',
+            price: '£290',
+            time: '30 - 45 Mins',
+            desc: "Subtle plumping, border definition, Cupid's bow contouring, and hydration."
+          },
+          {
+            id: 'filler-rhinoplasty',
+            name: 'Non-Surgical Rhinoplasty',
+            price: '£290',
+            time: '30 - 45 Mins',
+            desc: 'Straightens dorsal humps, refines nasal bridge angles, and elevates nasal tips without surgery.'
+          },
+          {
+            id: 'filler-tear-trough',
+            name: 'Tear Troughs & Under Eyes',
+            price: '£290',
+            time: '30 Mins',
+            desc: 'Brightens tired dark hollows beneath the eyes using specialised low-swelling HA.'
+          },
+          {
+            id: 'filler-temples',
+            name: 'Temples Rejuvenation',
+            price: '£290',
+            time: '30 Mins',
+            desc: 'Restores hollowed temporal fossa to deliver youthful, balanced heart-shaped contours.'
+          },
+          {
+            id: 'filler-cleavage-lines',
+            name: 'Cleavage & Decolletage Lines',
+            price: '£290',
+            time: '30 Mins',
+            desc: 'Smooths vertical sleep and sun-damage lines across the upper chest.'
+          },
+          {
+            id: 'filler-cheek-deep',
+            name: 'Cheeks Deep Contouring (1ml)',
+            price: '£350',
+            time: '40 Mins',
+            desc: 'High-definition zygomatic arch enhancement for razor-sharp cheekbone definition.'
+          },
+          {
+            id: 'filler-jaw-chin',
+            name: 'Jaw & Chin Contouring (1ml)',
+            price: '£350',
+            time: '40 Mins',
+            desc: 'Sculpts a defined jawline border, sharpens chin projection, and slims lower face.'
+          },
+          {
+            id: 'filler-hand-rejuvenation',
+            name: 'Hand Rejuvenation (1ml)',
+            price: '£470',
+            time: '30 Mins',
+            desc: 'Restores volume over dorsal veins and tendons on the back of hands for youthful skin.'
+          }
         ]
       },
       {
-        id: 'rejuvenation',
-        name: 'SKIN REJUVENATION',
+        id: 'skin-boosters',
+        name: 'Skin Boosters & Bioremodeling',
         items: [
-          { id: 'facetite', name: 'FaceTite Radiofrequency', price: '£1,800', time: '90 Mins', desc: 'Subdermal tightening combining RF energy with internal tissue coagulation.' },
-          { id: 'morpheus8', name: 'Morpheus8 RF Microneedling', price: '£850', time: '60 - 90 Mins', desc: 'Fractional remodeling utilizing RF-infused microneedles.' },
-          { id: 'ultherapy', name: 'Ultherapy Non-Surgical Lift', price: '£1,200', time: '60 - 120 Mins', desc: 'Deep SMAS layer micro-focused ultrasound tightening.' },
-          { id: 'pdo-threads', name: 'PDO Thread Lift', price: '£950', time: '60 Mins', desc: 'Polydioxanone structural suture suspension to counter deep sagging.' },
-          { id: 'skin-tightening', name: 'Skin Tightening Treatment', price: '£400', time: '45 Mins', desc: 'Non-invasive heating sessions stimulating quick fiber contraction.' },
-          { id: 'men-treatments', name: 'Treatments For Men', price: '£380', time: '45 Mins', desc: 'Targeted masculine dermal and structural contouring protocols.' },
-          { id: 'mesotherapy', name: 'Mesotherapy Cocktail Infusion', price: '£290', time: '45 Mins', desc: 'Superficial micro-droplets of rich vitamins, amino acids, and hydration.' },
-          { id: 'prx-peel', name: 'PRX-T33 No-Needle Biorejuvenation', price: '£250', time: '30 Mins', desc: 'Intense dermis renewal peel that bypasses epidermal shedding completely.' },
-          { id: 'skinpen', name: 'SkinPen Microneedling', price: '£280', time: '45 Mins', desc: 'Medical-grade mechanical collagen induction therapy.' },
-          { id: 'hyperpigmentation', name: 'Hyperpigmentation Care', price: '£320', time: '45 Mins', desc: 'Clinical depigmenting solutions targetting melasma and dark spots.' },
-          { id: 'cosmelan', name: 'Cosmelan Depigmentation Protocol', price: '£850', time: '60 Mins', desc: 'The gold standard clinical peel mask program for severe melasma.' },
-          { id: 'skin-peels', name: 'Medical-Grade Skin Peels', price: '£180', time: '30 Mins', desc: 'Advanced chemical resurfacing tailored to active acne, texture, or tone.' },
-          { id: 'obagi', name: 'Obagi Nu-Derm Skin System', price: '£390', time: '30 Mins', desc: 'Clinical setup for cellular transformation using prescription lines.' },
-          { id: 'zo-health', name: 'ZO Skin Health Protocol', price: '£250', time: '30 Mins', desc: 'High-potency skin health regimens configured for barrier repair.' }
+          {
+            id: 'profhilo-skin-booster',
+            name: 'Profhilo® 2ml Bioremodeling',
+            price: '£350',
+            time: '30 Mins',
+            desc: 'Ultra-pure stabilized hyaluronic acid stimulating 4 types of collagen and elastin (Single £350, Course of 2 £560).'
+          },
+          {
+            id: 'salmon-sperm-polynucleotides',
+            name: 'Salmon Sperm / Polynucleotides (PDRN)',
+            price: '£350',
+            time: '40 Mins',
+            desc: 'Purified DNA fragments repairing damaged cellular structures, fading pigmentation, and firming delicate eye tissue.'
+          }
+        ]
+      },
+      {
+        id: 'high-tech-lifting',
+        name: 'High-Tech Lifting & Laser',
+        items: [
+          {
+            id: 'morpheus8-facial',
+            name: 'Morpheus8 Facial RF Microneedling',
+            price: '£190',
+            time: '60 Mins',
+            desc: 'Subdermal adipose remodeling combining microneedling with radiofrequency to tighten skin up to 4mm deep.'
+          },
+          {
+            id: 'emface-lifting',
+            name: 'EMFACE® Tightening & Muscle Lifting',
+            price: '£250',
+            time: '20 Mins',
+            desc: 'Simultaneous synchronized RF and HIFES™ muscle stimulation to lift cheek elevators and smooth forehead.'
+          },
+          {
+            id: 'endolift-fiber-lift',
+            name: 'Endolift® Subdermal Laser Fiber Lift',
+            price: '£950',
+            time: '60 - 90 Mins',
+            desc: 'Minimally invasive internal micro-optical laser melting localized fat and retracting jawline and neck tissue.'
+          },
+          {
+            id: 'co2-fractional-laser',
+            name: 'CO2 Fractional Ablative Laser Resurfacing',
+            price: '£100',
+            time: '45 - 60 Mins',
+            desc: 'Micro-ablative laser technology vaporizing damaged tissue (Scars £100, Hands £200, Stretch Marks £200, Face & Neck £300).'
+          }
         ]
       }
     ]
   },
+
+  // =========================================================================
+  // 2. BODY SCULPTING
+  // =========================================================================
   {
-    id: 'body',
-    name: 'Body',
+    id: 'body-sculpting',
+    name: 'Body Sculpting',
     categories: [
       {
-        id: 'body-fillers',
-        name: 'DERMAL FILLERS FOR BODY',
+        id: 'fat-dissolving',
+        name: 'Fat Dissolving Injections (Aqualyx & Deso)',
         items: [
-          { id: 'hand-rejuve', name: 'Hydrating Hand Rejuvenation', price: '£390', time: '30 Mins', desc: 'Hyaluronic dermal hydration to restore crepey, dehydrated dorsal hand skin.' },
-          { id: 'radiesse-hands', name: 'Radiesse Hand Restoration', price: '£550', time: '30 Mins', desc: 'Calcium hydroxylapatite bio-stimulation to mask prominent veins.' }
+          {
+            id: 'aqualyx-small-single',
+            name: 'Aqualyx Small Area (Chin / Jowls)',
+            price: '£170',
+            time: '30 Mins',
+            desc: 'Targeted single treatment for localized small pockets like double chin or buccal pad (Course of 3: £408).'
+          },
+          {
+            id: 'aqualyx-med-single',
+            name: 'Aqualyx Medium Area (Arms / Flanks)',
+            price: '£190',
+            time: '30 Mins',
+            desc: 'Single session for medium deposits such as love handles or bra bulge (Course of 3: £456).'
+          },
+          {
+            id: 'aqualyx-large-single',
+            name: 'Aqualyx Large Area (Abdomen / Thighs)',
+            price: '£230',
+            time: '45 Mins',
+            desc: 'Comprehensive single session across lower abdomen, outer thighs, or back (Course of 3: £552).'
+          },
+          {
+            id: 'deso-small-single',
+            name: 'DesoFace Small Area (Double Chin)',
+            price: '£150',
+            time: '30 Mins',
+            desc: 'Specialized sodium deoxycholate formulated specifically for submental double chin (Course of 3: £360).'
+          },
+          {
+            id: 'deso-med-single',
+            name: 'DesoBody Medium Area (Flanks / Arms)',
+            price: '£170',
+            time: '30 Mins',
+            desc: 'Targeted formulation for flanks, inner knees, or underarm bulge (Course of 3: £408).'
+          },
+          {
+            id: 'deso-large-single',
+            name: 'DesoBody Large Area (Abdomen / Thighs)',
+            price: '£210',
+            time: '45 Mins',
+            desc: 'Maximum fat cell destruction across abdomen or thigh zones (Course of 3: £504).'
+          }
         ]
       },
       {
-        id: 'body-non-surgical',
-        name: 'NON SURGICAL TREATMENTS',
+        id: 'body-contouring',
+        name: 'Body Contouring & Fat Loss',
         items: [
-          { id: 'body-exosome', name: 'Body Exosome Tissue Repair', price: '£750', time: '45 Mins', desc: 'Cellular growth signaling factors focused on body scarring or laxity.' },
-          { id: 'hyperhidrosis', name: 'Excessive Sweating (Hyperhidrosis) Treatment', price: '£490', time: '30 Mins', desc: 'Neurotoxin injections to underarms or palms to eliminate hyperhidrosis.' },
-          { id: 'cellulite-treatment', name: 'Effective Cellulite Treatment', price: '£450', time: '45 Mins', desc: 'Integrated dynamic tissue breakdown targeting cellulite dimples.' },
-          { id: 'port-wine', name: 'Port Wine Stain Reduction', price: '£350', time: '30 Mins', desc: 'Clinical vascular targeting of deep capillary malformations.' },
-          { id: 'nail-fungus', name: 'Nail Fungus Laser Therapy', price: '£150', time: '15 Mins', desc: 'High-intensity thermal eradication of deep nail-bed fungal infections.' },
-          { id: 'leg-veins', name: 'Leg Veins Laser / Sclerotherapy', price: '£320', time: '30 Mins', desc: 'Chemical or thermal occlusion of spider veins on legs.' },
-          { id: 'vascular', name: 'Vascular & Hyperpigmentation Clearing', price: '£290', time: '30 Mins', desc: 'Clinical clearing of broken capillaries, cherry angiomas, and spot lesions.' },
-          { id: 'hayfever', name: 'Hay Fever Treatment', price: '£180', time: '15 Mins', desc: 'Intramuscular therapeutic alleviation of seasonal hayfever symptoms.' }
-        ]
-      },
-      {
-        id: 'female-intimate',
-        name: 'FEMALE INTIMATE TREATMENTS',
-        items: [
-          { id: 'labia-enhance', name: 'Labia Enhancement (Volume Restoration)', price: '£650', time: '45 Mins', desc: 'Hyaluronic acid sculpting to restore youthful volume and protect structures.' },
-          { id: 'vaginal-dryness', name: 'Vaginal Dryness PRP/Profhilo', price: '£480', time: '30 Mins', desc: 'Intense hydration bio-stimulation to restore tissue lubrication and comfort.' }
-        ]
-      },
-      {
-        id: 'male-intimate',
-        name: 'MALE INTIMATE TREATMENTS',
-        items: [
-          { id: 'penoplasty', name: 'Non-Surgical Penoplasty', price: '£1,900', time: '60 Mins', desc: 'Symmetrical structural girth enhancement utilizing specialized high-density bio-fillers.' }
-        ]
-      },
-      {
-        id: 'fat-reduction',
-        name: 'FAT REDUCTION',
-        items: [
-          { id: 'aqualyx', name: 'Aqualyx Fat Dissolving Injection', price: '£350', time: '30 - 45 Mins', desc: 'Targeted specialized localized fat lipolysis via deoxycholic acid formulation.' },
-          { id: 'desoface-desobody', name: 'Desoface® And Desobody® Injections', price: '£380', time: '30 - 45 Mins', desc: 'Second-generation localized fat dissolving with enhanced client comfort.' }
+          {
+            id: 'cryo-fat-freezing',
+            name: 'Fat Freezing Cryo Slimming (Cryolipolysis)',
+            price: '£95',
+            time: '45 - 60 Mins',
+            desc: 'Controlled medical cooling freezing fat cells to -9°C triggering natural apoptosis (Dual Applicator: £180).'
+          },
+          {
+            id: 'emsculpt-body-sculpt',
+            name: 'EMSCULPT® Body Sculpt & Muscle Tightening',
+            price: '£275',
+            time: '30 Mins',
+            desc: 'HIFEM producing 20,000 supramaximal contractions per session to build muscle and burn deep fat (Course of 4: £950).'
+          },
+          {
+            id: 'slimming-pen-program',
+            name: 'Medical Slimming Pen Program',
+            price: '£155',
+            time: 'Medical Consult',
+            desc: 'Physician-prescribed GLP-1 weight management (1 Month £155, 3 Months with doctor reviews & progress logs £450).'
+          },
+          {
+            id: 'morpheus8-body',
+            name: 'Morpheus8 Body Treatment',
+            price: '£200',
+            time: '60 Mins',
+            desc: 'Deep RF microneedling penetrating up to 7-8mm to melt fat and tighten skin on abdomen and thighs (Course of 3: £550).'
+          },
+          {
+            id: 'body-slimming-cellulite',
+            name: 'Body Slimming for Fat Loss & Cellulite Reduction',
+            price: '£195',
+            time: '60 Mins',
+            desc: 'Multi-technology lymphatic drainage and radiofrequency vacuum cavitation smoothing orange-peel skin texture.'
+          }
         ]
       }
     ]
   },
+
+  // =========================================================================
+  // 3. ADVANCED FACIALS
+  // =========================================================================
   {
-    id: 'buttocks',
-    name: 'Buttocks',
+    id: 'advanced-facials',
+    name: 'Advanced Facials',
     categories: [
       {
-        id: 'buttock-enhance',
-        name: 'BUTTOCK ENHANCEMENT',
+        id: 'medical-facials',
+        name: 'Clinical & Medical Facials',
         items: [
-          { id: 'buttock', name: 'Non-Surgical Buttock Lift', price: '£1,500', time: '60 Mins', desc: 'Gluteal projection and volume shaping using bio-stimulators.' },
-          { id: 'lanluma', name: 'Lanluma Volume Contouring', price: '£1,800', time: '60 Mins', desc: 'PLLA-based body sculpting formulation to restore deep structural volume.' },
-          { id: 'sculptra-butt', name: 'Sculptra Butt Lift', price: '£1,900', time: '60 Mins', desc: 'Deep poly-L-lactic acid stimulus to lift, smooth, and round gluteal arches.' }
+          {
+            id: 'aquafacial-clinical',
+            name: 'Aquafacial Deep Hydration & Extraction',
+            price: '£150',
+            time: '60 Mins',
+            desc: 'Vortex-fusion medical facial utilizing saline and AHA/BHA serums for painless vacuum extractions and peptide infusion.'
+          },
+          {
+            id: 'ultimate-glass-skin-facial',
+            name: 'Ultimate Glass Skin Facial (VIP Ritual)',
+            price: '£250',
+            time: '120 Mins',
+            desc: '2-hour medical facial ritual combining diamond peel, hyperbaric oxygen, microcurrent, and peptide layering.'
+          },
+          {
+            id: 'microneedling-collagen-induction',
+            name: 'Micro-Needling Collagen Induction Therapy',
+            price: '£150',
+            time: '60 Mins',
+            desc: 'Medical precision dermapen creating thousands of micro-punctures to stimulate neocollagenesis and shrink pores.'
+          },
+          {
+            id: 'bb-glow-facial',
+            name: 'BB Glow Semi-Permanent Foundation Facial',
+            price: '£180',
+            time: '60 Mins',
+            desc: 'Nano-needling infusion of nutrient-rich tinted pigments into the upper epidermis for a radiant soft-focus glow.'
+          },
+          {
+            id: 'diamond-microdermabrasion',
+            name: 'Diamond Tip Microdermabrasion',
+            price: '£60',
+            time: '45 Mins',
+            desc: 'Non-chemical diamond exfoliation vacuuming dead surface cells away to smooth coarse texture and dullness.'
+          },
+          {
+            id: 'extractions-scrubber-steamer',
+            name: 'Facial Extractions with Scrubber & Steamer',
+            price: '£55',
+            time: '45 Mins',
+            desc: 'Warm ozone steam, ultrasonic spatula vibrations, and gentle suction extractions to unclog pores.'
+          }
         ]
       },
       {
-        id: 'contour-refine',
-        name: 'CONTOURING & REFINEMENT',
+        id: 'specials-light',
+        name: 'Monday & Friday Specials & Light Therapy',
         items: [
-          { id: 'hip-dip', name: 'Hip Dip Correction', price: '£1,600', time: '60 Mins', desc: 'Targeted lateral depression filling to sculpt a seamless curvy silhouette.' },
-          { id: 'asymmetry-butt', name: 'Asymmetry Correction', price: '£1,400', time: '60 Mins', desc: 'Restoring volumetric balance between gluteal hemispheres.' },
-          { id: 'non-surg-sculpt', name: 'Non-Surgical Sculpting', price: '£1,200', time: '45 Mins', desc: 'Sleek muscle-toning and skin-tightening aesthetic integration.' }
-        ]
-      },
-      {
-        id: 'cellulite-texture',
-        name: 'CELLULITE & TEXTURE',
-        items: [
-          { id: 'cellulite-smooth', name: 'Cellulite Smoothing', price: '£550', time: '45 Mins', desc: 'Injectable and radiofrequency remodeling targeting cell chambers.' },
-          { id: 'subcision', name: 'Deep-tissue Subcision', price: '£750', time: '60 Mins', desc: 'Clinical release of fibrous septae pulling skin down to smooth deep dimples.' },
-          { id: 'rf-buttock', name: 'Radiofrequency Therapy', price: '£350', time: '30 Mins', desc: 'Deep thermal collagen remodeling to tighten gluteal fold crepiness.' }
+          {
+            id: 'gold-facial-special',
+            name: '24K Gold Facial (Mon & Fri Special)',
+            price: '£95',
+            time: '40 Mins',
+            desc: 'Monday & Friday Special: Decadent 24-karat gold leaf facial infused with cellular antioxidants.'
+          },
+          {
+            id: 'idebenone-facial-special',
+            name: 'Idebenone Antioxidant Facial (Mon & Fri Special)',
+            price: '£105',
+            time: '40 Mins',
+            desc: 'Monday & Friday Special: Ultra-potent Idebenone antioxidant infusion shielding against pollution and photo-ageing.'
+          },
+          {
+            id: 'egf-facial-special',
+            name: 'EGF Epidermal Growth Factor Facial (Mon & Fri Special)',
+            price: '£115',
+            time: '40 Mins',
+            desc: 'Monday & Friday Special: Concentrated biotech peptide infusion accelerating cellular repair and skin turnover.'
+          },
+          {
+            id: 'red-carpet-exfoliating-special',
+            name: 'Red Carpet Exfoliating Facial (Mon & Fri Special)',
+            price: '£120',
+            time: '45 Mins',
+            desc: 'Monday & Friday Special: Instant event-ready glow treatment combining fruit acid resurfacing and oxygen mist.'
+          },
+          {
+            id: 'oxygen-o2-dome-facial',
+            name: 'Oxygen O2 Dome Hyperbaric Facial',
+            price: '£90',
+            time: '45 Mins',
+            desc: 'Pure 90% hyperbaric oxygen and anion mist accelerating cellular repair and eliminating acne bacteria.'
+          },
+          {
+            id: 'led-light-therapy',
+            name: 'Clinical LED Light Therapy',
+            price: '£25',
+            time: '45 Mins',
+            desc: 'Medical light wavelengths (Red 633nm for collagen, Blue 415nm for acne, Near-Infrared 830nm for deep healing).'
+          },
+          {
+            id: 'high-frequency-acne-facial',
+            name: 'High Frequency Facial for Acne',
+            price: '£55',
+            time: '30 Mins',
+            desc: 'Gentle electrical ozone current eliminating acne-causing bacteria and speeding breakout recovery.'
+          }
         ]
       }
     ]
   },
+
+  // =========================================================================
+  // 4. HAIR & BEAUTY
+  // =========================================================================
   {
-    id: 'hair-scalp',
-    name: 'Hair & Scalp',
+    id: 'hair-beauty',
+    name: 'Hair & Beauty',
     categories: [
       {
-        id: 'scalp-trichology',
-        name: 'TRICHOLOGY & SCALP RESTORATION',
+        id: 'hair-salon',
+        name: 'Hair Salon & Trichology',
         items: [
-          { id: 'prp-hair', name: 'PRP Hair Restoration Therapy', price: '£450', time: '45 Mins', desc: 'Autologous platelet concentration injected into scalp to stimulate dormant follicles.' },
-          { id: 'exosome-scalp', name: 'Exosome Scalp Regeneration', price: '£790', time: '45 Mins', desc: 'Biotech growth factors and signaling exosomes promoting thick hair matrix rebuilding.' },
-          { id: 'meso-hair', name: 'Scalp Mesotherapy Cocktail', price: '£290', time: '30 Mins', desc: 'Direct micro-dosing of vitamins, biotin, and peptides to hair roots.' },
-          { id: 'polynucleotide-hair', name: 'Polynucleotide Hair Rejuvenation', price: '£490', time: '40 Mins', desc: 'DNA fractions restoring scalp microcirculation and follicular vitality.' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'skin-dermatology',
-    name: 'Skin & Dermatology',
-    categories: [
-      {
-        id: 'clinical-dermatology',
-        name: 'CLINICAL DERMATOLOGY',
-        items: [
-          { id: 'acne-protocol', name: 'Advanced Acne Clearing Protocol', price: '£280', time: '45 Mins', desc: 'Multi-modal clinical approach combining clarifying peels, blue light, and medical extraction.' },
-          { id: 'rosacea-vascular', name: 'Rosacea & Erythema Laser Treatment', price: '£320', time: '30 Mins', desc: 'Vascular targeting to calm diffuse facial redness and visible capillaries.' },
-          { id: 'melasma-depigment', name: 'Targeted Melasma Clearing', price: '£420', time: '45 Mins', desc: 'Precision pigment inhibition protocols suppressing active melanogenesis.' }
+          {
+            id: 'hair-wash-cut',
+            name: 'Ladies Wash & Cut',
+            price: '£20',
+            time: '30 Mins',
+            desc: 'Invigorating hair wash with luxury salon conditioning and precision haircut.'
+          },
+          {
+            id: 'hair-cut-blowdry',
+            name: 'Cut & Blow Dry',
+            price: '£25',
+            time: '45 Mins',
+            desc: 'Wash, precision cut, and professional volume blow dry styling.'
+          },
+          {
+            id: 'hair-blow-dry',
+            name: 'Salon Blow Dry (Standard / Long)',
+            price: '£35',
+            time: '30 - 45 Mins',
+            desc: 'Professional blow dry styling (Standard £35 / Long & Curly thermal styling £45).'
+          },
+          {
+            id: 'keratin-brazilian-blowdry',
+            name: 'Keratin / Brazilian Blowdry',
+            price: '£60',
+            time: '90 Mins',
+            desc: 'Semi-permanent protein smoothing eliminating 95% of frizz for up to 3-4 months.'
+          },
+          {
+            id: 'hair-botox-treatment',
+            name: 'Hair Botox Deep Repair',
+            price: '£65',
+            time: '60 Mins',
+            desc: 'Non-chemical deep conditioning reconstructing broken cortex fibers with hyaluronic & caviar extract.'
+          },
+          {
+            id: 'olaplex-stem-treatment',
+            name: 'Olaplex Stand-Alone Intensive Treatment',
+            price: '£65',
+            time: '45 Mins',
+            desc: 'Complete multi-step bond rebuilding ritual restoring heavily bleached or damaged hair (Colour Add-On: £15).'
+          },
+          {
+            id: 'colour-balayage',
+            name: 'Hair Highlights & Balayage',
+            price: '£70',
+            time: '60 - 120 Mins',
+            desc: 'Expert multidimensional colour (T-Section £70, Half Head £90, Balayage £90, Full Head £110).'
+          }
         ]
       },
       {
-        id: 'medical-peels',
-        name: 'ADVANCED MEDICAL PEELS',
+        id: 'lashes-brows-spmu',
+        name: 'Lashes, Brows & SPMU',
         items: [
-          { id: 'vi-peel', name: 'VI Peel Precision Plus', price: '£350', time: '30 Mins', desc: 'Medium-depth pharmaceutical peel for hyperpigmentation, texture, and tone.' },
-          { id: 'tca-cross', name: 'TCA Cross Ice-Pick Scar Treatment', price: '£280', time: '30 Mins', desc: 'High-strength focal trichloroacetic acid application for deep scar contraction.' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'longevity',
-    name: 'Longevity & Wellness',
-    categories: [
-      {
-        id: 'cellular-wellness',
-        name: 'CELLULAR LONGEVITY & INFUSIONS',
-        items: [
-          { id: 'nad-infusion', name: 'NAD+ Cellular Vitality Therapy', price: '£450', time: '60 - 90 Mins', desc: 'Intravenous coenzyme infusion to boost mitochondrial function, energy, and cellular repair.' },
-          { id: 'glutathione-glow', name: 'Glutathione Master Antioxidant Drip', price: '£180', time: '30 Mins', desc: 'Intense systemic detox and skin luminosity via medical-grade glutathione.' },
-          { id: 'vitamin-cocktail', name: 'Executive Myers Cocktail', price: '£220', time: '45 Mins', desc: 'Comprehensive micronutrient and electrolyte replenishment.' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'minor-surgery-scars',
-    name: 'Minor Surgery & Scars',
-    categories: [
-      {
-        id: 'minor-surgery-cat',
-        name: 'MINOR SURGERY',
-        items: [
-          { id: 'mole-removal', name: 'Mole & Lesion Removal', price: '£290', time: '30 Mins', desc: 'Safe clinical removal of moles with aesthetic suture closure.' },
-          { id: 'cyst-removal', name: 'Cyst Removal', price: '£380', time: '45 Mins', desc: 'Surgical excision of epidermal or sebaceous cysts including sac extraction.' },
-          { id: 'scarfree-excision', name: 'Precision Scar-free Excision', price: '£450', time: '45 Mins', desc: 'Feather-light surgical removal of cutaneous lesions to minimize marking.' },
-          { id: 'lobe-correction', name: 'Lobe Correction', price: '£350', time: '45 Mins', desc: 'Reconstructing torn or heavily stretched earlobes under local block.' }
+          {
+            id: 'eyebrow-wax',
+            name: 'Eyebrow Wax & Shape',
+            price: '£8',
+            time: '15 Mins',
+            desc: 'Clean waxing and arch definition with soothing aloe vera finish.'
+          },
+          {
+            id: 'eyebrow-lamination',
+            name: 'Eyebrow Lamination',
+            price: '£30',
+            time: '45 Mins',
+            desc: 'Relaxes and sets brow hairs in an upward, brushed-up fluffy runway look.'
+          },
+          {
+            id: 'lash-lift',
+            name: 'Lash Lift (Perm & Curl)',
+            price: '£30',
+            time: '45 Mins',
+            desc: 'Lifts and curls natural eyelashes from root to tip for 6-8 weeks.'
+          },
+          {
+            id: 'classic-lashes',
+            name: 'Classic Individual Lash Extensions',
+            price: '£55',
+            time: '60 Mins',
+            desc: '1-to-1 extension application for a natural, elegant mascara finish.'
+          },
+          {
+            id: 'russian-lashes',
+            name: 'Russian Volume Lash Extensions',
+            price: '£65',
+            time: '75 Mins',
+            desc: 'Handmade multi-lash lightweight fans applied to each lash for thick, fluffy, dark volume.'
+          },
+          {
+            id: 'spmu-eyeliner',
+            name: 'Semi-Permanent Eyeliner',
+            price: '£200',
+            time: '90 Mins',
+            desc: 'Crisp lash-line enhancement or winged eyeliner cosmetic pigment tattoo.'
+          },
+          {
+            id: 'spmu-microblading',
+            name: 'Microblading Eyebrows (Hair Strokes)',
+            price: '£250',
+            time: '120 Mins',
+            desc: 'Hand-etched crisp realistic hair strokes filling sparse brows with natural flow.'
+          },
+          {
+            id: 'spmu-ombre-brows',
+            name: 'Ombré Brows / Powder Brows',
+            price: '£250',
+            time: '120 Mins',
+            desc: 'Soft misted gradient fading from light at the front to defined at the tail.'
+          },
+          {
+            id: 'spmu-lip-blushing',
+            name: 'Lip Blushing (Tint & Contour)',
+            price: '£250',
+            time: '120 Mins',
+            desc: 'Infuses youthful nude, rose, or berry blush into pale lips with defined borders.'
+          },
+          {
+            id: 'tattoo-removal-laser',
+            name: 'Laser Tattoo & SPMU Removal',
+            price: '£350',
+            time: '30 - 45 Mins',
+            desc: 'Q-Switched laser breaking down cosmetic or body ink pigments without scarring.'
+          }
         ]
       },
       {
-        id: 'facial-rejuve-cat',
-        name: 'FACIAL REJUVENATION',
+        id: 'laser-hair-removal',
+        name: 'Laser Hair Removal',
         items: [
-          { id: 'blepharoplasty', name: 'Plasma Blepharoplasty (Non-Surgical)', price: '£750', time: '45 - 60 Mins', desc: 'Plasma arc upper or lower eyelid skin contraction & sublimation.' },
-          { id: 'upper-eye', name: 'Upper Eyelid Rejuvenation', price: '£450', time: '40 Mins', desc: 'Non-surgical targetting of eyelid skin crepeyness and mild sagging.' },
-          { id: 'lower-eye', name: 'Lower Eyelid Rejuvenation', price: '£450', time: '40 Mins', desc: 'Correcting dark circles, puffiness, and skin laxity beneath eyes.' }
+          {
+            id: 'laser-full-body',
+            name: 'Alma Soprano ICE Full Body Laser Package',
+            price: '£250',
+            time: '60 - 90 Mins',
+            desc: 'Virtually painless diode laser hair removal safe across all Fitzpatrick skin tones.'
+          },
+          {
+            id: 'laser-bikini',
+            name: 'Standard / High Bikini Laser',
+            price: '£40',
+            time: '15 Mins',
+            desc: 'Neat perimeter or high cut bikini border permanent hair reduction.'
+          },
+          {
+            id: 'laser-underarm',
+            name: 'Underarms Laser',
+            price: '£40',
+            time: '15 Mins',
+            desc: 'Quick 10-minute permanent diode laser hair reduction on both underarms.'
+          },
+          {
+            id: 'laser-half-arm',
+            name: 'Arms Laser (Half / Full)',
+            price: '£40',
+            time: '20 - 40 Mins',
+            desc: 'Forearms (£40) or full arms down to wrists (£65).'
+          },
+          {
+            id: 'laser-half-leg',
+            name: 'Legs Laser (Half / Full)',
+            price: '£65',
+            time: '30 - 60 Mins',
+            desc: 'Lower legs including knees (£65) or full legs from thighs to toes (£85).'
+          },
+          {
+            id: 'laser-electrolysis-1h',
+            name: 'Electrolysis Permanent Hair Removal (1 Hour)',
+            price: '£50',
+            time: '60 Mins',
+            desc: 'Permanent galvanic / thermolysis removal ideal for stubborn hormonal or blonde/grey hairs (£50/hour).'
+          }
         ]
       },
       {
-        id: 'scar-revision-cat',
-        name: 'SCAR REVISION',
+        id: 'iv-lounge-prp',
+        name: 'IV Drip Lounge & PRP Regenerative',
         items: [
-          { id: 'co2-laser', name: 'Fractional CO2 Laser', price: '£590', time: '45 Mins', desc: 'Ablative laser resurfacing targetting deep acne pitting and burn scars.' },
-          { id: 'subcision-therapy', name: 'Subcision Therapy', price: '£350', time: '30 Mins', desc: 'Mechanical release of bound fibrous tissue anchors to lift depressed scars.' },
-          { id: 'steroid-scar', name: 'Steroid Scar Flattening', price: '£120', time: '15 Mins', desc: 'Micro-dose triamcinolone injections to reduce hypertrophic or keloid scars.' }
-        ]
-      },
-      {
-        id: 'collagen-therapy-cat',
-        name: 'COLLAGEN THERAPY',
-        items: [
-          { id: 'prp-needling', name: 'PRP Microneedling', price: '£380', time: '60 Mins', desc: 'Platelet-rich plasma combined with medical needling for scar healing.' },
-          { id: 'growth-factor', name: 'Growth Factor Therapy', price: '£290', time: '45 Mins', desc: 'Infusing pure active bio-engineered growth signals for deep cell repair.' }
+          {
+            id: 'iv-b12-shot',
+            name: 'Vitamin B12 Booster Shot (Intramuscular)',
+            price: '£45',
+            time: '15 Mins',
+            desc: 'Instant energy shot boosting metabolism, red blood cell synthesis, and mental clarity.'
+          },
+          {
+            id: 'iv-iron-shot',
+            name: 'Iron Wellness Shot',
+            price: '£75',
+            time: '15 Mins',
+            desc: 'Replenishes iron stores to fight systemic fatigue, hair shedding, and low stamina.'
+          },
+          {
+            id: 'iv-ginko-infusion',
+            name: 'Ginko Biloba Cognitive Infusion',
+            price: '£80',
+            time: '30 Mins',
+            desc: 'Enhances micro-circulation, cerebral blood flow, focus, and memory recall.'
+          },
+          {
+            id: 'iv-performance-boosting',
+            name: 'Performance Boosting Cocktail',
+            price: '£90',
+            time: '40 Mins',
+            desc: 'Formulated with amino acids, B-Complex, and electrolytes for athletic peak power and post-workout muscle repair.'
+          },
+          {
+            id: 'iv-vitamin-c',
+            name: 'High-Dose Vitamin C Infusion',
+            price: '£100',
+            time: '40 Mins',
+            desc: 'Pure intravenous ascorbic acid stimulating collagen production and neutralising cellular oxidative stress.'
+          },
+          {
+            id: 'iv-vitamin-cocktail',
+            name: 'Essential Vitamin Cocktail',
+            price: '£110',
+            time: '40 Mins',
+            desc: 'Comprehensive multi-vitamin drip replenishing depleted micronutrient reserves.'
+          },
+          {
+            id: 'iv-detox-hangover',
+            name: 'Detox & Hangover Cure Infusion',
+            price: '£125',
+            time: '45 Mins',
+            desc: 'Fast-acting saline rehydration with anti-nausea, electrolytes, and liver detoxifiers.'
+          },
+          {
+            id: 'iv-zinc-vitamin-c-minerals',
+            name: 'Zinc, Vitamin C & Mineral Booster',
+            price: '£130',
+            time: '45 Mins',
+            desc: 'Immune powerhouse blend strengthening mucosal barriers and accelerating recovery.'
+          },
+          {
+            id: 'iv-skinny-drip',
+            name: 'Skinny Drip (Metabolic & Fat Burner)',
+            price: '£160',
+            time: '45 Mins',
+            desc: 'L-Carnitine and lipotropic nutrients stimulating liver metabolism to burn fat stores efficiently.'
+          },
+          {
+            id: 'iv-cinderella-brightening',
+            name: 'Cinderella Brightening Glow Drip',
+            price: '£200',
+            time: '45 Mins',
+            desc: '1200mg Glutathione master antioxidant paired with high-dose Vitamin C and Alpha Lipoic Acid.'
+          },
+          {
+            id: 'iv-modified-myers-cocktail',
+            name: 'Modified Myers Cocktail (Immune Booster)',
+            price: '£200',
+            time: '45 Mins',
+            desc: 'The world-famous gold standard wellness drip combining magnesium, B-complex, and high-potency Vitamin C.'
+          },
+          {
+            id: 'prp-hair-loss-single',
+            name: 'PRP for Hair Loss Treatment',
+            price: '£150',
+            time: '45 Mins',
+            desc: 'Subdermal platelet growth factor injections into thinning areas of the scalp.'
+          },
+          {
+            id: 'prp-facial-single',
+            name: 'PRP Facial Treatment (Vampire Facial)',
+            price: '£120',
+            time: '45 Mins',
+            desc: 'Autologous platelet micro-infusion across the face for collagen synthesis and radiance.'
+          },
+          {
+            id: 'prp-cosmetic-injection',
+            name: 'PRP Cosmetic Targeted Injection',
+            price: '£180',
+            time: '30 Mins',
+            desc: 'High-density platelet injection targeting under-eye hollows, smile lines, or scars.'
+          }
         ]
       }
     ]
@@ -274,6 +770,7 @@ export const findTreatmentInDB = (searchKey: string) => {
       for (const item of cat.items) {
         if (
           item.id === searchLower || 
+          item.name.toLowerCase() === searchLower ||
           item.name.toLowerCase().includes(searchLower) || 
           searchLower.includes(item.id)
         ) {
@@ -289,9 +786,10 @@ export const findTreatmentInDB = (searchKey: string) => {
  * Helper to find a specific TreatmentItem by ID
  */
 export const findTreatmentItemInDB = (id: string): TreatmentItem | null => {
+  const cleanId = id.toLowerCase().trim();
   for (const area of CLINICAL_AREAS_DB) {
     for (const cat of area.categories) {
-      const found = cat.items.find((i) => i.id === id);
+      const found = cat.items.find((i) => i.id.toLowerCase() === cleanId);
       if (found) return found;
     }
   }
@@ -323,4 +821,3 @@ export const resolveTreatmentToPricingItem = (
 };
 
 export { getHybridTreatmentPricing };
-

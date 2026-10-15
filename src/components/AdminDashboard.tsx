@@ -122,6 +122,7 @@ import ChatSupportManager from './ChatSupportManager';
 import ProfileDetailsEditor from './ProfileDetailsEditor';
 import AssetsMediaManager from './AssetsMediaManager';
 import ClinicDataManager from './ClinicDataManager';
+import TreatmentPricingEditor from './TreatmentPricingEditor';
 
 
 interface AdminDashboardProps {
@@ -135,7 +136,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
   const [passcodeError, setPasscodeError] = useState('');
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'clinic-info' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clinic-info' | 'treatment-pricing' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isHomepageEditorsOpen, setIsHomepageEditorsOpen] = useState(false);
@@ -702,6 +703,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
             { id: 'clinic-info', label: 'Clinic Master Data', icon: Database },
+            { id: 'treatment-pricing', label: 'Treatment Pricing & Media', icon: Sparkles },
             { id: 'consultations', label: 'Consultation Requests', count: consultations.length, icon: Users },
             { id: 'appointments', label: 'Faith Nzurike Slots', count: appointments.length, icon: Calendar },
             { id: 'inquiries', label: 'Clinic Inquiries', count: inquiries.length, icon: MessageSquare, badge: unreadInquiriesCount },
@@ -1056,6 +1058,13 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  onClick={() => setActiveTab('treatment-pricing')}
+                  className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow cursor-pointer"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Treatment Pricing & Media</span>
+                </button>
                 <button
                   onClick={() => setActiveTab('clinic-info')}
                   className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
@@ -1475,6 +1484,9 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
 
         {/* TAB: CLINIC MASTER DATA (clinicInfo.ts) */}
         {activeTab === 'clinic-info' && <ClinicDataManager />}
+
+        {/* TAB: TREATMENT PRICING & MEDIA (treatmentPricing.ts & siteCustomizations.json) */}
+        {activeTab === 'treatment-pricing' && <TreatmentPricingEditor />}
 
         {/* TAB: CHAT SUPPORT */}
         {activeTab === 'chat-support' && <ChatSupportManager />}

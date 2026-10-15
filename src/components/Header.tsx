@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { HeaderConfig } from '../types';
 import { CLINIC_INFO, CLINIC_DATA } from '../data/clinicInfo';
 import { useCart } from '../context/CartContext';
+import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 interface HeaderProps {
   onBookClick: (serviceName?: string) => void;
@@ -25,9 +26,12 @@ interface MegaColumn {
 
 interface NavItem {
   name: string;
+  desktopName?: string;
+  mobileName?: string;
   id: string;
   href?: string;
   isMega?: boolean;
+  hideOnDesktop?: boolean;
   imageUrl?: string;
   megaColumns?: MegaColumn[];
   procedures?: { name: string; desc?: string; id?: string }[];
@@ -46,6 +50,7 @@ export default function Header({
   onReviewsClick,
 }: HeaderProps) {
   const { openCart, totalCartCount } = useCart();
+  const { openTreatmentCart, totalTreatmentCount } = useTreatmentCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<NavItem | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -89,165 +94,210 @@ export default function Header({
       href: '#home'
     },
     {
-      name: 'Face',
-      id: 'face',
+      name: 'Face & Injectables',
+      desktopName: 'Face & Injectables',
+      mobileName: 'Face & Injectables',
+      id: 'face-injectables',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
         {
-          title: 'INJECTABLE TREATMENTS',
+          title: 'ANTI-WRINKLE (BOTOX)',
           items: [
-            'Exosome',
-            'Migraines Treatment',
-            'Profhilo',
-            'Polynucleotide',
-            'Non-Surgical Jaw Reduction',
-            'Gummy Smile Treatment',
-            'Eyebrow Lifting',
-            'Lines & Wrinkles Smoothing',
-            'Collagen Stimulator'
+            '1 Area (£180)',
+            '2 Areas (£250)',
+            '3 Areas (£280)',
+            'Forehead Lines (£230)',
+            'Jaw Slimming / Masseter (£320)',
+            'Bunny Lines (£160)',
+            'Crow\'s Feet (£160)',
+            'Lip Flip (£160)',
+            'Gummy Smile (£160)',
+            'Puppet Lines (£160)',
+            'Neck Bands (£290 / Extended £370)'
           ]
         },
         {
-          title: 'DERMAL FILLERS FOR FACE',
+          title: 'DERMAL FILLERS (1ML)',
           items: [
-            'Temple Filler',
-            'Forehead Filler',
-            'Earlobe Filler',
-            'Frown Line Treatment',
-            'Contouring the Jaw Line',
-            'Chin Enhancement',
-            'Cheek Enhancement',
-            'Eye Bag, Dark Circles & Tear Trough',
-            'Nose To Mouth Lines, Folds & Wrinkles',
-            'Non-Surgical Rhinoplasty',
-            'Lip Enhancement',
-            'Dermal filler Dissolving'
+            'Cheeks Soft Volumisation (£290)',
+            'Cheeks Deep Contouring (£350)',
+            'Lip Enhancement (£290)',
+            'Non-Surgical Rhinoplasty (from £290)',
+            'Tear Troughs & Under Eyes (£290)',
+            'Temples Rejuvenation (£290)',
+            'Jaw & Chin Contouring (£350)',
+            'Cleavage & Neck Lines (£290)',
+            'Hand Rejuvenation (£470)'
           ]
         },
         {
-          title: 'SKIN REJUVENATION',
+          title: 'SKIN BOOSTERS & LIFTING',
           items: [
-            'FaceTite',
-            'Morpheus 8',
-            'Ultherapy',
-            'PDO Thread',
-            'Skin Tightening Treatment',
-            'Treatments For Men',
-            'Mesotherapy',
-            'PRX Peel',
-            'SkinPen (Micro-needling)',
-            'Hyperpigmentation',
-            'Cosmelan',
-            'Skin Peels',
-            'Obagi Skin Care System',
-            'ZO Skin Health'
+            'Profhilo 2ml (£350 / Course £560)',
+            'Polynucleotides / Salmon Sperm (from £350)',
+            'Morpheus8 Facial (£190)',
+            'Emface Tightening & Lifting (from £250)',
+            'Endolift Fiber Lift (from £950)',
+            'Fractional CO2 Laser Face & Neck (£300)'
           ]
         }
       ]
     },
     {
-      name: 'Body',
-      id: 'body',
+      name: 'Body Sculpting',
+      desktopName: 'Body',
+      mobileName: 'Body Sculpting',
+      id: 'body-sculpting',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
         {
-          title: 'DERMAL FILLERS FOR BODY',
+          title: 'FAT DISSOLVING INJECTIONS',
           items: [
-            'Hydrating Face and Hand Rejuvenation',
-            'Radiesse Hand Rejuvenation'
+            'Aqualyx Small Area (£170)',
+            'Aqualyx Medium Area (£190)',
+            'Aqualyx Large Area (£230)',
+            'Aqualyx Course of 3 (from £408)',
+            'Desoface Single (£150)',
+            'Desobody Single (£170 - £210)',
+            'Deso Course of 3 (from £360)'
           ]
         },
         {
-          title: 'NON SURGICAL TREATMENTS',
+          title: 'BODY CONTOURING & FAT LOSS',
           items: [
-            'Exosome',
-            'Excessive Sweating Treatment',
-            'Effective Cellulite Treatment',
-            'Port Wine Stains',
-            'Nail Fungus',
-            'Leg Veins',
-            'Hyperpigmentation and Vascular',
-            'Hay Fever Treatment'
+            'Cryo Fat Freezing (from £95)',
+            'EMSCULPT Body Sculpt (from £275)',
+            'Medical Slimming Pen (1 Mo £155 / 3 Mo £450)',
+            'Cellulite & Fat Loss (£195)',
+            'Morpheus8 Body Sculpting (£200)'
           ]
         },
         {
-          title: 'FEMALE INTIMATE TREATMENTS',
+          title: 'BUTTOCK & TIGHTENING',
           items: [
-            'Labia Enhancement',
-            'Vaginal dryness'
-          ]
-        },
-        {
-          title: 'MALE INTIMATE TREATMENTS',
-          items: [
-            'Non-Surgical Penoplasty'
-          ]
-        },
-        {
-          title: 'FAT REDUCTION',
-          items: [
-            'Aqualyx',
-            'Desoface® And Desobody®'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Buttocks',
-      id: 'buttocks',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'BUTTOCK ENHANCEMENT',
-          items: [
-            'Non-Surgical Buttock Lift',
-            'Lanluma Volume Contouring',
-            'Sculptra Butt Lift'
-          ]
-        },
-        {
-          title: 'CONTOURING & REFINEMENT',
-          items: [
+            'Non-Surgical Buttock Lift (Lanluma / Sculptra)',
             'Hip Dip Correction',
-            'Asymmetry Correction',
-            'Non-Surgical Sculpting'
-          ]
-        },
-        {
-          title: 'CELLULITE & TEXTURE',
-          items: [
-            'Cellulite Smoothing',
-            'Deep-tissue Subcision',
-            'Radiofrequency Therapy'
+            'CO2 Laser Scars & Stretch Marks (£100 - £200)',
+            'Excessive Sweating Hyperhidrosis'
           ]
         }
       ]
     },
     {
-      name: 'Minor Surgery & Scars',
-      id: 'minor-surgery-scars',
+      name: 'Advanced Facials',
+      desktopName: 'Advanced Facials',
+      mobileName: 'Advanced Facials',
+      id: 'advanced-facials',
+      hideOnDesktop: true,
       isMega: true,
-      imageUrl: '/src/assets/images/clinic/procedures/minor_surgery_scars.jpg',
+      imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
         {
-          title: 'MINOR SURGERY',
+          title: 'CLINICAL & MEDICAL FACIALS',
           items: [
-            'Mole & Cyst Removal',
-            'Skin Tag & Milia Extraction',
-            'Keloid Treatment',
-            'Surgical Excision'
+            'Medical Aquafacial (£150)',
+            'Ultimate Glass Skin Protocol (£250)',
+            'Microneedling Collagen Induction (£150)',
+            'BB Glow Mesotherapy (£180)',
+            'Diamond Microdermabrasion (£60)'
           ]
         },
         {
-          title: 'SCAR REVISION',
+          title: 'LIGHT & OXYGEN PROTOCOLS',
           items: [
-            'Acne Scar Subcision',
-            'Fractional CO2 Laser',
-            'Microneedling PRP',
-            'Steroid Injections'
+            'Oxygen O2 Dome Therapy (£90)',
+            'Medical LED Light Therapy (£25)',
+            'High Frequency Acne Treatment (£55)'
+          ]
+        },
+        {
+          title: 'WEEKLY CLINICAL SPECIALS',
+          items: [
+            'Gold Special Facial (£95)',
+            'Idebenone Antioxidant Facial (£105)',
+            'EGF Cellular Growth Factor (£115)',
+            'Red Carpet Celebrity Glow (£120)'
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Beauty & Hair',
+      desktopName: 'Beauty & Hair',
+      mobileName: 'Hair & Beauty',
+      id: 'hair-beauty',
+      isMega: true,
+      imageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=400&q=80',
+      megaColumns: [
+        {
+          title: 'PRP & REGENERATIVE HAIR',
+          items: [
+            'PRP for Hair Loss (£150)',
+            'PRP Facial / Vampire (from £120)',
+            'PRP Cosmetic Injections'
+          ]
+        },
+        {
+          title: 'BEAUTY, LASHES & SPMU',
+          items: [
+            'Classic Lashes (£55) / Russian (£65)',
+            'Lash Lift & Tint (£30)',
+            'Brow Wax (£8) & Lamination (£30)',
+            'Microblading & Ombré Brows (£250)',
+            'Lip Blushing (£250)',
+            'Semi-Permanent Eyeliner (£200)',
+            'Laser Tattoo Removal (from £350)'
+          ]
+        },
+        {
+          title: 'LASER HAIR REMOVAL & SALON',
+          items: [
+            'Alma Soprano Full Body Laser (from £250)',
+            'Bikini (£40) & Underarms',
+            'Legs (£65 - £85) & Arms (£40 - £65)',
+            'Medical Electrolysis (£50/h)',
+            'Hair Salon Cuts, Highlights & Balayage',
+            'Keratin (£60) & Hair Botox (£65)',
+            'Olaplex Restorative Treatment'
+          ]
+        }
+      ]
+    },
+    {
+      name: 'IV Drip Lounge & Wellness',
+      desktopName: 'IV Drip Lounge',
+      mobileName: 'IV Drips & Wellness',
+      id: 'iv-wellness',
+      hideOnDesktop: true,
+      isMega: true,
+      imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=400&q=80',
+      megaColumns: [
+        {
+          title: 'BOOSTER SHOTS',
+          items: [
+            'Vitamin B12 Booster (£45)',
+            'Iron Booster (£75)',
+            'Ginko Focus Booster (£80)',
+            'Performance Booster (£90)'
+          ]
+        },
+        {
+          title: 'WELLNESS & IMMUNITY DRIPS',
+          items: [
+            'High-Dose Vitamin C (£100)',
+            'Vitamin Cocktail (£110)',
+            'Detox & Hangover Recovery (£125)',
+            'Zinc & Mineral Infusion (£130)'
+          ]
+        },
+        {
+          title: 'PREMIUM INFUSIONS',
+          items: [
+            'Skinny Metabolic Drip (£160)',
+            'Cinderella Glow Drip (£200)',
+            'Myers Immune Booster (£200)'
           ]
         }
       ]
@@ -265,6 +315,7 @@ export default function Header({
     {
       name: 'Shop',
       id: 'shop',
+      hideOnDesktop: true,
       procedures: [
         { name: 'Skincare Essentials Collection', id: 'essentials', desc: 'Dermatologist-formulated daily care' },
         { name: 'Anti-Aging & Cellular Serums', id: 'essentials', desc: 'Potent restorative active formulas' },
@@ -276,10 +327,11 @@ export default function Header({
       name: 'More',
       id: 'more',
       procedures: [
+        { name: 'Clinical Skincare Shop', id: 'shop', desc: 'Dermatologist-formulated skincare range' },
         { name: 'Before & After Gallery', id: 'gallery', desc: 'Real patient transformation results' },
         { name: 'Patient Reviews & Stories', id: 'reviews', desc: 'Verified 5-star clinical feedback' },
         { name: 'Medical Leadership & Team', id: 'leadership', desc: 'Meet our consultants & doctors' },
-        { name: 'Our Clinics & Locations', id: 'locations', desc: 'Harley Street London & Jaipur' },
+        { name: 'Our Clinics & Locations', id: 'locations', desc: 'Harley Street London & Lewisham' },
         { name: 'Facility & Interior Tour', id: 'facility', desc: 'State-of-the-art treatment suites' },
         { name: 'Latest Clinical News', id: 'latest-news', desc: 'Medical research and skincare journal' }
       ]
@@ -308,6 +360,10 @@ export default function Header({
   const handlePageClick = (id: string) => {
     setHoveredItem(null);
     setIsMobileMenuOpen(false);
+    if (id === 'shop' && onShopClick) {
+      onShopClick();
+      return;
+    }
     if (id === 'gallery' && onTransformationsClick) {
       onTransformationsClick();
       return;
@@ -351,10 +407,11 @@ export default function Header({
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center space-x-3 lg:space-x-4 xl:space-x-5">
           {navItems
-            .filter((item) => item.id !== 'minor-surgery-scars') // Hide Minor Surgery & Scars from desktop header nav
+            .filter((item) => !item.hideOnDesktop)
             .map((item) => {
               const isHovered = hoveredItem === item.id;
               const isActive = activeSection === item.id;
+              const displayName = item.desktopName || item.name;
 
               return (
                 <div
@@ -375,7 +432,7 @@ export default function Header({
                       }`}
                     >
                       <span className="relative pb-1">
-                        {item.name}
+                        {displayName}
                         {/* Animated Underline: Expands in gold */}
                         <span
                           className={`absolute bottom-0 left-0 h-[2px] bg-luxury-gold rounded-full transition-all duration-300 ease-out ${
@@ -402,7 +459,7 @@ export default function Header({
                       }`}
                     >
                       <span className="relative pb-1">
-                        {item.name}
+                        {displayName}
                         {/* Animated Underline: Expands in gold */}
                         <span
                           className={`absolute bottom-0 left-0 h-[2px] bg-luxury-gold rounded-full transition-all duration-300 ease-out ${
@@ -466,24 +523,29 @@ export default function Header({
         </nav>
 
         {/* CTA Button & Cart (Larger Screens Only - lg:flex) */}
-        <div className="hidden lg:flex items-center space-x-3 xl:space-x-4">
+        <div className="hidden lg:flex items-center space-x-2.5 xl:space-x-3.5">
+          
+
+          {/* Skincare Bag Button */}
           <button
             onClick={openCart}
             className="relative p-2.5 rounded-full border border-luxury-border/80 bg-white hover:bg-stone-50 text-luxury-text hover:text-black transition-all flex items-center gap-2 cursor-pointer shadow-xs group"
             aria-label="Open clinical shopping cart"
+            title="View shopping bag"
           >
             <ShoppingBag className="h-4 w-4 text-luxury-muted group-hover:text-luxury-gold transition-colors" strokeWidth={1.5} />
             <span className="hidden xl:inline text-xs font-sans font-medium tracking-wide">Bag</span>
             {totalCartCount > 0 && (
-              <span className="bg-black text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center -ml-1 border border-luxury-gold/50">
+              <span className="bg-black text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center -ml-1 border border-luxury-gold/50 shadow-xs">
                 {totalCartCount}
               </span>
             )}
           </button>
 
+          {/* Book Appointment CTA */}
           <button
             onClick={() => onBookClick()}
-            className="bg-black hover:bg-neutral-900 text-white border border-luxury-gold/40 px-6 py-2.5 rounded-full shadow-xs hover:shadow-md transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-xs uppercase group cursor-pointer"
+            className="bg-black hover:bg-neutral-900 text-white border border-luxury-gold/40 px-5 xl:px-6 py-2.5 rounded-full shadow-xs hover:shadow-md transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-xs uppercase group cursor-pointer"
           >
             <Calendar className="h-3.5 w-3.5 text-luxury-gold group-hover:scale-110 transition-transform" strokeWidth={1.5} />
             <span>Book Appointment</span>
@@ -535,7 +597,7 @@ export default function Header({
                 {/* Left Column: Image and Category Title */}
                 <div className="col-span-2 flex flex-col pr-4 border-r border-luxury-border/60">
                   <span className="text-xs font-serif font-medium uppercase tracking-[0.18em] text-luxury-text mb-3">
-                    {activeMegaItem.name}
+                    {activeMegaItem.desktopName || activeMegaItem.name}
                   </span>
                   {activeMegaItem.imageUrl && (
                     <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden shadow-md border border-luxury-border/60 group">
@@ -633,6 +695,8 @@ export default function Header({
                           </button>
                         </div>
 
+                        
+
                         {/* Top Section: Treatment Categories Only */}
                         <div className="space-y-1">
                           {navItems
@@ -644,7 +708,7 @@ export default function Header({
                                   onClick={() => setActiveMobileSubmenu(item)}
                                   className="flex w-full items-center justify-between px-0 py-1 text-left text-[22px] font-normal text-white hover:text-luxury-gold transition-colors cursor-pointer group"
                                 >
-                                  <span>{item.name}</span>
+                                  <span>{item.mobileName || item.name}</span>
                                   <ChevronRight className="h-6 w-6 text-white/70 group-hover:text-white group-hover:translate-x-1 transition-all" strokeWidth={2} />
                                 </button>
                               </div>
@@ -912,7 +976,7 @@ export default function Header({
                         {/* Title and Subcategory List */}
                         <div className="space-y-4 px-8">
                           <h4 className="text-left font-serif text-[26px] text-white tracking-wide">
-                            {activeMobileSubmenu.name}
+                            {activeMobileSubmenu.mobileName || activeMobileSubmenu.name}
                           </h4>
 
                           <div className="text-white space-y-4">

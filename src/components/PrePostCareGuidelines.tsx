@@ -24,7 +24,7 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
       </div>
 
       {/* Tab Controls with split layout */}
-      <div className="bg-white border border-silver-150 rounded-2xl p-5 md:p-6 shadow-sm">
+      <div className="bg-white border-y md:border border-silver-150 rounded-none md:rounded-2xl p-4 md:p-6 -mx-4 md:mx-0 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
           
           {/* Left / Top Side: Text & Checklists */}

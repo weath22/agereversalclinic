@@ -53,7 +53,7 @@ export default function ServiceFAQ({
   };
 
   return (
-    <div className="flex flex-col space-y-6 w-full bg-[#f8fafd] border border-[#eaedf6] rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10">
+    <div className="flex flex-col space-y-6 w-[calc(100%+2rem)] md:w-full bg-[#f8fafd] border-y md:border border-[#eaedf6] rounded-none sm:rounded-3xl p-4 sm:p-8 md:p-10 -mx-4 md:mx-0">
       
       {/* FAQ Header Block: Centered matching the reference image but with reduced text sizing */}
       <div className="text-center space-y-1.5 max-w-2xl mx-auto">
@@ -129,7 +129,7 @@ export default function ServiceFAQ({
       {/* Consult Disclaimer block - more compact */}
       <div className="bg-white border border-[#eaedf6] rounded-xl sm:rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-2xl mx-auto w-full shadow-sm mt-2">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-[#f0f4fc] text-[#2b3652] rounded-xl shrink-0">
+          <div className="p-2.5 bg-[#f0f4fc] text-[#2b3652] rounded-xl shrink-0 hidden md:block">
             <Sparkles className="h-4 w-4 text-rose-gold" />
           </div>
           <div className="text-left">

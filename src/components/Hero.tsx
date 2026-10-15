@@ -7,12 +7,13 @@ import { CLINIC_DATA } from '../data/clinicInfo';
 interface HeroProps {
   onBookClick: () => void;
   onExploreClick: () => void;
+  onPricingClick?: () => void;
   onTransformationsClick?: () => void;
   onReviewsClick?: () => void;
   heroConfig?: HeroConfig;
 }
 
-export default function Hero({ onBookClick, onExploreClick, onTransformationsClick, onReviewsClick, heroConfig }: HeroProps) {
+export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTransformationsClick, onReviewsClick, heroConfig }: HeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -246,10 +247,10 @@ export default function Hero({ onBookClick, onExploreClick, onTransformationsCli
               <Calendar className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-luxury-gold group-hover:scale-110 transition-transform" strokeWidth={1.5} />
             </button>
             <button
-              onClick={onExploreClick}
+              onClick={onPricingClick || onExploreClick}
               className="bg-white/95 backdrop-blur-md border border-luxury-border hover:border-luxury-gold/60 text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
             >
-              <span>Explore</span>
+              <span>Pricing</span>
               <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-luxury-muted group-hover:text-luxury-gold group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
             </button>
             {onTransformationsClick && (

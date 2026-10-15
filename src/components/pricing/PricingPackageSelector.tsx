@@ -55,6 +55,23 @@ export const PricingPackageSelector: React.FC<PricingPackageSelectorProps> = ({
           <p className="text-sm lg:text-base text-noir-700 font-normal mt-1">
             {treatment.title}
           </p>
+          {/* Unique Procedure & Downtime for the active package selection */}
+          {(() => {
+            const activePkg = treatment.packages.find((p) => p.id === selectedPkgId) || treatment.packages[0];
+            const activeProcedureTime = activePkg?.procedureTime || treatment.procedureTime || '20-30 Mins';
+            const activeDowntime = activePkg?.downtime || treatment.downtime || 'None';
+            return (
+              <div className="flex items-center gap-2 text-xs text-stone-600 mt-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                  <span className="text-stone-400">Procedure:</span> {activeProcedureTime}
+                </span>
+                <span className="text-stone-300">•</span>
+                <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                  <span className="text-stone-400">Downtime:</span> {activeDowntime}
+                </span>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -121,6 +138,13 @@ export const PricingPackageSelector: React.FC<PricingPackageSelectorProps> = ({
                   </p>
                 </div>
               </div>
+
+              {/* Package-specific details */}
+              {pkg.description && (
+                <div className="flex items-center gap-2 text-xs text-stone-500 mt-1.5 flex-wrap">
+                  <span className="text-stone-500 italic line-clamp-1">{pkg.description}</span>
+                </div>
+              )}
 
               {/* Collapsible Benefits Trigger & Drawer */}
               <div className="w-full mt-2.5 pt-2 border-t border-black/5">

@@ -12,7 +12,7 @@ interface ClinicalExpectationsProps {
 
 export default function ClinicalExpectations({ data }: ClinicalExpectationsProps) {
   return (
-    <div id="clinical-expectations" className="max-w-5xl mx-auto w-full bg-silver-50/60 border border-silver-100 rounded-3xl p-6 md:p-8">
+    <div id="clinical-expectations" className="max-w-5xl mx-auto w-full bg-silver-50/60 border-y md:border border-silver-100 rounded-none md:rounded-3xl p-4 sm:p-6 md:p-8 -mx-4 md:mx-auto">
       <h3 className="text-xs font-black tracking-widest uppercase text-silver-950 border-b border-silver-150 pb-3 mb-6 flex items-center space-x-2">
         <Activity className="h-4 w-4 text-rose-gold" />
         <span>Clinical Expectations</span>
@@ -21,10 +21,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         
         {/* Procedure Time */}
-        <div className="flex items-start space-x-4">
-          <div className="p-2.5 bg-white rounded-lg text-silver-800 border border-silver-100 shadow-sm shrink-0">
-            <Clock className="h-4 w-4 text-rose-gold" />
-          </div>
+        <div className="flex items-start space-x-3.5">
+          <Clock className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Procedure Time
@@ -36,10 +34,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Downtime */}
-        <div className="flex items-start space-x-4">
-          <div className="p-2.5 bg-white rounded-lg text-silver-800 border border-silver-100 shadow-sm shrink-0">
-            <Compass className="h-4 w-4 text-rose-gold" />
-          </div>
+        <div className="flex items-start space-x-3.5">
+          <Compass className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Recovery & Downtime
@@ -51,10 +47,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Comfort Level */}
-        <div className="flex items-start space-x-4">
-          <div className="p-2.5 bg-white rounded-lg text-silver-800 border border-silver-100 shadow-sm shrink-0">
-            <Sparkles className="h-4 w-4 text-rose-gold" />
-          </div>
+        <div className="flex items-start space-x-3.5">
+          <Sparkles className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Comfort Level
@@ -66,10 +60,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Recommended Sessions */}
-        <div className="flex items-start space-x-4">
-          <div className="p-2.5 bg-white rounded-lg text-silver-800 border border-silver-100 shadow-sm shrink-0">
-            <Calendar className="h-4 w-4 text-rose-gold" />
-          </div>
+        <div className="flex items-start space-x-3.5">
+          <Calendar className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Recommended Plan

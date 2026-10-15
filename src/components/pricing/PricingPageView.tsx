@@ -6,8 +6,10 @@ import {
   PricingCategory,
   PricingPackage,
 } from '../../data/treatmentPricing';
+import { getTreatmentPricingData } from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
+import { TreatmentVisualBanner } from './TreatmentVisualBanner';
 import {
   Search,
   ArrowLeft,
@@ -22,6 +24,139 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTreatmentCart } from '../../context/TreatmentCartContext';
+
+export interface TreatmentSubOptionConfig {
+  id: string;
+  label: string;
+  filter: (item: TreatmentPricingItem) => boolean;
+}
+
+export const TREATMENT_CATEGORY_SUB_OPTIONS: Record<string, TreatmentSubOptionConfig[]> = {
+  'Face & Injectables': [
+    {
+      id: 'anti-wrinkle',
+      label: 'Anti-Wrinkle (Botox)',
+      filter: (item) => item.id.startsWith('botox-'),
+    },
+    {
+      id: 'dermal-fillers',
+      label: 'Dermal Fillers (1ml)',
+      filter: (item) => item.id.startsWith('filler-'),
+    },
+    {
+      id: 'skin-boosters-lifting',
+      label: 'Skin Boosters & Lifting',
+      filter: (item) =>
+        item.id.includes('profhilo') ||
+        item.id.includes('salmon-sperm') ||
+        item.id.includes('morpheus8-facial') ||
+        item.id.includes('emface') ||
+        item.id.includes('endolift') ||
+        item.id.includes('co2-laser'),
+    },
+  ],
+  'Body Sculpting': [
+    {
+      id: 'fat-dissolving',
+      label: 'Fat Dissolving (Aqualyx & Deso)',
+      filter: (item) => item.id.startsWith('aqualyx-') || item.id.startsWith('deso-'),
+    },
+    {
+      id: 'body-contouring',
+      label: 'Body Contouring & Fat Loss',
+      filter: (item) =>
+        item.id.includes('cryo') ||
+        item.id.includes('emsculpt') ||
+        item.id.includes('slimming-pen') ||
+        item.id.includes('cellulite'),
+    },
+    {
+      id: 'high-tech-body',
+      label: 'High-Tech Body & Tightening',
+      filter: (item) => item.id.includes('morpheus8-body'),
+    },
+  ],
+  'Advanced Facials': [
+    {
+      id: 'clinical-medical',
+      label: 'Clinical & Medical Facials',
+      filter: (item) =>
+        item.id.includes('aquafacial') ||
+        item.id.includes('glass-skin') ||
+        item.id.includes('microneedling') ||
+        item.id.includes('bb-glow') ||
+        item.id.includes('diamond-microdermabrasion') ||
+        item.id.includes('regenerative-scalp'),
+    },
+    {
+      id: 'specials',
+      label: 'Monday & Friday Specials',
+      filter: (item) =>
+        item.id.includes('gold-facial') ||
+        item.id.includes('egf-facial') ||
+        item.id.includes('red-carpet') ||
+        item.id.includes('idebenone'),
+    },
+    {
+      id: 'light-oxygen',
+      label: 'Light, Oxygen & Extractions',
+      filter: (item) =>
+        item.id.includes('oxygen') ||
+        item.id.includes('led-light') ||
+        item.id.includes('high-frequency') ||
+        item.id.includes('extractions'),
+    },
+  ],
+  'Hair & Beauty': [
+    {
+      id: 'beauty-lashes-spmu',
+      label: 'Beauty, Lashes & SPMU',
+      filter: (item) =>
+        item.id.includes('lash') ||
+        item.id.includes('brow') ||
+        item.id.includes('spmu') ||
+        item.id.includes('tattoo-removal') ||
+        item.id.includes('party-makeup'),
+    },
+    {
+      id: 'hair-salon',
+      label: 'Hair Salon & Trichology',
+      filter: (item) =>
+        item.id.includes('hair-salon') ||
+        item.id.includes('hair-colour') ||
+        item.id.includes('hair-treatments') ||
+        item.id.includes('mens-kids'),
+    },
+    {
+      id: 'laser-hair-removal',
+      label: 'Laser Hair Removal & Waxing',
+      filter: (item) =>
+        item.id.includes('laser-') ||
+        item.id.includes('electrolysis') ||
+        item.id.includes('body-waxing'),
+    },
+  ],
+  'IV Drip Lounge & Wellness': [
+    {
+      id: 'iv-drips',
+      label: 'IV Nutrient Infusions',
+      filter: (item) =>
+        item.id.includes('iv-') &&
+        !item.id.includes('b12') &&
+        !item.id.includes('iron-shot'),
+    },
+    {
+      id: 'booster-shots',
+      label: 'Booster Vitamin Shots',
+      filter: (item) => item.id.includes('b12') || item.id.includes('iron-shot'),
+    },
+    {
+      id: 'prp-regenerative',
+      label: 'PRP Regenerative Therapy',
+      filter: (item) => item.id.startsWith('prp-'),
+    },
+  ],
+};
 
 const SORT_OPTIONS: Array<{ id: 'featured' | 'price-asc' | 'price-desc' | 'name-asc'; label: string }> = [
   { id: 'featured', label: 'Featured Order' },
@@ -50,36 +185,107 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>(
     initialCategoryFilter || 'All Procedures'
   );
+  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>([]);
+  const [activeFloatingCategory, setActiveFloatingCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<'featured' | 'price-asc' | 'price-desc' | 'name-asc'>('featured');
   const [isOrderMenuOpen, setIsOrderMenuOpen] = useState(false);
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
+  const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  const orderMenuRef = useRef<HTMLDivElement>(null);
+  // Dynamic treatment pricing data initialized from admin store with live update subscription
+  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
 
-  // Close order menu on click outside
+  useEffect(() => {
+    const handleUpdate = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setPricingData(e.detail);
+      } else {
+        setPricingData(getTreatmentPricingData());
+      }
+    };
+    window.addEventListener('treatment_pricing_updated', handleUpdate);
+    return () => window.removeEventListener('treatment_pricing_updated', handleUpdate);
+  }, []);
+
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(57);
+  const orderMenuRef = useRef<HTMLDivElement>(null);
+  const floatingModalRef = useRef<HTMLDivElement>(null);
+
+  // Measure sticky header height dynamically
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  }, []);
+
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (orderMenuRef.current && !orderMenuRef.current.contains(e.target as Node)) {
         setIsOrderMenuOpen(false);
       }
+      if (floatingModalRef.current && !floatingModalRef.current.contains(e.target as Node)) {
+        setActiveFloatingCategory(null);
+      }
     };
-    if (isOrderMenuOpen) {
+    if (isOrderMenuOpen || activeFloatingCategory) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOrderMenuOpen]);
+  }, [isOrderMenuOpen, activeFloatingCategory]);
+
+  const handleCategoryClick = (cat: string) => {
+    if (cat === 'All Procedures') {
+      setSelectedCategory('All Procedures');
+      setSelectedSubOptions([]);
+      setActiveFloatingCategory(null);
+      return;
+    }
+
+    if (selectedCategory !== cat) {
+      setSelectedCategory(cat);
+      setSelectedSubOptions([]); // Unselected by default
+      setActiveFloatingCategory(cat); // Open floating modal!
+    } else {
+      // Toggle floating modal if clicking active category
+      setActiveFloatingCategory((prev) => (prev === cat ? null : cat));
+    }
+  };
+
+  const handleToggleSubOption = (optionId: string) => {
+    setSelectedSubOptions((prev) =>
+      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
+    );
+  };
 
   // Filtered & Sorted Treatments
   const filteredTreatments = useMemo(() => {
-    let list = [...TREATMENT_PRICING_DATA];
+    // Only display active, non-hidden procedures to clients
+    let list = pricingData.filter((item) => !item.hidden && item.isActive !== false);
 
     // Category Filter
     if (selectedCategory !== 'All Procedures') {
       list = list.filter((item) => item.category === selectedCategory);
+
+      // Multi-select sub-option filter within category:
+      // When one or more options are selected, show treatments matching ANY selected option
+      if (selectedSubOptions.length > 0) {
+        const catOptions = TREATMENT_CATEGORY_SUB_OPTIONS[selectedCategory];
+        const activeFilters = catOptions?.filter((o) => selectedSubOptions.includes(o.id));
+        if (activeFilters && activeFilters.length > 0) {
+          list = list.filter((item) => activeFilters.some((f) => f.filter(item)));
+        }
+      }
     }
 
     // Search Query
@@ -113,7 +319,7 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     }
 
     return list;
-  }, [selectedCategory, searchQuery, sortOption]);
+  }, [selectedCategory, selectedSubOptions, searchQuery, sortOption]);
 
   const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
     setActivePackageModalTreatment(null);
@@ -124,7 +330,7 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   return (
     <div className="min-h-screen bg-[#faf8f5] text-luxury-text flex flex-col selection:bg-[#D8C2A3]/30">
       {/* 1. Sticky Clean Top Bar matching Shop page */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-luxury-border shadow-2xs">
+      <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-luxury-border shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-3.5 flex items-center justify-between gap-4">
           {/* Back to Clinic Button */}
           <button
@@ -182,11 +388,11 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-12 flex-1 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-8 sm:pt-12 pb-0 flex-1 w-full">
         {/* 2. Page Header & Introduction */}
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
           <span className="text-[11px] sm:text-xs font-sans font-medium text-luxury-gold uppercase tracking-[0.25em] block mb-2">
-            Harley Street Clinical Distinction
+            Age Reversal Clinical Distinction
           </span>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-light text-luxury-text mb-3 sm:mb-4 tracking-tight leading-tight">
             Treatment Pricing & Packages
@@ -272,26 +478,105 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           </div>
         </div>
 
-        {/* 4. Category Filter Tabs */}
-        <div className="mb-8 sm:mb-10 overflow-x-auto no-scrollbar -mx-4 sm:-mx-6 md:mx-0 px-4 sm:px-6 md:px-0">
-          <div className="flex items-center gap-2 pb-2 min-w-max">
-            {PRICING_CATEGORIES.map((cat) => {
-              const isActive = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? 'bg-black text-white shadow-sm border border-black'
-                      : 'bg-white hover:bg-stone-100 text-stone-700 border border-luxury-border/90 hover:border-luxury-gold/50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
+        {/* 4. Category Filter Tabs & Floating Options Modal - Sticky on All Screens when scrolled to top */}
+        <div
+          ref={floatingModalRef}
+          style={{ top: `${headerHeight}px` }}
+          className="sticky z-30 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 py-3 mb-6 sm:mb-8 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200/60 shadow-xs transition-shadow"
+        >
+          {/* Main Category Tabs - Horizontal scrollable pills */}
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2 pb-1 md:pb-0 min-w-max">
+              {PRICING_CATEGORIES.map((cat) => {
+                const isActive = selectedCategory === cat;
+                const activeCount = isActive ? selectedSubOptions.length : 0;
+
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={(e) => {
+                      e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                      handleCategoryClick(cat);
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none ${
+                      isActive
+                        ? 'bg-black text-white shadow-sm border border-black'
+                        : 'bg-white hover:bg-stone-100 text-stone-700 border border-luxury-border/90 hover:border-luxury-gold/50'
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    {activeCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-semibold bg-white text-black">
+                        {activeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* Floating UI: Floats directly ABOVE the cards without taking space below options */}
+          <AnimatePresence>
+            {activeFloatingCategory && TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory] && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-4 right-4 sm:left-0 sm:right-auto z-40 mt-2 max-w-xl sm:w-full"
+              >
+                <div className="bg-white/98 backdrop-blur-md rounded-2xl border border-stone-200/90 shadow-2xl shadow-stone-900/15 p-3.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-stone-100">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
+                      {activeFloatingCategory} Options
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedSubOptions.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSubOptions([])}
+                          className="text-[11px] text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveFloatingCategory(null)}
+                        className="p-1 text-stone-400 hover:text-stone-800 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                        aria-label="Close options"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Options appear directly on the modal, multi-selectable */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory].map((opt) => {
+                      const isSelected = selectedSubOptions.includes(opt.id);
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => handleToggleSubOption(opt.id)}
+                          className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap select-none ${
+                            isSelected
+                              ? 'bg-black text-white shadow-xs border border-black'
+                              : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80 hover:border-stone-400'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* 5. Pricing Cards Grid (2 per row on mobile screens) */}
@@ -301,7 +586,10 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
               <PricingCard
                 key={treatment.id}
                 treatment={treatment}
-                onChoosePackage={(t) => setActivePackageModalTreatment(t)}
+                onChoosePackage={(t) => {
+                  setSelectedPackageInitialId(undefined);
+                  setActivePackageModalTreatment(t);
+                }}
               />
             ))}
           </div>
@@ -316,6 +604,8 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
               onClick={() => {
                 setSearchQuery('');
                 setSelectedCategory('All Procedures');
+                setSelectedSubOptions([]);
+                setActiveFloatingCategory(null);
               }}
               className="bg-black hover:bg-neutral-900 text-white px-6 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-colors"
             >
@@ -324,8 +614,11 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           </div>
         )}
 
+        {/* Treatment Visual Banner Component */}
+        <TreatmentVisualBanner />
+
         {/* 6. Bottom Information & Consultation Banner (Full bleed to screen edges on mobile) */}
-        <div className="mt-14 sm:mt-20 -mx-4 sm:mx-0 px-4 py-8 sm:p-10 rounded-none sm:rounded-3xl bg-gradient-to-br from-white via-[#fbf8f3] to-[#f4ebe1] border-y sm:border border-[#D8C2A3]/50 shadow-xs text-center relative overflow-hidden">
+        <div className="mt-8 sm:mt-12 mb-0 -mx-4 sm:mx-0 px-4 py-8 sm:p-10 rounded-none sm:rounded-3xl bg-gradient-to-br from-white via-[#fbf8f3] to-[#f4ebe1] border-y sm:border border-[#D8C2A3]/50 shadow-xs text-center relative overflow-hidden">
           <div className="relative z-10 max-w-2xl mx-auto">
             <span className="text-[10px] sm:text-xs font-sans font-semibold text-luxury-gold uppercase tracking-[0.2em] block mb-2">
               Bespoke Treatment Combinations
@@ -355,7 +648,11 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
       {activePackageModalTreatment && (
         <PackageSelectModal
           treatment={activePackageModalTreatment}
-          onClose={() => setActivePackageModalTreatment(null)}
+          initialPackageId={selectedPackageInitialId}
+          onClose={() => {
+            setActivePackageModalTreatment(null);
+            setSelectedPackageInitialId(undefined);
+          }}
           onBookPackage={handleBookPackage}
         />
       )}

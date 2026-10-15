@@ -26,6 +26,11 @@ import {
   ProfilePageConfig
 } from '../types';
 import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
+import { 
+  TreatmentPricingItem, 
+  TREATMENT_PRICING_DATA, 
+  TREATMENT_PRICING_CATEGORIES 
+} from '../data/treatmentPricing';
 import siteCustomizations from '../data/siteCustomizations.json';
 
 // Helper to retrieve pre-deployment persisted configuration from siteCustomizations.json
@@ -64,6 +69,7 @@ const FOOTER_CONFIG_KEY = 'homepage_footer_config';
 const FLOATING_MENU_CONFIG_KEY = 'homepage_floating_menu_config';
 const PROFILE_PAGE_CONFIG_KEY = 'profile_page_config';
 const CLINIC_INFO_DATA_KEY = 'clinic_info_data';
+const TREATMENT_PRICING_DATA_KEY = 'treatment_pricing_data';
 
 
 // Initial Mock Consultations (LocationsAndConsultation)
@@ -1371,4 +1377,82 @@ export async function fetchRemoteClinicData(): Promise<ClinicData | null> {
     return null;
   }
 }
+
+// =========================================================================
+// Treatment Pricing Store Management (treatmentPricing.ts & siteCustomizations.json)
+// =========================================================================
+
+export function getTreatmentPricingData(): TreatmentPricingItem[] {
+  return getStorageItem<TreatmentPricingItem[]>(
+    TREATMENT_PRICING_DATA_KEY,
+    getFileDefault<TreatmentPricingItem[]>('treatment_pricing_data', TREATMENT_PRICING_DATA)
+  );
+}
+
+export function getTreatmentPricingCategories(): readonly string[] {
+  return TREATMENT_PRICING_CATEGORIES;
+}
+
+export function updateTreatmentPricingData(data: TreatmentPricingItem[]): TreatmentPricingItem[] {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(TREATMENT_PRICING_DATA_KEY, JSON.stringify(data));
+    window.dispatchEvent(new CustomEvent('treatment_pricing_updated', { detail: data }));
+  }
+  return data;
+}
+
+export async function saveTreatmentPricingData(
+  data: TreatmentPricingItem[]
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  // Update local storage and dispatch global event immediately for zero-delay UI update
+  updateTreatmentPricingData(data);
+
+  try {
+    const res = await fetch('/api/admin/treatment-pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ treatmentPricingData: data })
+    });
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to persist treatment pricing to disk:', err);
+    return { success: false, error: String(err) };
+  }
+}
+
+export function resetTreatmentPricingDataToDefault(): TreatmentPricingItem[] {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(TREATMENT_PRICING_DATA_KEY);
+    window.dispatchEvent(new CustomEvent('treatment_pricing_updated', { detail: TREATMENT_PRICING_DATA }));
+  }
+  // Also sync the reset to server
+  fetch('/api/admin/treatment-pricing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ treatmentPricingData: TREATMENT_PRICING_DATA })
+  }).catch((err) => {
+    console.warn('Could not sync reset treatment pricing to server:', err);
+  });
+  return TREATMENT_PRICING_DATA;
+}
+
+// Sync treatment pricing data from remote server on demand
+export async function fetchRemoteTreatmentPricingData(): Promise<TreatmentPricingItem[] | null> {
+  try {
+    const res = await fetch('/api/admin/treatment-pricing');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.data)) {
+        updateTreatmentPricingData(json.data);
+        return json.data;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not fetch remote treatment pricing data:', err);
+    return null;
+  }
+}
+
 

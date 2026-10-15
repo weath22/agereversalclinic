@@ -39,7 +39,7 @@ import {
 
 export default function ServiceViewDetailsEditor() {
   const [db, setDb] = useState<Record<string, TreatmentDetail>>({});
-  const [selectedKey, setSelectedKey] = useState<string>('exosome');
+  const [selectedKey, setSelectedKey] = useState<string>('botox-1-area');
   const [formData, setFormData] = useState<TreatmentDetail | null>(null);
   
   // Dynamic navigation search and filtering state
@@ -317,7 +317,7 @@ export default function ServiceViewDetailsEditor() {
     }
     setDb(TREATMENT_DETAILS_DB);
     saveTreatmentDetailsConfig(TREATMENT_DETAILS_DB);
-    setSelectedKey('exosome');
+    setSelectedKey('botox-1-area');
     setStatusMessage({ type: 'success', text: 'All clinical service templates successfully restored to default.' });
     setTimeout(() => setStatusMessage(null), 4000);
   };
