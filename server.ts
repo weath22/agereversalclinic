@@ -32,6 +32,114 @@ app.use(express.static(path.resolve(__dirname, 'public')));
 // Path to site customizations and clinic info files
 const customizationsPath = path.resolve(__dirname, 'src/data/siteCustomizations.json');
 const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
+const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
+
+function generateTreatmentPricingTs(items: any[]): string {
+  return `/**
+ * ============================================================================
+ * TREATMENT & PRICING CATALOG (Auto-Synced from Admin Studio)
+ * ============================================================================
+ */
+
+import { TreatmentMediaItem } from '../types';
+
+export interface PricingPackage {
+  id: string;
+  name: string;
+  price: number;
+  perSessionPrice?: number;
+  savingsBadge?: string;
+  badge?: string;
+  isPopular?: boolean;
+  sessions: number;
+  description: string;
+  includes: string[];
+  procedureTime?: string;
+  downtime?: string;
+}
+
+export type TreatmentCategory =
+  | 'Face & Injectables'
+  | 'Body Sculpting'
+  | 'Advanced Facials'
+  | 'Hair & Beauty'
+  | 'IV Drip Lounge & Wellness';
+
+export interface TreatmentPricingItem {
+  id: string;
+  title: string;
+  category: TreatmentCategory;
+  description: string;
+  image: string;
+  startingPrice: number;
+  currency: string;
+  procedureTime: string;
+  downtime: string;
+  badge?: string;
+  popular?: boolean;
+  hidden?: boolean;
+  isActive?: boolean;
+  packages: PricingPackage[];
+  coverMedia?: TreatmentMediaItem;
+  galleryImages?: string[];
+  seoKeywords?: string[];
+}
+
+export const PRICING_CATEGORIES = [
+  'All Procedures',
+  'Face & Injectables',
+  'Body Sculpting',
+  'Advanced Facials',
+  'Hair & Beauty',
+  'IV Drip Lounge & Wellness'
+] as const;
+
+export const TREATMENT_PRICING_CATEGORIES = PRICING_CATEGORIES;
+export type PricingCategory = typeof PRICING_CATEGORIES[number];
+
+export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = ${JSON.stringify(items, null, 2)};
+`;
+}
+
+// API: Save treatment pricing data to siteCustomizations.json and src/data/treatmentPricing.ts on disk
+app.post('/api/admin/treatment-pricing', (req, res) => {
+  try {
+    const { treatmentPricingData, data } = req.body;
+    const payload = treatmentPricingData || data || req.body;
+    if (!payload || !Array.isArray(payload)) {
+      return res.status(400).json({ success: false, error: 'Invalid treatment pricing data. Must be an array of treatments.' });
+    }
+
+    // 1. Write directly to src/data/treatmentPricing.ts so it is baked into source control and production builds
+    const tsCode = generateTreatmentPricingTs(payload);
+    fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
+    console.log(`[Admin] Successfully wrote updated code to ${treatmentPricingPath}`);
+
+    // 2. Also persist to siteCustomizations.json
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    existing.treatment_pricing_data = payload;
+    existing.lastSynced = new Date().toISOString();
+    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+
+    return res.json({
+      success: true,
+      message: 'Treatment pricing successfully written to src/data/treatmentPricing.ts and siteCustomizations.json',
+      count: payload.length,
+      updatedAt: existing.lastSynced
+    });
+  } catch (error) {
+    console.error('Error saving treatment pricing:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
 
 function generateClinicInfoTs(data: any): string {
   return `/**
@@ -234,41 +342,6 @@ app.get('/api/admin/clinic-info', (_req, res) => {
 // POST /api/admin/clinic-data & POST /api/admin/save-clinic-info
 app.post('/api/admin/clinic-data', handleSaveClinicData);
 app.post('/api/admin/save-clinic-info', handleSaveClinicData);
-
-// API: Save treatment pricing data to siteCustomizations.json on disk
-app.post('/api/admin/treatment-pricing', (req, res) => {
-  try {
-    const { treatmentPricingData, data } = req.body;
-    const payload = treatmentPricingData || data || req.body;
-    if (!payload || !Array.isArray(payload)) {
-      return res.status(400).json({ success: false, error: 'Invalid treatment pricing data. Must be an array of treatments.' });
-    }
-
-    let existing: Record<string, any> = {};
-    if (fs.existsSync(customizationsPath)) {
-      try {
-        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
-      } catch {
-        existing = {};
-      }
-    }
-
-    existing.treatment_pricing_data = payload;
-    existing.lastSynced = new Date().toISOString();
-    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
-    console.log(`[Admin] Successfully persisted ${payload.length} treatment pricing items to ${customizationsPath}`);
-
-    return res.json({
-      success: true,
-      message: 'Treatment pricing successfully persisted to disk in siteCustomizations.json',
-      count: payload.length,
-      updatedAt: existing.lastSynced
-    });
-  } catch (error) {
-    console.error('Error saving treatment pricing:', error);
-    return res.status(500).json({ success: false, error: String(error) });
-  }
-});
 
 // GET /api/admin/treatment-pricing
 app.get('/api/admin/treatment-pricing', (_req, res) => {
