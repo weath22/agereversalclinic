@@ -1,13 +1,25 @@
-import React from 'react';
+import { OverviewMediaConfig } from '../types';
 
 interface ServiceOverviewProps {
   data: {
     title: string;
     description: string;
+    overviewMedia?: OverviewMediaConfig;
+    imageUrl?: string;
   };
 }
 
 export default function ServiceOverview({ data }: ServiceOverviewProps) {
+  const defaultFallbackUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR";
+  const backMedia = data.overviewMedia?.backImage;
+  const frontMedia = data.overviewMedia?.frontImage;
+  const backUrl = backMedia?.url || defaultFallbackUrl;
+  const backAlt = backMedia?.altText || `${data.title} procedural profile - back framing`;
+  const backTitle = backMedia?.seoTitle || data.title;
+  const frontUrl = frontMedia?.url || data.imageUrl || defaultFallbackUrl;
+  const frontAlt = frontMedia?.altText || `${data.title} procedural profile - front focal`;
+  const frontTitle = frontMedia?.seoTitle || data.title;
+
   return (
     <div id="service-overview" className="max-w-5xl mx-auto w-full">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -27,8 +39,9 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
           {/* Back/Top-Left Card */}
           <div className="absolute top-[4%] left-0 w-[72%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-silver-100 z-10 transition-all duration-500 hover:scale-103 hover:z-25 group">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
-              alt={`${data.title} procedural profile - back framing`}
+              src={backUrl}
+              alt={backAlt}
+              title={backTitle}
               className="w-full h-full object-cover brightness-[0.98] transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
@@ -38,8 +51,9 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
           {/* Front/Bottom-Right Card */}
           <div className="absolute bottom-[-4%] right-0 w-[72%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-silver-150 z-20 transition-all duration-500 hover:scale-105 hover:shadow-[0_25px_60px_rgba(0,0,0,0.16)] group">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
-              alt={`${data.title} procedural profile - front focal`}
+              src={frontUrl}
+              alt={frontAlt}
+              title={frontTitle}
               className="w-full h-full object-cover brightness-[0.98] transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />

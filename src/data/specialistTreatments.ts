@@ -1,3 +1,5 @@
+import { TreatmentMediaItem } from '../types';
+
 export interface SpecialistTreatment {
   id: string;
   title: string;
@@ -5,9 +7,11 @@ export interface SpecialistTreatment {
   description: string;
   image: string;
   badge?: string;
+  coverMedia?: TreatmentMediaItem;
+  seoKeywords?: string[];
 }
 
-export const ALL_SPECIALIST_TREATMENTS: SpecialistTreatment[] = [
+const RAW_SPECIALIST_TREATMENTS: SpecialistTreatment[] = [
   // Page 1: Signature Facial Rejuvenation & Biotech
   {
     id: 'facial-injectables',
@@ -552,3 +556,28 @@ export const ALL_SPECIALIST_TREATMENTS: SpecialistTreatment[] = [
     badge: 'Harley St'
   }
 ];
+
+export function enrichSpecialistTreatment(t: SpecialistTreatment): SpecialistTreatment {
+  const defaultKeywords = t.seoKeywords && t.seoKeywords.length > 0 ? t.seoKeywords : [
+    'anti-aging clinic london',
+    'cellular skin regeneration',
+    'collagen bio-remodeling',
+    'non-surgical dermal lift',
+    t.title.toLowerCase()
+  ];
+  return {
+    ...t,
+    seoKeywords: defaultKeywords,
+    coverMedia: t.coverMedia || {
+      url: t.image,
+      mediaType: 'image',
+      altText: `${t.title} clinical aesthetic treatment at Age Reversal Clinic London`,
+      seoTitle: `${t.title} - Specialist Care`,
+      seoKeywords: defaultKeywords,
+      caption: t.badge || 'Signature Protocol'
+    }
+  };
+}
+
+export const ALL_SPECIALIST_TREATMENTS: SpecialistTreatment[] = RAW_SPECIALIST_TREATMENTS.map(enrichSpecialistTreatment);
+

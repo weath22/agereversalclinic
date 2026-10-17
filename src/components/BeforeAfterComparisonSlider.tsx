@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ClinicalComparisonMediaConfig } from '../types';
 
 interface BeforeAfterComparisonSliderProps {
   beforeImage: string;
   afterImage: string;
   treatmentName: string;
+  clinicalComparisonMedia?: ClinicalComparisonMediaConfig;
 }
 
-export default function BeforeAfterComparisonSlider({ beforeImage, afterImage, treatmentName }: BeforeAfterComparisonSliderProps) {
+export default function BeforeAfterComparisonSlider({ beforeImage, afterImage, treatmentName, clinicalComparisonMedia }: BeforeAfterComparisonSliderProps) {
+  const effectiveBefore = clinicalComparisonMedia?.beforeImage?.url || beforeImage;
+  const effectiveAfter = clinicalComparisonMedia?.afterImage?.url || afterImage;
+  const effectiveLabel = clinicalComparisonMedia?.caseLabel || "Target Aesthetic: Selected Treatment Case";
+
   // 8 High-quality clinical before/after cases (1 primary + 7 fallback cases)
   const fallbackCases = [
     {
@@ -29,15 +35,15 @@ export default function BeforeAfterComparisonSlider({ beforeImage, afterImage, t
   ];
 
   // Exclude identical images from the default fallbacks
-  const uniqueFallbacks = fallbackCases.filter(c => c.before !== beforeImage && c.after !== afterImage);
+  const uniqueFallbacks = fallbackCases.filter(c => c.before !== effectiveBefore && c.after !== effectiveAfter);
 
   // Generate 8 pairs
   const pairs = [
     {
       id: 1,
-      before: beforeImage,
-      after: afterImage,
-      label: "Target Aesthetic: Selected Treatment Case"
+      before: effectiveBefore,
+      after: effectiveAfter,
+      label: effectiveLabel
     }
   ];
 

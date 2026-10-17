@@ -103,8 +103,9 @@ export default function SpecialistAreas({
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-luxury-secondary relative">
                     <img
-                      src={treatment.image}
-                      alt={treatment.title}
+                      src={treatment.coverMedia?.url || treatment.image}
+                      alt={treatment.coverMedia?.altText || treatment.title}
+                      title={treatment.coverMedia?.seoTitle || treatment.title}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                       referrerPolicy="no-referrer"

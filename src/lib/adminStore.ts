@@ -23,7 +23,8 @@ import {
   LatestNewsConfig,
   FooterConfig,
   FloatingMenuConfig,
-  ProfilePageConfig
+  ProfilePageConfig,
+  MediaAssetRecord
 } from '../types';
 import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
 import { 
@@ -70,6 +71,109 @@ const FLOATING_MENU_CONFIG_KEY = 'homepage_floating_menu_config';
 const PROFILE_PAGE_CONFIG_KEY = 'profile_page_config';
 const CLINIC_INFO_DATA_KEY = 'clinic_info_data';
 const TREATMENT_PRICING_DATA_KEY = 'treatment_pricing_data';
+const CENTRAL_MEDIA_ASSETS_KEY = 'central_clinic_media_assets';
+
+export const INITIAL_MEDIA_ASSETS: MediaAssetRecord[] = [
+  {
+    id: 'asset-hero-video-1',
+    name: 'Clinic Cinematic Experience Video',
+    url: 'https://pub-e6f425d799324ff19d004c8c518f4155.r2.dev/videos/raw/be84df26-4172-4917-8f6b-9f5486c5c6d6.mp4',
+    mediaType: 'video',
+    location: 'Cloud Streaming CDN',
+    category: 'Videos',
+    altText: 'Age Reversal Clinic London clinical procedure showreel video',
+    seoKeywords: ['anti-aging clinic london', 'aesthetic medicine video', 'harley street clinic'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-prep-serum-1',
+    name: 'Clinical Skin Prep Serum Application',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Protocol',
+    category: 'Treatments',
+    altText: 'Clinical Skin Prep Serum Application - Epidermal Prime & Hydration',
+    seoKeywords: ['clinical skin prep', 'serum application protocol', 'medical grade pre-care protocol'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-recovery-spa-1',
+    name: 'Clinical Recovery Spa Sanctuary',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Sanctuary',
+    category: 'Treatments',
+    altText: 'Clinical Recovery Spa Sanctuary - Cellular Healing & Protection',
+    seoKeywords: ['post-care recovery', 'cellular healing', 'clinical skin recovery'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-diagnostic-tech-1',
+    name: 'Targeted Bio-Calibration Diagnostics',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Technology',
+    category: 'Treatments',
+    altText: 'High-precision targeted aesthetic treatment technology and diagnostics',
+    seoKeywords: ['targeted bio-calibration', 'diagnostic dermatology', 'cellular skin regeneration'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-exosome-hero',
+    name: 'Exosome Regenerative Therapy Hero',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Treatments',
+    category: 'Treatments',
+    altText: 'Exosome Regenerative Therapy clinical procedure and cellular skin renewal',
+    seoKeywords: ['cellular skin regeneration', 'exosome therapy london', 'anti-aging clinic london'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-profhilo-hero',
+    name: 'Profhilo Injectable Hydration Hero',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Treatments',
+    category: 'Treatments',
+    altText: 'Profhilo Injectable Hydration bio-remodeling at Age Reversal Clinic',
+    seoKeywords: ['collagen bio-remodeling', 'profhilo london clinic', 'hyaluronic acid injectable'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-morpheus8-hero',
+    name: 'Morpheus8 RF Microneedling Hero',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAOtBKp33pnPLoKpvckXkiIS-1G2cj7yNpUXZYP7v7nB3HgYFreRRFM-F6UZt2uwFsUMzf2u0m_0SvHcja7AjjBjq8B4mo1Gk_Y3ihgY2qmmbr1Vc48W8QizQ3BLTsaPHv9ojoje0Q8wG64F4zjwPy98roZuGAorsk2N5TxRUibfaZ4gZ7L9r7cFXGqA6jBiryjo3-fh10ZWdkryws_w14ASGtvXypafuUczwEFeVz6SywQsQKFg--N76UkgP9d4Um3Q5Snz8eG_XyS',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Treatments',
+    category: 'Treatments',
+    altText: 'Morpheus8 RF Microneedling facial remodeling session',
+    seoKeywords: ['morpheus8 rf microneedling', 'jawline contouring london', 'subdermal adipose remodeling'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-ultherapy-hero',
+    name: 'Ultherapy Ultrasound Lift Hero',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
+    mediaType: 'image',
+    location: 'Cloud CDN / Clinic Treatments',
+    category: 'Treatments',
+    altText: 'Ultherapy Non-Surgical Ultrasound Lift session',
+    seoKeywords: ['ultherapy non-surgical lift', 'smas muscle lifting', 'non-surgical dermal lift'],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'asset-ba-volumetric',
+    name: 'Clinical Trial Before/After Volumetric Case',
+    url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
+    mediaType: 'image',
+    location: 'Cloud CDN / Transformations',
+    category: 'Before & After',
+    altText: 'Clinical Trial Before and After Volumetric Resurfacing',
+    seoKeywords: ['before and after clinic', 'transformation gallery', 'cellular skin regeneration'],
+    createdAt: new Date().toISOString()
+  }
+];
 
 
 // Initial Mock Consultations (LocationsAndConsultation)
@@ -301,6 +405,19 @@ export async function uploadAssetFile(file: File): Promise<{ success: boolean; u
         });
         const data = await res.json();
         if (data.success && data.url) {
+          // Automatic Asset Library Registration (Task 2.1)
+          try {
+            registerMediaAsset({
+              name: file.name,
+              url: data.url,
+              mediaType: file.type.startsWith('video/') ? 'video' : 'image',
+              size: file.size,
+              category: 'Uploads',
+              altText: `${file.name.replace(/\.[^/.]+$/, '')} - Age Reversal Clinic London`
+            });
+          } catch (regErr) {
+            console.warn('Could not auto-register uploaded asset:', regErr);
+          }
           resolve({ success: true, url: data.url });
         } else {
           resolve({ success: false, error: data.error || 'Failed to upload asset' });
@@ -315,19 +432,152 @@ export async function uploadAssetFile(file: File): Promise<{ success: boolean; u
 }
 
 /**
- * List all project assets in src/assets/images and public/assets
+ * Central Clinic Media Asset Registration & Storage
  */
-export async function listProjectAssets(): Promise<Array<{ name: string; url: string; size: number; mtime: string; location: string }>> {
+export function getRegisteredMediaAssets(): MediaAssetRecord[] {
+  initializeAdminStore();
+  return getStorageItem<MediaAssetRecord[]>(
+    CENTRAL_MEDIA_ASSETS_KEY,
+    getFileDefault<MediaAssetRecord[]>('central_clinic_media_assets', INITIAL_MEDIA_ASSETS)
+  );
+}
+
+/**
+ * Register any newly uploaded or external media asset into central clinic library (Task 2.1)
+ */
+export function registerMediaAsset(asset: {
+  name?: string;
+  url: string;
+  mediaType?: 'image' | 'video';
+  category?: MediaAssetRecord['category'];
+  altText?: string;
+  seoKeywords?: string[];
+  size?: number;
+}): MediaAssetRecord {
+  if (!asset.url) {
+    throw new Error('Asset URL is required');
+  }
+  const current = getRegisteredMediaAssets();
+  const existingIndex = current.findIndex(a => a.url.trim() === asset.url.trim());
+
+  if (existingIndex >= 0) {
+    const existing = current[existingIndex];
+    const updatedRecord: MediaAssetRecord = {
+      ...existing,
+      name: asset.name || existing.name,
+      mediaType: asset.mediaType || existing.mediaType,
+      category: asset.category || existing.category,
+      altText: asset.altText || existing.altText,
+      seoKeywords: asset.seoKeywords && asset.seoKeywords.length > 0 ? asset.seoKeywords : existing.seoKeywords
+    };
+    const updatedList = [...current];
+    updatedList[existingIndex] = updatedRecord;
+    setStorageItem(CENTRAL_MEDIA_ASSETS_KEY, updatedList);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('central_assets_updated', { detail: updatedList }));
+    }
+    return updatedRecord;
+  }
+
+  const cleanName = asset.name || (asset.url.split('/').pop()?.split('?')[0] || 'Clinic Media Asset');
+  const inferredType = asset.mediaType || (asset.url.match(/\.(mp4|webm|mov|ogg)(\?|$)/i) ? 'video' : 'image');
+
+  const newRecord: MediaAssetRecord = {
+    id: `asset-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    name: cleanName,
+    url: asset.url,
+    mediaType: inferredType,
+    size: asset.size || 0,
+    location: asset.url.startsWith('/') ? 'Local Disk / Server Asset' : 'Cloud / Web CDN Asset',
+    category: asset.category || (inferredType === 'video' ? 'Videos' : 'Treatments'),
+    altText: asset.altText || `${cleanName} - Age Reversal Clinic London`,
+    seoKeywords: asset.seoKeywords || ['anti-aging clinic london', 'cellular skin regeneration'],
+    createdAt: new Date().toISOString()
+  };
+
+  const updated = [newRecord, ...current];
+  setStorageItem(CENTRAL_MEDIA_ASSETS_KEY, updated);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('central_assets_updated', { detail: updated }));
+  }
+  return newRecord;
+}
+
+/**
+ * List all project assets in src/assets/images, public/assets, AND registered clinic media
+ */
+export async function listProjectAssets(): Promise<Array<{
+  name: string;
+  url: string;
+  size: number;
+  mtime: string;
+  location: string;
+  mediaType?: 'image' | 'video';
+  category?: string;
+  altText?: string;
+  seoKeywords?: string[];
+}>> {
+  const combinedList: Array<{
+    name: string;
+    url: string;
+    size: number;
+    mtime: string;
+    location: string;
+    mediaType?: 'image' | 'video';
+    category?: string;
+    altText?: string;
+    seoKeywords?: string[];
+  }> = [];
+  const seenUrls = new Set<string>();
+
+  // 1. Fetch physical disk assets from server
   try {
     const res = await fetch('/api/admin/assets');
     const data = await res.json();
     if (data.success && Array.isArray(data.assets)) {
-      return data.assets;
+      for (const asset of data.assets) {
+        if (!seenUrls.has(asset.url)) {
+          seenUrls.add(asset.url);
+          combinedList.push({
+            name: asset.name,
+            url: asset.url,
+            size: asset.size,
+            mtime: asset.mtime,
+            location: asset.location || 'Local Disk (src/assets/images)',
+            mediaType: asset.url.match(/\.(mp4|webm|mov|ogg)(\?|$)/i) ? 'video' : 'image',
+            category: 'Uploads'
+          });
+        }
+      }
     }
   } catch (e) {
-    console.error('Failed to list assets', e);
+    console.error('Failed to list server assets', e);
   }
-  return [];
+
+  // 2. Fetch central clinic registered media assets (Cloud & Curated)
+  try {
+    const registered = getRegisteredMediaAssets();
+    for (const reg of registered) {
+      if (!seenUrls.has(reg.url)) {
+        seenUrls.add(reg.url);
+        combinedList.push({
+          name: reg.name,
+          url: reg.url,
+          size: reg.size || 0,
+          mtime: reg.createdAt,
+          location: reg.location,
+          mediaType: reg.mediaType,
+          category: reg.category,
+          altText: reg.altText,
+          seoKeywords: reg.seoKeywords
+        });
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load registered assets', e);
+  }
+
+  return combinedList;
 }
 
 /**
@@ -1162,7 +1412,8 @@ export function getTreatmentDetailsConfig(): Record<string, any> | null {
   if (typeof window === 'undefined') return null;
   try {
     const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
-    return item ? JSON.parse(item) : null;
+    if (item) return JSON.parse(item);
+    return getFileDefault(TREATMENT_DETAILS_KEY, null);
   } catch (error) {
     console.error(`Error reading localStorage key "${TREATMENT_DETAILS_KEY}":`, error);
     return null;
@@ -1171,6 +1422,9 @@ export function getTreatmentDetailsConfig(): Record<string, any> | null {
 
 export function saveTreatmentDetailsConfig(config: Record<string, any>): void {
   setStorageItem(TREATMENT_DETAILS_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('treatment_details_updated', { detail: config }));
+  }
 }
 
 export const DEFAULT_PROFILE_PAGE_CONFIG: ProfilePageConfig = {

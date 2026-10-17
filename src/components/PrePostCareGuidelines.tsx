@@ -1,15 +1,33 @@
 import { useState } from 'react';
 import { Calendar, ShieldAlert, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ClinicalGuidanceMediaConfig } from '../types';
 
 interface PrePostCareGuidelinesProps {
   preCare: string[];
   postCare: string[];
   treatmentName: string;
+  clinicalGuidanceMedia?: ClinicalGuidanceMediaConfig;
 }
 
-export default function PrePostCareGuidelines({ preCare, postCare, treatmentName }: PrePostCareGuidelinesProps) {
+export default function PrePostCareGuidelines({ preCare, postCare, treatmentName, clinicalGuidanceMedia }: PrePostCareGuidelinesProps) {
   const [activeTab, setActiveTab] = useState<'pre' | 'post'>('pre');
+
+  const fallbackPreUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww";
+  const fallbackPostUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r";
+
+  const preMedia = clinicalGuidanceMedia?.preCareVisual;
+  const postMedia = clinicalGuidanceMedia?.postCareVisual;
+
+  const preUrl = preMedia?.url || fallbackPreUrl;
+  const preAlt = preMedia?.altText || "Clinical Skin Prep Serum Application";
+  const preTitle = preMedia?.seoTitle || "Epidermal Prime & Hydration";
+  const preCaption = preMedia?.caption || "Epidermal Prime & Hydration";
+
+  const postUrl = postMedia?.url || fallbackPostUrl;
+  const postAlt = postMedia?.altText || "Clinical Recovery Spa Sanctuary";
+  const postTitle = postMedia?.seoTitle || "Cellular Healing & Protection";
+  const postCaption = postMedia?.caption || "Cellular Healing & Protection";
 
   return (
     <div className="flex flex-col space-y-6 w-full">
@@ -129,15 +147,16 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
                   className="absolute inset-0 w-full h-full"
                 >
                   <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww"
-                    alt="Clinical Skin Prep Serum Application"
+                    src={preUrl}
+                    alt={preAlt}
+                    title={preTitle}
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                   <div className="absolute bottom-4 inset-x-4">
                     <span className="text-[9px] font-black uppercase tracking-widest text-rose-gold block mb-0.5">Clinical Protocol</span>
-                    <h5 className="text-white text-xs font-bold leading-tight">Epidermal Prime & Hydration</h5>
+                    <h5 className="text-white text-xs font-bold leading-tight">{preCaption}</h5>
                   </div>
                 </motion.div>
               ) : (
@@ -150,15 +169,16 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
                   className="absolute inset-0 w-full h-full"
                 >
                   <img
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r"
-                    alt="Clinical Recovery Spa Sanctuary"
+                    src={postUrl}
+                    alt={postAlt}
+                    title={postTitle}
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                   <div className="absolute bottom-4 inset-x-4">
                     <span className="text-[9px] font-black uppercase tracking-widest text-rose-gold block mb-0.5">Post-Care Ritual</span>
-                    <h5 className="text-white text-xs font-bold leading-tight">Cellular Healing & Protection</h5>
+                    <h5 className="text-white text-xs font-bold leading-tight">{postCaption}</h5>
                   </div>
                 </motion.div>
               )}

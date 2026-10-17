@@ -2,12 +2,15 @@ import React from 'react';
 import { ArrowLeft, Calendar, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { TreatmentMediaItem } from '../types';
+
 interface ServiceHeroProps {
   data: {
     category: string;
     title: string;
     imageUrl: string;
     price?: string;
+    heroMedia?: TreatmentMediaItem;
   };
   onClose: () => void;
   onBook: (serviceName: string) => void;
@@ -23,16 +26,35 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
     onBook(data.title);
   };
 
+  const heroMedia = data.heroMedia;
+  const isVideo = heroMedia?.mediaType === 'video' || !!heroMedia?.url?.match(/\.(mp4|webm|mov)(\?|$)/i);
+  const mediaUrl = heroMedia?.url || data.imageUrl;
+  const altText = heroMedia?.altText || `${data.title} - Age Reversal Clinic London`;
+  const seoTitle = heroMedia?.seoTitle || data.title;
+
   return (
     <section id="service-hero" className="relative bg-white overflow-hidden min-h-0 md:min-h-[calc(100vh-100px)] flex items-center pt-16 pb-12 sm:pt-20 sm:pb-14 md:pt-24 md:pb-12 border-b border-silver-150">
-      {/* Mobile Full-bleed Background Image */}
+      {/* Mobile Full-bleed Background Image/Video */}
       <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0">
-        <img
-          className="w-full h-full object-cover object-center brightness-[0.6]"
-          src={data.imageUrl}
-          alt={data.title}
-          referrerPolicy="no-referrer"
-        />
+        {isVideo ? (
+          <video
+            className="w-full h-full object-cover object-center brightness-[0.6]"
+            src={mediaUrl}
+            poster={heroMedia?.videoPoster}
+            autoPlay={heroMedia?.autoPlay ?? true}
+            loop={heroMedia?.loop ?? true}
+            muted={heroMedia?.muted ?? true}
+            playsInline
+          />
+        ) : (
+          <img
+            className="w-full h-full object-cover object-center brightness-[0.6]"
+            src={mediaUrl}
+            alt={altText}
+            title={seoTitle}
+            referrerPolicy="no-referrer"
+          />
+        )}
         {/* Dark gradient overlay for mobile text legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/65 pointer-events-none" />
       </div>
@@ -46,14 +68,27 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
         <span className="text-rose-gold font-bold break-words">{data.title}</span>
       </div>
 
-      {/* Desktop Full-bleed Right Half Image */}
+      {/* Desktop Full-bleed Right Half Image/Video */}
       <div className="absolute top-0 right-0 w-1/2 h-full overflow-hidden hidden md:block z-0">
-        <img
-          className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
-          src={data.imageUrl}
-          alt={data.title}
-          referrerPolicy="no-referrer"
-        />
+        {isVideo ? (
+          <video
+            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02]"
+            src={mediaUrl}
+            poster={heroMedia?.videoPoster}
+            autoPlay={heroMedia?.autoPlay ?? true}
+            loop={heroMedia?.loop ?? true}
+            muted={heroMedia?.muted ?? true}
+            playsInline
+          />
+        ) : (
+          <img
+            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
+            src={mediaUrl}
+            alt={altText}
+            title={seoTitle}
+            referrerPolicy="no-referrer"
+          />
+        )}
         {/* Subtle overlay for beautiful text blend and professional appearance */}
         <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent w-32 pointer-events-none" />
         <div className="absolute inset-0 bg-black/5 pointer-events-none" />

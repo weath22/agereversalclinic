@@ -1,14 +1,22 @@
-import React from 'react';
 import { Shield, CheckCircle2 } from 'lucide-react';
+import { TreatmentMediaItem } from '../types';
 
 interface TargetConcernsProps {
   data: {
     title: string;
     concerns: string[];
+    targetConcernsMedia?: TreatmentMediaItem;
   };
 }
 
 export default function TargetConcerns({ data }: TargetConcernsProps) {
+  const fallbackUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR";
+  const media = data.targetConcernsMedia;
+  const mediaUrl = media?.url || fallbackUrl;
+  const altText = media?.altText || `${data.title} diagnostic technology - High-precision targeted aesthetic treatment technology`;
+  const seoTitle = media?.seoTitle || data.title;
+  const caption = media?.caption || "Targeted Bio-Calibration";
+
   return (
     <div id="target-concerns" className="max-w-5xl mx-auto w-full pt-6">
       <div className="space-y-6">
@@ -34,14 +42,15 @@ export default function TargetConcerns({ data }: TargetConcernsProps) {
           <div className="md:col-span-4">
             <div className="relative aspect-[4/3] md:aspect-square w-full rounded-xl overflow-hidden border border-silver-200 bg-silver-50 group shadow-sm">
               <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
-                alt="High-precision targeted aesthetic treatment technology"
+                src={mediaUrl}
+                alt={altText}
+                title={seoTitle}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
               <div className="absolute bottom-2.5 left-2.5 right-2.5 text-[9px] font-bold text-white tracking-wide uppercase text-center bg-black/45 backdrop-blur-xs py-1 rounded">
-                Targeted Bio-Calibration
+                {caption}
               </div>
             </div>
           </div>

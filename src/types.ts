@@ -148,11 +148,63 @@ export interface HeroConfig {
   mediaUrl: string;
 }
 
+export interface TreatmentMediaItem {
+  url: string;
+  mediaType?: 'image' | 'video';
+  altText: string;             // Google Image Search & accessibility SEO
+  seoTitle?: string;           // Hover/caption attribute
+  seoKeywords: string[];       // Tagged clinical keywords
+  caption?: string;            // Visual card caption
+  assetId?: string;            // Link to clinic Assets Media Library
+  videoPoster?: string;        // Fallback poster image for streaming video
+  autoPlay?: boolean;          // Video autoplay setting
+  muted?: boolean;             // Video muted setting
+  loop?: boolean;              // Video loop setting
+}
+
+export interface MediaAssetRecord {
+  id: string;
+  name: string;
+  url: string;
+  mediaType: 'image' | 'video';
+  size?: number;
+  location: string;
+  category?: 'Treatments' | 'Before & After' | 'Interiors & Facilities' | 'Videos' | 'Uploads' | 'Other';
+  altText?: string;
+  seoKeywords?: string[];
+  createdAt: string;
+}
+
+export interface OverviewMediaConfig {
+  backCard: TreatmentMediaItem;
+  frontCard: TreatmentMediaItem;
+  backImage?: TreatmentMediaItem;
+  frontImage?: TreatmentMediaItem;
+}
+
+export interface ClinicalComparisonMediaConfig {
+  before: TreatmentMediaItem;
+  after: TreatmentMediaItem;
+  beforeImage?: TreatmentMediaItem;
+  afterImage?: TreatmentMediaItem;
+  caseTitle?: string;
+  caseLabel?: string;
+}
+
+export interface ClinicalGuidanceMediaConfig {
+  preCare: TreatmentMediaItem;
+  postCare: TreatmentMediaItem;
+  preCareVisual?: TreatmentMediaItem;
+  postCareVisual?: TreatmentMediaItem;
+}
+
 export interface SpecialistArea {
   id: string;
   title: string;
   description: string;
   image: string;
+  coverMedia?: TreatmentMediaItem;
+  seoKeywords?: string[];
 }
 
 export interface SpecialistAreasConfig {

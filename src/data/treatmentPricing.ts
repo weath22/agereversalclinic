@@ -20,6 +20,8 @@ export type TreatmentCategory =
   | 'Hair & Beauty'
   | 'IV Drip Lounge & Wellness';
 
+import { TreatmentMediaItem } from '../types';
+
 export interface TreatmentPricingItem {
   id: string;
   title: string;
@@ -35,6 +37,9 @@ export interface TreatmentPricingItem {
   hidden?: boolean;
   isActive?: boolean;
   packages: PricingPackage[];
+  coverMedia?: TreatmentMediaItem;
+  galleryImages?: string[];
+  seoKeywords?: string[];
 }
 
 export const PRICING_CATEGORIES = [

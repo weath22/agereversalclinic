@@ -1,7 +1,7 @@
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect } from 'react';
-import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS } from './treatments/treatmentData';
+import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMediaDefaults } from './treatments/treatmentData';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import { getTreatmentDetailsConfig } from '../lib/adminStore';
 import BeforeAfterComparisonSlider from './BeforeAfterComparisonSlider';
@@ -77,7 +77,8 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
     return DEFAULT_TREATMENT_DETAILS(treatmentName);
   };
 
-  const data = getTreatmentData();
+  const rawData = getTreatmentData();
+  const data = populateTreatmentMediaDefaults(rawData);
 
   // Animation variants
   const pageVariants = {
@@ -123,6 +124,7 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
               beforeImage={data.beforeImage}
               afterImage={data.afterImage}
               treatmentName={data.title}
+              clinicalComparisonMedia={data.clinicalComparisonMedia}
             />
           </div>
 
@@ -184,6 +186,7 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
               preCare={data.preCare}
               postCare={data.postCare}
               treatmentName={data.title}
+              clinicalGuidanceMedia={data.clinicalGuidanceMedia}
             />
           </div>
 
