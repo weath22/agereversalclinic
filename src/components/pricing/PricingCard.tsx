@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TreatmentPricingItem } from '../../data/treatmentPricing';
 
 interface PricingCardProps {
@@ -6,10 +6,31 @@ interface PricingCardProps {
   onChoosePackage: (treatment: TreatmentPricingItem) => void;
 }
 
+const CLINICAL_PROCEDURE_FALLBACK = "https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ";
+
 export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
+  const targetImage = treatment.coverMedia?.url || treatment.image || CLINICAL_PROCEDURE_FALLBACK;
+  const [imgSrc, setImgSrc] = useState<string>(targetImage);
+
+  useEffect(() => {
+    setImgSrc(treatment.coverMedia?.url || treatment.image || CLINICAL_PROCEDURE_FALLBACK);
+  }, [treatment.coverMedia?.url, treatment.image]);
+
+  const handleImageError = () => {
+    // If custom image failed (e.g. broken local upload path in deployed environment), fallback gracefully
+    if (imgSrc !== treatment.image && treatment.image) {
+      setImgSrc(treatment.image);
+    } else {
+      setImgSrc(CLINICAL_PROCEDURE_FALLBACK);
+    }
+  };
+
+  const altLabel = treatment.coverMedia?.altText || `${treatment.title} Treatment at Age Reversal Clinic London`;
+  const seoTitle = treatment.coverMedia?.seoTitle || treatment.title;
+
   return (
     <div className="group h-full">
       <div className="flex h-full flex-1 cursor-pointer flex-col rounded bg-transparent sm:bg-mist overflow-hidden transition-all duration-300 hover:shadow-lg">
@@ -20,14 +41,16 @@ export const PricingCard: React.FC<PricingCardProps> = ({
         >
           <div className="h-44 sm:h-72 bg-noir-900 md:h-80 overflow-hidden">
             <img
-              alt={treatment.title}
+              alt={altLabel}
+              title={seoTitle}
               loading="lazy"
               width="800"
               height="800"
               decoding="async"
               data-nimg="1"
               className="h-full w-full object-cover opacity-60 duration-300 sm:group-hover:opacity-80"
-              src={treatment.image}
+              src={imgSrc}
+              onError={handleImageError}
               style={{ color: 'transparent' }}
               referrerPolicy="no-referrer"
             />

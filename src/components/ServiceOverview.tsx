@@ -11,8 +11,8 @@ interface ServiceOverviewProps {
 
 export default function ServiceOverview({ data }: ServiceOverviewProps) {
   const defaultFallbackUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR";
-  const backMedia = data.overviewMedia?.backImage;
-  const frontMedia = data.overviewMedia?.frontImage;
+  const backMedia = data.overviewMedia?.backImage || (data.overviewMedia as any)?.secondary || (data.overviewMedia as any)?.backCard;
+  const frontMedia = data.overviewMedia?.frontImage || (data.overviewMedia as any)?.primary || (data.overviewMedia as any)?.frontCard;
   const backUrl = backMedia?.url || defaultFallbackUrl;
   const backAlt = backMedia?.altText || `${data.title} procedural profile - back framing`;
   const backTitle = backMedia?.seoTitle || data.title;

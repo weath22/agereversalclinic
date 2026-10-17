@@ -609,7 +609,10 @@ export async function syncAllConfigsToFiles(): Promise<{ success: boolean; messa
       [FOOTER_CONFIG_KEY]: getFooterConfig(),
       [FLOATING_MENU_CONFIG_KEY]: getFloatingMenuConfig(),
       [PROFILE_PAGE_CONFIG_KEY]: getProfilePageConfig(),
-      [CLINIC_INFO_DATA_KEY]: getClinicData()
+      [CLINIC_INFO_DATA_KEY]: getClinicData(),
+      [TREATMENT_PRICING_DATA_KEY]: getTreatmentPricingData(),
+      [TREATMENT_DETAILS_KEY]: getTreatmentDetailsConfig(),
+      [CENTRAL_MEDIA_ASSETS_KEY]: getRegisteredMediaAssets()
     };
 
     const res = await fetch('/api/admin/save-to-files', {
@@ -1422,6 +1425,7 @@ export function getTreatmentDetailsConfig(): Record<string, any> | null {
 
 export function saveTreatmentDetailsConfig(config: Record<string, any>): void {
   setStorageItem(TREATMENT_DETAILS_KEY, config);
+  syncConfigToFile(TREATMENT_DETAILS_KEY, config);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('treatment_details_updated', { detail: config }));
   }

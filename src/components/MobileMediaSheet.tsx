@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   X, 
   Camera, 
@@ -13,7 +13,10 @@ import {
   Pause, 
   Tag, 
   Sliders, 
-  ChevronDown 
+  ChevronDown,
+  Plus,
+  Code,
+  Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TreatmentMediaItem } from '../types';
@@ -37,6 +40,45 @@ const CLINICAL_DESCRIPTORS = [
   'clinic', 'london', 'skin', 'therapy', 'rejuvenation', 'treatment',
   'cellular', 'protocol', 'dermal', 'facial', 'regeneration', 'collagen'
 ];
+
+export const CATEGORY_CLINICAL_KEYWORDS: Record<string, string[]> = {
+  'Bio-Remodeling': [
+    'collagen bio-remodeling',
+    'hyaluronic acid bio-stimulator',
+    'profhilo london clinic',
+    'cellular skin hydration',
+    'dermal matrix remodeling',
+    'polynucleotide rejuvenation'
+  ],
+  'Regenerative Biotech': [
+    'cellular skin regeneration',
+    'exosome therapy london',
+    'biotech growth factor serum',
+    'stem cell skin renewal',
+    'dna nucleotide therapy'
+  ],
+  'Facial Aesthetics': [
+    'anti-wrinkle clinic london',
+    'non-surgical dermal lift',
+    'smas muscle lifting',
+    'subdermal collagen lift',
+    'tear trough rejuvenation'
+  ],
+  'Body Sculpting': [
+    'subdermal adipose remodeling',
+    'targeted bio-calibration',
+    'aqualyx fat dissolving london',
+    'non-surgical body tightening',
+    'cellulite matrix reduction'
+  ],
+  'Dermatology & Skin': [
+    'medical grade pre-care protocol',
+    'clinical skin prep serum',
+    'epidermal prime hydration',
+    'radiofrequency microneedling',
+    'dermal barrier repair'
+  ]
+};
 
 const SUGGESTED_CLINICAL_KEYWORDS = [
   'cellular skin regeneration',
@@ -82,8 +124,19 @@ export default function MobileMediaSheet({
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Category-specific pre-loaded keywords (Task 5.3)
+  const categorySuggestions = useMemo(() => {
+    if (!treatmentCategory) return SUGGESTED_CLINICAL_KEYWORDS;
+    const catLower = treatmentCategory.toLowerCase();
+    const matchedKey = Object.keys(CATEGORY_CLINICAL_KEYWORDS).find(k => 
+      k.toLowerCase().includes(catLower) || catLower.includes(k.toLowerCase())
+    );
+    return matchedKey ? CATEGORY_CLINICAL_KEYWORDS[matchedKey] : SUGGESTED_CLINICAL_KEYWORDS;
+  }, [treatmentCategory]);
 
   useEffect(() => {
     if (isOpen) {
@@ -410,36 +463,76 @@ export default function MobileMediaSheet({
             />
           </div>
 
-          {/* One-Tap Suggested SEO Keywords Chips */}
-          <div className="space-y-2">
+          {/* Task 5.3 — Smart SEO Keywords Chip Editor & Structured Data Export */}
+          <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
                 <Tag className="h-3 w-3 text-[#c5a880]" />
-                <span>Tagged Keywords ({keywords.length})</span>
+                <span>SEO Keywords ({keywords.length} Tagged)</span>
+              </span>
+              <span className="text-[9px] font-mono text-emerald-600 font-bold">
+                Auto-Exported to Head &amp; JSON-LD
               </span>
             </div>
 
-            {/* Active Keywords */}
-            <div className="flex flex-wrap gap-1">
+            {/* Active Keywords with "+ Add Keyword" Chip Button */}
+            <div className="flex flex-wrap gap-1 p-2 bg-slate-50 rounded-xl border border-slate-200 min-h-[40px] items-center">
               {keywords.map((kw, idx) => (
                 <span
                   key={idx}
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-[#003334] text-white"
                 >
                   <span>{kw}</span>
-                  <button type="button" onClick={() => handleRemoveKeyword(kw)}>
+                  <button type="button" onClick={() => handleRemoveKeyword(kw)} className="cursor-pointer">
                     <X className="h-2.5 w-2.5 text-[#c5a880]" />
                   </button>
                 </span>
               ))}
+
+              {/* "+ Add Keyword" Chip Button (Task 5.3) */}
+              <button
+                type="button"
+                onClick={() => setShowCustomInput(!showCustomInput)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-dashed border-[#003334] text-[#003334] hover:bg-[#003334]/10 transition-colors cursor-pointer"
+              >
+                <Plus className="h-2.5 w-2.5" />
+                <span>+ Add Keyword</span>
+              </button>
             </div>
 
-            {/* Quick Add Suggestion Chips */}
+            {/* Custom Keyword Input (toggleable) */}
+            {showCustomInput && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newKeywordInput}
+                  onChange={(e) => setNewKeywordInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddKeyword(newKeywordInput);
+                    }
+                  }}
+                  autoFocus
+                  placeholder="Custom clinical keyword..."
+                  className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddKeyword(newKeywordInput)}
+                  className="px-3 py-1 bg-[#003334] text-[#c5a880] rounded-lg text-xs font-bold"
+                >
+                  Add
+                </button>
+              </div>
+            )}
+
+            {/* Pre-Loaded Category Suggestions (Task 5.3) */}
             <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block pt-1">
-              Tap to add clinical keyword:
+              Pre-loaded for {treatmentCategory || 'This Category'} (Tap to add):
             </span>
             <div className="flex flex-wrap gap-1">
-              {SUGGESTED_CLINICAL_KEYWORDS.slice(0, 6).map((sug) => {
+              {categorySuggestions.map((sug) => {
                 const added = keywords.includes(sug);
                 return (
                   <button
@@ -447,9 +540,9 @@ export default function MobileMediaSheet({
                     type="button"
                     disabled={added}
                     onClick={() => handleAddKeyword(sug)}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-medium ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
                       added
-                        ? 'bg-slate-100 text-slate-400'
+                        ? 'bg-slate-100 text-slate-400 opacity-60'
                         : 'bg-[#c5a880]/15 text-[#003334] border border-[#c5a880]/30 active:scale-95'
                     }`}
                   >
@@ -457,6 +550,22 @@ export default function MobileMediaSheet({
                   </button>
                 );
               })}
+            </div>
+
+            {/* Meta Tags & JSON-LD Export Summary (Task 5.3) */}
+            <div className="pt-1">
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <div className="flex items-center justify-between text-[9px] font-bold text-slate-600 uppercase">
+                  <span className="flex items-center gap-1">
+                    <Code className="h-3 w-3 text-[#c5a880]" />
+                    <span>Exported to HTML &lt;meta&gt; &amp; JSON-LD</span>
+                  </span>
+                  <span className="text-emerald-600 font-bold">Google Ready</span>
+                </div>
+                <p className="text-[9px] font-mono text-slate-600 bg-white p-1.5 rounded border border-slate-100 truncate">
+                  &lt;meta name="keywords" content="{keywords.join(', ') || 'clinical keywords'}"&gt;
+                </p>
+              </div>
             </div>
           </div>
 

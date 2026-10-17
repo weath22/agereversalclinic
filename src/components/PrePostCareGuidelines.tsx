@@ -16,8 +16,8 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
   const fallbackPreUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww";
   const fallbackPostUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r";
 
-  const preMedia = clinicalGuidanceMedia?.preCareVisual;
-  const postMedia = clinicalGuidanceMedia?.postCareVisual;
+  const preMedia = clinicalGuidanceMedia?.preCareVisual || (clinicalGuidanceMedia as any)?.preCare;
+  const postMedia = clinicalGuidanceMedia?.postCareVisual || (clinicalGuidanceMedia as any)?.postCare;
 
   const preUrl = preMedia?.url || fallbackPreUrl;
   const preAlt = preMedia?.altText || "Clinical Skin Prep Serum Application";

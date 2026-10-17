@@ -10,6 +10,17 @@ interface ClinicalSEOHeadProps {
   customImage?: string;
   canonicalPath?: string;
   productData?: ShopProduct | null;
+  customKeywords?: string[];
+  treatmentData?: {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    imageUrl?: string;
+    price?: string;
+    seoKeywords?: string[];
+    procedureTime?: string;
+  } | null;
 }
 
 /**
@@ -34,7 +45,7 @@ const setLinkTag = (rel: string, href: string) => {
   let element = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
   if (!element) {
     element = document.createElement('link');
-    element.setAttribute('rel', rel);
+    element.setAttribute(rel, rel);
     document.head.appendChild(element);
   }
   element.setAttribute('href', href);
@@ -42,14 +53,16 @@ const setLinkTag = (rel: string, href: string) => {
 
 /**
  * ClinicalSEOHead: Injects and synchronizes all Schema.org JSON-LD structured data,
- * OpenGraph social share cards, Twitter cards, and meta tags directly from the clinic TypeScript data.
+ * OpenGraph social share cards, Twitter cards, and meta tags directly from clinic and treatment data.
  */
 export default function ClinicalSEOHead({
   customTitle,
   customDescription,
   customImage,
   canonicalPath = '',
-  productData
+  productData,
+  customKeywords,
+  treatmentData
 }: ClinicalSEOHeadProps) {
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -70,10 +83,24 @@ export default function ClinicalSEOHead({
       pageUrl = `${CLINIC_DATA.canonicalUrl}/#product-${productData.id}`;
     }
 
+    if (treatmentData) {
+      pageTitle = `${treatmentData.title} | ${treatmentData.category} | ${CLINIC_DATA.name}`;
+      pageDescription = `${treatmentData.description} Starting from ${treatmentData.price || '£250'}. Harley Street clinical excellence and bespoke recovery protocols.`;
+      if (treatmentData.imageUrl) pageImage = treatmentData.imageUrl;
+      pageUrl = `${CLINIC_DATA.canonicalUrl}/#treatment-${treatmentData.id}`;
+    }
+
     // 1. Update Title & Standard Meta
     document.title = pageTitle;
     setMetaTag('name', 'description', pageDescription);
-    setMetaTag('name', 'keywords', CLINIC_DATA.brandKeywords.join(', '));
+
+    // Export tags to <meta name="keywords"> (Task 5.3)
+    const mergedKeywords = Array.from(new Set([
+      ...(customKeywords || []),
+      ...(treatmentData?.seoKeywords || []),
+      ...CLINIC_DATA.brandKeywords
+    ]));
+    setMetaTag('name', 'keywords', mergedKeywords.join(', '));
     setMetaTag('name', 'author', CLINIC_DATA.name);
     setMetaTag('name', 'geo.region', 'GB-ENG');
     setMetaTag('name', 'geo.placename', 'London, Harley Street');
@@ -104,7 +131,7 @@ export default function ClinicalSEOHead({
     setMetaTag('name', 'twitter:description', pageDescription);
     setMetaTag('name', 'twitter:image', pageImage);
 
-    // 6. Inject / Update Schema.org JSON-LD structured data script
+    // 6. Inject / Update Schema.org JSON-LD structured data script (Task 5.3)
     const schemaScriptId = 'clinical-schema-org-jsonld';
     let scriptElement = document.getElementById(schemaScriptId) as HTMLScriptElement | null;
     
@@ -119,6 +146,45 @@ export default function ClinicalSEOHead({
       // Focused product Schema along with parent Clinic provider
       const singleProductSchema = generateSingleProductSchema(productData);
       scriptElement.textContent = JSON.stringify(singleProductSchema, null, 2);
+    } else if (treatmentData) {
+      // Focused treatment MedicalProcedure Schema with exported keywords
+      const treatmentPrice = treatmentData.price 
+        ? parseInt(treatmentData.price.replace(/[^0-9]/g, '') || '250', 10) 
+        : 250;
+
+      const procedureSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'MedicalProcedure',
+        '@id': `${CLINIC_DATA.canonicalUrl}/#procedure-${treatmentData.id}`,
+        name: treatmentData.title,
+        description: treatmentData.description,
+        procedureType: treatmentData.category,
+        bodyLocation: treatmentData.category,
+        keywords: (treatmentData.seoKeywords || []).join(', '),
+        image: treatmentData.imageUrl || pageImage,
+        duration: treatmentData.procedureTime || '45 Minutes',
+        offers: {
+          '@type': 'Offer',
+          price: treatmentPrice,
+          priceCurrency: CLINIC_DATA.currency,
+          availability: 'https://schema.org/InStock',
+          url: pageUrl
+        },
+        provider: {
+          '@type': 'MedicalClinic',
+          name: CLINIC_DATA.name,
+          url: CLINIC_DATA.canonicalUrl,
+          telephone: CLINIC_DATA.phone,
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: '4 Harley Street, Marylebone',
+            addressLocality: 'London',
+            postalCode: 'W1G 9PB',
+            addressCountry: 'GB'
+          }
+        }
+      };
+      scriptElement.textContent = JSON.stringify(procedureSchema, null, 2);
     } else {
       // Master complete Schema graph (Clinic + FAQs + Procedures + Catalog)
       const allSchemas = generateAllClinicalSchemas();
@@ -128,7 +194,7 @@ export default function ClinicalSEOHead({
     return () => {
       // Cleanup is optional as SPA stays in-app
     };
-  }, [customTitle, customDescription, customImage, canonicalPath, productData]);
+  }, [customTitle, customDescription, customImage, canonicalPath, productData, customKeywords, treatmentData]);
 
   return null;
 }

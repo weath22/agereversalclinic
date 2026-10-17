@@ -38,7 +38,8 @@ import { TreatmentCartDrawer } from './components/pricing/TreatmentCartDrawer';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
 import { useEffect } from 'react';
-import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig } from './lib/adminStore';
+import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig, getTreatmentDetailsConfig } from './lib/adminStore';
+import { TREATMENT_DETAILS_DB } from './components/treatments/treatmentData';
 
 export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -269,9 +270,13 @@ export default function App() {
     seoImage = selectedArticle.image;
     seoPath = `#article-${selectedArticle.id}`;
   } else if (selectedTreatment) {
+    const config = getTreatmentDetailsConfig() || TREATMENT_DETAILS_DB;
+    const lower = selectedTreatment.toLowerCase().trim();
+    const activeTreatment = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
     seoTitle = `${selectedTreatment} | Treatment Details & Packages`;
-    seoDescription = `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${selectedTreatment} at Age Reversal Clinics.`;
+    seoDescription = activeTreatment?.description || `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${selectedTreatment} at Age Reversal Clinics.`;
     seoPath = `#treatment-${selectedTreatment.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    if (activeTreatment?.imageUrl) seoImage = activeTreatment.imageUrl;
   } else if (isAboutOpen) {
     seoTitle = 'About Our Clinic | Medical Heritage & Philosophy';
     seoDescription = 'Learn about Age Reversal Clinics, our GMC-registered doctors, London Harley Street heritage, and clinical philosophy.';
@@ -293,6 +298,14 @@ export default function App() {
     }
   }
 
+  // Resolve matching treatment data if viewing a treatment
+  let activeTreatmentData: any = null;
+  if (selectedTreatment) {
+    const config = getTreatmentDetailsConfig() || TREATMENT_DETAILS_DB;
+    const lower = selectedTreatment.toLowerCase().trim();
+    activeTreatmentData = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
+  }
+
   if (isAdminOpen) {
     return <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />;
   }
@@ -305,6 +318,8 @@ export default function App() {
         customDescription={seoDescription}
         customImage={seoImage}
         canonicalPath={seoPath}
+        customKeywords={activeTreatmentData?.seoKeywords}
+        treatmentData={activeTreatmentData}
       />
       
       {/* 1. Top Informational Banner Ribbon */}

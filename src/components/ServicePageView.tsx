@@ -16,6 +16,7 @@ import TargetConcerns from './TargetConcerns';
 import ServiceBottomCTA from './ServiceBottomCTA';
 import Testimonials from './Testimonials';
 import SpecialOffers from './SpecialOffers';
+import ClinicalSEOHead from './ClinicalSEOHead';
 
 interface ServicePageViewProps {
   treatmentName: string;
@@ -94,6 +95,16 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       className="bg-white min-h-screen flex flex-col relative z-10"
       id="service-page-view"
     >
+      {/* 1. Google SEO & Schema.org JSON-LD structured data export (Task 5.3) */}
+      <ClinicalSEOHead
+        customTitle={`${data.title} | ${data.category}`}
+        customDescription={data.description}
+        customImage={data.coverMedia?.url || data.imageUrl}
+        canonicalPath={`#treatment-${data.id}`}
+        customKeywords={data.seoKeywords}
+        treatmentData={data}
+      />
+
       {/* 2. Service Hero Section */}
       <ServiceHero data={data} onClose={onClose} onBook={onBook} />
 

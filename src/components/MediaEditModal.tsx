@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   X, 
   Camera, 
@@ -19,7 +19,10 @@ import {
   Tag,
   Maximize2,
   RefreshCw,
-  Info
+  Info,
+  Copy,
+  Code,
+  Plus
 } from 'lucide-react';
 import { TreatmentMediaItem } from '../types';
 
@@ -44,6 +47,59 @@ const CLINICAL_DESCRIPTORS = [
   'cellular', 'protocol', 'dermal', 'facial', 'regeneration', 'collagen',
   'aesthetic', 'harley street', 'anti-wrinkle', 'bio-remodeling'
 ];
+
+export const CATEGORY_CLINICAL_KEYWORDS: Record<string, string[]> = {
+  'Bio-Remodeling': [
+    'collagen bio-remodeling',
+    'hyaluronic acid bio-stimulator',
+    'profhilo london clinic',
+    'cellular skin hydration',
+    'dermal matrix remodeling',
+    'elastin synthesis protocol',
+    'polynucleotide rejuvenation',
+    'harley street bio-remodeling'
+  ],
+  'Regenerative Biotech': [
+    'cellular skin regeneration',
+    'exosome therapy london',
+    'biotech growth factor serum',
+    'stem cell skin renewal',
+    'cellular vesicle repair',
+    'dna nucleotide therapy',
+    'fibroblast stimulation',
+    'regenerative aesthetics london'
+  ],
+  'Facial Aesthetics': [
+    'anti-wrinkle clinic london',
+    'non-surgical dermal lift',
+    'smas muscle lifting',
+    'subdermal collagen lift',
+    'tear trough rejuvenation',
+    'facial contouring harley street',
+    'dermal volumising protocol',
+    'non-surgical blepharoplasty'
+  ],
+  'Body Sculpting': [
+    'subdermal adipose remodeling',
+    'targeted bio-calibration',
+    'aqualyx fat dissolving london',
+    'non-surgical body tightening',
+    'cellulite matrix reduction',
+    'body contouring clinic',
+    'high-intensity dermal tightening',
+    'adipose tissue remodeling'
+  ],
+  'Dermatology & Skin': [
+    'medical grade pre-care protocol',
+    'clinical skin prep serum',
+    'epidermal prime hydration',
+    'radiofrequency microneedling',
+    'dermal barrier repair',
+    'pigmentation laser clinic',
+    'acne scar remodeling',
+    'harley street dermatology'
+  ]
+};
 
 const SUGGESTED_CLINICAL_KEYWORDS = [
   'cellular skin regeneration',
@@ -119,6 +175,50 @@ export default function MediaEditModal({
       setUploadError(null);
     }
   }, [isOpen, initialMedia, treatmentTitle]);
+
+  const [showJsonLdInspector, setShowJsonLdInspector] = useState(false);
+  const [copiedJsonLd, setCopiedJsonLd] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  // Category-specific pre-loaded keywords (Task 5.3)
+  const categorySuggestions = useMemo(() => {
+    if (!treatmentCategory) return SUGGESTED_CLINICAL_KEYWORDS;
+    const catLower = treatmentCategory.toLowerCase();
+    const matchedKey = Object.keys(CATEGORY_CLINICAL_KEYWORDS).find(k => 
+      k.toLowerCase().includes(catLower) || catLower.includes(k.toLowerCase())
+    );
+    return matchedKey ? CATEGORY_CLINICAL_KEYWORDS[matchedKey] : SUGGESTED_CLINICAL_KEYWORDS;
+  }, [treatmentCategory]);
+
+  // Live JSON-LD MedicalProcedure schema with exported keywords (Task 5.3)
+  const liveJsonLdSnippet = useMemo(() => {
+    return {
+      "@context": "https://schema.org",
+      "@type": "MedicalProcedure",
+      "name": treatmentTitle,
+      "procedureType": treatmentCategory,
+      "bodyLocation": treatmentCategory,
+      "description": caption || altText,
+      "keywords": keywords.join(', '),
+      "image": url || "https://images.unsplash.com/photo-1512290923902-8a9f81dc236c",
+      "offers": {
+        "@type": "Offer",
+        "price": 250,
+        "priceCurrency": "GBP"
+      },
+      "provider": {
+        "@type": "MedicalClinic",
+        "name": "Age Reversal Clinics",
+        "address": "4 Harley Street, London"
+      }
+    };
+  }, [treatmentTitle, treatmentCategory, caption, altText, keywords, url]);
+
+  const handleCopyJsonLd = () => {
+    navigator.clipboard?.writeText(JSON.stringify(liveJsonLdSnippet, null, 2));
+    setCopiedJsonLd(true);
+    setTimeout(() => setCopiedJsonLd(false), 2500);
+  };
 
   // Video play/pause toggle
   const togglePlay = () => {
@@ -643,17 +743,17 @@ export default function MediaEditModal({
               </div>
             </div>
 
-            {/* Tagged Clinical Keywords */}
-            <div className="space-y-2.5">
+            {/* Task 5.3 — Smart SEO Keywords Chip Editor & Structured Data Export */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Tag className="h-3.5 w-3.5 text-[#c5a880]" />
-                  <span>Clinical SEO Keyword Tagging</span>
+                  <span>Clinical SEO Keyword Tagging (Exported to HTML &amp; JSON-LD)</span>
                 </label>
                 <span className="text-[10px] text-slate-400 font-mono">{keywords.length} Tagged</span>
               </div>
 
-              {/* Keyword Pills */}
+              {/* Active Keyword Pills with "+ Add Keyword" Chip Button */}
               <div className="flex flex-wrap gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-200 min-h-[48px] items-center">
                 {keywords.length === 0 ? (
                   <span className="text-xs text-slate-400 italic">No keywords tagged yet</span>
@@ -661,53 +761,68 @@ export default function MediaEditModal({
                   keywords.map((kw, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#003334] text-white shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#003334] text-white shadow-2xs group"
                     >
                       <span>{kw}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveKeyword(kw)}
-                        className="text-[#c5a880] hover:text-white"
+                        className="text-[#c5a880] hover:text-white transition-colors cursor-pointer"
                         aria-label={`Remove keyword ${kw}`}
+                        title="Remove tag"
                       >
                         <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))
                 )}
-              </div>
 
-              {/* Custom Keyword Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newKeywordInput}
-                  onChange={(e) => setNewKeywordInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddKeyword(newKeywordInput);
-                    }
-                  }}
-                  placeholder="Add custom clinical keyword and press Enter..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003334]"
-                />
+                {/* "+ Add Keyword" Chip Button (Task 5.3) */}
                 <button
                   type="button"
-                  onClick={() => handleAddKeyword(newKeywordInput)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  onClick={() => setShowCustomInput(!showCustomInput)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border border-dashed border-[#003334] text-[#003334] hover:bg-[#003334]/10 transition-colors cursor-pointer"
+                  title="Add custom keyword tag"
                 >
-                  Add
+                  <Plus className="h-3 w-3" />
+                  <span>+ Add Keyword</span>
                 </button>
               </div>
 
-              {/* One-Tap Suggested Keywords */}
+              {/* Custom Keyword Input (collapsible or persistent) */}
+              {(showCustomInput || keywords.length === 0) && (
+                <div className="flex gap-2 animate-fadeIn">
+                  <input
+                    type="text"
+                    value={newKeywordInput}
+                    onChange={(e) => setNewKeywordInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddKeyword(newKeywordInput);
+                      }
+                    }}
+                    autoFocus
+                    placeholder="Type custom clinical keyword and press Enter..."
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003334]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddKeyword(newKeywordInput)}
+                    className="bg-[#003334] hover:bg-[#236963] text-[#c5a880] px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Add Tag
+                  </button>
+                </div>
+              )}
+
+              {/* Pre-Loaded Category Suggestions (Task 5.3) */}
               <div className="space-y-1.5 pt-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Suggested High-Impact Clinical Keywords (1-Click Add):
+                  Pre-loaded Suggestions for {treatmentCategory || 'This Category'} (1-Click Add):
                 </span>
                 <div className="flex flex-wrap gap-1">
-                  {SUGGESTED_CLINICAL_KEYWORDS.slice(0, 8).map((sug) => {
+                  {categorySuggestions.map((sug) => {
                     const isAdded = keywords.includes(sug);
                     return (
                       <button
@@ -715,7 +830,7 @@ export default function MediaEditModal({
                         type="button"
                         disabled={isAdded}
                         onClick={() => handleAddKeyword(sug)}
-                        className={`px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
                           isAdded
                             ? 'bg-slate-100 text-slate-400 opacity-50 cursor-default'
                             : 'bg-[#c5a880]/15 hover:bg-[#c5a880]/30 text-[#003334] border border-[#c5a880]/30'
@@ -725,6 +840,49 @@ export default function MediaEditModal({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Export Tags into Page's Meta Tags & JSON-LD Structured Data Preview (Task 5.3) */}
+              <div className="pt-2">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Code className="h-3.5 w-3.5 text-[#c5a880]" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                        Exported Meta Tags &amp; Schema.org JSON-LD
+                      </span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Live Export Active
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="text-[9px] font-mono text-slate-400 block">Document HTML &lt;meta name="keywords"&gt;:</span>
+                      <div className="p-2 bg-slate-900 text-emerald-400 font-mono text-[10px] rounded-lg overflow-x-auto whitespace-pre-wrap break-all">
+                        {`<meta name="keywords" content="${keywords.join(', ') || 'clinical aesthetic keywords'}" />`}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between pb-0.5">
+                        <span className="text-[9px] font-mono text-slate-400 block">Schema.org MedicalProcedure JSON-LD:</span>
+                        <button
+                          type="button"
+                          onClick={handleCopyJsonLd}
+                          className="text-[10px] font-bold text-[#003334] hover:text-[#c5a880] flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedJsonLd ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                          <span>{copiedJsonLd ? 'Copied' : 'Copy JSON-LD'}</span>
+                        </button>
+                      </div>
+                      <div className="p-2 bg-slate-900 text-slate-300 font-mono text-[10px] rounded-lg max-h-28 overflow-y-auto whitespace-pre">
+                        {JSON.stringify(liveJsonLdSnippet, null, 2)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

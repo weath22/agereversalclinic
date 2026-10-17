@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SpecialistAreasConfig } from '../types';
 import Pagination from './Pagination';
 import { ALL_SPECIALIST_TREATMENTS, SpecialistTreatment } from '../data/specialistTreatments';
+import { getTreatmentDetailsConfig } from '../lib/adminStore';
 
 interface SpecialistAreasProps {
   onBookClick: (serviceName?: string) => void;
@@ -20,9 +21,12 @@ export default function SpecialistAreas({
 }: SpecialistAreasProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
 
+  // Dynamic treatment database customization store (Task 6.6)
+  const customDb = getTreatmentDetailsConfig();
+
   // Use configured areas if customized with multiple pages, otherwise use full comprehensive clinical treatments
-  const treatmentsList: SpecialistTreatment[] = 
-    specialistAreasConfig?.areas && specialistAreasConfig.areas.length > 4
+  const treatmentsList: SpecialistTreatment[] = useMemo(() => {
+    const baseList = specialistAreasConfig?.areas && specialistAreasConfig.areas.length > 4
       ? specialistAreasConfig.areas.map(a => ({
           id: a.id,
           title: a.title,
@@ -31,6 +35,24 @@ export default function SpecialistAreas({
           image: a.image
         }))
       : ALL_SPECIALIST_TREATMENTS;
+
+    if (!customDb) return baseList;
+
+    return baseList.map(t => {
+      const match = customDb[t.id] || Object.values(customDb).find((d: any) => 
+        (d.id && d.id.toLowerCase() === t.id.toLowerCase()) || 
+        (d.title && d.title.toLowerCase() === t.title.toLowerCase())
+      );
+      if (match && match.coverMedia?.url) {
+        return {
+          ...t,
+          image: match.coverMedia.url,
+          coverMedia: match.coverMedia
+        };
+      }
+      return t;
+    });
+  }, [specialistAreasConfig, customDb]);
 
   const itemsPerPage = 4;
   const totalPages = Math.ceil(treatmentsList.length / itemsPerPage) || 1;
