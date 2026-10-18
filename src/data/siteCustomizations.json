@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-17T12:45:50.772Z",
+  "lastSynced": "2026-10-18T15:43:34.232Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
@@ -946,7 +946,7 @@
       "title": "Jaw Slimming (Masseter Reduction / Bruxism)",
       "category": "Face & Injectables",
       "description": "High-dose neurotoxin targeting hypertrophic masseter chewing muscles to slim a square lower face into a refined V-shape while relieving teeth grinding.",
-      "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792330262409-Jaw_Slimming_Masseter_Reduction_Bruxism_Age_reversal_clinic_uk_groove_park.png",
       "startingPrice": 320,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -973,7 +973,7 @@
       "title": "Extended Neck Bands Therapy",
       "category": "Face & Injectables",
       "description": "Comprehensive multi-vector platysmal therapy across the anterior, lateral, and lower neck borders to smooth intense vertical cords and crepey bands.",
-      "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792329322256-Extended_Neck_Bands_Therapy_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 370,
       "currency": "£",
       "procedureTime": "35 Mins",
@@ -999,7 +999,7 @@
       "title": "Cheek - Soft Tissue Volumisation (1ml)",
       "category": "Face & Injectables",
       "description": "Subtle mid-face volume restoration using cross-linked hyaluronic acid to lift tired apple cheeks and gently soften deep nasolabial folds.",
-      "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792329145997-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1025,7 +1025,7 @@
       "title": "Cleavage Lines (Décolletage) Filler (1ml)",
       "category": "Face & Injectables",
       "description": "Smooths vertical sleep, side-sleeping, and sun-damage creases across the central chest and cleavage using delicate skin-smoothing hyaluronic micro-papules.",
-      "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792328975789-Cleavage_Lines_D_colletage_Filler_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1051,7 +1051,7 @@
       "title": "Lip Enhancement (1ml Premium Filler)",
       "category": "Face & Injectables",
       "description": "Bespoke architectural lip shaping emphasizing vermilion border crispness, Cupid’s bow contouring, pillowy volume, and profound deep moisture.",
-      "image": "https://images.unsplash.com/photo-1588515724527-074a7a56616c?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792330524654-Lip_Enhancement_1ml_Premium_Filler_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 - 45 Mins",
@@ -1080,7 +1080,7 @@
       "title": "Non-Surgical Rhinoplasty (Liquid Nose Job)",
       "category": "Face & Injectables",
       "description": "Strategic micro-droplet placement of ultra-dense cohesive filler to camouflage dorsal humps, lift drooping tips, and straighten the nasal bridge profile without surgery.",
-      "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792330940135-Non_Surgical_Rhinoplasty_Liquid_Nose_Job_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 - 45 Mins",
@@ -1107,7 +1107,7 @@
       "title": "Nose to Mouth Lines (Nasolabial Folds 1ml)",
       "category": "Face & Injectables",
       "description": "Softens deep smile creases running from the nostril corners down to mouth borders, restoring a rested, youthful midface profile.",
-      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792331129517-Nose_to_Mouth_Line_Treatments_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1134,7 +1134,7 @@
       "title": "Tear Trough & Under-Eye Hollows (1ml)",
       "category": "Face & Injectables",
       "description": "Brightens tired dark circles and fills hollow sunken under-eye troughs using ultra-gentle low-hydrophilic hyaluronic acid via blunt cannula safety protocol.",
-      "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792331972748-Tear_Trough_Under_Eye_Hollows_1ml_Age_reversal_clinic_uk_groove_park.png",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -3635,6 +3635,126 @@
   ],
   "clinical_treatment_details": null,
   "central_clinic_media_assets": [
+    {
+      "id": "asset-1792331972778-415",
+      "name": "Tear Trough Under Eye Hollows 1ml Age reversal clinic uk groove park.png",
+      "url": "/assets/1792331972748-Tear_Trough_Under_Eye_Hollows_1ml_Age_reversal_clinic_uk_groove_park.png",
+      "mediaType": "image",
+      "size": 2038041,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Tear Trough Under Eye Hollows 1ml Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:59:32.778Z"
+    },
+    {
+      "id": "asset-1792331129539-477",
+      "name": "Nose to Mouth Line Treatments Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792331129517-Nose_to_Mouth_Line_Treatments_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 15676,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Nose to Mouth Line Treatments Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:45:29.539Z"
+    },
+    {
+      "id": "asset-1792330940198-671",
+      "name": "Non Surgical Rhinoplasty Liquid Nose Job Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792330940135-Non_Surgical_Rhinoplasty_Liquid_Nose_Job_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 8844,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Non Surgical Rhinoplasty Liquid Nose Job Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:42:20.198Z"
+    },
+    {
+      "id": "asset-1792330524711-113",
+      "name": "Lip Enhancement 1ml Premium Filler Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792330524654-Lip_Enhancement_1ml_Premium_Filler_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 8468,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Lip Enhancement 1ml Premium Filler Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:35:24.711Z"
+    },
+    {
+      "id": "asset-1792330262462-986",
+      "name": "Jaw Slimming Masseter Reduction Bruxism Age reversal clinic uk groove park.png",
+      "url": "/assets/1792330262409-Jaw_Slimming_Masseter_Reduction_Bruxism_Age_reversal_clinic_uk_groove_park.png",
+      "mediaType": "image",
+      "size": 2022428,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Jaw Slimming Masseter Reduction Bruxism Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:31:02.462Z"
+    },
+    {
+      "id": "asset-1792329322544-686",
+      "name": "Extended Neck Bands Therapy Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792329322256-Extended_Neck_Bands_Therapy_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 55555,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Extended Neck Bands Therapy Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:15:22.545Z"
+    },
+    {
+      "id": "asset-1792329146209-371",
+      "name": "Cheek Soft Tissue Volumisation Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792329145997-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 56946,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Cheek Soft Tissue Volumisation Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:12:26.209Z"
+    },
+    {
+      "id": "asset-1792328975998-573",
+      "name": "Cleavage Lines Décolletage Filler Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792328975789-Cleavage_Lines_D_colletage_Filler_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 82843,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Cleavage Lines Décolletage Filler Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T13:09:35.998Z"
+    },
     {
       "id": "asset-1792241106686-851",
       "name": "Neck Bands Nefertiti Lift Age reversal clinic uk groove park.jpg",
