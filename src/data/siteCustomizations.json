@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-18T15:43:34.232Z",
+  "lastSynced": "2026-10-18T19:15:03.332Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
@@ -1107,7 +1107,7 @@
       "title": "Nose to Mouth Lines (Nasolabial Folds 1ml)",
       "category": "Face & Injectables",
       "description": "Softens deep smile creases running from the nostril corners down to mouth borders, restoring a rested, youthful midface profile.",
-      "image": "/assets/1792331129517-Nose_to_Mouth_Line_Treatments_Age_reversal_clinic_uk_groove_park.webp",
+      "image": "/assets/1792348415998-Nose_to_Mouth_Lines_Treatments_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1161,7 +1161,7 @@
       "title": "Temples Volume Restoration (1ml)",
       "category": "Face & Injectables",
       "description": "Rebuilds hollowed, skeletal temporal depressions to restore a soft, youthful oval-heart facial contour and support lateral brow elevation.",
-      "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792348680404-Temple_Filler_Temples_Volume_Restoration_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1187,7 +1187,7 @@
       "title": "Cheek - Deep Contouring (1ml)",
       "category": "Face & Injectables",
       "description": "High-definition zygomatic arch enhancement placing high-density cohesive hyaluronic acid onto the bone for razor-sharp cheekbone definition and structural projection.",
-      "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792348559117-Cheek_Fillers_Cheek_Deep_Contouring_1ml_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 350,
       "currency": "£",
       "procedureTime": "40 Mins",
@@ -1213,7 +1213,7 @@
       "title": "Jaw & Chin - Deep Contouring (1ml)",
       "category": "Face & Injectables",
       "description": "Sculpts mandibular angles, sharpens the jawline profile border, and advances chin projection to eliminate lower face heaviness and strengthen side profiles.",
-      "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792348434601-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 350,
       "currency": "£",
       "procedureTime": "40 Mins",
@@ -1240,7 +1240,7 @@
       "title": "Hand Rejuvenation Filler (1ml)",
       "category": "Face & Injectables",
       "description": "Restores lost volume over dorsal veins and exposed tendons on the back of hands, delivering firm, plump, and age-defying smooth skin texture.",
-      "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792347444005-Aesthetician_Hand_rejuvenation_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 470,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1266,7 +1266,7 @@
       "title": "Profhilo® 2ml Bioremodeling",
       "category": "Face & Injectables",
       "description": "Ultra-pure stabilized hyaluronic acid formulated with patented NAHYCO® technology to stimulate 4 types of collagen and elastin across 10 Bio-Aesthetic Points.",
-      "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792349052932-profhilo_facial_treatment_Profhilo_2ml_Bioremodeling_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 350,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1308,7 +1308,7 @@
       "title": "Salmon Sperm Injection (Polynucleotides / PDRN)",
       "category": "Face & Injectables",
       "description": "Breakthrough cellular regeneration therapy utilizing purified DNA fragments (PDRN) to repair damaged cellular structures, fade pigmentation, and firm delicate eye and facial tissue.",
-      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792349221256-Salmon_Sperm_Injection_Polynucleotides_PDRN_Age_reversal_clinic_uk_groove_park.png",
       "startingPrice": 350,
       "currency": "£",
       "procedureTime": "40 Mins",
@@ -1349,7 +1349,7 @@
       "title": "Morpheus8 Facial RF Microneedling",
       "category": "Face & Injectables",
       "description": "Subdermal adipose remodeling that combines microneedling with radiofrequency to melt submental fat, rebuild elastin, and tighten skin up to 4mm deep.",
-      "image": "https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792350777360-Goldskin_Elite_FDA_Cleared_RF_Microneedling_Fractional_RF_Machine_for_Face_Body_Age_reversal_clinic_uk_groove_park.jpg",
       "startingPrice": 190,
       "currency": "£",
       "procedureTime": "60 Mins",
@@ -1389,7 +1389,7 @@
       "title": "EMFACE Skin Tightening & Lifting",
       "category": "Face & Injectables",
       "description": "Hands-free needle-free therapy combining synchronized Radiofrequency (RF) and High-Intensity Facial Electrical Stimulation (HIFES™) to tone delicate elevator muscles and smooth wrinkles.",
-      "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/1792350896240-EMFACE_Skin_Tightening_Lifting_Age_reversal_clinic_uk_groove_park.webp",
       "startingPrice": 250,
       "currency": "£",
       "procedureTime": "20 Mins",
@@ -3635,6 +3635,141 @@
   ],
   "clinical_treatment_details": null,
   "central_clinic_media_assets": [
+    {
+      "id": "asset-1792350896295-830",
+      "name": "EMFACE Skin Tightening Lifting Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792350896240-EMFACE_Skin_Tightening_Lifting_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 31284,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "EMFACE Skin Tightening Lifting Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T19:14:56.295Z"
+    },
+    {
+      "id": "asset-1792350777584-151",
+      "name": "Goldskin Elite FDA Cleared RF Microneedling Fractional RF Machine for Face Body Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792350777360-Goldskin_Elite_FDA_Cleared_RF_Microneedling_Fractional_RF_Machine_for_Face_Body_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 84572,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Goldskin Elite FDA Cleared RF Microneedling Fractional RF Machine for Face Body Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T19:12:57.584Z"
+    },
+    {
+      "id": "asset-1792349221308-886",
+      "name": "Salmon Sperm Injection Polynucleotides PDRN Age reversal clinic uk groove park.png",
+      "url": "/assets/1792349221256-Salmon_Sperm_Injection_Polynucleotides_PDRN_Age_reversal_clinic_uk_groove_park.png",
+      "mediaType": "image",
+      "size": 227195,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Salmon Sperm Injection Polynucleotides PDRN Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:47:01.308Z"
+    },
+    {
+      "id": "asset-1792349052995-598",
+      "name": "profhilo facial treatment Profhilo 2ml Bioremodeling Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792349052932-profhilo_facial_treatment_Profhilo_2ml_Bioremodeling_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 43836,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "profhilo facial treatment Profhilo 2ml Bioremodeling Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:44:12.995Z"
+    },
+    {
+      "id": "asset-1792348680728-199",
+      "name": "Temple Filler Temples Volume Restoration Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792348680404-Temple_Filler_Temples_Volume_Restoration_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 24214,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Temple Filler Temples Volume Restoration Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:38:00.728Z"
+    },
+    {
+      "id": "asset-1792348559165-34",
+      "name": "Cheek Fillers Cheek Deep Contouring 1ml Age reversal clinic uk groove park.webp",
+      "url": "/assets/1792348559117-Cheek_Fillers_Cheek_Deep_Contouring_1ml_Age_reversal_clinic_uk_groove_park.webp",
+      "mediaType": "image",
+      "size": 44700,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Cheek Fillers Cheek Deep Contouring 1ml Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:35:59.165Z"
+    },
+    {
+      "id": "asset-1792348434876-971",
+      "name": "Cheek Soft Tissue Volumisation Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792348434601-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 56946,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Cheek Soft Tissue Volumisation Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:33:54.876Z"
+    },
+    {
+      "id": "asset-1792348416146-540",
+      "name": "Nose to Mouth Lines Treatments Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792348415998-Nose_to_Mouth_Lines_Treatments_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 11940,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Nose to Mouth Lines Treatments Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:33:36.146Z"
+    },
+    {
+      "id": "asset-1792347444322-241",
+      "name": "Aesthetician Hand rejuvenation Age reversal clinic uk groove park.jpg",
+      "url": "/assets/1792347444005-Aesthetician_Hand_rejuvenation_Age_reversal_clinic_uk_groove_park.jpg",
+      "mediaType": "image",
+      "size": 69975,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Aesthetician Hand rejuvenation Age reversal clinic uk groove park - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-18T18:17:24.322Z"
+    },
     {
       "id": "asset-1792331972778-415",
       "name": "Tear Trough Under Eye Hollows 1ml Age reversal clinic uk groove park.png",
