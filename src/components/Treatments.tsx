@@ -119,6 +119,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Radiance Protocol" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[0]}
                 />
@@ -139,6 +141,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Volume Definition" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[1]}
                 />
@@ -159,6 +163,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Symmetry Mastered" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[2]}
                 />
@@ -179,6 +185,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Anatomical Precision" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[3]}
                 />
@@ -199,6 +207,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Lash Extension Art" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[4]}
                 />
@@ -219,6 +229,8 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               >
                 <img 
                   alt="Advanced Portrait" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={TREATMENT_IMAGES[5]}
                 />

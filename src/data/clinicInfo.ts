@@ -79,7 +79,7 @@ export interface ClinicData {
 
 export const CLINIC_DATA: ClinicData = {
   "name": "Age Reversal Clinics",
-  "tagline": "Premier Medical, Surgical & Cosmetic Dermatology",
+  "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
   "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
   "canonicalUrl": "https://agereversalclinics.co.uk",
   "brandKeywords": [
@@ -87,23 +87,32 @@ export const CLINIC_DATA: ClinicData = {
     "harley street dermatologist",
     "anti-aging clinic london",
     "botox harley street",
-    "aesthetic dermatology"
+    "aesthetic dermatology",
+    "Clinical aesthetics UK",
+    "Professional skincare clinic UK",
+    "Aesthetic medicine UK",
+    "Skin rejuvenation clinic UK",
+    "Non-surgical cosmetic treatments UK",
+    "Advanced aesthetics UK",
+    "Cosmetic skin clinic UK",
+    "Medical aesthetics UK",
+    "Aesthetic clinics UK"
   ],
   "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
   "logo": {
-    "icon": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=400&q=80",
-    "alt": "Age Reversal Clinics Harley Street Logo"
+    "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+    "alt": "Age Reversal Clinics Logo",
+    "full": "/assets/1791726190127-arc-logo__2_.webp"
   },
   "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
   "interiorPhotos": [
-    "https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80"
+    "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
   ],
-  "phone": "+44 (0) 20 7946 0921",
-  "email": "appointments@agereversalclinics.co.uk",
-  "whatsapp": "https://wa.me/442079460921",
-  "openingHours": "Mon - Fri: 08:30 – 19:30, Sat: 09:30 – 17:00",
-  "priceRange": "£££",
+  "phone": "+44 (0) 20 7984159517",
+  "email": "agereversalbeautyspa@gmail.com",
+  "whatsapp": "https://wa.me/44207984159517",
+  "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
+  "priceRange": "£",
   "currency": "GBP",
   "acceptedPayments": [
     "Cash",
@@ -115,9 +124,7 @@ export const CLINIC_DATA: ClinicData = {
   ],
   "languagesSpoken": [
     "English",
-    "French",
-    "Arabic",
-    "Spanish"
+    "French"
   ],
   "medicalSpecialties": [
     "Dermatology",
@@ -138,65 +145,48 @@ export const CLINIC_DATA: ClinicData = {
   ],
   "locations": [
     {
-      "id": "harley-street-flagship",
-      "name": "Harley Street Flagship Clinic",
-      "address": "10 Harley Street, Marylebone",
+      "id": "location-1791722960928",
+      "name": "Age Reversal Clinic",
+      "address": "Age Reversal Clinic Grove Park",
       "city": "London",
-      "postalCode": "W1G 9PF",
+      "postalCode": "",
       "country": "United Kingdom",
-      "phone": "+44 (0) 20 7946 0921",
-      "hours": "Mon - Fri: 08:30 - 19:30 | Sat: 09:30 - 17:00",
-      "directionsUrl": "https://maps.google.com/?q=10+Harley+Street+London+W1G+9PF",
-      "latitude": 51.5186,
+      "phone": "+44 (0) 20 88572000",
+      "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
+      "directionsUrl": "",
+      "latitude": 51.5173,
       "longitude": -0.1472,
-      "parkingAvailable": true,
+      "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
-      "imageAlt": "Harley Street Flagship Clinic Exterior"
+      "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
+      "imageAlt": ""
     },
     {
-      "id": "devonshire-place-clinic",
-      "name": "Devonshire Place Laser Suite",
-      "address": "22 Devonshire Place, Marylebone",
+      "id": "location-1791728808656",
+      "name": "374 Baring Road London UK",
+      "address": "374 Baring Road Se12 0EF",
       "city": "London",
-      "postalCode": "W1G 6JA",
+      "postalCode": "",
       "country": "United Kingdom",
-      "phone": "+44 (0) 20 7946 0922",
-      "hours": "Mon - Fri: 09:00 - 18:00",
-      "directionsUrl": "https://maps.google.com/?q=22+Devonshire+Place+London+W1G+6JA",
-      "latitude": 51.5212,
-      "longitude": -0.1495,
-      "parkingAvailable": true,
-      "wheelchairAccessible": true,
-      "image": "https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=1200&q=80",
-      "imageAlt": "Devonshire Place Laser Suite"
-    },
-    {
-      "id": "grove-park-clinic",
-      "name": "Chiswick & West London Suite",
-      "address": "4 Chiswick High Road",
-      "city": "London",
-      "postalCode": "W4 1TH",
-      "country": "United Kingdom",
-      "phone": "+44 (0) 20 8994 0110",
-      "hours": "Tue - Sat: 09:00 - 18:00",
-      "directionsUrl": "https://maps.google.com/?q=4+Chiswick+High+Road+London+W4+1TH",
-      "latitude": 51.4938,
-      "longitude": -0.2741,
-      "parkingAvailable": true,
-      "wheelchairAccessible": true,
-      "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=1200&q=80",
-      "imageAlt": "Chiswick & West London Suite"
+      "phone": "+44 (0) 20 8857 2000",
+      "hours": "Mon – Sat: 09:00 – 19:00",
+      "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
+      "latitude": 51.5173,
+      "longitude": -0.1472,
+      "parkingAvailable": false,
+      "wheelchairAccessible": false,
+      "image": "/assets/1791729403362-arc-logo__1___2_.webp",
+      "imageAlt": ""
     }
   ],
   "socials": {
-    "facebook": "https://facebook.com/agereversalclinics",
-    "instagram": "https://instagram.com/agereversalclinics",
-    "twitter": "https://twitter.com/agereversal",
-    "youtube": "https://youtube.com/@agereversalclinics",
-    "linkedin": "https://linkedin.com/company/age-reversal-clinics"
+    "facebook": "https://www.facebook.com/agereversalmedspa",
+    "instagram": "https://www.instagram.com/agereversalclinicuk/",
+    "twitter": "",
+    "youtube": "",
+    "linkedin": ""
   },
-  "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJ-3P3F6sEdkgRk612k05J2vM"
+  "googleReviewUrl": ""
 };
 
 /**

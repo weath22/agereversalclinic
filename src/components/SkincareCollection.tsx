@@ -99,6 +99,8 @@ export default function SkincareCollection({ onShopClick }: SkincareCollectionPr
                   <div className="aspect-[4/5] rounded-[24px] overflow-hidden bg-luxury-secondary mb-4 sm:mb-6 relative border border-luxury-border">
                     <img
                       alt={product.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       src={product.image}
                     />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { saveConsultation, saveInquiry, getOurLocationsConfig, getClinicData } from '../lib/adminStore';
+import { saveConsultation, saveInquiry, getOurLocationsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { OurLocationsConfig, LocationItemConfig } from '../types';
@@ -8,7 +8,7 @@ import { CLINIC_DATA, ClinicData } from '../data/clinicInfo';
 import ContactDrawerModal from './ContactDrawerModal';
 import AppointmentDatePicker from './AppointmentDatePicker';
 import { PackageSelectModal } from './pricing/PackageSelectModal';
-import { TREATMENT_PRICING_DATA, TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
+import type { TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 import { 
@@ -32,16 +32,20 @@ export {
 };
 
 import { CLINIC_LOCATION_IMAGES } from '../data/clinicImages';
+import location1Img from '../assets/images/clinic/locations/location1_img.jpg';
+import location2Img from '../assets/images/clinic/locations/location2_img.jpg';
 
 const clinicDevonshire = CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].primary;
 const clinicHarleyStreet = CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary;
 
 const DEFAULT_LOCATION_IMAGES: Record<string, string> = {
-  'loc-1': clinicDevonshire,
-  'loc-2': clinicHarleyStreet,
+  'location-1791722960928': location1Img,
+  'location-1791728808656': location2Img,
+  'loc-1': location1Img,
+  'loc-2': location2Img,
 };
 
-const LOCATION_FALLBACKS = [clinicDevonshire, clinicHarleyStreet];
+const LOCATION_FALLBACKS = [location1Img, location2Img, clinicHarleyStreet, clinicDevonshire];
 
 interface LocationsAndConsultationProps {
   preselectedService?: string;
@@ -81,7 +85,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   const [isTreatmentCardOpen, setIsTreatmentCardOpen] = useState<boolean>(false);
   const [viewingTreatment, setViewingTreatment] = useState<TreatmentItem | null>(null);
   const [openMenu, setOpenMenu] = useState<'area' | 'category' | 'treatment' | null>(null);
-  const [activeConsultMenu, setActiveConsultMenu] = useState<'doctor' | 'bestTime' | 'hearAboutUs' | null>(null);
+  const [activeConsultMenu, setActiveConsultMenu] = useState<'doctor' | 'bestTime' | 'hearAboutUs' | 'location' | null>(null);
   const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down');
   const menuContainerRef = useRef<HTMLDivElement>(null);
   const consultMenuContainerRef = useRef<HTMLDivElement>(null);
@@ -329,26 +333,50 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     setLocationsConfig(getOurLocationsConfig());
     setClinicData(getClinicData());
 
+    // Fetch remote clinic data from server on mount to guarantee fresh server state across deployments
+    fetchRemoteClinicData().then((remoteData) => {
+      if (remoteData) {
+        setClinicData(remoteData);
+      }
+    });
+
     const handleClinicDataChange = (e: any) => {
       if (e.detail) {
         setClinicData(e.detail);
       }
     };
 
+    const handleLocationsConfigChange = (e: any) => {
+      if (e.detail) {
+        setLocationsConfig(e.detail);
+      }
+    };
+
     window.addEventListener('clinic_data_changed', handleClinicDataChange);
+    window.addEventListener('locations_config_changed', handleLocationsConfigChange);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChange);
+      window.removeEventListener('locations_config_changed', handleLocationsConfigChange);
     };
   }, []);
 
   // Locations directly mapped from clinic info data file (src/data/clinicInfo.ts) or reactive store
-  const activeLocations: LocationItemConfig[] = (clinicData.locations || []).map((loc, idx) => {
+  const activeLocations: LocationItemConfig[] = (clinicData.locations && clinicData.locations.length > 0 ? clinicData.locations : CLINIC_DATA.locations).map((loc, idx) => {
     const locId = loc.id || `loc-${idx + 1}`;
-    const fullAddress = loc.address.includes(loc.city)
-      ? `${loc.address}, ${loc.postalCode}`
-      : `${loc.address}, ${loc.city}, ${loc.postalCode}`;
-    const mapsUrl = loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`;
-    const fallbackImg = DEFAULT_LOCATION_IMAGES[`loc-${idx + 1}`] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length];
+    
+    // Clean formatted address without trailing commas
+    const addressParts = [
+      loc.address?.trim(),
+      (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
+      loc.postalCode?.trim() || null
+    ].filter(Boolean);
+    const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : (loc.address || 'London, United Kingdom');
+    
+    const mapsUrl = loc.directionsUrl && loc.directionsUrl.trim().length > 0
+      ? loc.directionsUrl
+      : `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`;
+      
+    const fallbackImg = DEFAULT_LOCATION_IMAGES[locId] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length];
 
     const adminLoc = locationsConfig?.locations?.find(
       (al) => al.id === locId || al.id === `loc-${idx + 1}` || al.name.toLowerCase() === loc.name.toLowerCase()
@@ -365,7 +393,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       id: locId,
       name: loc.name,
       address: fullAddress,
-      hours: loc.hours,
+      hours: loc.hours || clinicData.openingHours || CLINIC_DATA.openingHours,
       phone: loc.phone || clinicData.phone || CLINIC_DATA.phone,
       mapsUrl: mapsUrl,
       bannerType: adminLoc?.bannerType || 'Clinic',
@@ -382,6 +410,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     procedure: '',
     improvement: '',
     doctor: '',
+    preferredLocation: '',
     date: '',
     bestTime: 'morning',
     hearAboutUs: 'search',
@@ -432,6 +461,9 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       price: item.price
     }));
 
+    const locationNote = booking.preferredLocation ? `[Preferred Location: ${booking.preferredLocation}]` : '';
+    const fullNotes = [locationNote, booking.notes].filter(Boolean).join('\n');
+
     saveConsultation({
       firstName: booking.firstName,
       lastName: booking.lastName,
@@ -440,7 +472,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       date: booking.date,
       bestTime: booking.bestTime,
       hearAboutUs: booking.hearAboutUs,
-      notes: booking.notes,
+      notes: fullNotes,
       improvement: booking.improvement,
       doctor: booking.doctor,
       stayInTouch: booking.stayInTouch,
@@ -469,13 +501,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
               {locationsConfig?.heading || 'Our Locations'}
             </h2>
             <p className="font-sans text-sm md:text-base text-luxury-subtext max-w-2xl mx-auto font-light leading-relaxed">
-              {locationsConfig?.description || 'Conveniently located in the heart of London\'s medical district, providing world-class care across multiple specialized facilities.'}
+              {locationsConfig?.description || `${clinicData?.name || 'Age Reversal Clinic'} — conveniently located across London, providing world-class aesthetic dermatology, clinical consultations, and personalized care.`}
             </p>
             <div className="w-12 h-[1px] bg-luxury-gold mx-auto mt-8" />
           </div>
 
           <div className={`grid grid-cols-1 ${activeLocations.length >= 3 ? 'md:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-2'} gap-6 lg:gap-8`}>
-            {activeLocations.map((loc) => {
+            {activeLocations.map((loc, idx) => {
               const displayImage = loc.imageUrl;
 
               return (
@@ -487,11 +519,12 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                       src={displayImage}
                       alt={loc.name}
                       loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
                         const target = e.currentTarget as HTMLImageElement;
-                        const defaultImg = DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[0];
+                        const defaultImg = DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length] || LOCATION_FALLBACKS[0];
                         if (target.src !== defaultImg) {
                           target.src = defaultImg;
                         }
@@ -537,7 +570,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                     </div>
                   </div>
 
-                  {/* Standalone Action Items (Message & Get Directions) */}
+                  {/* Standalone Action Items (Message, Book Here, & Get Directions) */}
                   <div className="p-4 sm:p-5 px-5 sm:px-6 flex items-center justify-between bg-luxury-card border-t border-luxury-border/60">
                     <button
                       type="button"
@@ -546,6 +579,21 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                     >
                       <Mail className="h-3.5 w-3.5 text-luxury-gold group-hover:scale-110 transition-transform" />
                       <span>Message</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBooking(prev => ({ ...prev, preferredLocation: loc.name }));
+                        const elem = document.getElementById('preferred-consultation');
+                        if (elem) {
+                          elem.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold font-sans text-luxury-text hover:text-luxury-gold transition-colors duration-200 cursor-pointer group"
+                    >
+                      <Clock className="h-3.5 w-3.5 text-luxury-gold group-hover:scale-110 transition-transform" />
+                      <span>Book Here</span>
                     </button>
 
                     <a 
@@ -1311,7 +1359,78 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
                 {/* Doctor and Date Selection */}
                 <div ref={consultMenuContainerRef} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Custom Dropdown: Preferred Clinic Location */}
+                    <div className="space-y-2 relative">
+                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">
+                        Preferred Location
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setActiveConsultMenu(activeConsultMenu === 'location' ? null : 'location')}
+                        className={`w-full px-5 py-4 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                          activeConsultMenu === 'location' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
+                        }`}
+                      >
+                        <span className={`truncate ${!booking.preferredLocation ? 'text-luxury-subtext font-normal' : ''}`}>
+                          {booking.preferredLocation || 'Select clinic location'}
+                        </span>
+                        <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'location' ? 'rotate-180 text-luxury-gold' : ''}`} />
+                      </button>
+
+                      <AnimatePresence>
+                        {activeConsultMenu === 'location' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBooking({ ...booking, preferredLocation: '' });
+                                setActiveConsultMenu(null);
+                              }}
+                              className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                !booking.preferredLocation
+                                  ? 'bg-luxury-secondary/90 font-bold text-luxury-text'
+                                  : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                              }`}
+                            >
+                              <span className="truncate">Any Location (First Available)</span>
+                              {!booking.preferredLocation && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                            </button>
+                            {activeLocations.map((loc) => {
+                              const isSelected = booking.preferredLocation === loc.name;
+                              return (
+                                <button
+                                  key={loc.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBooking({ ...booking, preferredLocation: loc.name });
+                                    setActiveConsultMenu(null);
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-luxury-secondary/90 font-bold text-luxury-text'
+                                      : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
+                                  }`}
+                                >
+                                  <div className="truncate text-left">
+                                    <span className="block font-semibold">{loc.name}</span>
+                                    <span className="block text-[11px] text-slate-400 font-normal truncate">{loc.address}</span>
+                                  </div>
+                                  {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     {/* Custom Dropdown: Preferred Doctor */}
                     <div className="space-y-2 relative">
                       <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Preferred Doctor</label>
@@ -1323,7 +1442,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         }`}
                       >
                         <span className={`truncate ${!booking.doctor ? 'text-luxury-subtext font-normal' : ''}`}>
-                          {DOCTOR_OPTIONS.find(d => d.value === booking.doctor)?.label || 'Select a specialist (Optional)'}
+                          {DOCTOR_OPTIONS.find(d => d.value === booking.doctor)?.label || 'Select a specialist'}
                         </span>
                         <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'doctor' ? 'rotate-180 text-luxury-gold' : ''}`} />
                       </button>
@@ -1663,6 +1782,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   </div>
                 )}
                 
+                {booking.preferredLocation && (
+                  <div className="mb-4 inline-flex items-center gap-1.5 bg-white border border-luxury-border/30 px-3.5 py-1.5 rounded-full text-xs text-luxury-text shadow-2xs">
+                    <MapPin className="h-3.5 w-3.5 text-luxury-gold shrink-0" />
+                    <span>Clinic Location: <strong>{booking.preferredLocation}</strong></span>
+                  </div>
+                )}
+
                 <div className="flex justify-center w-full px-1 sm:px-0 pt-2">
                   <button 
                     onClick={() => {
@@ -1676,6 +1802,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         procedure: 'exosome',
                         improvement: '',
                         doctor: '',
+                        preferredLocation: '',
                         date: '',
                         bestTime: 'morning',
                         hearAboutUs: 'search',

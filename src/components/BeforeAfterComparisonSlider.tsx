@@ -131,6 +131,8 @@ export default function BeforeAfterComparisonSlider({ beforeImage, afterImage, t
                         src={pair.before} 
                         alt={pair.id === 1 && clinicalComparisonMedia?.beforeImage?.altText ? clinicalComparisonMedia.beforeImage.altText : `${treatmentName} Before Treatment Case ${pair.id}`} 
                         title={pair.id === 1 && clinicalComparisonMedia?.beforeImage?.seoTitle ? clinicalComparisonMedia.beforeImage.seoTitle : `${treatmentName} Baseline Case ${pair.id}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         referrerPolicy="no-referrer"
                       />
@@ -155,6 +157,8 @@ export default function BeforeAfterComparisonSlider({ beforeImage, afterImage, t
                         src={pair.after} 
                         alt={pair.id === 1 && clinicalComparisonMedia?.afterImage?.altText ? clinicalComparisonMedia.afterImage.altText : `${treatmentName} After Treatment Case ${pair.id}`} 
                         title={pair.id === 1 && clinicalComparisonMedia?.afterImage?.seoTitle ? clinicalComparisonMedia.afterImage.seoTitle : `${treatmentName} Post-Procedure Case ${pair.id}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         referrerPolicy="no-referrer"
                       />

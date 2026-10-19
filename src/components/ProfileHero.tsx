@@ -97,6 +97,8 @@ export default function ProfileHero({ authorName, onClose, onBookClick, config }
           <img 
             src={photoUrl} 
             alt={authorName}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />

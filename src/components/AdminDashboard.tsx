@@ -39,7 +39,8 @@ import {
   getFloatingMenuConfig,
   getProfilePageConfig,
   syncAllConfigsToFiles,
-  uploadAssetFile
+  uploadAssetFile,
+  loadSiteCustomizations
 } from '../lib/adminStore';
 import { 
   ConsultationRequest, 
@@ -193,6 +194,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
 
   // Load homepage editor states on initialization
   useEffect(() => {
+    loadSiteCustomizations().catch(() => {});
     const header = getHeaderConfig();
     setHBrandName(header.primaryName);
     setHLogoText(header.logoUrl);

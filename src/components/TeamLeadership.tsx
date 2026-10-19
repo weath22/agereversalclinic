@@ -46,6 +46,8 @@ export default function TeamLeadership({ onViewProfile }: TeamLeadershipProps) {
             <div className="md:w-1/2 relative min-h-[350px] sm:min-h-[450px] md:min-h-[500px]">
               <img
                 alt={FOUNDER.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 src={FOUNDER.image}
               />
@@ -126,6 +128,8 @@ export default function TeamLeadership({ onViewProfile }: TeamLeadershipProps) {
               <div className="w-full aspect-[3/4] rounded-[24px] overflow-hidden mb-6 bg-luxury-secondary transition-all duration-500 relative">
                 <img
                   alt={member.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                   src={member.image}
                 />

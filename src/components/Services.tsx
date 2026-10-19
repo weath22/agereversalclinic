@@ -88,6 +88,8 @@ export default function Services({ onBookAppointment }: ServicesProps) {
                   <div className="aspect-[4/3] w-full mb-6 overflow-hidden rounded-xl bg-silver-100 border border-silver-200">
                     <img
                       alt={service.title}
+                      loading="lazy"
+                      decoding="async"
                       className={`w-full h-full object-cover transition-transform duration-500 hover:scale-110 ${isAntiAging ? 'grayscale' : ''}`}
                       src={service.image}
                     />
@@ -157,6 +159,8 @@ export default function Services({ onBookAppointment }: ServicesProps) {
                 <div className="h-48 w-full overflow-hidden relative">
                   <img
                     alt={selectedService.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     src={selectedService.image}
                   />

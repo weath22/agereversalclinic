@@ -150,6 +150,8 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
                     src={preUrl}
                     alt={preAlt}
                     title={preTitle}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
@@ -172,6 +174,8 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
                     src={postUrl}
                     alt={postAlt}
                     title={postTitle}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />

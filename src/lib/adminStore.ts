@@ -32,12 +32,33 @@ import {
   TREATMENT_PRICING_DATA, 
   TREATMENT_PRICING_CATEGORIES 
 } from '../data/treatmentPricing';
-import siteCustomizations from '../data/siteCustomizations.json';
+// Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
+let _siteCustomizationsCache: Record<string, any> | null = null;
+let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
+
+/**
+ * Lazily loads and parses siteCustomizations.json only when requested (e.g. by admin studio or treatment views)
+ */
+export async function loadSiteCustomizations(): Promise<Record<string, any> | null> {
+  if (_siteCustomizationsCache) return _siteCustomizationsCache;
+  if (!_siteCustomizationsPromise) {
+    _siteCustomizationsPromise = import('../data/siteCustomizations.json')
+      .then((m) => {
+        _siteCustomizationsCache = (m.default || m) as Record<string, any>;
+        return _siteCustomizationsCache;
+      })
+      .catch((err) => {
+        console.warn('Could not lazily load siteCustomizations.json:', err);
+        return null;
+      });
+  }
+  return _siteCustomizationsPromise;
+}
 
 // Helper to retrieve pre-deployment persisted configuration from siteCustomizations.json
 function getFileDefault<T>(key: string, hardcodedFallback: T): T {
-  if (siteCustomizations && typeof siteCustomizations === 'object' && key in siteCustomizations) {
-    const val = (siteCustomizations as Record<string, any>)[key];
+  if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object' && key in _siteCustomizationsCache) {
+    const val = _siteCustomizationsCache[key];
     if (val !== undefined && val !== null) {
       return val as T;
     }
@@ -828,19 +849,26 @@ const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
 
 const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
   heading: "Our Locations",
-  description: "Conveniently located in the heart of London's medical district, providing world-class care across multiple specialized facilities.",
-  locations: CLINIC_DATA.locations.map((loc, idx) => ({
-    id: `loc-${idx + 1}`,
-    name: loc.name,
-    address: loc.address.includes(loc.city) ? `${loc.address}, ${loc.postalCode}` : `${loc.address}, ${loc.city}, ${loc.postalCode}`,
-    hours: loc.hours,
-    phone: loc.phone || CLINIC_DATA.phone,
-    mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(loc.address)}`,
-    bannerType: "Clinic",
-    imageUrl: loc.image || (idx === 0 
-      ? "/src/assets/images/clinic/locations/harley_street_flagship.jpg" 
-      : "/src/assets/images/clinic/locations/devonshire_place.jpg")
-  }))
+  description: "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
+  locations: (CLINIC_DATA.locations || []).map((loc, idx) => {
+    const fullAddress = [
+      loc.address?.trim(),
+      (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
+      loc.postalCode?.trim() || null
+    ].filter(Boolean).join(', ');
+    return {
+      id: loc.id || `loc-${idx + 1}`,
+      name: loc.name,
+      address: fullAddress,
+      hours: loc.hours,
+      phone: loc.phone || CLINIC_DATA.phone,
+      mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
+      bannerType: "Clinic",
+      imageUrl: loc.image || (idx === 0 
+        ? "/assets/1791723050511-Screenshot_2026-07-24_193158.png" 
+        : "/assets/1791729403362-arc-logo__1___2_.webp")
+    };
+  })
 };
 
 const DEFAULT_TEAM_LEADERSHIP_CONFIG: TeamLeadershipConfig = {
@@ -1291,11 +1319,20 @@ export function saveAwardsConfig(config: AwardsConfig): AwardsConfig {
 
 export function getOurLocationsConfig(): OurLocationsConfig {
   initializeAdminStore();
-  return getStorageItem<OurLocationsConfig>(LOCATIONS_CONFIG_KEY, getFileDefault(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG));
+  const config = getStorageItem<OurLocationsConfig>(LOCATIONS_CONFIG_KEY, getFileDefault(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG));
+  // If stored config locations contain the legacy dummy "Devonshire Place, London W1G 6BW" or empty, dynamically fall back to DEFAULT_LOCATIONS_CONFIG
+  if (config && (!config.locations || config.locations.length === 0 || config.locations.some(l => l.address?.includes('Devonshire Place, London W1G 6BW') || l.name?.includes('The London Clinic')))) {
+    return DEFAULT_LOCATIONS_CONFIG;
+  }
+  return config;
 }
 
 export function saveOurLocationsConfig(config: OurLocationsConfig): OurLocationsConfig {
   setStorageItem(LOCATIONS_CONFIG_KEY, config);
+  syncConfigToFile(LOCATIONS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('locations_config_changed', { detail: config }));
+  }
   return config;
 }
 
@@ -1421,6 +1458,20 @@ export function getTreatmentDetailsConfig(): Record<string, any> | null {
     console.error(`Error reading localStorage key "${TREATMENT_DETAILS_KEY}":`, error);
     return null;
   }
+}
+
+/**
+ * Defers loading and parsing siteCustomizations.json until treatment detail is requested
+ */
+export async function getTreatmentDetailsConfigDeferred(): Promise<Record<string, any> | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
+      if (item) return JSON.parse(item);
+    } catch {}
+  }
+  await loadSiteCustomizations();
+  return getTreatmentDetailsConfig();
 }
 
 export function saveTreatmentDetailsConfig(config: Record<string, any>): void {
@@ -1585,6 +1636,33 @@ export function updateClinicData(data: ClinicData): ClinicData {
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(CLINIC_INFO_DATA_KEY, JSON.stringify(data));
     window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
+
+    // Automatically synchronize locations config so location and consultation components update in lockstep
+    if (Array.isArray(data.locations) && data.locations.length > 0) {
+      const currentLocConfig = getOurLocationsConfig();
+      const updatedLocConfig: OurLocationsConfig = {
+        ...currentLocConfig,
+        locations: data.locations.map((loc, idx) => {
+          const fullAddress = [
+            loc.address?.trim(),
+            (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
+            loc.postalCode?.trim() || null
+          ].filter(Boolean).join(', ');
+          return {
+            id: loc.id || `loc-${idx + 1}`,
+            name: loc.name,
+            address: fullAddress,
+            hours: loc.hours,
+            phone: loc.phone || data.phone || CLINIC_DATA.phone,
+            mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
+            bannerType: "Clinic",
+            imageUrl: loc.image || ""
+          };
+        })
+      };
+      setStorageItem(LOCATIONS_CONFIG_KEY, updatedLocConfig);
+      window.dispatchEvent(new CustomEvent('locations_config_changed', { detail: updatedLocConfig }));
+    }
   }
   return data;
 }

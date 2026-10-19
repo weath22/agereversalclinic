@@ -687,3 +687,5 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     </div>
   );
 };
+
+export default PricingPageView;

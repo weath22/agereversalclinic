@@ -376,3 +376,5 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
     </div>
   );
 };
+
+export default TransformationsPageView;

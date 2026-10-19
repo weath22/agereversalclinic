@@ -37,6 +37,7 @@ function TreatmentServiceFrameComparison({ title, beforeImage, afterImage }: Tre
               src={beforeImage} 
               alt={`${title} Before Treatment`} 
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
@@ -62,6 +63,7 @@ function TreatmentServiceFrameComparison({ title, beforeImage, afterImage }: Tre
               src={afterImage} 
               alt={`${title} After Treatment`} 
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />

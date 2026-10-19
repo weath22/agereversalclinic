@@ -303,6 +303,32 @@ const handleSaveClinicData = (req: any, res: any) => {
       }
     }
     existing.clinic_info_data = clinicData;
+    if (Array.isArray(clinicData.locations)) {
+      if (!existing.homepage_locations_config) {
+        existing.homepage_locations_config = {
+          heading: "Our Locations",
+          description: "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
+          locations: []
+        };
+      }
+      existing.homepage_locations_config.locations = clinicData.locations.map((loc: any, idx: number) => {
+        const fullAddress = [
+          loc.address?.trim(),
+          (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
+          loc.postalCode?.trim() || null
+        ].filter(Boolean).join(', ');
+        return {
+          id: loc.id || `loc-${idx + 1}`,
+          name: loc.name,
+          address: fullAddress,
+          hours: loc.hours,
+          phone: loc.phone || clinicData.phone,
+          mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
+          bannerType: "Clinic",
+          imageUrl: loc.image || ""
+        };
+      });
+    }
     existing.lastSynced = new Date().toISOString();
     fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
 

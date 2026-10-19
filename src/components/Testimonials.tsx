@@ -65,6 +65,8 @@ export default function Testimonials({ treatmentId, category }: TestimonialsProp
                   <div className="flex items-center space-x-2.5 sm:space-x-3.5 md:space-x-4 min-w-0 flex-1">
                     <img
                       alt={testimonial.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
                       src={testimonial.image}
                     />

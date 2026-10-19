@@ -26,6 +26,13 @@ export default function LocationsEditor() {
 
   useEffect(() => {
     setConfig(getOurLocationsConfig());
+    const handleUpdate = (e: any) => {
+      if (e.detail) {
+        setConfig(e.detail);
+      }
+    };
+    window.addEventListener('locations_config_changed', handleUpdate);
+    return () => window.removeEventListener('locations_config_changed', handleUpdate);
   }, []);
 
   const handleSave = () => {
@@ -53,13 +60,13 @@ export default function LocationsEditor() {
         ...config.locations,
         {
           id: 'loc-' + Date.now(),
-          name: 'New Custom Consult Room',
-          address: '100 Devonshire Place, London W1G 6BW',
-          hours: 'Mon - Fri: 9:00 AM - 5:00 PM',
-          phone: '+44 (0)20 7935 4444',
+          name: 'New Clinic Consult Room',
+          address: 'London, United Kingdom',
+          hours: 'Mon – Sat: 09:00 AM – 6:00 PM',
+          phone: '+44 (0) 20 8857 2000',
           mapsUrl: 'https://maps.google.com/?q=London',
           bannerType: 'Clinic',
-          imageUrl: 'Diagnostic Consultation Suite'
+          imageUrl: '/assets/1791723050511-Screenshot_2026-07-24_193158.png'
         }
       ]
     });

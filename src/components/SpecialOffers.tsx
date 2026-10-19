@@ -145,6 +145,8 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
                   <div className="w-full flex justify-center relative mt-2 sm:mt-4">
                     <img
                       alt={`${offer.title} Promotional Pack`}
+                      loading="lazy"
+                      decoding="async"
                       className={`h-32 sm:h-42 w-auto object-contain drop-shadow-md transition-transform duration-500 hover:scale-105 ${
                         !isRose ? 'opacity-95' : ''
                       }`}
@@ -253,6 +255,8 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
                     <div className="w-1/2 flex justify-end relative">
                       <img
                         alt={`${offer.title} Promotional Pack`}
+                        loading="lazy"
+                        decoding="async"
                         className={`h-48 xl:h-52 w-auto object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105 ${
                           !isRose ? 'opacity-95' : ''
                         }`}

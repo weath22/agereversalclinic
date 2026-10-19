@@ -506,3 +506,5 @@ export const ShopPageView: React.FC<ShopPageViewProps> = ({
     </div>
   );
 };
+
+export default ShopPageView;

@@ -92,6 +92,8 @@ export default function AwardsShowcase() {
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtB50YnOlyADPuedg2qMzTGO8xfnwOcB7t2-m7_npkuSx1BTCC5UlaJwIdCO6x9ZxKYyMLa3yMXQul9a3Eqcb0D99YLu85cpSvpTEPjnGb1LASgnsPiZNc16H2bbqdwGvMNfakarMRTE7wT9V_i8C6YgRCdQCCE_ym_S8foYNXQtMhkCUQPh0nS01kyTovtyQCHAmrQD15ZBojWP5UyPQs3_I2UV1O9uA38vdL-97__HRpL4P8mETpoJKWggqKuB8N-w"
           alt="Atelier Aura Prestigious Gold Sculptures and Laureate Trophies"
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
         />
         {/* Subtle whitish fade overlay for aesthetic clarity & contrast */}
@@ -134,6 +136,7 @@ export default function AwardsShowcase() {
                     src={imageUrl}
                     alt={award.title}
                     loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                     referrerPolicy="no-referrer"
                   />

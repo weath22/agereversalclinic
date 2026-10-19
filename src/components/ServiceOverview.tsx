@@ -42,6 +42,8 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
               src={backUrl}
               alt={backAlt}
               title={backTitle}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover brightness-[0.98] transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
@@ -54,6 +56,8 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
               src={frontUrl}
               alt={frontAlt}
               title={frontTitle}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover brightness-[0.98] transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />

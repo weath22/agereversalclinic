@@ -76,6 +76,7 @@ export default function SocialVideoShowcase() {
                     loop
                     muted
                     playsInline
+                    preload="none"
                     aria-hidden="true"
                     className="h-full w-full object-cover object-top"
                   >
@@ -176,6 +177,7 @@ export default function SocialVideoShowcase() {
                 autoPlay
                 loop
                 playsInline
+                preload="metadata"
                 muted={isMuted}
                 className="w-full h-full object-cover"
                 src={activeVideo.videoUrl}

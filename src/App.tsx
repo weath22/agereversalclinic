@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import TopBar from './components/TopBar';
 import HotSaleBanner from './components/HotSaleBanner';
 import Header from './components/Header';
@@ -8,38 +8,38 @@ import WhyChooseUs from './components/WhyChooseUs';
 import Services from './components/Services';
 import Treatments from './components/Treatments';
 import Process from './components/Process';
-import FacilityInteriors from './components/FacilityInteriors';
-import BeforeAfterGallery from './components/BeforeAfterGallery';
-import Testimonials from './components/Testimonials';
 import SpecialOffers from './components/SpecialOffers';
-import TeamLeadership from './components/TeamLeadership';
-import TrustBrands from './components/TrustBrands';
-import Accreditations from './components/Accreditations';
-import LatestNews from './components/LatestNews';
-import AwardsShowcase from './components/AwardsShowcase';
-import DoctorAppointment from './components/DoctorAppointment';
-import LocationsAndConsultation from './components/LocationsAndConsultation';
-import SocialVideoShowcase from './components/SocialVideoShowcase';
 import FloatingMenu from './components/FloatingMenu';
 import Footer from './components/Footer';
-import ServicePageView from './components/ServicePageView';
-import ExploreTreatmentsView from './components/ExploreTreatmentsView';
-import NewsArticleView from './components/NewsArticleView';
-import ProfilePage from './components/ProfilePage';
-import AdminDashboard from './components/AdminDashboard';
-import AboutAgeReversal from './components/AboutAgeReversal';
-import { ShopPageView } from './components/shop/ShopPageView';
-import { PricingPageView } from './components/pricing/PricingPageView';
-import { TransformationsPageView } from './components/transformations/TransformationsPageView';
-import { ReviewsPageView } from './components/reviews/ReviewsPageView';
 import ClinicalSEOHead from './components/ClinicalSEOHead';
 import { UniversalCartDrawer } from './components/shop/ShopCartDrawer';
 import { TreatmentCartDrawer } from './components/pricing/TreatmentCartDrawer';
 import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsConfig } from './types';
 import { ShopProduct } from './types/shop';
-import { useEffect } from 'react';
 import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig, getTreatmentDetailsConfig } from './lib/adminStore';
-import { TREATMENT_DETAILS_DB } from './components/treatments/treatmentData';
+import PageLoadingFallback from './components/common/PageLoadingFallback';
+import LazySection from './components/common/LazySection';
+
+// Task 1.1: Dynamic Lazy Imports for Heavy Route Views
+const ServicePageView = lazy(() => import('./components/ServicePageView'));
+const ExploreTreatmentsView = lazy(() => import('./components/ExploreTreatmentsView'));
+const NewsArticleView = lazy(() => import('./components/NewsArticleView'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const AboutAgeReversal = lazy(() => import('./components/AboutAgeReversal'));
+const ShopPageView = lazy(() => import('./components/shop/ShopPageView'));
+const PricingPageView = lazy(() => import('./components/pricing/PricingPageView'));
+const TransformationsPageView = lazy(() => import('./components/transformations/TransformationsPageView'));
+const ReviewsPageView = lazy(() => import('./components/reviews/ReviewsPageView'));
+
+// Task 2.1: Below-the-fold Heavy Section Lazy Imports
+const FacilityInteriors = lazy(() => import('./components/FacilityInteriors'));
+const BeforeAfterGallery = lazy(() => import('./components/BeforeAfterGallery'));
+const Testimonials = lazy(() => import('./components/Testimonials'));
+const LatestNews = lazy(() => import('./components/LatestNews'));
+const AwardsShowcase = lazy(() => import('./components/AwardsShowcase'));
+const SocialVideoShowcase = lazy(() => import('./components/SocialVideoShowcase'));
+const LocationsAndConsultation = lazy(() => import('./components/LocationsAndConsultation'));
 
 export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -116,10 +116,15 @@ export default function App() {
     if (serviceName) {
       setPreferredService(serviceName);
     }
-    const element = document.getElementById('preferred-consultation') || document.getElementById('contact');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('scroll_to_section', { detail: 'preferred-consultation' }));
     }
+    setTimeout(() => {
+      const element = document.getElementById('preferred-consultation') || document.getElementById('contact') || document.getElementById('locations');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 50);
     setActiveSection('preferred-consultation');
   };
 
@@ -270,9 +275,9 @@ export default function App() {
     seoImage = selectedArticle.image;
     seoPath = `#article-${selectedArticle.id}`;
   } else if (selectedTreatment) {
-    const config = getTreatmentDetailsConfig() || TREATMENT_DETAILS_DB;
+    const config = getTreatmentDetailsConfig();
     const lower = selectedTreatment.toLowerCase().trim();
-    const activeTreatment = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
+    const activeTreatment = config ? (config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower)) : null;
     seoTitle = `${selectedTreatment} | Treatment Details & Packages`;
     seoDescription = activeTreatment?.description || `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${selectedTreatment} at Age Reversal Clinics.`;
     seoPath = `#treatment-${selectedTreatment.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
@@ -301,13 +306,19 @@ export default function App() {
   // Resolve matching treatment data if viewing a treatment
   let activeTreatmentData: any = null;
   if (selectedTreatment) {
-    const config = getTreatmentDetailsConfig() || TREATMENT_DETAILS_DB;
-    const lower = selectedTreatment.toLowerCase().trim();
-    activeTreatmentData = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
+    const config = getTreatmentDetailsConfig();
+    if (config) {
+      const lower = selectedTreatment.toLowerCase().trim();
+      activeTreatmentData = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
+    }
   }
 
   if (isAdminOpen) {
-    return <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />;
+    return (
+      <Suspense fallback={<PageLoadingFallback message="Opening Clinical Management Studio..." subMessage="Loading content editors, treatment media assets, and clinic settings" />}>
+        <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -380,7 +391,8 @@ export default function App() {
       />
 
       <main className="flex-grow">
-        {selectedConsultant ? (
+        <Suspense fallback={<PageLoadingFallback />}>
+          {selectedConsultant ? (
           <ProfilePage
             authorName={selectedConsultant}
             onClose={() => setSelectedConsultant(null)}
@@ -512,6 +524,8 @@ export default function App() {
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
                   alt="Sculptural bust with pedestal in monochrome violet"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
                 />
                 {/* Hardware-native alpha fade overlay */}
@@ -537,26 +551,28 @@ export default function App() {
               />
             </div>
 
-            {/* 8. Breathtaking Interactive Before/After Gallery */}
-            <div 
-              className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]"
-              style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
-            >
-              {/* Soft Fade Overlay (Matches Treatment component) */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
-
-              {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
+            {/* Task 2.1: Below-the-Fold LazySection - 8. Interactive Before/After Gallery */}
+            <LazySection id="gallery" alternateIds={['transformations', 'before-after', 'cases']} minHeight="650px" rootMargin="250px 0px" contentLabel="Loading Clinical Transformations...">
               <div 
-                className="absolute inset-0 pointer-events-none opacity-85" 
-                style={{
-                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
-                }}
-              />
+                className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]"
+                style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
+              >
+                {/* Soft Fade Overlay (Matches Treatment component) */}
+                <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
-              <div className="relative z-10">
-                <BeforeAfterGallery />
+                {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
+                <div 
+                  className="absolute inset-0 pointer-events-none opacity-85" 
+                  style={{
+                    background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
+                  }}
+                />
+
+                <div className="relative z-10">
+                  <BeforeAfterGallery />
+                </div>
               </div>
-            </div>
+            </LazySection>
 
             {/* Why Choose Us Section with App's Theme Background */}
             <div 
@@ -568,7 +584,7 @@ export default function App() {
 
               {/* Luxury Ambient Light Blooms (GPU-optimized pre-computed radial gradients) */}
               <div 
-                className="absolute inset-0 pointer-events-none opacity-90"
+                className="absolute inset-0 pointer-events-none opacity-90" 
                 style={{
                   background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 100% 35%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 0% 90%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)'
                 }}
@@ -579,34 +595,53 @@ export default function App() {
               </div>
             </div>       
 
-            {/* 13.6 Awards & Recognition Auto-scrolling Section (Escapes the background for future custom styling) */}
-            <AwardsShowcase />       
+            {/* Task 2.1: Below-the-Fold LazySection - Facility Interiors Gallery */}
+            <LazySection id="facility" alternateIds={['interiors', 'tour']} minHeight="550px" rootMargin="250px 0px" contentLabel="Loading Clinical Facility & Interiors...">
+              <FacilityInteriors />
+            </LazySection>
 
-            {/* Our Locations and Preferred Consultation Sections from HTML request */}
-            <div>
-              <LocationsAndConsultation 
-                preselectedService={preferredService} 
-                onTreatmentClick={(name) => setSelectedTreatment(name)}
-              />
-            </div>
+            {/* Task 2.1: Below-the-Fold LazySection - Patient Testimonials */}
+            <LazySection id="testimonials" alternateIds={['reviews', 'stories']} minHeight="450px" rootMargin="250px 0px" contentLabel="Loading Verified Testimonials...">
+              <Testimonials />
+            </LazySection>
+
+            {/* Task 2.1: Below-the-Fold LazySection - 13.6 Awards & Recognition Showcase */}
+            <LazySection id="awards" alternateIds={['recognition', 'accreditations']} minHeight="220px" rootMargin="250px 0px" contentLabel="Loading Clinical Awards & Honors...">
+              <AwardsShowcase />
+            </LazySection>       
+
+            {/* Task 2.1: Below-the-Fold LazySection - Our Locations and Preferred Consultation */}
+            <LazySection id="locations" alternateIds={['preferred-consultation', 'contact', 'book', 'appointment']} minHeight="750px" rootMargin="300px 0px" contentLabel="Loading Clinic Locations & Consultations...">
+              <div>
+                <LocationsAndConsultation 
+                  preselectedService={preferredService} 
+                  onTreatmentClick={(name) => setSelectedTreatment(name)}
+                />
+              </div>
+            </LazySection>
 
             {/* 10. Limited Time Promotional Banners */}
             <div style={{ contentVisibility: 'auto', containIntrinsicSize: '600px' }}>
               <SpecialOffers onClaimOffer={handleClaimOffer} />
             </div>
 
-            {/* Latest from The London Clinic Section */}
-            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}>
-              <LatestNews onArticleClick={setSelectedArticle} />
-            </div>
+            {/* Task 2.1: Below-the-Fold LazySection - Latest Clinical News */}
+            <LazySection id="news" alternateIds={['latest-news', 'journal']} minHeight="550px" rootMargin="250px 0px" contentLabel="Loading Clinical Journal...">
+              <div style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}>
+                <LatestNews onArticleClick={setSelectedArticle} />
+              </div>
+            </LazySection>
           </>
         )}
+        </Suspense>
       </main>
 
-      {/* 14.5 Social Media Reels / Video Showcase */}
-      <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
-        <SocialVideoShowcase />
-      </div>
+      {/* Task 2.1: Below-the-Fold LazySection - 14.5 Social Media Reels / Video Showcase */}
+      <LazySection id="social-videos" alternateIds={['videos', 'reels']} minHeight="450px" rootMargin="250px 0px" contentLabel="Loading Video Showcase...">
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
+          <SocialVideoShowcase />
+        </div>
+      </LazySection>
 
       {/* 15. Footnotes and Sitemap */}
       <div style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>

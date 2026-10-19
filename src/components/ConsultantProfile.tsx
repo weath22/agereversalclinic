@@ -15,6 +15,8 @@ export default function ConsultantProfile({ authorName, onViewProfile }: Consult
             <img 
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuDddaCi7PsPNTwV7AiEWxAoBSKDc9x7oJb4yFMVO41f99W4wxnnsgcI6AzvsOCf4kSCE8EDCAOgvLeEfBhBAJqjpM00DsGFv8_3x2tYtIe6sFTplMAF9SLyrwFaIWhlfrTIF4wOh7dR5swda_bf9ss9jn1vOr5QOYEgWeCxEODworWQ1wvIOUWEoW4mKN15tNvMocfNZjw7xG4qU0sKbOB2UrkHu3YPQoq-WswAXNY-4y2nGG1mBgta8XV5lBlewVQ242-xoDTjIW1l" 
               alt={authorName}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
               referrerPolicy="no-referrer"
             />

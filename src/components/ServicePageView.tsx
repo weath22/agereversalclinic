@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMediaDefaults } from './treatments/treatmentData';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
-import { getTreatmentDetailsConfig } from '../lib/adminStore';
+import { getTreatmentDetailsConfig, loadSiteCustomizations } from '../lib/adminStore';
 import BeforeAfterComparisonSlider from './BeforeAfterComparisonSlider';
 import SkinLayerTargets from './SkinLayerTargets';
 import PrePostCareGuidelines from './PrePostCareGuidelines';
@@ -25,9 +25,10 @@ interface ServicePageViewProps {
 }
 
 export default function ServicePageView({ treatmentName, onClose, onBook }: ServicePageViewProps) {
-  // Scroll to top on mount
+  // Scroll to top and hydrate deferred customizations on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    loadSiteCustomizations().catch(() => {});
   }, [treatmentName]);
 
   // Resolve matching treatment metadata dynamically using key lookup
