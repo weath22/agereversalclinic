@@ -54,8 +54,6 @@ export default function Process() {
               <div className="aspect-[4/3] rounded-[24px] overflow-hidden mb-8 bg-luxury-secondary border border-luxury-border/50 relative">
                 <img 
                   alt={step.title} 
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]" 
                   src={step.image}
                 />

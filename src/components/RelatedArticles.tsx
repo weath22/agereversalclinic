@@ -47,8 +47,6 @@ export default function RelatedArticles({ currentArticle, onArticleClick, articl
               <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-neutral-100 relative">
                 <img
                   alt={article.title}
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
                   src={article.image}
                   referrerPolicy="no-referrer"

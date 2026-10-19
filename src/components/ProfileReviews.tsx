@@ -51,8 +51,6 @@ export default function ProfileReviews({ config }: ProfileReviewsProps) {
                   <div className="flex items-center space-x-4">
                     <img
                       alt={review.name}
-                      loading="lazy"
-                      decoding="async"
                       className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-sm"
                       src={review.image}
                     />

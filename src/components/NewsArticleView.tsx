@@ -45,8 +45,6 @@ export default function NewsArticleView({ article, onClose, onBookClick, onArtic
             className="w-full h-full object-cover brightness-[0.98] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
             src={article.image}
             alt={article.title}
-            loading="lazy"
-            decoding="async"
             referrerPolicy="no-referrer"
           />
           {/* Subtle overlay for beautiful text blend and professional appearance */}
@@ -158,8 +156,6 @@ export default function NewsArticleView({ article, onClose, onBookClick, onArtic
                 className="w-full h-full object-cover brightness-[0.98] contrast-[1.02]"
                 src={article.image}
                 alt={article.title}
-                loading="lazy"
-                decoding="async"
                 referrerPolicy="no-referrer"
               />
             </div>

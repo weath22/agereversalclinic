@@ -45,7 +45,6 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             loop={heroMedia?.loop ?? true}
             muted={heroMedia?.muted ?? true}
             playsInline
-            preload="metadata"
           />
         ) : (
           <img
@@ -53,8 +52,6 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             src={mediaUrl}
             alt={altText}
             title={seoTitle}
-            loading="lazy"
-            decoding="async"
             referrerPolicy="no-referrer"
           />
         )}
@@ -82,7 +79,6 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             loop={heroMedia?.loop ?? true}
             muted={heroMedia?.muted ?? true}
             playsInline
-            preload="metadata"
           />
         ) : (
           <img
@@ -90,8 +86,6 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             src={mediaUrl}
             alt={altText}
             title={seoTitle}
-            loading="lazy"
-            decoding="async"
             referrerPolicy="no-referrer"
           />
         )}

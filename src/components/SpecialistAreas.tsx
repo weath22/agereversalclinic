@@ -129,7 +129,6 @@ export default function SpecialistAreas({
                       alt={treatment.coverMedia?.altText || treatment.title}
                       title={treatment.coverMedia?.seoTitle || treatment.title}
                       loading="lazy"
-                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                       referrerPolicy="no-referrer"
                     />

@@ -45,8 +45,6 @@ export default function TargetConcerns({ data }: TargetConcernsProps) {
                 src={mediaUrl}
                 alt={altText}
                 title={seoTitle}
-                loading="lazy"
-                decoding="async"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 referrerPolicy="no-referrer"
               />

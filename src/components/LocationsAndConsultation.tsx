@@ -519,7 +519,6 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                       src={displayImage}
                       alt={loc.name}
                       loading="lazy"
-                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                       referrerPolicy="no-referrer"
                       onError={(e) => {

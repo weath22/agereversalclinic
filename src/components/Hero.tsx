@@ -65,7 +65,6 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             className="w-full h-full object-cover object-center brightness-100 contrast-[1.02] opacity-85"
             src={heroConfig?.mediaUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC"}
             alt="Hero Background"
-            decoding="async"
           />
         ) : (
           <video
@@ -75,7 +74,6 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             loop
             muted
             playsInline
-            preload="metadata"
           />
         )}
         {/* Subtle, Reduced White Fade Overlay (Matching SpecialistAreas & Treatments) */}
@@ -95,7 +93,6 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             className="w-full h-full object-cover"
             src={heroConfig?.mediaUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC"}
             alt="Hero Background"
-            decoding="async"
           />
         ) : (
           <video
@@ -105,7 +102,6 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             loop
             muted
             playsInline
-            preload="metadata"
           />
         )}
         {/* Crisp subtle dark overlay for text readability and high-end feel */}
@@ -278,22 +274,16 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             <div className="flex -space-x-3 sm:-space-x-4 shrink-0 group-hover:scale-105 transition-transform">
               <img 
                 alt="Patient 1" 
-                loading="lazy"
-                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4"
               />
               <img 
                 alt="Patient 2" 
-                loading="lazy"
-                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
               />
               <img 
                 alt="Patient 3" 
-                loading="lazy"
-                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs"
               />

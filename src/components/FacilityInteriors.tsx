@@ -63,8 +63,6 @@ export default function FacilityInteriors() {
               <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-silver-100 border border-silver-200/50 relative">
                 <img 
                   alt={facility.title} 
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   src={facility.image}
                 />
@@ -130,8 +128,6 @@ export default function FacilityInteriors() {
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 max-h-[75vh] flex items-center justify-center">
                   <img 
                     alt={FACILITIES[activeLightboxIndex].title}
-                    loading="lazy"
-                    decoding="async"
                     className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
                     src={FACILITIES[activeLightboxIndex].image}
                   />

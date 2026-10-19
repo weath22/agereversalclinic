@@ -76,8 +76,6 @@ export default function Footer() {
             <div className="mb-6 text-center">
               <img
                 alt={`${CLINIC_INFO.clinicName} Emblem`}
-                loading="lazy"
-                decoding="async"
                 className="h-16 w-auto mb-4 mx-auto transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjxq3WzjVonyYRXNXzK5c475rxgNujUJ0Cm9YnyMOaDn-cHHquCFSlgH51zEgGkVPBsUpIyK718k700FLjwoLlBP3LkU7j_c00e92k6nFndooqDaIr1Pr2xUHXnRpgbPjpIbQSLFhkE5dED9HuHvYEKB-plLBBj9pajUERxdBPCkT2TBLr8H_-ge7BRzNzPL6t4Pt06Rq9QLBy1bWAA1Dp6eDlqqEEPLDmxHYzNuCzpZVkp_JYmjp4xLxt5i0S4ge7kG8fwjWUL80z"
               />

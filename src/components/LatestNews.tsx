@@ -96,8 +96,6 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
                 <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-[#faf7f2] relative">
                   <img
                     alt={article.title}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                     src={article.image}
                     referrerPolicy="no-referrer"

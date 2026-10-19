@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-10T07:16:28.094Z",
+  "lastSynced": "2026-10-19T11:30:38.226Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
@@ -206,7 +206,7 @@
   },
   "homepage_locations_config": {
     "heading": "Our Locations",
-    "description": "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
+    "description": "Conveniently located in the heart of London's medical district, providing world-class care across multiple specialized facilities.",
     "locations": [
       {
         "id": "location-1791722960928",
@@ -214,7 +214,7 @@
         "address": "Age Reversal Clinic Grove Park, London",
         "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
         "phone": "+44 (0) 20 88572000",
-        "mapsUrl": "https://maps.google.com/?q=Age+Reversal+Clinic+Grove+Park+London",
+        "mapsUrl": "https://maps.google.com/?q=Age%20Reversal%20Clinic%20Grove%20Park%2C%20London",
         "bannerType": "Clinic",
         "imageUrl": "/assets/1791723050511-Screenshot_2026-07-24_193158.png"
       },
@@ -225,7 +225,7 @@
         "hours": "Mon – Sat: 09:00 – 19:00",
         "phone": "+44 (0) 20 8857 2000",
         "mapsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
-        "bannerType": "Building",
+        "bannerType": "Clinic",
         "imageUrl": "/assets/1791729403362-arc-logo__1___2_.webp"
       }
     ]

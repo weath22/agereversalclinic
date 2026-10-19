@@ -199,8 +199,6 @@ export default function DoctorAppointment({ preselectedService, onSuccess, onTre
               <div className="aspect-[4/5] rounded-2xl overflow-hidden shadow-xl border-4 border-white relative group">
                 <img
                   alt="Dr. Faith Nzurike in clinic"
-                  loading="lazy"
-                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDddaCi7PsPNTwV7AiEWxAoBSKDc9x7oJb4yFMVO41f99W4wxnnsgcI6AzvsOCf4kSCE8EDCAOgvLeEfBhBAJqjpM00DsGFv8_3x2tYtIe6sFTplMAF9SLyrwFaIWhlfrTIF4wOh7dR5swda_bf9ss9jn1vOr5QOYEgWeCxEODworWQ1wvIOUWEoW4mKN15tNvMocfNZjw7xG4qU0sKbOB2UrkHu3YPQoq-WswAXNY-4y2nGG1mBgta8XV5lBlewVQ242-xoDTjIW1l"
                 />

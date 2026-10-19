@@ -21,8 +21,6 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
             className="w-full h-full object-cover object-center brightness-[0.6]"
             src="https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY"
             alt="Age Reversal Clinic Reception Lounge"
-            loading="lazy"
-            decoding="async"
             referrerPolicy="no-referrer"
           />
           {/* Dark gradient overlay for mobile text legibility */}
@@ -42,8 +40,6 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
             className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
             src="https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY"
             alt="Age Reversal Clinic Reception Lounge"
-            loading="lazy"
-            decoding="async"
             referrerPolicy="no-referrer"
           />
           {/* Subtle overlay for beautiful text blend */}
