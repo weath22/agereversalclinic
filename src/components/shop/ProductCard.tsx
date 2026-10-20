@@ -9,16 +9,32 @@ interface ProductCardProps {
   onAddToCart: (product: ShopProduct) => void;
 }
 
+function normalizeProductUrl(url?: string): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+  if (
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:')
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/')) {
+    return trimmed;
+  }
+  return `/${trimmed}`;
+}
+
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onViewProduct,
   onAddToCart,
 }) => {
-  const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(!product.image);
 
   useEffect(() => {
-    setIsLoaded(false);
     setHasError(!product.image);
   }, [product.image]);
 
@@ -36,15 +52,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             onClick={() => onViewProduct(product)}
             className="relative h-44 sm:h-48 md:h-80 w-full overflow-hidden bg-gradient-to-b from-[#fbf9f6] via-white to-[#f8f5f0] rounded-2xl border border-[#D8C2A3]/30 cursor-pointer shadow-xs transition-all duration-300 flex items-center justify-center"
           >
-            {/* Outline Logo Placeholder while image is loading */}
-            {!isLoaded && !hasError && (
-              <div className="absolute inset-0 flex items-center justify-center z-0">
-                <LogoOutlineSkeleton size="md" variant="gold" animate={true} />
-              </div>
-            )}
-
-            {/* Permanent Outline Logo Placeholder if image is missing or failed to load (No generated images) */}
-            {hasError && (
+            {/* Outline Logo Placeholder if image is missing or failed to load */}
+            {(!product.image || hasError) ? (
               <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
                 <LogoOutlineSkeleton
                   size="md"
@@ -54,18 +63,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   text="Medical Skincare"
                 />
               </div>
-            )}
-
-            {/* High-Resolution Product Image */}
-            {product.image && !hasError && (
+            ) : (
               <img
                 alt={product.name}
                 loading="lazy"
-                className={`mx-auto h-full w-full object-contain p-2.5 sm:p-4 md:p-6 duration-300 group-hover:scale-105 transition-all ${
-                  isLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                src={product.image}
-                onLoad={() => setIsLoaded(true)}
+                className="mx-auto h-full w-full object-contain p-2.5 sm:p-4 md:p-6 duration-300 group-hover:scale-105 transition-all opacity-100"
+                src={normalizeProductUrl(product.image)}
                 onError={() => setHasError(true)}
               />
             )}

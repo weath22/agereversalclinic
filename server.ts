@@ -23,10 +23,13 @@ for (const dir of [uploadsDir, publicAssetsDir, srcAssetsDir]) {
   }
 }
 
-// Serve uploaded and static assets
+// Serve uploaded and static assets across all common directory formats
 app.use('/uploads', express.static(uploadsDir));
 app.use('/assets', express.static(publicAssetsDir));
 app.use('/assets', express.static(srcAssetsDir));
+app.use('/src/assets/images', express.static(srcAssetsDir));
+app.use('/src/assets', express.static(path.resolve(__dirname, 'src/assets')));
+app.use('/images', express.static(srcAssetsDir));
 app.use(express.static(path.resolve(__dirname, 'public')));
 
 // Path to site customizations and clinic info files
