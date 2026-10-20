@@ -6,7 +6,7 @@ import {
   PricingCategory,
   PricingPackage,
 } from '../../data/treatmentPricing';
-import { getTreatmentPricingData, getTreatmentDetailsConfig, fetchRemoteTreatmentPricingData } from '../../lib/adminStore';
+import { getTreatmentPricingData, fetchRemoteTreatmentPricingData } from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
 import { TreatmentVisualBanner } from './TreatmentVisualBanner';
@@ -194,46 +194,26 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Helper to merge pricing data with custom treatment details (coverMedia and imageUrl)
-  const getMergedPricingData = () => {
-    const rawPricing = getTreatmentPricingData();
-    const detailsDb = getTreatmentDetailsConfig();
-    if (!detailsDb) return rawPricing;
-
-    return rawPricing.map(item => {
-      const match = detailsDb[item.id] || Object.values(detailsDb).find((d: any) => 
-        (d.id && d.id.toLowerCase() === item.id.toLowerCase()) || 
-        (d.title && d.title.toLowerCase() === item.title.toLowerCase())
-      );
-      if (match && (match.coverMedia?.url || match.imageUrl)) {
-        return {
-          ...item,
-          image: match.coverMedia?.url || match.imageUrl || item.image,
-          coverMedia: match.coverMedia || item.coverMedia
-        };
-      }
-      return item;
-    });
-  };
-
   // Dynamic treatment pricing data initialized from admin store with live update subscription
-  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getMergedPricingData());
+  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
 
   useEffect(() => {
     const refreshPricing = () => {
-      setPricingData(getMergedPricingData());
+      setPricingData(getTreatmentPricingData());
     };
 
-    // On mount, also pull remote server customizations (siteCustomizations.json) so deployed clients get the latest edits!
-    fetchRemoteTreatmentPricingData().then(() => {
-      refreshPricing();
+    // On mount, pull remote server customizations (siteCustomizations.json) so deployed clients get the latest edits!
+    fetchRemoteTreatmentPricingData().then((remoteData) => {
+      if (remoteData && Array.isArray(remoteData) && remoteData.length > 0) {
+        setPricingData(remoteData);
+      } else {
+        refreshPricing();
+      }
     }).catch(() => {});
 
     window.addEventListener('treatment_pricing_updated', refreshPricing);
-    window.addEventListener('treatment_details_updated', refreshPricing);
     return () => {
       window.removeEventListener('treatment_pricing_updated', refreshPricing);
-      window.removeEventListener('treatment_details_updated', refreshPricing);
     };
   }, []);
 

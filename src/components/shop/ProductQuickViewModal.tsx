@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShopProduct } from '../../types/shop';
 import { X, ShoppingBag, Plus, Minus, Star, ShieldCheck, Truck, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 
 interface ProductQuickViewModalProps {
   product: ShopProduct | null;
@@ -15,6 +16,13 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
   onAddToCart,
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(!product?.image);
+  }, [product?.image]);
 
   if (!product) return null;
 
@@ -53,12 +61,38 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({
           </button>
 
           {/* Left: Product Image */}
-          <div className="w-full md:w-1/2 bg-silver-100 p-6 sm:p-8 flex items-center justify-center relative overflow-hidden">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="max-h-64 sm:max-h-80 w-auto object-contain drop-shadow-md"
-            />
+          <div className="w-full md:w-1/2 bg-silver-100 p-6 sm:p-8 flex items-center justify-center relative overflow-hidden min-h-[220px]">
+            {/* Outline Logo Placeholder while image is loading */}
+            {!isLoaded && !hasError && (
+              <div className="absolute inset-0 flex items-center justify-center z-0">
+                <LogoOutlineSkeleton size="lg" variant="gold" animate={true} />
+              </div>
+            )}
+
+            {/* Permanent Outline Logo Placeholder if image is missing or failed (No generated images) */}
+            {hasError && (
+              <div className="w-full h-full flex items-center justify-center p-4 text-center z-10">
+                <LogoOutlineSkeleton
+                  size="lg"
+                  variant="gold"
+                  animate={false}
+                  showText={true}
+                  text="Medical Skincare"
+                />
+              </div>
+            )}
+
+            {product.image && !hasError && (
+              <img
+                src={product.image}
+                alt={product.name}
+                className={`max-h-64 sm:max-h-80 w-auto object-contain drop-shadow-md transition-opacity duration-300 ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setIsLoaded(true)}
+                onError={() => setHasError(true)}
+              />
+            )}
             {product.discountBadge && (
               <div className="absolute left-4 top-4 z-10 flex items-center justify-center rounded-full bg-[#EA014A] text-center font-sans font-bold leading-tight text-white antialiased h-14 w-14 text-xs shadow-md">
                 <span dangerouslySetInnerHTML={{ __html: product.discountBadge.replace('\n', '<br>') }} />

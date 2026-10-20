@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShopProduct } from '../../types/shop';
 import { ShoppingBag } from 'lucide-react';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 
 interface ProductCardProps {
   product: ShopProduct;
@@ -13,6 +14,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onViewProduct,
   onAddToCart,
 }) => {
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(!product.image);
+  }, [product.image]);
+
   const isVoucher = product.type === 'Voucher';
   const priceParts = product.price.toFixed(2).split('.');
   const wholePrice = priceParts[0];
@@ -25,14 +34,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Image Box with Hover Overlay & Discount Badge */}
           <div
             onClick={() => onViewProduct(product)}
-            className="relative h-44 sm:h-48 md:h-80 w-full overflow-hidden bg-white/95 rounded-2xl border border-[#D8C2A3]/30 cursor-pointer shadow-xs transition-all duration-300"
+            className="relative h-44 sm:h-48 md:h-80 w-full overflow-hidden bg-gradient-to-b from-[#fbf9f6] via-white to-[#f8f5f0] rounded-2xl border border-[#D8C2A3]/30 cursor-pointer shadow-xs transition-all duration-300 flex items-center justify-center"
           >
-            <img
-              alt={product.name}
-              loading="lazy"
-              className="mx-auto h-full w-full object-contain p-2.5 sm:p-4 md:p-6 duration-300 group-hover:scale-105 transition-transform"
-              src={product.image}
-            />
+            {/* Outline Logo Placeholder while image is loading */}
+            {!isLoaded && !hasError && (
+              <div className="absolute inset-0 flex items-center justify-center z-0">
+                <LogoOutlineSkeleton size="md" variant="gold" animate={true} />
+              </div>
+            )}
+
+            {/* Permanent Outline Logo Placeholder if image is missing or failed to load (No generated images) */}
+            {hasError && (
+              <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
+                <LogoOutlineSkeleton
+                  size="md"
+                  variant="gold"
+                  animate={false}
+                  showText={true}
+                  text="Medical Skincare"
+                />
+              </div>
+            )}
+
+            {/* High-Resolution Product Image */}
+            {product.image && !hasError && (
+              <img
+                alt={product.name}
+                loading="lazy"
+                className={`mx-auto h-full w-full object-contain p-2.5 sm:p-4 md:p-6 duration-300 group-hover:scale-105 transition-all ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                src={product.image}
+                onLoad={() => setIsLoaded(true)}
+                onError={() => setHasError(true)}
+              />
+            )}
 
             {/* Hover 'View product' CTA overlay */}
             <div className="absolute left-0 top-0 h-full w-full pointer-events-none">

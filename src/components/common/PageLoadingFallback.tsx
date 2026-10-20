@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { LogoOutlineSkeleton } from './LogoOutlineSkeleton';
 
 interface PageLoadingFallbackProps {
   message?: string;
@@ -17,19 +17,8 @@ export const PageLoadingFallback: React.FC<PageLoadingFallbackProps> = ({
       aria-live="polite"
       aria-label={message}
     >
-      <div className="relative flex items-center justify-center mb-6">
-        {/* Outer glowing pulsing orb */}
-        <div className="absolute w-20 h-20 rounded-full bg-rose-gold/15 blur-xl animate-pulse" />
-        
-        {/* Spinning luxury double-ring border */}
-        <div className="w-16 h-16 rounded-full border-2 border-rose-gold/20 border-t-rose-gold border-r-rose-gold/60 animate-spin" />
-        
-        {/* Central emblem */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1b1c1d] to-[#2d2e30] border border-rose-gold/30 shadow-md flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-rose-gold animate-pulse" />
-          </div>
-        </div>
+      <div className="relative flex items-center justify-center mb-4">
+        <LogoOutlineSkeleton size="lg" variant="gold" animate={true} />
       </div>
 
       {/* Typography */}

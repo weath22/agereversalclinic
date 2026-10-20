@@ -1,31 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { TreatmentPricingItem } from '../../data/treatmentPricing';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 
 interface PricingCardProps {
   treatment: TreatmentPricingItem;
   onChoosePackage: (treatment: TreatmentPricingItem) => void;
 }
 
-const CLINICAL_PROCEDURE_FALLBACK = "https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ";
-
 export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const targetImage = treatment.coverMedia?.url || treatment.image || CLINICAL_PROCEDURE_FALLBACK;
-  const [imgSrc, setImgSrc] = useState<string>(targetImage);
+  const targetImage = treatment.image || treatment.coverMedia?.url || '';
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
-    setImgSrc(treatment.coverMedia?.url || treatment.image || CLINICAL_PROCEDURE_FALLBACK);
-  }, [treatment.coverMedia?.url, treatment.image]);
+    setIsLoaded(false);
+    setHasError(!targetImage);
+  }, [targetImage]);
 
   const handleImageError = () => {
-    // If custom image failed (e.g. broken local upload path in deployed environment), fallback gracefully
-    if (imgSrc !== treatment.image && treatment.image) {
-      setImgSrc(treatment.image);
-    } else {
-      setImgSrc(CLINICAL_PROCEDURE_FALLBACK);
-    }
+    setHasError(true);
   };
 
   const altLabel = treatment.coverMedia?.altText || `${treatment.title} Treatment at Age Reversal Clinic London`;
@@ -39,23 +35,49 @@ export const PricingCard: React.FC<PricingCardProps> = ({
           role="button"
           onClick={() => onChoosePackage(treatment)}
         >
-          <div className="h-44 sm:h-72 bg-noir-900 md:h-80 overflow-hidden">
-            <img
-              alt={altLabel}
-              title={seoTitle}
-              loading="lazy"
-              width="800"
-              height="800"
-              decoding="async"
-              data-nimg="1"
-              className="h-full w-full object-cover opacity-60 duration-300 sm:group-hover:opacity-80"
-              src={imgSrc}
-              onError={handleImageError}
-              style={{ color: 'transparent' }}
-              referrerPolicy="no-referrer"
-            />
+          <div className="h-44 sm:h-72 bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] md:h-80 overflow-hidden relative flex items-center justify-center">
+            {/* Outline Logo Placeholder while image is downloading */}
+            {!isLoaded && !hasError && (
+              <div className="absolute inset-0 flex items-center justify-center z-0">
+                <LogoOutlineSkeleton size="lg" variant="gold" animate={true} />
+              </div>
+            )}
+
+            {/* Permanent Outline Logo Placeholder if no image exists or loading failed (No generated images) */}
+            {hasError && (
+              <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
+                <LogoOutlineSkeleton
+                  size="lg"
+                  variant="gold"
+                  animate={false}
+                  showText={true}
+                  text="Age Reversal Protocol"
+                />
+              </div>
+            )}
+
+            {/* High-Resolution Clinical Photograph */}
+            {targetImage && !hasError && (
+              <img
+                alt={altLabel}
+                title={seoTitle}
+                loading="lazy"
+                width="800"
+                height="800"
+                decoding="async"
+                data-nimg="1"
+                className={`h-full w-full object-cover transition-opacity duration-500 sm:group-hover:opacity-85 ${
+                  isLoaded ? 'opacity-60' : 'opacity-0'
+                }`}
+                src={targetImage}
+                onLoad={() => setIsLoaded(true)}
+                onError={handleImageError}
+                style={{ color: 'transparent' }}
+                referrerPolicy="no-referrer"
+              />
+            )}
           </div>
-          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2">
+          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-10">
             <p className="no-margin text-xs sm:text-sm text-white md:text-lg font-medium">
               {treatment.title}
             </p>

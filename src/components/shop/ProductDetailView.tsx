@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShopProduct } from '../../types/shop';
 import { Share2, Check } from 'lucide-react';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 
 interface ProductDetailViewProps {
   product: ShopProduct;
@@ -17,6 +18,13 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(!product.image);
+  }, [product.image]);
   const isVoucher = product.type === 'Voucher';
 
   const priceParts = product.price.toFixed(2).split('.');
@@ -127,17 +135,43 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             {/* Left 7 Columns: Product Image Container with 30% OFF Badge */}
             <div className="lg:col-span-7 lg:h-auto">
               <div className="relative h-auto max-h-96 w-full overflow-hidden lg:sticky lg:top-32 lg:h-[600px] lg:max-h-fit bg-white/90 backdrop-blur-md rounded-3xl border border-[#D8C2A3]/45 shadow-[0_15px_40px_-10px_rgba(216,194,163,0.30)] flex items-center justify-center p-4">
-                <img
-                  alt={product.name}
-                  loading="lazy"
-                  width={800}
-                  height={800}
-                  decoding="async"
-                  data-nimg="1"
-                  className="mx-auto h-full max-h-96 w-full object-contain object-top lg:max-h-fit drop-shadow-sm"
-                  src={product.image}
-                  style={{ color: 'transparent' }}
-                />
+                {/* Outline Logo Placeholder while image is downloading */}
+                {!isLoaded && !hasError && (
+                  <div className="absolute inset-0 flex items-center justify-center z-0">
+                    <LogoOutlineSkeleton size="xl" variant="gold" animate={true} />
+                  </div>
+                )}
+
+                {/* Permanent Outline Logo Placeholder if image is missing or error */}
+                {hasError && (
+                  <div className="w-full h-full min-h-[300px] flex items-center justify-center p-8 text-center z-10">
+                    <LogoOutlineSkeleton
+                      size="xl"
+                      variant="gold"
+                      animate={false}
+                      showText={true}
+                      text="Medical Skincare Formulation"
+                    />
+                  </div>
+                )}
+
+                {product.image && !hasError && (
+                  <img
+                    alt={product.name}
+                    loading="lazy"
+                    width={800}
+                    height={800}
+                    decoding="async"
+                    data-nimg="1"
+                    className={`mx-auto h-full max-h-96 w-full object-contain object-top lg:max-h-fit drop-shadow-sm transition-opacity duration-300 ${
+                      isLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    src={product.image}
+                    onLoad={() => setIsLoaded(true)}
+                    onError={() => setHasError(true)}
+                    style={{ color: 'transparent' }}
+                  />
+                )}
 
                 {(product.discountBadge || product.originalPrice) && (
                   <div className="absolute right-[10%] top-[2%] z-20 flex items-center justify-center rounded-full bg-[#EA014A] text-center font-Lato font-bold leading-tight text-white antialiased h-20 w-20 text-xl md:h-32 md:w-32 md:text-3xl shadow-lg">
