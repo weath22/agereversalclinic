@@ -149,7 +149,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Lip Flip (Botox)",
     "category": "Face & Injectables",
     "description": "Subtle relaxation of the superficial orbicularis oris muscle along the vermilion border, gently rolling the top lip upward to create fuller presence without filler volume.",
-    "image": "/assets/treatments/botox-lip-flip.jpeg",
+    "image": "/assets/treatments/botox-lip-flip.webp",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "15 Mins",
@@ -170,14 +170,14 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
         ]
       }
     ],
-    "updatedAt": 1792586510892
+    "updatedAt": 1792587453165
   },
   {
     "id": "botox-puppet-lines",
     "title": "Puppet Lines (DAO Muscle)",
     "category": "Face & Injectables",
     "description": "Targeted relaxation of the depressor anguli oris (DAO) muscle to lift downward-pulling mouth corners, eradicating resting melancholic or downturned expressions.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-puppet-lines.webp",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -196,14 +196,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "2-week check"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792587618445
   },
   {
     "id": "botox-1-area",
     "title": "Anti-Wrinkle: 1 Area Full Treatment",
     "category": "Face & Injectables",
     "description": "Full clinical dose targeting one major dynamic upper facial zone (Frown Glabella, Horizontal Forehead, or Bilateral Crow’s Feet) for smooth, rested skin.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-1-area.jpg",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -222,14 +223,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Complimentary 2-week top-up"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792587658902
   },
   {
     "id": "botox-chin-dimpling",
     "title": "Chin Dimpling (Pebble / Orange Peel Chin)",
     "category": "Face & Injectables",
     "description": "Relaxes hyperactive mentalis muscle fibers to smooth golf-ball dimpling, crease tethering, and lower chin strain during speech and expression.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-chin-dimpling.png",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -248,14 +250,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "2-week review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588047128
   },
   {
     "id": "botox-frown-lines",
     "title": "Frown Lines (Glabella \"11\" Lines)",
     "category": "Face & Injectables",
     "description": "Direct dosing of the corrugator and procerus complex between the eyebrows to erase deep vertical furrow creases and relieve habitual brow tension.",
-    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-frown-lines.webp",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -274,14 +277,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Complimentary 2-week check"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792587992899
   },
   {
     "id": "botox-forehead",
     "title": "Forehead Lines Anti-Wrinkle",
     "category": "Face & Injectables",
     "description": "Expert frontalis muscle dosing that irons out horizontal expression ripples while balancing brow height to prevent heaviness or dropping.",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-forehead.jpg",
     "startingPrice": 230,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -300,14 +304,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "2-week review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588095434
   },
   {
     "id": "botox-2-areas",
     "title": "Anti-Wrinkle: 2 Areas Treatment",
     "category": "Face & Injectables",
     "description": "Simultaneous treatment of two complementary zones (e.g. Frown + Forehead or Frown + Crow’s Feet) for cohesive upper facial rejuvenation.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-2-areas.jpg",
     "startingPrice": 250,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -327,14 +332,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Complimentary 2-week follow-up and top-up"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588132701
   },
   {
     "id": "botox-3-areas",
     "title": "Anti-Wrinkle: 3 Areas (Complete Upper Face)",
     "category": "Face & Injectables",
     "description": "The definitive gold-standard upper-face anti-ageing protocol smoothing Forehead, Glabella Frown Lines, and Crow’s Feet in one seamless appointment.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-3-areas.avif",
     "startingPrice": 280,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -356,14 +362,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Complimentary 2-week review and refinement"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588532552
   },
   {
     "id": "botox-neck-bands",
     "title": "Neck Bands (Nefertiti Lift)",
     "category": "Face & Injectables",
     "description": "Relaxes downward-pulling platysmal bands along the anterior neck and mandibular border, sharpening jawline definition and smoothing horizontal neck rings.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-neck-bands.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -382,14 +389,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "2-week review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588551739
   },
   {
     "id": "botox-jaw-slimming",
     "title": "Jaw Slimming (Masseter Reduction / Bruxism)",
     "category": "Face & Injectables",
     "description": "High-dose neurotoxin targeting hypertrophic masseter chewing muscles to slim a square lower face into a refined V-shape while relieving teeth grinding.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-jaw-slimming.png",
     "startingPrice": 320,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -409,14 +417,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Bruxism relief review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588577977
   },
   {
     "id": "botox-extended-neck-bands",
     "title": "Extended Neck Bands Therapy",
     "category": "Face & Injectables",
     "description": "Comprehensive multi-vector platysmal therapy across the anterior, lateral, and lower neck borders to smooth intense vertical cords and crepey bands.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/botox-extended-neck-bands.jpg",
     "startingPrice": 370,
     "currency": "£",
     "procedureTime": "35 Mins",
@@ -435,14 +444,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Extended follow-up"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588591017
   },
   {
     "id": "filler-cheeks-soft",
     "title": "Cheek - Soft Tissue Volumisation (1ml)",
     "category": "Face & Injectables",
     "description": "Subtle mid-face volume restoration using cross-linked hyaluronic acid to lift tired apple cheeks and gently soften deep nasolabial folds.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-cheeks-soft.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -461,14 +471,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Post-procedure review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588741436
   },
   {
     "id": "filler-cleavage-lines",
     "title": "Cleavage Lines (Décolletage) Filler (1ml)",
     "category": "Face & Injectables",
     "description": "Smooths vertical sleep, side-sleeping, and sun-damage creases across the central chest and cleavage using delicate skin-smoothing hyaluronic micro-papules.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-cleavage-lines.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -487,14 +498,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Arnica soothing cream"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588776439
   },
   {
     "id": "filler-lips",
     "title": "Lip Enhancement (1ml Premium Filler)",
     "category": "Face & Injectables",
     "description": "Bespoke architectural lip shaping emphasizing vermilion border crispness, Cupid’s bow contouring, pillowy volume, and profound deep moisture.",
-    "image": "https://images.unsplash.com/photo-1588515724527-074a7a56616c?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-lips.jpeg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -516,14 +528,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Post-care review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588859178
   },
   {
     "id": "filler-rhinoplasty",
     "title": "Non-Surgical Rhinoplasty (Liquid Nose Job)",
     "category": "Face & Injectables",
     "description": "Strategic micro-droplet placement of ultra-dense cohesive filler to camouflage dorsal humps, lift drooping tips, and straighten the nasal bridge profile without surgery.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-rhinoplasty.webp",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -543,14 +556,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "2-week physician refinement"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588925974
   },
   {
     "id": "filler-nose-to-mouth",
     "title": "Nose to Mouth Lines (Nasolabial Folds 1ml)",
     "category": "Face & Injectables",
     "description": "Softens deep smile creases running from the nostril corners down to mouth borders, restoring a rested, youthful midface profile.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-nose-to-mouth.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -570,14 +584,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Follow-up"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588948128
   },
   {
     "id": "filler-tear-trough",
     "title": "Tear Trough & Under-Eye Hollows (1ml)",
     "category": "Face & Injectables",
     "description": "Brightens tired dark circles and fills hollow sunken under-eye troughs using ultra-gentle low-hydrophilic hyaluronic acid via blunt cannula safety protocol.",
-    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-tear-trough.png",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -597,7 +612,8 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Doctor review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792588975734
   },
   {
     "id": "filler-temples",
