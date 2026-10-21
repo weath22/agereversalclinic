@@ -21,6 +21,7 @@ export type TreatmentCategory =
   | 'IV Drip Lounge & Wellness';
 
 import { TreatmentMediaItem } from '../types';
+export { getTreatmentImagePath, getTreatmentCardImage, handleTreatmentImageError } from '../utils/treatmentImageHelper';
 
 export interface TreatmentPricingItem {
   id: string;

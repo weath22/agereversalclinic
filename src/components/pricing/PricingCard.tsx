@@ -1,53 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { TreatmentPricingItem } from '../../data/treatmentPricing';
 import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
+import { getTreatmentImagePath } from '../../utils/treatmentImageHelper';
 
 interface PricingCardProps {
   treatment: TreatmentPricingItem;
   onChoosePackage: (treatment: TreatmentPricingItem) => void;
 }
 
-function normalizeUrl(url?: string): string {
-  if (!url || typeof url !== 'string') return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('//')) return `https:${trimmed}`;
-  if (
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('data:') ||
-    trimmed.startsWith('blob:')
-  ) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('/')) {
-    return trimmed;
-  }
-  return `/${trimmed}`;
-}
-
 export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const primaryUrl = normalizeUrl(treatment.image);
-  const secondaryUrl = normalizeUrl(treatment.coverMedia?.url);
-  const initialImage = primaryUrl || secondaryUrl;
-
-  const [activeImage, setActiveImage] = useState<string>(initialImage);
-  const [hasFailed, setHasFailed] = useState<boolean>(!initialImage);
+  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(idBasedUrl);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
-    const next = primaryUrl || secondaryUrl;
-    setActiveImage(next);
-    setHasFailed(!next);
-  }, [primaryUrl, secondaryUrl]);
+    setIsLoaded(false);
+    setHasError(false);
+    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt));
+  }, [treatment.id, treatment.image, (treatment as any).updatedAt]);
 
-  const handleImageError = () => {
-    // If primary failed and secondary is available and different, try secondary
-    if (activeImage === primaryUrl && secondaryUrl && secondaryUrl !== primaryUrl) {
-      setActiveImage(secondaryUrl);
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const fallback = treatment.image || treatment.coverMedia?.url || '';
+    if (fallback && currentImageSrc !== fallback) {
+      setCurrentImageSrc(fallback);
     } else {
-      setHasFailed(true);
+      setHasError(true);
     }
   };
 
@@ -63,8 +44,15 @@ export const PricingCard: React.FC<PricingCardProps> = ({
           onClick={() => onChoosePackage(treatment)}
         >
           <div className="h-44 sm:h-72 bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] md:h-80 overflow-hidden relative flex items-center justify-center">
-            {/* Outline Logo Placeholder if no image exists or loading failed */}
-            {(!activeImage || hasFailed) ? (
+            {/* Outline Logo Placeholder while image is downloading */}
+            {!isLoaded && !hasError && (
+              <div className="absolute inset-0 flex items-center justify-center z-0">
+                <LogoOutlineSkeleton size="lg" variant="gold" animate={true} />
+              </div>
+            )}
+
+            {/* Permanent Outline Logo Placeholder if no image exists or loading failed (No generated images) */}
+            {hasError && (
               <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
                 <LogoOutlineSkeleton
                   size="lg"
@@ -74,7 +62,10 @@ export const PricingCard: React.FC<PricingCardProps> = ({
                   text="Age Reversal Protocol"
                 />
               </div>
-            ) : (
+            )}
+
+            {/* High-Resolution Clinical Photograph */}
+            {!hasError && (
               <img
                 alt={altLabel}
                 title={seoTitle}
@@ -83,8 +74,11 @@ export const PricingCard: React.FC<PricingCardProps> = ({
                 height="800"
                 decoding="async"
                 data-nimg="1"
-                className="h-full w-full object-cover opacity-60 duration-300 sm:group-hover:opacity-85 transition-opacity"
-                src={activeImage}
+                className={`h-full w-full object-cover transition-opacity duration-500 sm:group-hover:opacity-85 ${
+                  isLoaded ? 'opacity-60' : 'opacity-0'
+                }`}
+                src={currentImageSrc}
+                onLoad={() => setIsLoaded(true)}
                 onError={handleImageError}
                 style={{ color: 'transparent' }}
                 referrerPolicy="no-referrer"

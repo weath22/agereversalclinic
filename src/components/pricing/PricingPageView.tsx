@@ -6,7 +6,7 @@ import {
   PricingCategory,
   PricingPackage,
 } from '../../data/treatmentPricing';
-import { getTreatmentPricingData, getTreatmentDetailsConfig, fetchRemoteTreatmentPricingData } from '../../lib/adminStore';
+import { getTreatmentPricingData, fetchRemoteTreatmentPricingData } from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
 import { TreatmentVisualBanner } from './TreatmentVisualBanner';
@@ -194,63 +194,26 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Helper to resolve pricing data cross-referencing any custom images saved in clinical_treatment_details or pricing data
-  const getResolvedPricingData = (): TreatmentPricingItem[] => {
-    const rawPricing = getTreatmentPricingData();
-    const detailsDb = getTreatmentDetailsConfig();
-    if (!detailsDb || typeof detailsDb !== 'object') {
-      return rawPricing;
-    }
-
-    return rawPricing.map((item) => {
-      const match =
-        detailsDb[item.id] ||
-        Object.values(detailsDb).find(
-          (d: any) =>
-            (d?.id && d.id.toLowerCase() === item.id.toLowerCase()) ||
-            (d?.title && d.title.toLowerCase() === item.title.toLowerCase())
-        );
-
-      if (match) {
-        const customUrl = match.coverMedia?.url || match.imageUrl;
-        // If a custom image was assigned in Treatment Media Studio or Asset Library, ensure it displays on the card
-        if (customUrl && typeof customUrl === 'string' && customUrl.trim()) {
-          return {
-            ...item,
-            image: customUrl,
-            coverMedia: match.coverMedia || item.coverMedia
-          };
-        }
-      }
-
-      return item;
-    });
-  };
-
   // Dynamic treatment pricing data initialized from admin store with live update subscription
-  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getResolvedPricingData());
+  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
 
   useEffect(() => {
     const refreshPricing = () => {
-      setPricingData(getResolvedPricingData());
+      setPricingData(getTreatmentPricingData());
     };
 
     // On mount, pull remote server customizations (siteCustomizations.json) so deployed clients get the latest edits!
     fetchRemoteTreatmentPricingData().then((remoteData) => {
       if (remoteData && Array.isArray(remoteData) && remoteData.length > 0) {
-        setPricingData(getResolvedPricingData());
+        setPricingData(remoteData);
       } else {
         refreshPricing();
       }
-    }).catch(() => {
-      refreshPricing();
-    });
+    }).catch(() => {});
 
     window.addEventListener('treatment_pricing_updated', refreshPricing);
-    window.addEventListener('treatment_details_updated', refreshPricing);
     return () => {
       window.removeEventListener('treatment_pricing_updated', refreshPricing);
-      window.removeEventListener('treatment_details_updated', refreshPricing);
     };
   }, []);
 

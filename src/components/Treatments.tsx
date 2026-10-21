@@ -2,6 +2,7 @@ import { TREATMENTS, TREATMENT_IMAGES } from '../data';
 import { motion } from 'motion/react';
 import { Calendar } from 'lucide-react';
 import { TreatmentsConfig } from '../types';
+import { getTreatmentImagePath } from '../utils/treatmentImageHelper';
 
 interface TreatmentsProps {
   onBookClick: () => void;
@@ -120,7 +121,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Radiance Protocol" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[0]}
+                  src={getTreatmentImagePath('radiance-protocol', TREATMENT_IMAGES[0])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[0];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">DERMAL CARE</span>
@@ -140,7 +144,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Volume Definition" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[1]}
+                  src={getTreatmentImagePath('volume-definition', TREATMENT_IMAGES[1])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[1];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">FACIAL SCULPTING</span>
@@ -160,7 +167,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Symmetry Mastered" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[2]}
+                  src={getTreatmentImagePath('symmetry-mastered', TREATMENT_IMAGES[2])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[2];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BROW ARCHITECTURE</span>
@@ -180,7 +190,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Anatomical Precision" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[3]}
+                  src={getTreatmentImagePath('anatomical-precision', TREATMENT_IMAGES[3])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[3];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BODY CONTOURING</span>
@@ -200,7 +213,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Lash Extension Art" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[4]}
+                  src={getTreatmentImagePath('lash-extension-art', TREATMENT_IMAGES[4])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[4];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">OCULAR BEAUTY</span>
@@ -220,7 +236,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                 <img 
                   alt="Advanced Portrait" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={TREATMENT_IMAGES[5]}
+                  src={getTreatmentImagePath('advanced-portrait', TREATMENT_IMAGES[5])}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[5];
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                   <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">CLINICAL FACIAL</span>

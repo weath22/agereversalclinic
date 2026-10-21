@@ -14,6 +14,7 @@ import {
   TreatmentCategory, 
   PRICING_CATEGORIES 
 } from '../data/treatmentPricing';
+import { getTreatmentImagePath, setTreatmentImageVersion } from '../utils/treatmentImageHelper';
 import { 
   Search, 
   Plus, 
@@ -471,26 +472,74 @@ export default function TreatmentPricingEditor() {
     setImageSwapTreatment(null);
   };
 
-  // Handle local file upload
+  // 1-Click Upload directly to /api/admin/treatments/:id/image (Deletes previous image on server)
+  const handleDirectTreatmentImageUpload = async (treatment: TreatmentPricingItem, file: File) => {
+    if (!file || !treatment) return;
+    setIsUploadingImage(true);
+    showToast(`Uploading photo for "${treatment.title || treatment.id}"...`, 'info');
+
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(`/api/admin/treatments/${encodeURIComponent(treatment.id)}/image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dataUrl,
+          fileName: file.name
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.imagePath) {
+        // Register image cache version for instant live refresh
+        setTreatmentImageVersion(treatment.id, data.version);
+
+        // Update treatment in state
+        const updated = treatments.map((t) =>
+          t.id === treatment.id
+            ? { ...t, image: data.rawPath || data.imagePath, updatedAt: data.version }
+            : t
+        );
+        setTreatments(updated);
+        saveTreatmentPricingData(updated);
+
+        // If editing modal is open for this treatment, update it
+        if (editingTreatment && editingTreatment.id === treatment.id) {
+          setEditingTreatment((prev) => prev ? { ...prev, image: data.rawPath || data.imagePath, updatedAt: data.version } : null);
+        }
+
+        const purgeInfo = data.deletedFiles && data.deletedFiles.length > 0
+          ? ` (Cleaned previous ${data.deletedFiles.join(', ')})`
+          : '';
+        showToast(`Card photo updated for "${treatment.title || treatment.id}"!${purgeInfo}`, 'success');
+      } else {
+        showToast(data.error || 'Failed to update treatment card photo', 'error');
+      }
+    } catch (err) {
+      console.error('Error uploading treatment image:', err);
+      showToast('Upload error: ' + String(err), 'error');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Handle local file upload in Image Swap modal
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !imageSwapTreatment) return;
 
-    setIsUploadingImage(true);
-    try {
-      const res = await uploadAssetFile(file);
-      if (res.success && res.url) {
-        handleApplyImageSwap(res.url);
-      } else {
-        showToast(res.error || 'Failed to upload photo', 'error');
-      }
-    } catch (err) {
-      showToast('Error uploading asset file: ' + String(err), 'error');
-    } finally {
-      setIsUploadingImage(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    // Use direct ID-based treatment upload route
+    await handleDirectTreatmentImageUpload(imageSwapTreatment, file);
+    setIsImageSwapModalOpen(false);
+    setImageSwapTreatment(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -696,12 +745,12 @@ export default function TreatmentPricingEditor() {
                 {/* 1. Cover Image Thumbnail with Quick-Swap Hover Overlay */}
                 <div className="relative aspect-[16/10] bg-slate-100 overflow-hidden shrink-0">
                   <img
-                    src={treatment.image || PRESET_CLINIC_PHOTOS[0].url}
+                    src={getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt)}
                     alt={treatment.title}
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = PRESET_CLINIC_PHOTOS[0].url;
+                      (e.target as HTMLImageElement).src = treatment.image || PRESET_CLINIC_PHOTOS[0].url;
                     }}
                   />
 
@@ -730,22 +779,58 @@ export default function TreatmentPricingEditor() {
                   </div>
 
                   {/* Quick-Swap Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/55 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3 text-center">
+                  <div className="absolute inset-0 bg-black/65 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3 text-center z-20">
+                    {/* 1-Click Direct File Upload */}
+                    <label className="w-full max-w-[200px] bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Update Card Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleDirectTreatmentImageUpload(treatment, f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+
                     <button
                       onClick={() => handleOpenImageSwapModal(treatment)}
-                      className="bg-white text-[#003334] hover:bg-[#c5a880] hover:text-[#003334] px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                      className="w-full max-w-[200px] bg-white text-[#003334] hover:bg-[#c5a880] hover:text-[#003334] px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <ImageIcon className="h-3.5 w-3.5" />
-                      <span>Change Cover Image</span>
+                      <span>Presets & Custom URL</span>
                     </button>
                     <button
                       onClick={() => handleOpenEditTreatment(treatment)}
-                      className="bg-black/50 hover:bg-black/80 text-white border border-white/20 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="w-full max-w-[200px] bg-black/50 hover:bg-black/80 text-white border border-white/20 px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Edit3 className="h-3 w-3" />
                       <span>Edit Details & Pricing</span>
                     </button>
                   </div>
+
+                  {/* Always-visible Quick Update Photo badge on bottom right of thumbnail */}
+                  <label
+                    title="1-Click upload photo for this treatment ID"
+                    className="absolute bottom-2 right-2 z-10 bg-black/75 hover:bg-black text-amber-300 hover:text-white px-2 py-1 rounded-lg backdrop-blur-md transition-all shadow cursor-pointer flex items-center gap-1 text-[10px] font-semibold"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Upload className="h-3 w-3 text-amber-400" />
+                    <span>Update Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleDirectTreatmentImageUpload(treatment, f);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
 
                 {/* 2. Card Content & Metadata */}
@@ -785,13 +870,30 @@ export default function TreatmentPricingEditor() {
                               <span>Edit Details & Pricing</span>
                             </button>
 
-                            {/* 2. Change Cover Image */}
+                            {/* 1-Click Update Card Photo */}
+                            <label className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-900 transition-colors cursor-pointer">
+                              <Upload className="h-3.5 w-3.5 text-amber-600" />
+                              <span>Update Card Photo (1-Click)</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleDirectTreatmentImageUpload(treatment, f);
+                                  e.target.value = '';
+                                  setActiveMenuTreatmentId(null);
+                                }}
+                              />
+                            </label>
+
+                            {/* 2. Change Cover Image (Modal with Presets) */}
                             <button
                               onClick={() => handleOpenImageSwapModal(treatment)}
                               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#003334] transition-colors cursor-pointer"
                             >
                               <ImageIcon className="h-3.5 w-3.5 text-slate-400" />
-                              <span>Change Cover Image</span>
+                              <span>Change Image (Presets / URL)</span>
                             </button>
 
                             {/* 3. Duplicate Procedure */}

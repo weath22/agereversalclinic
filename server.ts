@@ -16,20 +16,56 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const uploadsDir = path.resolve(__dirname, 'public/uploads');
 const publicAssetsDir = path.resolve(__dirname, 'public/assets');
 const srcAssetsDir = path.resolve(__dirname, 'src/assets/images');
+const publicTreatmentsDir = path.resolve(__dirname, 'public/assets/treatments');
+const srcTreatmentsDir = path.resolve(__dirname, 'src/assets/images/treatments');
+const distTreatmentsDir = path.resolve(__dirname, 'dist/assets/treatments');
 
-for (const dir of [uploadsDir, publicAssetsDir, srcAssetsDir]) {
+for (const dir of [uploadsDir, publicAssetsDir, srcAssetsDir, publicTreatmentsDir, srcTreatmentsDir]) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
 
-// Serve uploaded and static assets across all common directory formats
+// ============================================================================
+// TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
+// ============================================================================
+// Ensure assets in src/assets/images/treatments (source/git) and public/assets/treatments (Vite public)
+// are mirrored and kept in sync so neither environment loses images upon server restart or build.
+try {
+  if (fs.existsSync(srcTreatmentsDir) && fs.existsSync(publicTreatmentsDir)) {
+    const srcFiles = fs.readdirSync(srcTreatmentsDir);
+    for (const f of srcFiles) {
+      const srcFile = path.join(srcTreatmentsDir, f);
+      const pubFile = path.join(publicTreatmentsDir, f);
+      if (fs.statSync(srcFile).isFile() && !fs.existsSync(pubFile)) {
+        fs.copyFileSync(srcFile, pubFile);
+        console.log(`[Production Mirror Sync] Synced ${f} from src to public assets`);
+      }
+    }
+
+    const pubFiles = fs.readdirSync(publicTreatmentsDir);
+    for (const f of pubFiles) {
+      const pubFile = path.join(publicTreatmentsDir, f);
+      const srcFile = path.join(srcTreatmentsDir, f);
+      if (fs.statSync(pubFile).isFile() && !fs.existsSync(srcFile)) {
+        fs.copyFileSync(pubFile, srcFile);
+        console.log(`[Production Mirror Sync] Synced ${f} from public to src assets`);
+      }
+    }
+  }
+} catch (syncErr) {
+  console.warn('[Production Mirror] Initial synchronization notice:', syncErr);
+}
+
+// Serve uploaded and static assets
 app.use('/uploads', express.static(uploadsDir));
+app.use('/assets/treatments', express.static(publicTreatmentsDir));
+app.use('/assets/treatments', express.static(srcTreatmentsDir));
+if (fs.existsSync(distTreatmentsDir)) {
+  app.use('/assets/treatments', express.static(distTreatmentsDir));
+}
 app.use('/assets', express.static(publicAssetsDir));
 app.use('/assets', express.static(srcAssetsDir));
-app.use('/src/assets/images', express.static(srcAssetsDir));
-app.use('/src/assets', express.static(path.resolve(__dirname, 'src/assets')));
-app.use('/images', express.static(srcAssetsDir));
 app.use(express.static(path.resolve(__dirname, 'public')));
 
 // Path to site customizations and clinic info files
@@ -45,6 +81,7 @@ function generateTreatmentPricingTs(items: any[]): string {
  */
 
 import { TreatmentMediaItem } from '../types';
+export { getTreatmentImagePath, getTreatmentCardImage, handleTreatmentImageError } from '../utils/treatmentImageHelper';
 
 export interface PricingPackage {
   id: string;
@@ -538,6 +575,191 @@ app.get('/api/admin/assets', (_req, res) => {
     return res.json({ success: true, assets: assetsList });
   } catch (error) {
     console.error('Error listing assets:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// ============================================================================
+// TREATMENT PRICING CARDS: ID-BASED IMAGE UPLOAD & CLEANUP
+// ============================================================================
+// API: Upload, replace, and clean previous images for a specific treatment ID
+app.post('/api/admin/treatments/:id/image', (req, res) => {
+  try {
+    const rawId = req.params.id || req.body?.id;
+    if (!rawId) {
+      return res.status(400).json({ success: false, error: 'Missing treatment ID in request parameters' });
+    }
+
+    // Standardize treatment ID (lowercase, alphanumeric + hyphens/underscores)
+    const sanitizedId = String(rawId).trim().replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
+    const { dataUrl, base64, fileName, extension } = req.body || {};
+
+    if (!dataUrl && !base64) {
+      return res.status(400).json({ success: false, error: 'Missing image data (dataUrl or base64 required)' });
+    }
+
+    // Determine extension from explicit parameter, fileName, or data URL MIME type
+    let ext = '.webp';
+    if (extension) {
+      ext = extension.startsWith('.') ? extension.toLowerCase() : `.${extension.toLowerCase()}`;
+    } else if (fileName && path.extname(fileName)) {
+      ext = path.extname(fileName).toLowerCase();
+    } else if (dataUrl) {
+      const match = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
+      if (match && match[1]) {
+        const mimeSub = match[1].toLowerCase();
+        if (mimeSub === 'jpeg' || mimeSub === 'jpg') ext = '.jpg';
+        else if (mimeSub === 'png') ext = '.png';
+        else if (mimeSub === 'webp') ext = '.webp';
+        else if (mimeSub === 'svg+xml') ext = '.svg';
+      }
+    }
+
+    // Extract raw base64 buffer
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/\w+;base64,/, '') : base64;
+    const buffer = Buffer.from(rawData, 'base64');
+
+    // 1. Scan target directories and delete any previous image matching `${sanitizedId}.*`
+    // Includes public, src, and production dist directories
+    const targetDirs = [publicTreatmentsDir, srcTreatmentsDir];
+    if (fs.existsSync(distTreatmentsDir)) {
+      targetDirs.push(distTreatmentsDir);
+    }
+    const deletedFiles: string[] = [];
+
+    for (const dir of targetDirs) {
+      if (fs.existsSync(dir)) {
+        try {
+          const files = fs.readdirSync(dir);
+          for (const f of files) {
+            // Delete if file starts with `${sanitizedId}.` regardless of extension (.jpg, .png, .webp, etc.)
+            if (f.startsWith(`${sanitizedId}.`)) {
+              const fullPath = path.join(dir, f);
+              try {
+                fs.unlinkSync(fullPath);
+                deletedFiles.push(f);
+                console.log(`[Admin] Deleted previous treatment image: ${fullPath}`);
+              } catch (delErr) {
+                console.warn(`[Admin] Could not delete old file ${fullPath}:`, delErr);
+              }
+            }
+          }
+        } catch (readErr) {
+          console.warn(`[Admin] Error reading directory ${dir}:`, readErr);
+        }
+      }
+    }
+
+    // 2. Save new image under predictable ID path in both public and src directories (and dist if exists)
+    const primaryFileName = `${sanitizedId}${ext}`;
+    const publicPath = path.join(publicTreatmentsDir, primaryFileName);
+    const srcPath = path.join(srcTreatmentsDir, primaryFileName);
+
+    fs.writeFileSync(publicPath, buffer);
+    fs.writeFileSync(srcPath, buffer);
+    if (fs.existsSync(distTreatmentsDir)) {
+      try {
+        fs.writeFileSync(path.join(distTreatmentsDir, primaryFileName), buffer);
+      } catch (distErr) {
+        console.warn(`[Admin] Could not write to distTreatmentsDir:`, distErr);
+      }
+    }
+    console.log(`[Admin] Saved new treatment image: ${publicPath}`);
+
+    // If saved as .jpg or .png, also mirror a .webp copy so predictable /assets/treatments/${id}.webp URLs always resolve!
+    if (ext !== '.webp') {
+      try {
+        fs.writeFileSync(path.join(publicTreatmentsDir, `${sanitizedId}.webp`), buffer);
+        fs.writeFileSync(path.join(srcTreatmentsDir, `${sanitizedId}.webp`), buffer);
+        if (fs.existsSync(distTreatmentsDir)) {
+          fs.writeFileSync(path.join(distTreatmentsDir, `${sanitizedId}.webp`), buffer);
+        }
+      } catch (webpErr) {
+        console.warn(`[Admin] Could not create .webp mirror:`, webpErr);
+      }
+    }
+
+    const timestamp = Date.now();
+    const cleanRelativePath = `/assets/treatments/${primaryFileName}`;
+    const cacheBustedUrl = `${cleanRelativePath}?v=${timestamp}`;
+
+    // 3. Optional sync: Update in-memory siteCustomizations.json and treatmentPricing.ts if matching item exists
+    try {
+      if (fs.existsSync(customizationsPath)) {
+        const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+        if (customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data)) {
+          let updated = false;
+          customizations.treatment_pricing_data = customizations.treatment_pricing_data.map((item: any) => {
+            const itemId = String(item.id || '').trim().toLowerCase();
+            const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
+            if (itemId === sanitizedId || normalizedItemId === sanitizedId) {
+              updated = true;
+              return { ...item, image: cleanRelativePath, updatedAt: timestamp };
+            }
+            return item;
+          });
+
+          if (updated) {
+            customizations.lastSynced = new Date().toISOString();
+            fs.writeFileSync(customizationsPath, JSON.stringify(customizations, null, 2), 'utf-8');
+            const tsCode = generateTreatmentPricingTs(customizations.treatment_pricing_data);
+            fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
+            console.log(`[Admin] Synced updated treatment image directly into treatmentPricing.ts`);
+          }
+        }
+      }
+    } catch (syncErr) {
+      console.warn(`[Admin] Could not sync with treatmentPricing.ts:`, syncErr);
+    }
+
+    return res.json({
+      success: true,
+      id: sanitizedId,
+      fileName: primaryFileName,
+      imagePath: cacheBustedUrl,
+      rawPath: cleanRelativePath,
+      deletedFiles: [...new Set(deletedFiles)],
+      version: timestamp,
+      message: `Treatment image for '${sanitizedId}' successfully saved and previous images purged.`
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving treatment image:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// API: Query current image info for a specific treatment ID
+app.get('/api/admin/treatments/:id/image', (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const sanitizedId = String(rawId).trim().replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
+
+    if (fs.existsSync(publicTreatmentsDir)) {
+      const files = fs.readdirSync(publicTreatmentsDir);
+      const matched = files.find(f => f.startsWith(`${sanitizedId}.`));
+      if (matched) {
+        const stat = fs.statSync(path.join(publicTreatmentsDir, matched));
+        const timestamp = Math.floor(stat.mtimeMs);
+        return res.json({
+          success: true,
+          exists: true,
+          fileName: matched,
+          imagePath: `/assets/treatments/${matched}?v=${timestamp}`,
+          rawPath: `/assets/treatments/${matched}`,
+          updatedAt: stat.mtime.toISOString(),
+          version: timestamp
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      exists: false,
+      imagePath: `/assets/treatments/${sanitizedId}.webp`,
+      rawPath: `/assets/treatments/${sanitizedId}.webp`
+    });
+  } catch (error) {
+    console.error('[Admin] Error checking treatment image:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
 });
