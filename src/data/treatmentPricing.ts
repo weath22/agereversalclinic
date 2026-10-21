@@ -647,7 +647,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Cheek - Deep Contouring (1ml)",
     "category": "Face & Injectables",
     "description": "High-definition zygomatic arch enhancement placing high-density cohesive hyaluronic acid onto the bone for razor-sharp cheekbone definition and structural projection.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-cheek-deep.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -666,14 +666,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Follow-up review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598520435
   },
   {
     "id": "filler-jaw-chin",
     "title": "Jaw & Chin - Deep Contouring (1ml)",
     "category": "Face & Injectables",
     "description": "Sculpts mandibular angles, sharpens the jawline profile border, and advances chin projection to eliminate lower face heaviness and strengthen side profiles.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-jaw-chin.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -693,14 +694,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Physician mapping"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598546882
   },
   {
     "id": "filler-hand-rejuvenation",
     "title": "Hand Rejuvenation Filler (1ml)",
     "category": "Face & Injectables",
     "description": "Restores lost volume over dorsal veins and exposed tendons on the back of hands, delivering firm, plump, and age-defying smooth skin texture.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-hand-rejuvenation.webp",
     "startingPrice": 470,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -719,14 +721,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Post-treatment massage"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598569230
   },
   {
     "id": "profhilo-skin-booster",
     "title": "Profhilo® 2ml Bioremodeling",
     "category": "Face & Injectables",
     "description": "Ultra-pure stabilized hyaluronic acid formulated with patented NAHYCO® technology to stimulate 4 types of collagen and elastin across 10 Bio-Aesthetic Points.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/profhilo-skin-booster.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -761,14 +764,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Complimentary 8-week physician review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598626443
   },
   {
     "id": "salmon-sperm-polynucleotides",
     "title": "Salmon Sperm Injection (Polynucleotides / PDRN)",
     "category": "Face & Injectables",
     "description": "Breakthrough cellular regeneration therapy utilizing purified DNA fragments (PDRN) to repair damaged cellular structures, fade pigmentation, and firm delicate eye and facial tissue.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/salmon-sperm-polynucleotides.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -802,14 +806,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Take-home barrier cream"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598817945
   },
   {
     "id": "morpheus8-facial",
     "title": "Morpheus8 Facial RF Microneedling",
     "category": "Face & Injectables",
     "description": "Subdermal adipose remodeling that combines microneedling with radiofrequency to melt submental fat, rebuild elastin, and tighten skin up to 4mm deep.",
-    "image": "https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/morpheus8-facial.webp",
     "startingPrice": 190,
     "currency": "£",
     "procedureTime": "60 Mins",
@@ -842,14 +847,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Pre- and post-treatment photographic review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598876563
   },
   {
     "id": "emface-lifting",
     "title": "EMFACE Skin Tightening & Lifting",
     "category": "Face & Injectables",
     "description": "Hands-free needle-free therapy combining synchronized Radiofrequency (RF) and High-Intensity Facial Electrical Stimulation (HIFES™) to tone delicate elevator muscles and smooth wrinkles.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/emface-lifting.webp",
     "startingPrice": 250,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -882,7 +888,8 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Maintenance roadmap"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792598905124
   },
   {
     "id": "endolift-fiber-lift",

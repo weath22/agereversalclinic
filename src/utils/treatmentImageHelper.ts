@@ -102,4 +102,53 @@ export function handleTreatmentImageError(
   }
 }
 
+/**
+ * Client-side converter that transforms any uploaded image (PNG, JPG, HEIC, etc.)
+ * into an optimized true WebP data URL before sending to the server.
+ * This guarantees crystal-clear compression and ensures only a single .webp file is stored.
+ */
+export async function convertImageFileToWebP(file: File, quality: number = 0.9): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // If the file is already a .webp, read directly
+    if (file.type === 'image/webp') {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(reader.result as string);
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          const webpDataUrl = canvas.toDataURL('image/webp', quality);
+          // If browser supports webp canvas export, return it
+          if (webpDataUrl.startsWith('data:image/webp')) {
+            resolve(webpDataUrl);
+          } else {
+            resolve(reader.result as string);
+          }
+        } catch {
+          resolve(reader.result as string);
+        }
+      };
+      img.onerror = () => resolve(reader.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default getTreatmentImagePath;

@@ -52,6 +52,25 @@ try {
         console.log(`[Production Mirror Sync] Synced ${f} from public to src assets`);
       }
     }
+
+    // Purge any redundant non-webp duplicate pairs (e.g. legacy .png/.jpg when .webp exists)
+    for (const dir of [publicTreatmentsDir, srcTreatmentsDir]) {
+      if (fs.existsSync(dir)) {
+        const allFiles = fs.readdirSync(dir);
+        for (const file of allFiles) {
+          const ext = path.extname(file).toLowerCase();
+          if (ext !== '.webp') {
+            const base = path.basename(file, ext);
+            if (fs.existsSync(path.join(dir, `${base}.webp`))) {
+              try {
+                fs.unlinkSync(path.join(dir, file));
+                console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
+              } catch {}
+            }
+          }
+        }
+      }
+    }
   }
 } catch (syncErr) {
   console.warn('[Production Mirror] Initial synchronization notice:', syncErr);
@@ -650,37 +669,24 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
       }
     }
 
-    // 2. Save new image under predictable ID path in both public and src directories (and dist if exists)
-    const primaryFileName = `${sanitizedId}${ext}`;
-    const publicPath = path.join(publicTreatmentsDir, primaryFileName);
-    const srcPath = path.join(srcTreatmentsDir, primaryFileName);
+    // 2. Save strictly ONE single .webp image per treatment ID
+    const singleFileName = `${sanitizedId}.webp`;
+    const publicPath = path.join(publicTreatmentsDir, singleFileName);
+    const srcPath = path.join(srcTreatmentsDir, singleFileName);
 
     fs.writeFileSync(publicPath, buffer);
     fs.writeFileSync(srcPath, buffer);
     if (fs.existsSync(distTreatmentsDir)) {
       try {
-        fs.writeFileSync(path.join(distTreatmentsDir, primaryFileName), buffer);
+        fs.writeFileSync(path.join(distTreatmentsDir, singleFileName), buffer);
       } catch (distErr) {
         console.warn(`[Admin] Could not write to distTreatmentsDir:`, distErr);
       }
     }
-    console.log(`[Admin] Saved new treatment image: ${publicPath}`);
-
-    // If saved as .jpg or .png, also mirror a .webp copy so predictable /assets/treatments/${id}.webp URLs always resolve!
-    if (ext !== '.webp') {
-      try {
-        fs.writeFileSync(path.join(publicTreatmentsDir, `${sanitizedId}.webp`), buffer);
-        fs.writeFileSync(path.join(srcTreatmentsDir, `${sanitizedId}.webp`), buffer);
-        if (fs.existsSync(distTreatmentsDir)) {
-          fs.writeFileSync(path.join(distTreatmentsDir, `${sanitizedId}.webp`), buffer);
-        }
-      } catch (webpErr) {
-        console.warn(`[Admin] Could not create .webp mirror:`, webpErr);
-      }
-    }
+    console.log(`[Admin] Saved single treatment .webp image: ${publicPath}`);
 
     const timestamp = Date.now();
-    const cleanRelativePath = `/assets/treatments/${primaryFileName}`;
+    const cleanRelativePath = `/assets/treatments/${singleFileName}`;
     const cacheBustedUrl = `${cleanRelativePath}?v=${timestamp}`;
 
     // 3. Optional sync: Update in-memory siteCustomizations.json and treatmentPricing.ts if matching item exists
@@ -715,7 +721,7 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
     return res.json({
       success: true,
       id: sanitizedId,
-      fileName: primaryFileName,
+      fileName: singleFileName,
       imagePath: cacheBustedUrl,
       rawPath: cleanRelativePath,
       deletedFiles: [...new Set(deletedFiles)],

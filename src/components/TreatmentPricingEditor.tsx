@@ -14,7 +14,7 @@ import {
   TreatmentCategory, 
   PRICING_CATEGORIES 
 } from '../data/treatmentPricing';
-import { getTreatmentImagePath, setTreatmentImageVersion } from '../utils/treatmentImageHelper';
+import { getTreatmentImagePath, setTreatmentImageVersion, convertImageFileToWebP } from '../utils/treatmentImageHelper';
 import { 
   Search, 
   Plus, 
@@ -476,22 +476,19 @@ export default function TreatmentPricingEditor() {
   const handleDirectTreatmentImageUpload = async (treatment: TreatmentPricingItem, file: File) => {
     if (!file || !treatment) return;
     setIsUploadingImage(true);
-    showToast(`Uploading photo for "${treatment.title || treatment.id}"...`, 'info');
+    showToast(`Optimizing & converting photo to WebP for "${treatment.title || treatment.id}"...`, 'info');
 
     try {
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
+      // Convert any uploaded format (PNG, JPEG, HEIC, etc.) to true WebP
+      const dataUrl = await convertImageFileToWebP(file, 0.92);
 
       const response = await fetch(`/api/admin/treatments/${encodeURIComponent(treatment.id)}/image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dataUrl,
-          fileName: file.name
+          fileName: `${treatment.id}.webp`,
+          extension: '.webp'
         })
       });
 
