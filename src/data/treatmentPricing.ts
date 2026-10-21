@@ -620,7 +620,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Temples Volume Restoration (1ml)",
     "category": "Face & Injectables",
     "description": "Rebuilds hollowed, skeletal temporal depressions to restore a soft, youthful oval-heart facial contour and support lateral brow elevation.",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/filler-temples.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -639,7 +639,8 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Review"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792596944901
   },
   {
     "id": "filler-cheek-deep",

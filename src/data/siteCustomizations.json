@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-21T15:09:02.759Z",
+  "lastSynced": "2026-10-21T15:35:50.997Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
@@ -200,7 +200,7 @@
   },
   "homepage_locations_config": {
     "heading": "Our Locations",
-    "description": "Conveniently located in the heart of London's medical district, providing world-class care across multiple specialized facilities.",
+    "description": "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
     "locations": [
       {
         "id": "location-1791722960928",
@@ -1192,7 +1192,7 @@
       "title": "Temples Volume Restoration (1ml)",
       "category": "Face & Injectables",
       "description": "Rebuilds hollowed, skeletal temporal depressions to restore a soft, youthful oval-heart facial contour and support lateral brow elevation.",
-      "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/filler-temples.jpg",
       "startingPrice": 290,
       "currency": "£",
       "procedureTime": "30 Mins",
@@ -1211,7 +1211,8 @@
             "Review"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1792596944901
     },
     {
       "id": "filler-cheek-deep",
@@ -3679,7 +3680,7 @@
         "aesthetic medicine video",
         "harley street clinic"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-prep-serum-1",
@@ -3694,7 +3695,7 @@
         "serum application protocol",
         "medical grade pre-care protocol"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-recovery-spa-1",
@@ -3709,7 +3710,7 @@
         "cellular healing",
         "clinical skin recovery"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-diagnostic-tech-1",
@@ -3724,7 +3725,7 @@
         "diagnostic dermatology",
         "cellular skin regeneration"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-exosome-hero",
@@ -3739,7 +3740,7 @@
         "exosome therapy london",
         "anti-aging clinic london"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-profhilo-hero",
@@ -3754,7 +3755,7 @@
         "profhilo london clinic",
         "hyaluronic acid injectable"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-morpheus8-hero",
@@ -3769,7 +3770,7 @@
         "jawline contouring london",
         "subdermal adipose remodeling"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-ultherapy-hero",
@@ -3784,7 +3785,7 @@
         "smas muscle lifting",
         "non-surgical dermal lift"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     },
     {
       "id": "asset-ba-volumetric",
@@ -3799,7 +3800,7 @@
         "transformation gallery",
         "cellular skin regeneration"
       ],
-      "createdAt": "2026-10-21T13:22:58.356Z"
+      "createdAt": "2026-10-21T15:35:49.545Z"
     }
   ]
 }
