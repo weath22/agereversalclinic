@@ -1,5 +1,6 @@
-import React, { useId } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
+import { getHeaderConfig } from '../../lib/adminStore';
 
 export type LogoSkeletonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type LogoSkeletonVariant = 'gold' | 'silver' | 'noir' | 'light';
@@ -15,7 +16,7 @@ export interface LogoOutlineSkeletonProps {
    */
   className?: string;
   /**
-   * Enable subtle luxury stroke pulse and gradient shimmer
+   * Enable subtle luxury pulse animation
    * Default: true
    */
   animate?: boolean;
@@ -39,70 +40,51 @@ export interface LogoOutlineSkeletonProps {
   label?: string;
 }
 
-const SIZE_MAP: Record<LogoSkeletonSize, { box: string; stroke: number }> = {
-  xs: { box: 'w-8 h-8', stroke: 1.2 },
-  sm: { box: 'w-12 h-12', stroke: 1.25 },
-  md: { box: 'w-20 h-20', stroke: 1.5 },
-  lg: { box: 'w-32 h-32', stroke: 1.75 },
-  xl: { box: 'w-44 h-44', stroke: 2 },
-  full: { box: 'w-full h-full', stroke: 1.5 },
+const DEFAULT_BRAND_LOGO_URL =
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q';
+
+const SIZE_MAP: Record<LogoSkeletonSize, { box: string }> = {
+  xs: { box: 'w-8 h-8' },
+  sm: { box: 'w-12 h-12' },
+  md: { box: 'w-16 h-16 sm:w-20 sm:h-20' },
+  lg: { box: 'w-16 h-16 sm:w-32 sm:h-32' },
+  xl: { box: 'w-28 h-28 sm:w-44 sm:h-44' },
+  full: { box: 'w-full h-full' },
 };
 
 const VARIANT_CONFIG: Record<
   LogoSkeletonVariant,
   {
-    strokeStart: string;
-    strokeMid: string;
-    strokeEnd: string;
     haloBg: string;
-    ambientBg: string;
     textColor: string;
     subtextColor: string;
   }
 > = {
   gold: {
-    strokeStart: '#C5A880',
-    strokeMid: '#F5E6D3',
-    strokeEnd: '#9B7B52',
-    haloBg: 'bg-[#C5A880]/10',
-    ambientBg: 'bg-[#C5A880]/5',
-    textColor: 'text-[#003334]',
+    haloBg: 'bg-[#C5A880]/15',
+    textColor: 'text-[#D8C2A3]',
     subtextColor: 'text-stone-400',
   },
   silver: {
-    strokeStart: '#94A3B8',
-    strokeMid: '#F1F5F9',
-    strokeEnd: '#64748B',
     haloBg: 'bg-slate-300/15',
-    ambientBg: 'bg-slate-100/40',
-    textColor: 'text-slate-800',
+    textColor: 'text-slate-300',
     subtextColor: 'text-slate-400',
   },
   noir: {
-    strokeStart: '#D8C2A3',
-    strokeMid: '#FFFFFF',
-    strokeEnd: '#8C7355',
     haloBg: 'bg-[#D8C2A3]/15',
-    ambientBg: 'bg-[#121820]/60',
     textColor: 'text-white',
     subtextColor: 'text-stone-300',
   },
   light: {
-    strokeStart: '#003334',
-    strokeMid: '#C5A880',
-    strokeEnd: '#003334',
-    haloBg: 'bg-[#003334]/5',
-    ambientBg: 'bg-stone-50/70',
+    haloBg: 'bg-[#003334]/10',
     textColor: 'text-[#003334]',
     subtextColor: 'text-stone-500',
   },
 };
 
 /**
- * Task 3.1: Standalone Clean Outline Logo Preloader Component
- * Architectural/geometric line-art vector outline of the clinic emblem.
- * Uses thin luxury stroke styling with a subtle opacity pulse & gold gradient shimmer,
- * completely avoiding heavy solid fills.
+ * Brand Real Logo Placeholder & Preloader Component
+ * Displays the authentic Age Reversal Clinic brand logo instead of an outlined SVG.
  */
 export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
   size = 'md',
@@ -111,14 +93,14 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
   variant = 'gold',
   showText = false,
   text,
-  label = 'Age Reversal Clinic Emblem Skeleton',
+  label = 'Age Reversal Clinic Brand Logo',
 }) => {
-  const gradientId = useId();
-  const shimmerId = useId();
+  const headerConfig = getHeaderConfig();
+  const brandLogoUrl = headerConfig?.logoUrl || DEFAULT_BRAND_LOGO_URL;
 
   const variantStyles = VARIANT_CONFIG[variant] || VARIANT_CONFIG.gold;
   const isCustomNumeric = typeof size === 'number';
-  const sizeConfig = !isCustomNumeric ? SIZE_MAP[size] || SIZE_MAP.md : { box: '', stroke: 1.5 };
+  const sizeConfig = !isCustomNumeric ? SIZE_MAP[size] || SIZE_MAP.md : { box: '' };
   const customInlineStyle = isCustomNumeric ? { width: `${size}px`, height: `${size}px` } : undefined;
 
   return (
@@ -147,16 +129,18 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
           />
         )}
 
-        {/* Refined Geometric Vector Emblem */}
-        <motion.svg
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full overflow-visible"
+        {/* Real Clinic Brand Logo */}
+        <motion.img
+          src={brandLogoUrl}
+          alt={label}
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-contain drop-shadow-[0_2px_12px_rgba(216,194,163,0.22)]"
           animate={
             animate
               ? {
                   opacity: [0.65, 1, 0.65],
+                  scale: [0.98, 1.02, 0.98],
                 }
               : undefined
           }
@@ -165,81 +149,7 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-        >
-          <defs>
-            {/* Primary Luxury Metallic Shimmer Linear Gradient */}
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={variantStyles.strokeStart} />
-              <stop offset="50%" stopColor={variantStyles.strokeMid} />
-              <stop offset="100%" stopColor={variantStyles.strokeEnd} />
-            </linearGradient>
-
-            {/* Sweep Shimmer Gradient Mask */}
-            {animate && (
-              <linearGradient id={shimmerId} x1="0%" y1="50%" x2="100%" y2="50%">
-                <stop offset="0%" stopColor="white" stopOpacity="0.4" />
-                <stop offset="50%" stopColor="white" stopOpacity="1" />
-                <stop offset="100%" stopColor="white" stopOpacity="0.4" />
-              </linearGradient>
-            )}
-          </defs>
-
-          {/* Group with thin luxury stroke parameters */}
-          <g
-            stroke={`url(#${gradientId})`}
-            strokeWidth={sizeConfig.stroke}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {/* 1. Outer Faceted Architectural Diamond / Crest */}
-            <path
-              d="M 50 6 L 92 50 L 50 94 L 8 50 Z"
-              strokeDasharray="400"
-              strokeDashoffset="0"
-            />
-
-            {/* 2. Inner Concentric Geometric Diamond (Fine Hairline Offset) */}
-            <path
-              d="M 50 16 L 82 50 L 50 84 L 18 50 Z"
-              opacity="0.5"
-              strokeWidth={Math.max(1, sizeConfig.stroke * 0.75)}
-            />
-
-            {/* 3. Aesthetic Botanical / Cellular Petal Arcs (Rejuvenation Cross) */}
-            {/* Vertical Petal Arc */}
-            <path
-              d="M 50 20 C 60 36 60 64 50 80 C 40 64 40 36 50 20 Z"
-              opacity="0.75"
-            />
-            {/* Horizontal Petal Arc */}
-            <path
-              d="M 20 50 C 36 60 64 60 80 50 C 64 40 36 40 20 50 Z"
-              opacity="0.75"
-            />
-
-            {/* 4. Cardinal Axial Precision Lines (Micro Precision Hairlines) */}
-            <line x1="50" y1="8" x2="50" y2="22" opacity="0.6" />
-            <line x1="50" y1="78" x2="50" y2="92" opacity="0.6" />
-            <line x1="10" y1="50" x2="22" y2="50" opacity="0.6" />
-            <line x1="78" y1="50" x2="90" y2="50" opacity="0.6" />
-
-            {/* 5. Center Brilliant Diamond Core */}
-            <polygon
-              points="50,42 58,50 50,58 42,50"
-              opacity="0.9"
-              fill={variantStyles.strokeMid}
-              fillOpacity="0.08"
-            />
-
-            {/* 6. Central Seed / Micro Focal Apex */}
-            <circle
-              cx="50"
-              cy="50"
-              r="2"
-              fill={`url(#${gradientId})`}
-            />
-          </g>
-        </motion.svg>
+        />
       </div>
 
       {/* Optional Minimalist Brand Text */}
@@ -248,15 +158,15 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
           initial={{ opacity: 0.6 }}
           animate={animate ? { opacity: [0.55, 0.9, 0.55] } : undefined}
           transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-center mt-3 space-y-0.5"
+          className="text-center mt-1.5 sm:mt-3 space-y-0.5"
         >
           <p
-            className={`text-[11px] font-serif tracking-[0.25em] uppercase font-medium ${variantStyles.textColor}`}
+            className={`text-[9px] sm:text-[11px] font-serif tracking-[0.18em] sm:tracking-[0.25em] uppercase font-medium ${variantStyles.textColor}`}
           >
-            Age Reversal
+            Age Reversal Clinics
           </p>
           {text && (
-            <p className={`text-[9px] font-sans tracking-wider ${variantStyles.subtextColor}`}>
+            <p className={`text-[8px] sm:text-[9px] font-sans tracking-wider ${variantStyles.subtextColor}`}>
               {text}
             </p>
           )}

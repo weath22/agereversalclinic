@@ -82,12 +82,18 @@ export const TREATMENT_CARD_SUMMARY_COLUMNS =
 export function projectTreatmentCardSummary(
   item: TreatmentPricingItem | Record<string, any>
 ): TreatmentPricingCardSummary {
+  const rawImage = typeof item.image === 'string' ? item.image.trim() : '';
+  const cleanImage =
+    rawImage.includes('images.unsplash.com') || rawImage.includes('unsplash.com')
+      ? ''
+      : rawImage;
+
   const projected: TreatmentPricingCardSummary = {
     id: item.id,
     title: item.title,
     category: item.category,
     description: item.description,
-    image: item.image,
+    image: cleanImage,
     startingPrice: item.startingPrice,
     currency: item.currency || '£',
   };
@@ -99,8 +105,13 @@ export function projectTreatmentCardSummary(
   if (item.updatedAt !== undefined) projected.updatedAt = item.updatedAt;
 
   if (item.coverMedia) {
+    const rawCoverUrl = typeof item.coverMedia.url === 'string' ? item.coverMedia.url.trim() : '';
+    const cleanCoverUrl =
+      rawCoverUrl.includes('images.unsplash.com') || rawCoverUrl.includes('unsplash.com')
+        ? undefined
+        : rawCoverUrl;
     projected.coverMedia = {
-      url: item.coverMedia.url,
+      url: cleanCoverUrl,
       altText: item.coverMedia.altText,
       seoTitle: item.coverMedia.seoTitle,
     };

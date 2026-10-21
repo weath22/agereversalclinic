@@ -93,12 +93,13 @@ export function handleTreatmentImageError(
 ): void {
   const target = event.currentTarget;
   const currentSrc = target.src;
-  const defaultFallback = fallbackUrl || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80';
+  const cleanFallback =
+    fallbackUrl && !fallbackUrl.includes('unsplash.com') ? fallbackUrl : '';
 
   // Prevent infinite loops if fallback also fails
-  if (!target.dataset.hasFallenBack && currentSrc !== defaultFallback) {
+  if (cleanFallback && !target.dataset.hasFallenBack && currentSrc !== cleanFallback) {
     target.dataset.hasFallenBack = 'true';
-    target.src = defaultFallback;
+    target.src = cleanFallback;
   }
 }
 
