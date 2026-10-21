@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { TreatmentPricingItem, PricingPackage } from '../../data/treatmentPricing';
+import {
+  TreatmentPricingItem,
+  TreatmentPricingCardSummary,
+  PricingPackage,
+} from '../../data/treatmentPricing';
+import { getTreatmentPackageDetailsById } from '../../lib/adminStore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Check, ChevronDown, ArrowLeft, Loader2 } from 'lucide-react';
 
 interface PackageSelectModalProps {
-  treatment: TreatmentPricingItem | null;
+  treatment: TreatmentPricingCardSummary | TreatmentPricingItem | null;
   initialPackageId?: string;
   onClose: () => void;
   onBack?: () => void;
   backLabel?: string;
   onBookPackage: (treatment: TreatmentPricingItem, selectedPackage: PricingPackage) => void;
+}
+
+function hasLoadedPackages(
+  item: TreatmentPricingCardSummary | TreatmentPricingItem | null
+): item is TreatmentPricingItem {
+  return Boolean(item && 'packages' in item && Array.isArray(item.packages) && item.packages.length > 0);
 }
 
 export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
@@ -22,6 +33,12 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
   onBookPackage,
 }) => {
   const [mounted, setMounted] = useState(false);
+  const [resolvedTreatment, setResolvedTreatment] = useState<TreatmentPricingItem | null>(() =>
+    hasLoadedPackages(treatment) ? treatment : null
+  );
+  const [isLoadingPackages, setIsLoadingPackages] = useState<boolean>(() =>
+    Boolean(treatment && !hasLoadedPackages(treatment))
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -37,29 +54,72 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
     };
   }, [treatment]);
 
+  // On-demand fetch of full treatment packages[], procedureTime, and downtime by id
+  useEffect(() => {
+    if (!treatment) {
+      setResolvedTreatment(null);
+      setIsLoadingPackages(false);
+      return;
+    }
+
+    if (hasLoadedPackages(treatment)) {
+      setResolvedTreatment(treatment);
+      setIsLoadingPackages(false);
+      return;
+    }
+
+    let cancelled = false;
+    setResolvedTreatment(null);
+    setIsLoadingPackages(true);
+
+    getTreatmentPackageDetailsById(treatment.id)
+      .then((fullDetails) => {
+        if (cancelled) return;
+        if (fullDetails) {
+          setResolvedTreatment(fullDetails);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingPackages(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [treatment]);
+
   // Set default selected package (specified, or popular one if available, otherwise first)
-  const [selectedPkgId, setSelectedPkgId] = useState<string>(() => {
-    if (initialPackageId) return initialPackageId;
-    const defaultPopular = treatment?.packages.find((p) => p.isPopular) || treatment?.packages[0];
-    return defaultPopular?.id || '';
-  });
+  const [selectedPkgId, setSelectedPkgId] = useState<string>('');
+  const [openBenefitsIds, setOpenBenefitsIds] = useState<string[]>([]);
 
   useEffect(() => {
+    if (!resolvedTreatment || !Array.isArray(resolvedTreatment.packages)) {
+      setSelectedPkgId('');
+      setOpenBenefitsIds([]);
+      return;
+    }
+
     if (initialPackageId) {
       setSelectedPkgId(initialPackageId);
-    } else if (treatment) {
-      const defaultPopular = treatment.packages.find((p) => p.isPopular) || treatment.packages[0];
+    } else {
+      const defaultPopular =
+        resolvedTreatment.packages.find((p) => p.isPopular) || resolvedTreatment.packages[0];
       setSelectedPkgId(defaultPopular?.id || '');
     }
-  }, [treatment, initialPackageId]);
 
-  // Popular package is open by default for benefits
-  const [openBenefitsIds, setOpenBenefitsIds] = useState<string[]>(() => {
-    if (!treatment) return [];
-    const popularPkgs = treatment.packages.filter((p) => p.isPopular).map((p) => p.id);
-    if (popularPkgs.length > 0) return popularPkgs;
-    return treatment.packages[0] ? [treatment.packages[0].id] : [];
-  });
+    const popularPkgs = resolvedTreatment.packages
+      .filter((p) => p.isPopular)
+      .map((p) => p.id);
+    if (popularPkgs.length > 0) {
+      setOpenBenefitsIds(popularPkgs);
+    } else if (resolvedTreatment.packages[0]) {
+      setOpenBenefitsIds([resolvedTreatment.packages[0].id]);
+    } else {
+      setOpenBenefitsIds([]);
+    }
+  }, [resolvedTreatment, initialPackageId]);
 
   const toggleBenefits = (pkgId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,8 +131,9 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
   if (!treatment) return null;
   if (!mounted || typeof document === 'undefined') return null;
 
+  const packagesList = resolvedTreatment?.packages || [];
   const currentSelectedPackage =
-    treatment.packages.find((p) => p.id === selectedPkgId) || treatment.packages[0];
+    packagesList.find((p) => p.id === selectedPkgId) || packagesList[0];
 
   return createPortal(
     <AnimatePresence>
@@ -154,163 +215,206 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                       {treatment.title}
                     </p>
                     {/* Unique Procedure & Downtime for the active package selection */}
-                    {(() => {
-                      const activePkg = treatment.packages.find((p) => p.id === selectedPkgId) || treatment.packages[0];
-                      const activeProcedureTime = activePkg?.procedureTime || treatment.procedureTime || '20-30 Mins';
-                      const activeDowntime = activePkg?.downtime || treatment.downtime || 'None';
-                      return (
-                        <div className="flex items-center gap-2 text-xs text-stone-600 mt-1 flex-wrap">
-                          <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
-                            <span className="text-stone-400">Procedure:</span> {activeProcedureTime}
-                          </span>
-                          <span className="text-stone-300">•</span>
-                          <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
-                            <span className="text-stone-400">Downtime:</span> {activeDowntime}
-                          </span>
-                        </div>
-                      );
-                    })()}
+                    {isLoadingPackages ? (
+                      <div className="flex items-center gap-2 mt-1.5 animate-pulse">
+                        <span className="h-5 w-32 bg-stone-100 rounded-md inline-block" />
+                        <span className="text-stone-300">•</span>
+                        <span className="h-5 w-28 bg-stone-100 rounded-md inline-block" />
+                      </div>
+                    ) : (
+                      (() => {
+                        const activePkg =
+                          packagesList.find((p) => p.id === selectedPkgId) || packagesList[0];
+                        const activeProcedureTime =
+                          activePkg?.procedureTime ||
+                          resolvedTreatment?.procedureTime ||
+                          '20-30 Mins';
+                        const activeDowntime =
+                          activePkg?.downtime || resolvedTreatment?.downtime || 'None';
+                        return (
+                          <div className="flex items-center gap-2 text-xs text-stone-600 mt-1 flex-wrap">
+                            <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                              <span className="text-stone-400">Procedure:</span> {activeProcedureTime}
+                            </span>
+                            <span className="text-stone-300">•</span>
+                            <span className="inline-flex items-center gap-1 bg-stone-100/90 text-stone-800 px-2 py-0.5 rounded-md font-medium">
+                              <span className="text-stone-400">Downtime:</span> {activeDowntime}
+                            </span>
+                          </div>
+                        );
+                      })()
+                    )}
                   </div>
 
-                  {/* Package Option Items */}
+                  {/* Package Option Items or Instant On-Demand Loading State */}
                   <div className="space-y-2.5 pb-2 pt-2 lg:space-y-2.5 lg:pb-0 lg:pt-3">
-                    {treatment.packages.map((pkg, idx) => {
-                      const isSelected = selectedPkgId === pkg.id;
-                      const isBenefitsOpen = openBenefitsIds.includes(pkg.id);
-                      const perSessionAmount =
-                        pkg.perSessionPrice || Math.round(pkg.price / (pkg.sessions || 1));
-                      const isBestValue = idx === treatment.packages.length - 1 && treatment.packages.length > 1;
-                      const isPopular = pkg.isPopular && !isBestValue;
-                      const currencySymbol = treatment.currency || '£';
+                    {isLoadingPackages ? (
+                      <div className="space-y-2.5 py-1" role="status" aria-live="polite">
+                        <div className="flex items-center gap-2 text-xs text-stone-500 pb-1">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-700" />
+                          <span>Loading package options...</span>
+                        </div>
+                        {[0, 1].map((skeletonIdx) => (
+                          <div
+                            key={`pkg-skeleton-${skeletonIdx}`}
+                            className="rounded-xl border border-noir-200/80 bg-stone-50/70 px-3.5 py-3 sm:px-4 sm:py-3.5 animate-pulse space-y-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-1.5">
+                                <div className="h-4 w-28 bg-stone-200 rounded" />
+                                <div className="h-3 w-44 bg-stone-200/80 rounded" />
+                              </div>
+                              <div className="space-y-1 text-right">
+                                <div className="h-4 w-16 bg-stone-200 rounded ml-auto" />
+                                <div className="h-2.5 w-14 bg-stone-200/70 rounded ml-auto" />
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-black/5">
+                              <div className="h-3 w-32 bg-stone-200/80 rounded" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      packagesList.map((pkg, idx) => {
+                        const isSelected = selectedPkgId === pkg.id;
+                        const isBenefitsOpen = openBenefitsIds.includes(pkg.id);
+                        const perSessionAmount =
+                          pkg.perSessionPrice || Math.round(pkg.price / (pkg.sessions || 1));
+                        const isBestValue =
+                          idx === packagesList.length - 1 && packagesList.length > 1;
+                        const isPopular = pkg.isPopular && !isBestValue;
+                        const currencySymbol = treatment.currency || '£';
 
-                      return (
-                        <div
-                          key={pkg.id}
-                          onClick={() => setSelectedPkgId(pkg.id)}
-                          className={`relative flex flex-col cursor-pointer justify-between rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3 ring-[1.5px] duration-200 ${
-                            isSelected
-                              ? 'bg-purple/5 ring-purple border-transparent shadow-xs'
-                              : 'border-noir-200 bg-white/80 ring-transparent sm:hover:border-transparent sm:hover:bg-white sm:hover:ring-purple/70'
-                          }`}
-                        >
-                          {/* Top Row: Session Title, Badges, and Per-Session Price */}
-                          <div className="flex items-start justify-between w-full gap-2">
-                            <div className="space-y-0.5">
-                              <div className="no-margin flex items-center text-sm sm:text-base font-medium text-noir-900">
-                                <span>
-                                  {pkg.sessions} {pkg.sessions === 1 ? 'session' : 'sessions'}
-                                </span>
-
-                                {/* Popular badge */}
-                                {isPopular && (
-                                  <span className="ml-2 -mt-0.5 rounded-full bg-access-lilac px-2 py-0.5 font-Lato text-[10px] sm:text-xs font-semibold text-white">
-                                    Popular
+                        return (
+                          <div
+                            key={pkg.id}
+                            onClick={() => setSelectedPkgId(pkg.id)}
+                            className={`relative flex flex-col cursor-pointer justify-between rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3 ring-[1.5px] duration-200 ${
+                              isSelected
+                                ? 'bg-purple/5 ring-purple border-transparent shadow-xs'
+                                : 'border-noir-200 bg-white/80 ring-transparent sm:hover:border-transparent sm:hover:bg-white sm:hover:ring-purple/70'
+                            }`}
+                          >
+                            {/* Top Row: Session Title, Badges, and Per-Session Price */}
+                            <div className="flex items-start justify-between w-full gap-2">
+                              <div className="space-y-0.5">
+                                <div className="no-margin flex items-center text-sm sm:text-base font-medium text-noir-900">
+                                  <span>
+                                    {pkg.sessions} {pkg.sessions === 1 ? 'session' : 'sessions'}
                                   </span>
-                                )}
 
-                                {/* Best value badge */}
-                                {isBestValue && (
-                                  <span className="flex items-center space-x-0.5 ml-2 -mt-0.5 rounded-full bg-[#E62414] px-2 py-0.5 font-Lato text-[10px] sm:text-xs font-semibold text-white">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="16"
-                                      height="16"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="lucide lucide-thumbs-up h-2.5 w-2.5 sm:h-3 sm:w-3"
-                                      aria-hidden="true"
-                                    >
-                                      <path d="M7 10v12"></path>
-                                      <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path>
-                                    </svg>
-                                    <span>Best value</span>
-                                  </span>
+                                  {/* Popular badge */}
+                                  {isPopular && (
+                                    <span className="ml-2 -mt-0.5 rounded-full bg-access-lilac px-2 py-0.5 font-Lato text-[10px] sm:text-xs font-semibold text-white">
+                                      Popular
+                                    </span>
+                                  )}
+
+                                  {/* Best value badge */}
+                                  {isBestValue && (
+                                    <span className="flex items-center space-x-0.5 ml-2 -mt-0.5 rounded-full bg-[#E62414] px-2 py-0.5 font-Lato text-[10px] sm:text-xs font-semibold text-white">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="lucide lucide-thumbs-up h-2.5 w-2.5 sm:h-3 sm:w-3"
+                                        aria-hidden="true"
+                                      >
+                                        <path d="M7 10v12"></path>
+                                        <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path>
+                                      </svg>
+                                      <span>Best value</span>
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Savings percentage tag */}
+                                {pkg.savingsBadge && (
+                                  <div className="flex items-center space-x-1 font-semibold font-Lato text-[11px] text-[#E62414] duration-500 uppercase tracking-wide">
+                                    <span>{pkg.savingsBadge}</span>
+                                  </div>
                                 )}
                               </div>
 
-                              {/* Savings percentage tag */}
-                              {pkg.savingsBadge && (
-                                <div className="flex items-center space-x-1 font-semibold font-Lato text-[11px] text-[#E62414] duration-500 uppercase tracking-wide">
-                                  <span>{pkg.savingsBadge}</span>
-                                </div>
+                              {/* Right Side Per-Session Pricing */}
+                              <div className="flex flex-col text-right shrink-0">
+                                <p className="no-margin text-sm sm:text-base font-semibold text-noir-900">
+                                  {currencySymbol}{perSessionAmount}
+                                  <span className="text-xs font-normal text-noir-600">.95</span>
+                                </p>
+                                <p className="no-margin text-noir-500 antialiased -mt-0.5">
+                                  <small className="text-[10px] sm:text-xs">per session</small>
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Package-specific details*/}
+                            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500 mt-1 flex-wrap">
+                              {pkg.description && (
+                                <span className="text-stone-500 italic line-clamp-1">{pkg.description}</span>
                               )}
                             </div>
 
-                            {/* Right Side Per-Session Pricing */}
-                            <div className="flex flex-col text-right shrink-0">
-                              <p className="no-margin text-sm sm:text-base font-semibold text-noir-900">
-                                {currencySymbol}{perSessionAmount}
-                                <span className="text-xs font-normal text-noir-600">.95</span>
-                              </p>
-                              <p className="no-margin text-noir-500 antialiased -mt-0.5">
-                                <small className="text-[10px] sm:text-xs">per session</small>
-                              </p>
+                            {/* Collapsible Benefits Trigger & Drawer */}
+                            <div className="w-full mt-1.5 pt-1.5 border-t border-black/5">
+                              <button
+                                type="button"
+                                onClick={(e) => toggleBenefits(pkg.id, e)}
+                                className="flex items-center gap-1.5 text-[11px] sm:text-xs font-Lato font-medium text-noir-600 hover:text-black transition-colors cursor-pointer py-0.5"
+                              >
+                                <span>{isBenefitsOpen ? 'Hide package benefits' : 'View package benefits'}</span>
+                                <ChevronDown
+                                  className={`w-3 h-3 transition-transform duration-200 ${
+                                    isBenefitsOpen ? 'rotate-180 text-black' : 'text-noir-500'
+                                  }`}
+                                />
+                              </button>
+
+                              {/* Collapsible Benefits Content */}
+                              <AnimatePresence>
+                                {isBenefitsOpen && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="pt-1.5 pb-0.5 space-y-1">
+                                      {pkg.includes && pkg.includes.length > 0 ? (
+                                        <ul className="space-y-1">
+                                          {pkg.includes.map((benefit, bIdx) => (
+                                            <li
+                                              key={bIdx}
+                                              className="flex items-start gap-1.5 text-[11px] sm:text-xs text-noir-700 font-light"
+                                            >
+                                              <Check className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+                                              <span>{benefit}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      ) : (
+                                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-noir-700 font-light">
+                                          <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                                          <span>Full clinician assessment and post-treatment aftercare</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
                           </div>
-
-                          {/* Package-specific details*/}
-                          <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500 mt-1 flex-wrap">
-                            {pkg.description && (
-                              <span className="text-stone-500 italic line-clamp-1">{pkg.description}</span>
-                            )}
-                          </div>
-
-                          {/* Collapsible Benefits Trigger & Drawer */}
-                          <div className="w-full mt-1.5 pt-1.5 border-t border-black/5">
-                            <button
-                              type="button"
-                              onClick={(e) => toggleBenefits(pkg.id, e)}
-                              className="flex items-center gap-1.5 text-[11px] sm:text-xs font-Lato font-medium text-noir-600 hover:text-black transition-colors cursor-pointer py-0.5"
-                            >
-                              <span>{isBenefitsOpen ? 'Hide package benefits' : 'View package benefits'}</span>
-                              <ChevronDown
-                                className={`w-3 h-3 transition-transform duration-200 ${
-                                  isBenefitsOpen ? 'rotate-180 text-black' : 'text-noir-500'
-                                }`}
-                              />
-                            </button>
-
-                            {/* Collapsible Benefits Content */}
-                            <AnimatePresence>
-                              {isBenefitsOpen && (
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="overflow-hidden"
-                                >
-                                  <div className="pt-1.5 pb-0.5 space-y-1">
-                                    {pkg.includes && pkg.includes.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {pkg.includes.map((benefit, bIdx) => (
-                                          <li
-                                            key={bIdx}
-                                            className="flex items-start gap-1.5 text-[11px] sm:text-xs text-noir-700 font-light"
-                                          >
-                                            <Check className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
-                                            <span>{benefit}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-noir-700 font-light">
-                                        <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                                        <span>Full clinician assessment and post-treatment aftercare</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -319,7 +423,8 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                   <div className="flex items-end justify-between space-x-2">
                     <div className="whitespace-nowrap">
                       <p className="text-lg sm:text-xl font-medium text-noir-900">
-                        Total {treatment.currency || '£'}{currentSelectedPackage?.price || treatment.startingPrice}
+                        Total {treatment.currency || '£'}
+                        {currentSelectedPackage?.price || treatment.startingPrice}
                         <span className="text-xs sm:text-sm font-normal text-noir-600">.95</span>
                       </p>
                     </div>
@@ -330,15 +435,18 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                 <div className="w-full pt-1 pb-2">
                   <button
                     type="button"
+                    disabled={isLoadingPackages || !resolvedTreatment || !currentSelectedPackage}
                     onClick={() => {
-                      if (currentSelectedPackage) {
-                        onBookPackage(treatment, currentSelectedPackage);
+                      if (resolvedTreatment && currentSelectedPackage) {
+                        onBookPackage(resolvedTreatment, currentSelectedPackage);
                       }
                     }}
                     className="inline-flex items-center rounded-full justify-center ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 font-Lato duration-200 font-semibold antialiased focus:outline-none bg-noir-900 text-white sm:hover:bg-noir-800 disabled:bg-noir-700 disabled:sm:hover:bg-noir-700 px-6 py-2.5 sm:py-3 text-sm sm:text-base w-full whitespace-nowrap cursor-pointer shadow-md active:scale-[0.99]"
                   >
                     <div className="flex items-center space-x-2">
-                      <span>Add to Treatment Plan →</span>
+                      <span>
+                        {isLoadingPackages ? 'Loading Package Details...' : 'Add to Treatment Plan →'}
+                      </span>
                     </div>
                   </button>
                 </div>

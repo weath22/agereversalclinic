@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { TreatmentPricingItem } from '../../data/treatmentPricing';
+import { TreatmentPricingCardSummary } from '../../data/treatmentPricing';
 import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 import { getTreatmentImagePath } from '../../utils/treatmentImageHelper';
 
 interface PricingCardProps {
-  treatment: TreatmentPricingItem;
-  onChoosePackage: (treatment: TreatmentPricingItem) => void;
+  treatment: TreatmentPricingCardSummary;
+  onChoosePackage: (treatment: TreatmentPricingCardSummary) => void;
 }
 
 export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt);
+  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
   const [currentImageSrc, setCurrentImageSrc] = useState<string>(idBasedUrl);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
@@ -20,8 +20,8 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
-    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt));
-  }, [treatment.id, treatment.image, (treatment as any).updatedAt]);
+    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt));
+  }, [treatment.id, treatment.image, treatment.updatedAt]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const fallback = treatment.image || treatment.coverMedia?.url || '';

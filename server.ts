@@ -2,6 +2,11 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import {
+  TREATMENT_PRICING_DATA,
+  filterAndSortTreatmentCards,
+  TreatmentSortOption,
+} from './src/data/treatmentPricing.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,71 +98,16 @@ const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
 const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
 
 function generateTreatmentPricingTs(items: any[]): string {
-  return `/**
- * ============================================================================
- * TREATMENT & PRICING CATALOG (Auto-Synced from Admin Studio)
- * ============================================================================
- */
-
-import { TreatmentMediaItem } from '../types';
-export { getTreatmentImagePath, getTreatmentCardImage, handleTreatmentImageError } from '../utils/treatmentImageHelper';
-
-export interface PricingPackage {
-  id: string;
-  name: string;
-  price: number;
-  perSessionPrice?: number;
-  savingsBadge?: string;
-  badge?: string;
-  isPopular?: boolean;
-  sessions: number;
-  description: string;
-  includes: string[];
-  procedureTime?: string;
-  downtime?: string;
-}
-
-export type TreatmentCategory =
-  | 'Face & Injectables'
-  | 'Body Sculpting'
-  | 'Advanced Facials'
-  | 'Hair & Beauty'
-  | 'IV Drip Lounge & Wellness';
-
-export interface TreatmentPricingItem {
-  id: string;
-  title: string;
-  category: TreatmentCategory;
-  description: string;
-  image: string;
-  startingPrice: number;
-  currency: string;
-  procedureTime: string;
-  downtime: string;
-  badge?: string;
-  popular?: boolean;
-  hidden?: boolean;
-  isActive?: boolean;
-  packages: PricingPackage[];
-  coverMedia?: TreatmentMediaItem;
-  galleryImages?: string[];
-  seoKeywords?: string[];
-}
-
-export const PRICING_CATEGORIES = [
-  'All Procedures',
-  'Face & Injectables',
-  'Body Sculpting',
-  'Advanced Facials',
-  'Hair & Beauty',
-  'IV Drip Lounge & Wellness'
-] as const;
-
-export const TREATMENT_PRICING_CATEGORIES = PRICING_CATEGORIES;
-export type PricingCategory = typeof PRICING_CATEGORIES[number];
-
-export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = ${JSON.stringify(items, null, 2)};
-`;
+  // Preserve all interfaces, projection helpers, and sub-option definitions in src/data/treatmentPricing.ts
+  if (fs.existsSync(treatmentPricingPath)) {
+    const existingContent = fs.readFileSync(treatmentPricingPath, 'utf-8');
+    const marker = 'export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] =';
+    const markerIdx = existingContent.indexOf(marker);
+    if (markerIdx !== -1) {
+      return `${existingContent.slice(0, markerIdx)}${marker} ${JSON.stringify(items, null, 2)};\n`;
+    }
+  }
+  return `export const TREATMENT_PRICING_DATA = ${JSON.stringify(items, null, 2)};\n`;
 }
 
 // API: Save treatment pricing data to siteCustomizations.json and src/data/treatmentPricing.ts on disk
@@ -428,9 +378,82 @@ app.get('/api/admin/clinic-info', (_req, res) => {
 app.post('/api/admin/clinic-data', handleSaveClinicData);
 app.post('/api/admin/save-clinic-info', handleSaveClinicData);
 
+// Helper to resolve active treatment catalog on the server (customizations override or default TREATMENT_PRICING_DATA)
+const getServerTreatmentCatalog = (): any[] => {
+  if (fs.existsSync(customizationsPath)) {
+    try {
+      const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      if (
+        customizations.treatment_pricing_data &&
+        Array.isArray(customizations.treatment_pricing_data) &&
+        customizations.treatment_pricing_data.length > 0
+      ) {
+        return customizations.treatment_pricing_data;
+      }
+    } catch {
+      // fall through to default catalog
+    }
+  }
+  return TREATMENT_PRICING_DATA;
+};
+
 // GET /api/admin/treatment-pricing
-app.get('/api/admin/treatment-pricing', (_req, res) => {
+// Supports:
+// - fields=card (projects only essential card columns + pagination metadata: totalCount, hasMore, page, offset, limit)
+// - page, offset, limit (defaults to limit=10 when fields=card or pagination params are supplied)
+// - category, subOptions (comma-separated or repeated), search, sort
+app.get('/api/admin/treatment-pricing', (req, res) => {
   try {
+    const fieldsMode = req.query.fields ? String(req.query.fields) : undefined;
+    const hasPaginationParams =
+      fieldsMode === 'card' ||
+      req.query.page !== undefined ||
+      req.query.offset !== undefined ||
+      req.query.limit !== undefined ||
+      req.query.category !== undefined ||
+      req.query.subOptions !== undefined ||
+      req.query.search !== undefined ||
+      req.query.sort !== undefined;
+
+    if (hasPaginationParams) {
+      const catalog = getServerTreatmentCatalog();
+      const page = req.query.page !== undefined ? Number(req.query.page) : undefined;
+      const offset = req.query.offset !== undefined ? Number(req.query.offset) : undefined;
+      const limit = req.query.limit !== undefined ? Number(req.query.limit) : 10;
+      const category = req.query.category ? String(req.query.category) : 'All Procedures';
+      const rawSubOptions = req.query.subOptions;
+      const subOptions = Array.isArray(rawSubOptions)
+        ? rawSubOptions.map(String).filter(Boolean)
+        : typeof rawSubOptions === 'string' && rawSubOptions.trim().length > 0
+        ? rawSubOptions.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+      const search = req.query.search ? String(req.query.search) : '';
+      const sort = (req.query.sort ? String(req.query.sort) : 'featured') as TreatmentSortOption;
+
+      const paginated = filterAndSortTreatmentCards(catalog, {
+        page,
+        offset,
+        limit,
+        category,
+        subOptions,
+        search,
+        sort,
+        fields: 'card',
+      });
+
+      return res.json({
+        success: true,
+        data: paginated.items,
+        items: paginated.items,
+        totalCount: paginated.totalCount,
+        hasMore: paginated.hasMore,
+        page: paginated.page,
+        offset: paginated.offset,
+        limit: paginated.limit,
+      });
+    }
+
+    // Legacy / full admin store fetch (when no fields=card or pagination query parameters are passed)
     if (fs.existsSync(customizationsPath)) {
       const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
       if (customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data)) {
@@ -440,6 +463,55 @@ app.get('/api/admin/treatment-pricing', (_req, res) => {
     return res.json({ success: true, data: null });
   } catch (error) {
     console.error('Error reading treatment pricing customizations:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// GET /api/admin/treatment-pricing/:id
+// Single-item detail endpoint: fetches packages[], procedureTime, and downtime on demand when a specific card is clicked
+app.get('/api/admin/treatment-pricing/:id', (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ success: false, error: 'Missing treatment ID' });
+    }
+
+    const catalog = getServerTreatmentCatalog();
+    const matched = catalog.find((item: any) => item.id === targetId);
+    if (!matched) {
+      return res.status(404).json({ success: false, error: `Treatment '${targetId}' not found` });
+    }
+
+    // Return the single item's package details & essential fields (excluding unrelated gallery/SEO arrays)
+    const detailPayload = {
+      id: matched.id,
+      title: matched.title,
+      category: matched.category,
+      description: matched.description,
+      image: matched.image,
+      startingPrice: matched.startingPrice,
+      currency: matched.currency || '£',
+      procedureTime: matched.procedureTime,
+      downtime: matched.downtime,
+      badge: matched.badge,
+      popular: matched.popular,
+      updatedAt: matched.updatedAt,
+      packages: matched.packages || [],
+      coverMedia: matched.coverMedia
+        ? {
+            url: matched.coverMedia.url,
+            altText: matched.coverMedia.altText,
+            seoTitle: matched.coverMedia.seoTitle,
+          }
+        : undefined,
+    };
+
+    return res.json({
+      success: true,
+      data: detailPayload,
+    });
+  } catch (error) {
+    console.error('Error fetching single treatment package details:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
 });

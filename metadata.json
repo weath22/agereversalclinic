@@ -1,6 +1,8 @@
 {
-  "name": "Age Reversal Clinic",
+  "name": "Remix Age Reversal Clinic",
   "description": "Premium Age Reversal Clinic website featuring medical, surgical, and cosmetic dermatology care, built with React, Tailwind, and Motion.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

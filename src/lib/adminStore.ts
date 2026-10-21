@@ -29,6 +29,11 @@ import {
 import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
 import { 
   TreatmentPricingItem, 
+  TreatmentPricingCardSummary,
+  TreatmentPricingQueryParams,
+  PaginatedTreatmentCardsResponse,
+  projectTreatmentCardSummary,
+  filterAndSortTreatmentCards,
   TREATMENT_PRICING_DATA, 
   TREATMENT_PRICING_CATEGORIES 
 } from '../data/treatmentPricing';
@@ -1790,5 +1795,154 @@ export async function fetchRemoteTreatmentPricingData(): Promise<TreatmentPricin
     return null;
   }
 }
+
+/**
+ * Lightweight Card-List Query:
+ * Returns ONLY essential card fields (TreatmentPricingCardSummary) and strips out
+ * packages, procedureTime, downtime, galleryImages, and seoKeywords.
+ */
+export function getTreatmentPricingCardList(): TreatmentPricingCardSummary[] {
+  const fullData = getTreatmentPricingData();
+  return fullData
+    .filter((item) => !item.hidden && item.isActive !== false)
+    .map(projectTreatmentCardSummary);
+}
+
+/**
+ * Remote Card-List Query (fields=card):
+ * Fetches only projected card summary fields from the server without heavy package payloads.
+ */
+export async function fetchRemoteTreatmentPricingCardList(): Promise<TreatmentPricingCardSummary[] | null> {
+  try {
+    const res = await fetch('/api/admin/treatment-pricing?fields=card');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.data)) {
+        return json.data
+          .filter((item: TreatmentPricingCardSummary) => !item.hidden && item.isActive !== false)
+          .map(projectTreatmentCardSummary);
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not fetch remote projected treatment cards:', err);
+    return null;
+  }
+}
+
+/**
+ * Paginated & Projected Local Store Helper:
+ * Filters by category, subOptions, search, sorts by sort, projects ONLY essential card columns,
+ * and returns a 10-card slice (offset, limit=10) + totalCount and hasMore metadata.
+ */
+export function getPaginatedTreatmentCards(
+  params: TreatmentPricingQueryParams = {}
+): PaginatedTreatmentCardsResponse {
+  const fullData = getTreatmentPricingData();
+  return filterAndSortTreatmentCards(fullData, {
+    ...params,
+    limit: params.limit ?? 10,
+    fields: 'card',
+  });
+}
+
+/**
+ * Paginated & Projected Server Endpoint Fetcher:
+ * Calls GET /api/admin/treatment-pricing?fields=card&limit=10&offset=...&category=...&subOptions=...&search=...&sort=...
+ * Falls back cleanly to getPaginatedTreatmentCards if offline or if local unsaved admin edits exist.
+ */
+export async function fetchPaginatedTreatmentCards(
+  params: TreatmentPricingQueryParams = {}
+): Promise<PaginatedTreatmentCardsResponse> {
+  const limit = params.limit ?? 10;
+  const page = params.page ?? 1;
+  const offset = params.offset !== undefined ? params.offset : (page - 1) * limit;
+
+  // If the admin has local storage overrides in the current browser session, ensure immediate consistency
+  if (typeof window !== 'undefined' && window.localStorage.getItem(TREATMENT_PRICING_DATA_KEY)) {
+    return getPaginatedTreatmentCards({ ...params, limit, offset, page });
+  }
+
+  try {
+    const searchParams = new URLSearchParams();
+    searchParams.set('fields', 'card');
+    searchParams.set('limit', String(limit));
+    searchParams.set('offset', String(offset));
+    searchParams.set('page', String(Math.floor(offset / limit) + 1));
+
+    if (params.category) searchParams.set('category', params.category);
+    if (params.subOptions && params.subOptions.length > 0) {
+      searchParams.set('subOptions', params.subOptions.join(','));
+    }
+    if (params.search && params.search.trim()) {
+      searchParams.set('search', params.search.trim());
+    }
+    if (params.sort) {
+      searchParams.set('sort', params.sort);
+    }
+
+    const res = await fetch(`/api/admin/treatment-pricing?${searchParams.toString()}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.items || json.data)) {
+        const rawItems = json.items || json.data;
+        return {
+          items: rawItems.map(projectTreatmentCardSummary),
+          totalCount:
+            typeof json.totalCount === 'number' ? json.totalCount : rawItems.length,
+          hasMore: Boolean(json.hasMore),
+          page: typeof json.page === 'number' ? json.page : Math.floor(offset / limit) + 1,
+          offset: typeof json.offset === 'number' ? json.offset : offset,
+          limit: typeof json.limit === 'number' ? json.limit : limit,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Falling back to local paginated treatment cards:', err);
+  }
+
+  return getPaginatedTreatmentCards({ ...params, limit, offset, page });
+}
+
+/**
+ * Lookup full treatment details (including packages, procedureTime, downtime) by ID synchronously
+ */
+export function getTreatmentPricingItemById(id: string): TreatmentPricingItem | null {
+  const fullData = getTreatmentPricingData();
+  return fullData.find((item) => item.id === id) || null;
+}
+
+/**
+ * On-demand single-item detail selector/fetcher:
+ * Calls GET /api/admin/treatment-pricing/:id to fetch packages[], procedureTime, and downtime
+ * ONLY when a specific card is clicked.
+ */
+export async function getTreatmentPackageDetailsById(
+  id: string
+): Promise<TreatmentPricingItem | null> {
+  if (!id) return null;
+
+  // Check local admin override first if present
+  if (typeof window !== 'undefined' && window.localStorage.getItem(TREATMENT_PRICING_DATA_KEY)) {
+    const localItem = getTreatmentPricingItemById(id);
+    if (localItem) return localItem;
+  }
+
+  try {
+    const res = await fetch(`/api/admin/treatment-pricing/${encodeURIComponent(id)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.data) {
+        return json.data as TreatmentPricingItem;
+      }
+    }
+  } catch (err) {
+    console.warn(`Could not fetch remote package details for ${id}, using local fallback:`, err);
+  }
+
+  return getTreatmentPricingItemById(id);
+}
+
+
 
 

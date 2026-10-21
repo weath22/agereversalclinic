@@ -1,15 +1,23 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  TREATMENT_PRICING_DATA,
   PRICING_CATEGORIES,
+  TREATMENT_CATEGORY_SUB_OPTIONS,
+  TreatmentSubOptionConfig,
   TreatmentPricingItem,
+  TreatmentPricingCardSummary,
   PricingCategory,
   PricingPackage,
 } from '../../data/treatmentPricing';
-import { getTreatmentPricingData, fetchRemoteTreatmentPricingData } from '../../lib/adminStore';
+import {
+  getPaginatedTreatmentCards,
+  fetchPaginatedTreatmentCards,
+  getTreatmentPricingItemById,
+  getTreatmentPackageDetailsById,
+} from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
 import { TreatmentVisualBanner } from './TreatmentVisualBanner';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
 import {
   Search,
   ArrowLeft,
@@ -25,138 +33,12 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useTreatmentCart } from '../../context/TreatmentCartContext';
 
-export interface TreatmentSubOptionConfig {
-  id: string;
-  label: string;
-  filter: (item: TreatmentPricingItem) => boolean;
-}
+export type { TreatmentSubOptionConfig };
+export { TREATMENT_CATEGORY_SUB_OPTIONS };
 
-export const TREATMENT_CATEGORY_SUB_OPTIONS: Record<string, TreatmentSubOptionConfig[]> = {
-  'Face & Injectables': [
-    {
-      id: 'anti-wrinkle',
-      label: 'Anti-Wrinkle (Botox)',
-      filter: (item) => item.id.startsWith('botox-'),
-    },
-    {
-      id: 'dermal-fillers',
-      label: 'Dermal Fillers (1ml)',
-      filter: (item) => item.id.startsWith('filler-'),
-    },
-    {
-      id: 'skin-boosters-lifting',
-      label: 'Skin Boosters & Lifting',
-      filter: (item) =>
-        item.id.includes('profhilo') ||
-        item.id.includes('salmon-sperm') ||
-        item.id.includes('morpheus8-facial') ||
-        item.id.includes('emface') ||
-        item.id.includes('endolift') ||
-        item.id.includes('co2-laser'),
-    },
-  ],
-  'Body Sculpting': [
-    {
-      id: 'fat-dissolving',
-      label: 'Fat Dissolving (Aqualyx & Deso)',
-      filter: (item) => item.id.startsWith('aqualyx-') || item.id.startsWith('deso-'),
-    },
-    {
-      id: 'body-contouring',
-      label: 'Body Contouring & Fat Loss',
-      filter: (item) =>
-        item.id.includes('cryo') ||
-        item.id.includes('emsculpt') ||
-        item.id.includes('slimming-pen') ||
-        item.id.includes('cellulite'),
-    },
-    {
-      id: 'high-tech-body',
-      label: 'High-Tech Body & Tightening',
-      filter: (item) => item.id.includes('morpheus8-body'),
-    },
-  ],
-  'Advanced Facials': [
-    {
-      id: 'clinical-medical',
-      label: 'Clinical & Medical Facials',
-      filter: (item) =>
-        item.id.includes('aquafacial') ||
-        item.id.includes('glass-skin') ||
-        item.id.includes('microneedling') ||
-        item.id.includes('bb-glow') ||
-        item.id.includes('diamond-microdermabrasion') ||
-        item.id.includes('regenerative-scalp'),
-    },
-    {
-      id: 'specials',
-      label: 'Monday & Friday Specials',
-      filter: (item) =>
-        item.id.includes('gold-facial') ||
-        item.id.includes('egf-facial') ||
-        item.id.includes('red-carpet') ||
-        item.id.includes('idebenone'),
-    },
-    {
-      id: 'light-oxygen',
-      label: 'Light, Oxygen & Extractions',
-      filter: (item) =>
-        item.id.includes('oxygen') ||
-        item.id.includes('led-light') ||
-        item.id.includes('high-frequency') ||
-        item.id.includes('extractions'),
-    },
-  ],
-  'Hair & Beauty': [
-    {
-      id: 'beauty-lashes-spmu',
-      label: 'Beauty, Lashes & SPMU',
-      filter: (item) =>
-        item.id.includes('lash') ||
-        item.id.includes('brow') ||
-        item.id.includes('spmu') ||
-        item.id.includes('tattoo-removal') ||
-        item.id.includes('party-makeup'),
-    },
-    {
-      id: 'hair-salon',
-      label: 'Hair Salon & Trichology',
-      filter: (item) =>
-        item.id.includes('hair-salon') ||
-        item.id.includes('hair-colour') ||
-        item.id.includes('hair-treatments') ||
-        item.id.includes('mens-kids'),
-    },
-    {
-      id: 'laser-hair-removal',
-      label: 'Laser Hair Removal & Waxing',
-      filter: (item) =>
-        item.id.includes('laser-') ||
-        item.id.includes('electrolysis') ||
-        item.id.includes('body-waxing'),
-    },
-  ],
-  'IV Drip Lounge & Wellness': [
-    {
-      id: 'iv-drips',
-      label: 'IV Nutrient Infusions',
-      filter: (item) =>
-        item.id.includes('iv-') &&
-        !item.id.includes('b12') &&
-        !item.id.includes('iron-shot'),
-    },
-    {
-      id: 'booster-shots',
-      label: 'Booster Vitamin Shots',
-      filter: (item) => item.id.includes('b12') || item.id.includes('iron-shot'),
-    },
-    {
-      id: 'prp-regenerative',
-      label: 'PRP Regenerative Therapy',
-      filter: (item) => item.id.startsWith('prp-'),
-    },
-  ],
-};
+const PAGE_SIZE = 10;
+
+
 
 const SORT_OPTIONS: Array<{ id: 'featured' | 'price-asc' | 'price-desc' | 'name-asc'; label: string }> = [
   { id: 'featured', label: 'Featured Order' },
@@ -190,32 +72,165 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<'featured' | 'price-asc' | 'price-desc' | 'name-asc'>('featured');
   const [isOrderMenuOpen, setIsOrderMenuOpen] = useState(false);
-  const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
+  const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<
+    TreatmentPricingCardSummary | TreatmentPricingItem | null
+  >(null);
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Dynamic treatment pricing data initialized from admin store with live update subscription
-  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
+  // Initial synchronous batch of 10 projected cards for instant first paint
+  const initialBatch = getPaginatedTreatmentCards({
+    page: 1,
+    offset: 0,
+    limit: PAGE_SIZE,
+    category: initialCategoryFilter || 'All Procedures',
+    subOptions: [],
+    search: '',
+    sort: 'featured',
+    fields: 'card',
+  });
+
+  // Paginated 10-Card Infinite Scroll State
+  const [visibleTreatments, setVisibleTreatments] = useState<TreatmentPricingCardSummary[]>(
+    () => initialBatch.items
+  );
+  const [page, setPage] = useState<number>(1);
+  const [offset, setOffset] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(() => initialBatch.totalCount);
+  const [hasMore, setHasMore] = useState<boolean>(() => initialBatch.hasMore);
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+  const activeQueryIdRef = useRef<number>(0);
+
+  // Reset cursor to first 10 items whenever category, subOptions, searchQuery, or sortOption changes
+  const resetAndFetchFirstBatch = useCallback(() => {
+    const queryId = ++activeQueryIdRef.current;
+    const syncFirstPage = getPaginatedTreatmentCards({
+      page: 1,
+      offset: 0,
+      limit: PAGE_SIZE,
+      category: selectedCategory,
+      subOptions: selectedSubOptions,
+      search: searchQuery,
+      sort: sortOption,
+      fields: 'card',
+    });
+
+    setPage(1);
+    setOffset(0);
+    setVisibleTreatments(syncFirstPage.items);
+    setTotalCount(syncFirstPage.totalCount);
+    setHasMore(syncFirstPage.hasMore);
+    setIsLoadingMore(false);
+
+    // Also sync first 10 projected cards from remote endpoint
+    fetchPaginatedTreatmentCards({
+      page: 1,
+      offset: 0,
+      limit: PAGE_SIZE,
+      category: selectedCategory,
+      subOptions: selectedSubOptions,
+      search: searchQuery,
+      sort: sortOption,
+      fields: 'card',
+    })
+      .then((remoteBatch) => {
+        if (activeQueryIdRef.current !== queryId) return;
+        setVisibleTreatments(remoteBatch.items);
+        setTotalCount(remoteBatch.totalCount);
+        setHasMore(remoteBatch.hasMore);
+      })
+      .catch(() => {});
+  }, [selectedCategory, selectedSubOptions, searchQuery, sortOption]);
 
   useEffect(() => {
-    const refreshPricing = () => {
-      setPricingData(getTreatmentPricingData());
+    resetAndFetchFirstBatch();
+  }, [resetAndFetchFirstBatch]);
+
+  useEffect(() => {
+    const handleAdminPricingUpdate = () => {
+      resetAndFetchFirstBatch();
     };
-
-    // On mount, pull remote server customizations (siteCustomizations.json) so deployed clients get the latest edits!
-    fetchRemoteTreatmentPricingData().then((remoteData) => {
-      if (remoteData && Array.isArray(remoteData) && remoteData.length > 0) {
-        setPricingData(remoteData);
-      } else {
-        refreshPricing();
-      }
-    }).catch(() => {});
-
-    window.addEventListener('treatment_pricing_updated', refreshPricing);
+    window.addEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
     return () => {
-      window.removeEventListener('treatment_pricing_updated', refreshPricing);
+      window.removeEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
     };
-  }, []);
+  }, [resetAndFetchFirstBatch]);
+
+  // Load next batch of 10 essential card items on scroll
+  const loadNextBatch = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    const nextOffset = offset + PAGE_SIZE;
+    const nextPage = page + 1;
+    const queryId = activeQueryIdRef.current;
+
+    setIsLoadingMore(true);
+
+    try {
+      const nextBatch = await fetchPaginatedTreatmentCards({
+        page: nextPage,
+        offset: nextOffset,
+        limit: PAGE_SIZE,
+        category: selectedCategory,
+        subOptions: selectedSubOptions,
+        search: searchQuery,
+        sort: sortOption,
+        fields: 'card',
+      });
+
+      if (activeQueryIdRef.current !== queryId) return;
+
+      setVisibleTreatments((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const uniqueNew = nextBatch.items.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...uniqueNew];
+      });
+      setOffset(nextOffset);
+      setPage(nextPage);
+      setTotalCount(nextBatch.totalCount);
+      setHasMore(nextBatch.hasMore);
+    } finally {
+      if (activeQueryIdRef.current === queryId) {
+        setIsLoadingMore(false);
+      }
+    }
+  }, [
+    isLoadingMore,
+    hasMore,
+    offset,
+    page,
+    selectedCategory,
+    selectedSubOptions,
+    searchQuery,
+    sortOption,
+  ]);
+
+  // Lightweight IntersectionObserver attached to sentinel at bottom of the cards grid
+  useEffect(() => {
+    const sentinelEl = loadMoreSentinelRef.current;
+    if (!sentinelEl || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0];
+        if (firstEntry && firstEntry.isIntersecting && !isLoadingMore && hasMore) {
+          loadNextBatch();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '280px 0px',
+        threshold: 0.05,
+      }
+    );
+
+    observer.observe(sentinelEl);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoadingMore, loadNextBatch]);
 
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(57);
@@ -276,58 +291,12 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     );
   };
 
-  // Filtered & Sorted Treatments
-  const filteredTreatments = useMemo(() => {
-    // Only display active, non-hidden procedures to clients
-    let list = pricingData.filter((item) => !item.hidden && item.isActive !== false);
-
-    // Category Filter
-    if (selectedCategory !== 'All Procedures') {
-      list = list.filter((item) => item.category === selectedCategory);
-
-      // Multi-select sub-option filter within category:
-      // When one or more options are selected, show treatments matching ANY selected option
-      if (selectedSubOptions.length > 0) {
-        const catOptions = TREATMENT_CATEGORY_SUB_OPTIONS[selectedCategory];
-        const activeFilters = catOptions?.filter((o) => selectedSubOptions.includes(o.id));
-        if (activeFilters && activeFilters.length > 0) {
-          list = list.filter((item) => activeFilters.some((f) => f.filter(item)));
-        }
-      }
-    }
-
-    // Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        (item) =>
-          item.title.toLowerCase().includes(q) ||
-          item.category.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q) ||
-          item.packages.some((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))
-      );
-    }
-
-    // Sorting
-    switch (sortOption) {
-      case 'price-asc':
-        list.sort((a, b) => a.startingPrice - b.startingPrice);
-        break;
-      case 'price-desc':
-        list.sort((a, b) => b.startingPrice - a.startingPrice);
-        break;
-      case 'name-asc':
-        list.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case 'featured':
-      default:
-        // Prioritize popular items, then original order
-        list.sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
-        break;
-    }
-
-    return list;
-  }, [selectedCategory, selectedSubOptions, searchQuery, sortOption]);
+  const handleChooseCardPackage = useCallback((cardSummary: TreatmentPricingCardSummary) => {
+    setSelectedPackageInitialId(undefined);
+    // Open PackageSelectModal immediately with the lightweight card summary;
+    // PackageSelectModal displays an instant loading state and fetches full packages[] by ID on demand.
+    setActivePackageModalTreatment(cardSummary);
+  }, []);
 
   const handleBookPackage = (treatment: TreatmentPricingItem, pkg: PricingPackage) => {
     setActivePackageModalTreatment(null);
@@ -433,7 +402,8 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           {/* Results Count & Sort Dropdown */}
           <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
             <span className="text-xs sm:text-sm text-stone-500 font-light">
-              Showing <strong className="text-stone-900 font-semibold">{filteredTreatments.length}</strong> treatments
+              Showing <strong className="text-stone-900 font-semibold">{visibleTreatments.length}</strong> of{' '}
+              <strong className="text-stone-900 font-semibold">{totalCount}</strong> treatments
             </span>
 
             {/* Sort Order Menu */}
@@ -587,20 +557,58 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* 5. Pricing Cards Grid (2 per row on mobile screens) */}
-        {filteredTreatments.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
-            {filteredTreatments.map((treatment) => (
-              <PricingCard
-                key={treatment.id}
-                treatment={treatment}
-                onChoosePackage={(t) => {
-                  setSelectedPackageInitialId(undefined);
-                  setActivePackageModalTreatment(t);
-                }}
-              />
-            ))}
-          </div>
+        {/* 5. Pricing Cards Grid (2 per row on mobile screens, 10 cards per scroll batch) */}
+        {visibleTreatments.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+              {visibleTreatments.map((treatment) => (
+                <PricingCard
+                  key={treatment.id}
+                  treatment={treatment}
+                  onChoosePackage={handleChooseCardPackage}
+                />
+              ))}
+
+              {/* Skeleton Placeholders while next batch of 10 cards is loading */}
+              {isLoadingMore &&
+                Array.from({ length: Math.min(4, Math.max(2, totalCount - visibleTreatments.length)) }).map(
+                  (_, idx) => (
+                    <div
+                      key={`pricing-card-skeleton-${idx}`}
+                      className="flex h-full flex-col rounded bg-transparent sm:bg-mist overflow-hidden border border-stone-200/50 animate-pulse"
+                    >
+                      <div className="h-44 sm:h-72 md:h-80 bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] flex items-center justify-center relative">
+                        <LogoOutlineSkeleton size="lg" variant="gold" animate={true} />
+                      </div>
+                      <div className="flex flex-1 flex-col justify-between space-y-3 sm:space-y-4 px-3 sm:px-4 py-3 sm:py-4 bg-white/60">
+                        <div className="space-y-2">
+                          <div className="h-3 w-16 bg-stone-200 rounded" />
+                          <div className="h-7 w-24 bg-stone-200 rounded" />
+                          <div className="hidden md:block h-4 w-full bg-stone-200 rounded" />
+                          <div className="hidden md:block h-4 w-3/4 bg-stone-200 rounded" />
+                        </div>
+                        <div className="h-9 w-full md:w-36 bg-stone-200 rounded-full" />
+                      </div>
+                    </div>
+                  )
+                )}
+            </div>
+
+            {/* Infinite Scroll Sentinel */}
+            {hasMore && (
+              <div
+                ref={loadMoreSentinelRef}
+                className="w-full py-8 flex flex-col items-center justify-center gap-2"
+                aria-hidden="true"
+              >
+                <span className="text-xs text-stone-400 font-light tracking-wide">
+                  {isLoadingMore
+                    ? 'Loading more procedures...'
+                    : `Scroll to view more (${visibleTreatments.length} of ${totalCount})`}
+                </span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="py-16 sm:py-24 text-center bg-white rounded-3xl border border-luxury-border/80 p-8 shadow-xs max-w-lg mx-auto">
             <Search className="w-10 h-10 text-stone-300 mx-auto mb-3" />
