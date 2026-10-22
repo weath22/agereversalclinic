@@ -12,29 +12,31 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
-  const [currentImageSrc, setCurrentImageSrc] = useState<string>(idBasedUrl);
+  const resolveRealImageUrl = (item: TreatmentPricingCardSummary): string => {
+    const rawImg = (item.image || item.coverMedia?.url || '').trim();
+    if (!rawImg || rawImg.includes('unsplash.com')) {
+      return '';
+    }
+    if (rawImg.startsWith('/assets/treatments/')) {
+      return getTreatmentImagePath(item.id, rawImg, item.updatedAt);
+    }
+    return rawImg;
+  };
+
+  const initialSrc = resolveRealImageUrl(treatment);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(initialSrc);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(() => !initialSrc);
 
   useEffect(() => {
+    const nextSrc = resolveRealImageUrl(treatment);
+    setCurrentImageSrc(nextSrc);
     setIsLoaded(false);
-    setHasError(false);
-    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt));
-  }, [treatment.id, treatment.image, treatment.updatedAt]);
+    setHasError(!nextSrc);
+  }, [treatment.id, treatment.image, treatment.coverMedia?.url, treatment.updatedAt]);
 
   const handleImageError = () => {
-    const rawFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
-    const isDummyStockImage =
-      !rawFallback ||
-      rawFallback.includes('images.unsplash.com') ||
-      rawFallback.includes('unsplash.com');
-
-    if (!isDummyStockImage && currentImageSrc !== rawFallback) {
-      setCurrentImageSrc(rawFallback);
-    } else {
-      setHasError(true);
-    }
+    setHasError(true);
   };
 
   const altLabel = treatment.coverMedia?.altText || `${treatment.title} Treatment at Age Reversal Clinic London`;
@@ -56,15 +58,14 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               </div>
             )}
 
-            {/* Permanent Outline Logo Placeholder if no image exists or loading failed (No generated images) */}
+            {/* Permanent Brand Logo Placeholder if no image exists or loading failed */}
             {hasError && (
-              <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
+              <div className="w-full h-full flex items-center justify-center p-3 sm:p-6 text-center z-0">
                 <LogoOutlineSkeleton
                   size="lg"
                   variant="gold"
                   animate={false}
                   showText={true}
-                  text="Age Reversal Protocol"
                 />
               </div>
             )}
@@ -90,13 +91,13 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               />
             )}
           </div>
-          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-10">
+          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-20">
             <p className="no-margin text-xs sm:text-sm text-white md:text-lg font-medium">
               {treatment.title}
             </p>
           </div>
           {treatment.badge && (
-            <div className="absolute left-2 sm:left-3 top-3 sm:top-4 flex flex-col space-y-2 items-start">
+            <div className="absolute left-2 sm:left-3 top-2.5 sm:top-4 z-20 flex flex-col space-y-2 items-start pointer-events-none">
               <div className="inline-flex items-center font-Lato rounded-full border border-noir-600 px-2 py-0.5 text-[10px] sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-none font-semibold antialiased text-white bg-[#EA014A]">
                 {treatment.badge}
               </div>

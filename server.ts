@@ -88,6 +88,10 @@ app.use('/assets/treatments', express.static(srcTreatmentsDir));
 if (fs.existsSync(distTreatmentsDir)) {
   app.use('/assets/treatments', express.static(distTreatmentsDir));
 }
+// Fast 404 for missing treatment images so they never fall through to Vite SPA HTML middleware
+app.use('/assets/treatments', (_req, res) => {
+  res.status(404).end();
+});
 app.use('/assets', express.static(publicAssetsDir));
 app.use('/assets', express.static(srcAssetsDir));
 app.use(express.static(path.resolve(__dirname, 'public')));
@@ -380,6 +384,7 @@ app.post('/api/admin/save-clinic-info', handleSaveClinicData);
 
 // Helper to resolve active treatment catalog on the server (customizations override or default TREATMENT_PRICING_DATA)
 const getServerTreatmentCatalog = (): any[] => {
+  let catalog: any[] = TREATMENT_PRICING_DATA;
   if (fs.existsSync(customizationsPath)) {
     try {
       const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
@@ -388,13 +393,37 @@ const getServerTreatmentCatalog = (): any[] => {
         Array.isArray(customizations.treatment_pricing_data) &&
         customizations.treatment_pricing_data.length > 0
       ) {
-        return customizations.treatment_pricing_data;
+        catalog = customizations.treatment_pricing_data;
       }
     } catch {
       // fall through to default catalog
     }
   }
-  return TREATMENT_PRICING_DATA;
+
+  // Check which treatment IDs actually have an uploaded .webp file in public/assets/treatments
+  const existingDiskIds = new Set<string>();
+  if (fs.existsSync(publicTreatmentsDir)) {
+    try {
+      for (const file of fs.readdirSync(publicTreatmentsDir)) {
+        if (file.endsWith('.webp')) {
+          existingDiskIds.add(file.slice(0, -5).toLowerCase());
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return catalog.map((item: any) => {
+    const cleanId = String(item.id || '')
+      .trim()
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .toLowerCase();
+    if (existingDiskIds.has(cleanId)) {
+      return { ...item, image: `/assets/treatments/${cleanId}.webp` };
+    }
+    return item;
+  });
 };
 
 // GET /api/admin/treatment-pricing
