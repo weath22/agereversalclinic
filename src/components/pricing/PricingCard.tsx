@@ -12,29 +12,59 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
-  const [currentImageSrc, setCurrentImageSrc] = useState<string>(idBasedUrl);
+  const getInitialImageSrc = (item: TreatmentPricingCardSummary): string => {
+    const customImg = (item.image || item.coverMedia?.url || '').trim();
+    const hasCustomNonUnsplash = Boolean(customImg && !customImg.includes('unsplash.com'));
+
+    if (hasCustomNonUnsplash && !customImg.startsWith('/assets/treatments/')) {
+      return customImg;
+    }
+
+    return getTreatmentImagePath(item.id, item.image, item.updatedAt);
+  };
+
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(() =>
+    getInitialImageSrc(treatment)
+  );
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    const nextSrc = getInitialImageSrc(treatment);
+    setCurrentImageSrc(nextSrc);
     setIsLoaded(false);
     setHasError(false);
-    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt));
-  }, [treatment.id, treatment.image, treatment.updatedAt]);
+  }, [treatment.id, treatment.image, treatment.coverMedia?.url, treatment.updatedAt]);
+
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  }, [currentImageSrc]);
 
   const handleImageError = () => {
-    const rawFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
-    const isDummyStockImage =
-      !rawFallback ||
-      rawFallback.includes('images.unsplash.com') ||
-      rawFallback.includes('unsplash.com');
+    const predictablePath = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
+    const customFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
+    const isValidCustomFallback =
+      Boolean(customFallback) &&
+      !customFallback.includes('unsplash.com') &&
+      !customFallback.startsWith('/assets/treatments/');
 
-    if (!isDummyStockImage && currentImageSrc !== rawFallback) {
-      setCurrentImageSrc(rawFallback);
-    } else {
-      setHasError(true);
+    // If we started with a custom URL and it failed, try the predictable ID-based path once
+    if (currentImageSrc !== predictablePath && !currentImageSrc.startsWith('/assets/treatments/')) {
+      setCurrentImageSrc(predictablePath);
+      return;
     }
+
+    // If we started with the predictable ID-based path and it 404'd, try a non-Unsplash custom URL if available
+    if (isValidCustomFallback && currentImageSrc !== customFallback) {
+      setCurrentImageSrc(customFallback);
+      return;
+    }
+
+    // Never fall back to dummy Unsplash photos — show the permanent brand logo placeholder
+    setHasError(true);
   };
 
   const altLabel = treatment.coverMedia?.altText || `${treatment.title} Treatment at Age Reversal Clinic London`;
@@ -71,6 +101,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
             {/* High-Resolution Clinical Photograph */}
             {!hasError && (
               <img
+                ref={imgRef}
                 alt={altLabel}
                 title={seoTitle}
                 loading="lazy"
