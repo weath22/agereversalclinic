@@ -400,17 +400,27 @@ const getServerTreatmentCatalog = (): any[] => {
     }
   }
 
-  // Check which treatment IDs actually have an uploaded .webp file in public/assets/treatments
-  const existingDiskIds = new Set<string>();
-  if (fs.existsSync(publicTreatmentsDir)) {
-    try {
-      for (const file of fs.readdirSync(publicTreatmentsDir)) {
-        if (file.endsWith('.webp')) {
-          existingDiskIds.add(file.slice(0, -5).toLowerCase());
+  // Check which treatment IDs actually have an uploaded image file in public/assets/treatments or src/assets/images/treatments
+  const existingDiskFiles = new Map<string, { path: string; mtimeMs: number }>();
+  for (const dir of [publicTreatmentsDir, srcTreatmentsDir, distTreatmentsDir]) {
+    if (fs.existsSync(dir)) {
+      try {
+        for (const file of fs.readdirSync(dir)) {
+          const ext = path.extname(file).toLowerCase();
+          if (['.webp', '.png', '.jpg', '.jpeg', '.svg'].includes(ext)) {
+            const baseId = path.basename(file, ext).toLowerCase();
+            if (!existingDiskFiles.has(baseId)) {
+              const stat = fs.statSync(path.join(dir, file));
+              existingDiskFiles.set(baseId, {
+                path: `/assets/treatments/${file}`,
+                mtimeMs: Math.floor(stat.mtimeMs),
+              });
+            }
+          }
         }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
   }
 
@@ -419,8 +429,13 @@ const getServerTreatmentCatalog = (): any[] => {
       .trim()
       .replace(/[^a-zA-Z0-9_-]/g, '-')
       .toLowerCase();
-    if (existingDiskIds.has(cleanId)) {
-      return { ...item, image: `/assets/treatments/${cleanId}.webp` };
+    const diskMatch = existingDiskFiles.get(cleanId);
+    if (diskMatch) {
+      return {
+        ...item,
+        image: diskMatch.path,
+        updatedAt: item.updatedAt || diskMatch.mtimeMs,
+      };
     }
     return item;
   });
@@ -790,30 +805,40 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
     const cleanRelativePath = `/assets/treatments/${singleFileName}`;
     const cacheBustedUrl = `${cleanRelativePath}?v=${timestamp}`;
 
-    // 3. Optional sync: Update in-memory siteCustomizations.json and treatmentPricing.ts if matching item exists
+    // 3. Sync: Update siteCustomizations.json and treatmentPricing.ts if matching item exists
     try {
+      let customizations: Record<string, any> = {};
       if (fs.existsSync(customizationsPath)) {
-        const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
-        if (customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data)) {
-          let updated = false;
-          customizations.treatment_pricing_data = customizations.treatment_pricing_data.map((item: any) => {
-            const itemId = String(item.id || '').trim().toLowerCase();
-            const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
-            if (itemId === sanitizedId || normalizedItemId === sanitizedId) {
-              updated = true;
-              return { ...item, image: cleanRelativePath, updatedAt: timestamp };
-            }
-            return item;
-          });
-
-          if (updated) {
-            customizations.lastSynced = new Date().toISOString();
-            fs.writeFileSync(customizationsPath, JSON.stringify(customizations, null, 2), 'utf-8');
-            const tsCode = generateTreatmentPricingTs(customizations.treatment_pricing_data);
-            fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
-            console.log(`[Admin] Synced updated treatment image directly into treatmentPricing.ts`);
-          }
+        try {
+          customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+        } catch {
+          customizations = {};
         }
+      }
+
+      const sourceList: any[] =
+        customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data) && customizations.treatment_pricing_data.length > 0
+          ? customizations.treatment_pricing_data
+          : TREATMENT_PRICING_DATA;
+
+      let updated = false;
+      const updatedList = sourceList.map((item: any) => {
+        const itemId = String(item.id || '').trim().toLowerCase();
+        const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
+        if (itemId === sanitizedId || normalizedItemId === sanitizedId) {
+          updated = true;
+          return { ...item, image: cleanRelativePath, updatedAt: timestamp };
+        }
+        return item;
+      });
+
+      if (updated) {
+        customizations.treatment_pricing_data = updatedList;
+        customizations.lastSynced = new Date().toISOString();
+        fs.writeFileSync(customizationsPath, JSON.stringify(customizations, null, 2), 'utf-8');
+        const tsCode = generateTreatmentPricingTs(updatedList);
+        fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
+        console.log(`[Admin] Synced updated treatment image directly into treatmentPricing.ts`);
       }
     } catch (syncErr) {
       console.warn(`[Admin] Could not sync with treatmentPricing.ts:`, syncErr);

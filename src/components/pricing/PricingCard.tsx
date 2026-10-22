@@ -12,30 +12,58 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const resolveRealImageUrl = (item: TreatmentPricingCardSummary): string => {
-    const rawImg = (item.image || item.coverMedia?.url || '').trim();
-    if (!rawImg || rawImg.includes('unsplash.com')) {
-      return '';
+  const getInitialImageSrc = (item: TreatmentPricingCardSummary): string => {
+    const customImg = (item.image || item.coverMedia?.url || '').trim();
+    const hasCustomNonUnsplash = Boolean(customImg && !customImg.includes('unsplash.com'));
+
+    if (hasCustomNonUnsplash && !customImg.startsWith('/assets/treatments/')) {
+      return customImg;
     }
-    if (rawImg.startsWith('/assets/treatments/')) {
-      return getTreatmentImagePath(item.id, rawImg, item.updatedAt);
-    }
-    return rawImg;
+
+    return getTreatmentImagePath(item.id, item.image, item.updatedAt);
   };
 
-  const initialSrc = resolveRealImageUrl(treatment);
-  const [currentImageSrc, setCurrentImageSrc] = useState<string>(initialSrc);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(() =>
+    getInitialImageSrc(treatment)
+  );
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [hasError, setHasError] = useState<boolean>(() => !initialSrc);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    const nextSrc = resolveRealImageUrl(treatment);
+    const nextSrc = getInitialImageSrc(treatment);
     setCurrentImageSrc(nextSrc);
     setIsLoaded(false);
-    setHasError(!nextSrc);
+    setHasError(false);
   }, [treatment.id, treatment.image, treatment.coverMedia?.url, treatment.updatedAt]);
 
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  }, [currentImageSrc]);
+
   const handleImageError = () => {
+    const predictablePath = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
+    const customFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
+    const isValidCustomFallback =
+      Boolean(customFallback) &&
+      !customFallback.includes('unsplash.com') &&
+      !customFallback.startsWith('/assets/treatments/');
+
+    // If we started with a custom URL and it failed, try the predictable ID-based path once
+    if (currentImageSrc !== predictablePath && !currentImageSrc.startsWith('/assets/treatments/')) {
+      setCurrentImageSrc(predictablePath);
+      return;
+    }
+
+    // If we started with the predictable ID-based path and it 404'd, try a non-Unsplash custom URL if available
+    if (isValidCustomFallback && currentImageSrc !== customFallback) {
+      setCurrentImageSrc(customFallback);
+      return;
+    }
+
+    // Never fall back to dummy Unsplash photos — show the permanent brand logo placeholder
     setHasError(true);
   };
 
@@ -73,6 +101,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
             {/* High-Resolution Clinical Photograph */}
             {!hasError && (
               <img
+                ref={imgRef}
                 alt={altLabel}
                 title={seoTitle}
                 loading="lazy"
@@ -80,8 +109,8 @@ export const PricingCard: React.FC<PricingCardProps> = ({
                 height="800"
                 decoding="async"
                 data-nimg="1"
-                className={`h-full w-full object-cover transition-opacity duration-500 sm:group-hover:opacity-85 ${
-                  isLoaded ? 'opacity-60' : 'opacity-0'
+                className={`h-full w-full object-cover transition-opacity duration-500 ${
+                  isLoaded ? 'opacity-90 group-hover:opacity-100' : 'opacity-0'
                 }`}
                 src={currentImageSrc}
                 onLoad={() => setIsLoaded(true)}

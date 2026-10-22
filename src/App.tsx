@@ -612,10 +612,12 @@ export default function App() {
         </Suspense>
       </main>
 
-      {/* 14.5 Social Media Reels / Video Showcase */}
-      <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
-        <SocialVideoShowcase />
-      </div>
+      {/* 14.5 Social Media Reels / Video Showcase (Excluded on Pricing Page to save bandwidth) */}
+      {!isPricingOpen && (
+        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
+          <SocialVideoShowcase />
+        </div>
+      )}
 
       {/* 15. Footnotes and Sitemap */}
       <div style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>
