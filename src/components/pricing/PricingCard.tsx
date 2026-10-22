@@ -12,59 +12,29 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   treatment,
   onChoosePackage,
 }) => {
-  const getInitialImageSrc = (item: TreatmentPricingCardSummary): string => {
-    const customImg = (item.image || item.coverMedia?.url || '').trim();
-    const hasCustomNonUnsplash = Boolean(customImg && !customImg.includes('unsplash.com'));
-
-    if (hasCustomNonUnsplash && !customImg.startsWith('/assets/treatments/')) {
-      return customImg;
-    }
-
-    return getTreatmentImagePath(item.id, item.image, item.updatedAt);
-  };
-
-  const [currentImageSrc, setCurrentImageSrc] = useState<string>(() =>
-    getInitialImageSrc(treatment)
-  );
+  const idBasedUrl = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(idBasedUrl);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
-  const imgRef = React.useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    const nextSrc = getInitialImageSrc(treatment);
-    setCurrentImageSrc(nextSrc);
     setIsLoaded(false);
     setHasError(false);
-  }, [treatment.id, treatment.image, treatment.coverMedia?.url, treatment.updatedAt]);
-
-  useEffect(() => {
-    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
-      setIsLoaded(true);
-    }
-  }, [currentImageSrc]);
+    setCurrentImageSrc(getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt));
+  }, [treatment.id, treatment.image, treatment.updatedAt]);
 
   const handleImageError = () => {
-    const predictablePath = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
-    const customFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
-    const isValidCustomFallback =
-      Boolean(customFallback) &&
-      !customFallback.includes('unsplash.com') &&
-      !customFallback.startsWith('/assets/treatments/');
+    const rawFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
+    const isDummyStockImage =
+      !rawFallback ||
+      rawFallback.includes('images.unsplash.com') ||
+      rawFallback.includes('unsplash.com');
 
-    // If we started with a custom URL and it failed, try the predictable ID-based path once
-    if (currentImageSrc !== predictablePath && !currentImageSrc.startsWith('/assets/treatments/')) {
-      setCurrentImageSrc(predictablePath);
-      return;
+    if (!isDummyStockImage && currentImageSrc !== rawFallback) {
+      setCurrentImageSrc(rawFallback);
+    } else {
+      setHasError(true);
     }
-
-    // If we started with the predictable ID-based path and it 404'd, try a non-Unsplash custom URL if available
-    if (isValidCustomFallback && currentImageSrc !== customFallback) {
-      setCurrentImageSrc(customFallback);
-      return;
-    }
-
-    // Never fall back to dummy Unsplash photos — show the permanent brand logo placeholder
-    setHasError(true);
   };
 
   const altLabel = treatment.coverMedia?.altText || `${treatment.title} Treatment at Age Reversal Clinic London`;
@@ -86,14 +56,15 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               </div>
             )}
 
-            {/* Permanent Brand Logo Placeholder if no image exists or loading failed */}
+            {/* Permanent Outline Logo Placeholder if no image exists or loading failed (No generated images) */}
             {hasError && (
-              <div className="w-full h-full flex items-center justify-center p-3 sm:p-6 text-center z-0">
+              <div className="w-full h-full flex items-center justify-center p-6 text-center z-10">
                 <LogoOutlineSkeleton
                   size="lg"
                   variant="gold"
                   animate={false}
                   showText={true}
+                  text="Age Reversal Protocol"
                 />
               </div>
             )}
@@ -101,7 +72,6 @@ export const PricingCard: React.FC<PricingCardProps> = ({
             {/* High-Resolution Clinical Photograph */}
             {!hasError && (
               <img
-                ref={imgRef}
                 alt={altLabel}
                 title={seoTitle}
                 loading="lazy"
@@ -120,13 +90,13 @@ export const PricingCard: React.FC<PricingCardProps> = ({
               />
             )}
           </div>
-          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-20">
+          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-10">
             <p className="no-margin text-xs sm:text-sm text-white md:text-lg font-medium">
               {treatment.title}
             </p>
           </div>
           {treatment.badge && (
-            <div className="absolute left-2 sm:left-3 top-2.5 sm:top-4 z-20 flex flex-col space-y-2 items-start pointer-events-none">
+            <div className="absolute left-2 sm:left-3 top-3 sm:top-4 flex flex-col space-y-2 items-start">
               <div className="inline-flex items-center font-Lato rounded-full border border-noir-600 px-2 py-0.5 text-[10px] sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-none font-semibold antialiased text-white bg-[#EA014A]">
                 {treatment.badge}
               </div>

@@ -78,29 +78,26 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Initial synchronous batch of 10 projected cards computed once for instant first paint
-  const initialBatchRef = useRef<ReturnType<typeof getPaginatedTreatmentCards> | null>(null);
-  if (!initialBatchRef.current) {
-    initialBatchRef.current = getPaginatedTreatmentCards({
-      page: 1,
-      offset: 0,
-      limit: PAGE_SIZE,
-      category: initialCategoryFilter || 'All Procedures',
-      subOptions: [],
-      search: '',
-      sort: 'featured',
-      fields: 'card',
-    });
-  }
+  // Initial synchronous batch of 10 projected cards for instant first paint
+  const initialBatch = getPaginatedTreatmentCards({
+    page: 1,
+    offset: 0,
+    limit: PAGE_SIZE,
+    category: initialCategoryFilter || 'All Procedures',
+    subOptions: [],
+    search: '',
+    sort: 'featured',
+    fields: 'card',
+  });
 
   // Paginated 10-Card Infinite Scroll State
   const [visibleTreatments, setVisibleTreatments] = useState<TreatmentPricingCardSummary[]>(
-    () => initialBatchRef.current!.items
+    () => initialBatch.items
   );
   const [page, setPage] = useState<number>(1);
   const [offset, setOffset] = useState<number>(0);
-  const [totalCount, setTotalCount] = useState<number>(() => initialBatchRef.current!.totalCount);
-  const [hasMore, setHasMore] = useState<boolean>(() => initialBatchRef.current!.hasMore);
+  const [totalCount, setTotalCount] = useState<number>(() => initialBatch.totalCount);
+  const [hasMore, setHasMore] = useState<boolean>(() => initialBatch.hasMore);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);

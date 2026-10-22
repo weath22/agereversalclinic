@@ -36,9 +36,6 @@ export const TreatmentVisualBanner: React.FC = () => {
               <img
                 src={img.src}
                 alt={img.alt}
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
                 className="w-full h-auto max-h-[500px] object-contain rounded-xl transition-transform duration-500 group-hover:scale-[1.01]"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center rounded-2xl pointer-events-none">

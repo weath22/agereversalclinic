@@ -46,9 +46,9 @@ const DEFAULT_BRAND_LOGO_URL =
 const SIZE_MAP: Record<LogoSkeletonSize, { box: string }> = {
   xs: { box: 'w-8 h-8' },
   sm: { box: 'w-12 h-12' },
-  md: { box: 'w-16 h-16 sm:w-20 sm:h-20' },
-  lg: { box: 'w-16 h-16 sm:w-32 sm:h-32' },
-  xl: { box: 'w-28 h-28 sm:w-44 sm:h-44' },
+  md: { box: 'w-20 h-20' },
+  lg: { box: 'w-24 h-24 sm:w-32 sm:h-32' },
+  xl: { box: 'w-36 h-36 sm:w-44 sm:h-44' },
   full: { box: 'w-full h-full' },
 };
 
@@ -158,15 +158,15 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
           initial={{ opacity: 0.6 }}
           animate={animate ? { opacity: [0.55, 0.9, 0.55] } : undefined}
           transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="text-center mt-1.5 sm:mt-3 space-y-0.5"
+          className="text-center mt-3 space-y-0.5"
         >
           <p
-            className={`text-[9px] sm:text-[11px] font-serif tracking-[0.18em] sm:tracking-[0.25em] uppercase font-medium ${variantStyles.textColor}`}
+            className={`text-[11px] font-serif tracking-[0.25em] uppercase font-medium ${variantStyles.textColor}`}
           >
-            Age Reversal Clinics
+            Age Reversal
           </p>
           {text && (
-            <p className={`text-[8px] sm:text-[9px] font-sans tracking-wider ${variantStyles.subtextColor}`}>
+            <p className={`text-[9px] font-sans tracking-wider ${variantStyles.subtextColor}`}>
               {text}
             </p>
           )}
