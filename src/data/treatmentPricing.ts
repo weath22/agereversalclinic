@@ -386,7 +386,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Bunny Lines Anti-Wrinkle",
     "category": "Face & Injectables",
     "description": "Precision neurotoxin injection relaxing the nasalis muscle to smooth horizontal and diagonal wrinkles across the bridge of the nose when smiling or squinting.",
-    "image": "/assets/1792491562698-shutterstock_2490434939-2000x2000.jpg",
+    "image": "/assets/1792240576668-bunny-lines-treatment-cover_Age_reversal_clinic_medspa_uk.jpeg",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -412,7 +412,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Crow's Feet Anti-Wrinkle",
     "category": "Face & Injectables",
     "description": "Micro-droplet botulinum injections targeting the lateral orbicularis oculi to soften smiling laugh lines around the outer eye corners while preserving sparkling eye animation.",
-    "image": "/assets/1792494600657-595812225748528945__1_.jpg",
+    "image": "/assets/1792240614208-Precision_Cosmetic_Injection_Treatment_Age_reversal_clinic_medspa_uk.png",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -439,7 +439,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Gummy Smile Reduction",
     "category": "Face & Injectables",
     "description": "Calibrated neurotoxin relaxation of hyperactive LLSAN upper lip levator muscles, restoring natural balance so gums remain covered during spontaneous smiling.",
-    "image": "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240647196-Gumm_smile_Treatment_at__Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "15 Mins",
@@ -465,7 +465,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Lip Flip (Botox)",
     "category": "Face & Injectables",
     "description": "Subtle relaxation of the superficial orbicularis oris muscle along the vermilion border, gently rolling the top lip upward to create fuller presence without filler volume.",
-    "image": "https://images.unsplash.com/photo-1588515724527-074a7a56616c?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240676120-gummy-smile-botox-cover_Age_reversal_clinic_uk_groove_park.jpeg",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "15 Mins",
@@ -492,7 +492,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Puppet Lines (DAO Muscle)",
     "category": "Face & Injectables",
     "description": "Targeted relaxation of the depressor anguli oris (DAO) muscle to lift downward-pulling mouth corners, eradicating resting melancholic or downturned expressions.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240782591-marionette-lines_Age_reversal_clinic_medspa_uk_groove_park_london.webp",
     "startingPrice": 160,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -518,7 +518,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Anti-Wrinkle: 1 Area Full Treatment",
     "category": "Face & Injectables",
     "description": "Full clinical dose targeting one major dynamic upper facial zone (Frown Glabella, Horizontal Forehead, or Bilateral Crow’s Feet) for smooth, rested skin.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240808622-Anti-Wrinkle_1_Area_Full_Treatment_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -544,7 +544,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Chin Dimpling (Pebble / Orange Peel Chin)",
     "category": "Face & Injectables",
     "description": "Relaxes hyperactive mentalis muscle fibers to smooth golf-ball dimpling, crease tethering, and lower chin strain during speech and expression.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240856192-Chin_Dimpling_Pebble__Orange_Peel_Chin_Face_Injectables_Age_reversal_clinic_uk_groove_park.png",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -570,7 +570,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Frown Lines (Glabella \"11\" Lines)",
     "category": "Face & Injectables",
     "description": "Direct dosing of the corrugator and procerus complex between the eyebrows to erase deep vertical furrow creases and relieve habitual brow tension.",
-    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792240968583-Frown_Lines_Glabella_11_Lines_Age_reversal_clinic_medspa_uk_groove_park_london.webp",
     "startingPrice": 180,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -596,7 +596,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Forehead Lines Anti-Wrinkle",
     "category": "Face & Injectables",
     "description": "Expert frontalis muscle dosing that irons out horizontal expression ripples while balancing brow height to prevent heaviness or dropping.",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792241005616-Anti-Wrinkle_3_Areas_Complete_Upper_Face_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 230,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -622,7 +622,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Anti-Wrinkle: 2 Areas Treatment",
     "category": "Face & Injectables",
     "description": "Simultaneous treatment of two complementary zones (e.g. Frown + Forehead or Frown + Crow’s Feet) for cohesive upper facial rejuvenation.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792241027498-Anti-Wrinkle_1_Area_Full_Treatment_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 250,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -649,7 +649,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Anti-Wrinkle: 3 Areas (Complete Upper Face)",
     "category": "Face & Injectables",
     "description": "The definitive gold-standard upper-face anti-ageing protocol smoothing Forehead, Glabella Frown Lines, and Crow’s Feet in one seamless appointment.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792241085606-Anti_Wrinkle_3_Areas_Complete_Upper_Face_Age_reversal_clinic_uk_groove_park.avif",
     "startingPrice": 280,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -678,7 +678,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Neck Bands (Nefertiti Lift)",
     "category": "Face & Injectables",
     "description": "Relaxes downward-pulling platysmal bands along the anterior neck and mandibular border, sharpening jawline definition and smoothing horizontal neck rings.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792241106481-Neck_Bands_Nefertiti_Lift_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -704,7 +704,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Jaw Slimming (Masseter Reduction / Bruxism)",
     "category": "Face & Injectables",
     "description": "High-dose neurotoxin targeting hypertrophic masseter chewing muscles to slim a square lower face into a refined V-shape while relieving teeth grinding.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792330262409-Jaw_Slimming_Masseter_Reduction_Bruxism_Age_reversal_clinic_uk_groove_park.png",
     "startingPrice": 320,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -731,7 +731,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Extended Neck Bands Therapy",
     "category": "Face & Injectables",
     "description": "Comprehensive multi-vector platysmal therapy across the anterior, lateral, and lower neck borders to smooth intense vertical cords and crepey bands.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792329322256-Extended_Neck_Bands_Therapy_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 370,
     "currency": "£",
     "procedureTime": "35 Mins",
@@ -757,7 +757,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Cheek - Soft Tissue Volumisation (1ml)",
     "category": "Face & Injectables",
     "description": "Subtle mid-face volume restoration using cross-linked hyaluronic acid to lift tired apple cheeks and gently soften deep nasolabial folds.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792329145997-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -783,7 +783,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Cleavage Lines (Décolletage) Filler (1ml)",
     "category": "Face & Injectables",
     "description": "Smooths vertical sleep, side-sleeping, and sun-damage creases across the central chest and cleavage using delicate skin-smoothing hyaluronic micro-papules.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792328975789-Cleavage_Lines_D_colletage_Filler_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -809,7 +809,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Lip Enhancement (1ml Premium Filler)",
     "category": "Face & Injectables",
     "description": "Bespoke architectural lip shaping emphasizing vermilion border crispness, Cupid’s bow contouring, pillowy volume, and profound deep moisture.",
-    "image": "https://images.unsplash.com/photo-1588515724527-074a7a56616c?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792330524654-Lip_Enhancement_1ml_Premium_Filler_Age_reversal_clinic_uk_groove_park.webp",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -838,7 +838,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Non-Surgical Rhinoplasty (Liquid Nose Job)",
     "category": "Face & Injectables",
     "description": "Strategic micro-droplet placement of ultra-dense cohesive filler to camouflage dorsal humps, lift drooping tips, and straighten the nasal bridge profile without surgery.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792330940135-Non_Surgical_Rhinoplasty_Liquid_Nose_Job_Age_reversal_clinic_uk_groove_park.webp",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -865,7 +865,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Nose to Mouth Lines (Nasolabial Folds 1ml)",
     "category": "Face & Injectables",
     "description": "Softens deep smile creases running from the nostril corners down to mouth borders, restoring a rested, youthful midface profile.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792348415998-Nose_to_Mouth_Lines_Treatments_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -892,7 +892,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Tear Trough & Under-Eye Hollows (1ml)",
     "category": "Face & Injectables",
     "description": "Brightens tired dark circles and fills hollow sunken under-eye troughs using ultra-gentle low-hydrophilic hyaluronic acid via blunt cannula safety protocol.",
-    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792331972748-Tear_Trough_Under_Eye_Hollows_1ml_Age_reversal_clinic_uk_groove_park.png",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -919,7 +919,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Temples Volume Restoration (1ml)",
     "category": "Face & Injectables",
     "description": "Rebuilds hollowed, skeletal temporal depressions to restore a soft, youthful oval-heart facial contour and support lateral brow elevation.",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792348680404-Temple_Filler_Temples_Volume_Restoration_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 290,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -945,7 +945,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Cheek - Deep Contouring (1ml)",
     "category": "Face & Injectables",
     "description": "High-definition zygomatic arch enhancement placing high-density cohesive hyaluronic acid onto the bone for razor-sharp cheekbone definition and structural projection.",
-    "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792348559117-Cheek_Fillers_Cheek_Deep_Contouring_1ml_Age_reversal_clinic_uk_groove_park.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -971,7 +971,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Jaw & Chin - Deep Contouring (1ml)",
     "category": "Face & Injectables",
     "description": "Sculpts mandibular angles, sharpens the jawline profile border, and advances chin projection to eliminate lower face heaviness and strengthen side profiles.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792348434601-Cheek_Soft_Tissue_Volumisation_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -998,7 +998,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Hand Rejuvenation Filler (1ml)",
     "category": "Face & Injectables",
     "description": "Restores lost volume over dorsal veins and exposed tendons on the back of hands, delivering firm, plump, and age-defying smooth skin texture.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792347444005-Aesthetician_Hand_rejuvenation_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 470,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -1024,7 +1024,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Profhilo® 2ml Bioremodeling",
     "category": "Face & Injectables",
     "description": "Ultra-pure stabilized hyaluronic acid formulated with patented NAHYCO® technology to stimulate 4 types of collagen and elastin across 10 Bio-Aesthetic Points.",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792349052932-profhilo_facial_treatment_Profhilo_2ml_Bioremodeling_Age_reversal_clinic_uk_groove_park.webp",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -1066,7 +1066,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Salmon Sperm Injection (Polynucleotides / PDRN)",
     "category": "Face & Injectables",
     "description": "Breakthrough cellular regeneration therapy utilizing purified DNA fragments (PDRN) to repair damaged cellular structures, fade pigmentation, and firm delicate eye and facial tissue.",
-    "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792349221256-Salmon_Sperm_Injection_Polynucleotides_PDRN_Age_reversal_clinic_uk_groove_park.png",
     "startingPrice": 350,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -1107,7 +1107,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Morpheus8 Facial RF Microneedling",
     "category": "Face & Injectables",
     "description": "Subdermal adipose remodeling that combines microneedling with radiofrequency to melt submental fat, rebuild elastin, and tighten skin up to 4mm deep.",
-    "image": "https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792350777360-Goldskin_Elite_FDA_Cleared_RF_Microneedling_Fractional_RF_Machine_for_Face_Body_Age_reversal_clinic_uk_groove_park.jpg",
     "startingPrice": 190,
     "currency": "£",
     "procedureTime": "60 Mins",
@@ -1147,7 +1147,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "EMFACE Skin Tightening & Lifting",
     "category": "Face & Injectables",
     "description": "Hands-free needle-free therapy combining synchronized Radiofrequency (RF) and High-Intensity Facial Electrical Stimulation (HIFES™) to tone delicate elevator muscles and smooth wrinkles.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/1792350896240-EMFACE_Skin_Tightening_Lifting_Age_reversal_clinic_uk_groove_park.webp",
     "startingPrice": 250,
     "currency": "£",
     "procedureTime": "20 Mins",
@@ -1187,7 +1187,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     "title": "Endolift® - Fiber Lift (Laser)",
     "category": "Face & Injectables",
     "description": "Minimally invasive internal laser procedure using microscopic optical fibers to dissolve localized fat and stimulate internal collagen retraction along the jawline and neck.",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/endolift-fiber-lift.webp",
     "startingPrice": 950,
     "currency": "£",
     "procedureTime": "60 - 90 Mins",
@@ -1206,14 +1206,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Post-procedure compression guidance"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792720955618
   },
   {
     "id": "co2-laser-face-neck",
     "title": "CO2 Laser: Facial & Neck Resurfacing",
     "category": "Face & Injectables",
     "description": "Gold-standard micro-ablative fractional CO2 laser resurfacing vaporizing damaged epidermal columns to eliminate deep wrinkles, acne scarring, and severe photodamage.",
-    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/co2-laser-face-neck.webp",
     "startingPrice": 300,
     "currency": "£",
     "procedureTime": "60 Mins",
@@ -1232,14 +1233,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Post-laser healing serum package"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792695707630
   },
   {
     "id": "co2-laser-hands",
     "title": "CO2 Laser: Hands Resurfacing",
     "category": "Face & Injectables",
     "description": "Ablative fractional CO2 laser renewal targeting sun spots, age pigmentation, crepey skin, and collagen depletion across the back of both hands.",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/co2-laser-hands.webp",
     "startingPrice": 200,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1258,14 +1260,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Soothing healing balm"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792695328615
   },
   {
     "id": "co2-laser-scars",
     "title": "CO2 Laser: Localized Scars",
     "category": "Face & Injectables",
     "description": "Ultra-targeted high-energy micro-fractional vaporization to remodel fibrous collagen bands in localized traumatic, surgical, or pitted acne scars.",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/co2-laser-scars.webp",
     "startingPrice": 100,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -1283,14 +1286,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Sterile healing protocol"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792695561700
   },
   {
     "id": "co2-laser-stretch-marks",
     "title": "CO2 Laser: Stretch Marks (Striae)",
     "category": "Face & Injectables",
     "description": "Thermal fractional coagulation stimulating deep fibroblasts to blend texture, contract wide margins, and restore elasticity in stretch marks on abdomen, hips, or thighs.",
-    "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/co2-laser-stretch-marks.webp",
     "startingPrice": 200,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1308,14 +1312,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Hydrating barrier care"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792762359129
   },
   {
     "id": "aqualyx-course-1",
     "title": "Aqualyx - Course of 1",
     "category": "Body Sculpting",
     "description": "Targeted single-session deoxycholic acid lipolysis injected directly into stubborn subcutaneous adipose pockets to permanently rupture fat cell membranes.",
-    "image": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/aqualyx-course-1.webp",
     "startingPrice": 170,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -1357,14 +1362,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Multi-vector injection technique"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792763150122
   },
   {
     "id": "aqualyx-course-3",
     "title": "Aqualyx - Course of 3",
     "category": "Body Sculpting",
     "description": "Complete 3-session series spaced 3-4 weeks apart for cumulative permanent fat elimination across stubborn body or submental regions.",
-    "image": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/aqualyx-course-3.webp",
     "startingPrice": 408,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -1414,14 +1420,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Dietary lymphatic support guidance"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792763656713
   },
   {
     "id": "deso-course-1",
     "title": "Deso Face & Body - Course of 1",
     "category": "Body Sculpting",
     "description": "Second-generation sodium deoxycholate formulated specifically for refined facial fat pockets (DesoFace) or dense body lipids (DesoBody).",
-    "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/deso-course-1.webp",
     "startingPrice": 150,
     "currency": "£",
     "procedureTime": "30 - 45 Mins",
@@ -1462,7 +1469,8 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Multi-layer injection"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792699769918
   },
   {
     "id": "deso-course-3",
@@ -1517,14 +1525,14 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
         ]
       }
     ],
-    "updatedAt": 1792760924780
+    "updatedAt": 1792699757486
   },
   {
     "id": "slimming-pen-program",
     "title": "Slimming Pen Medical Program",
     "category": "Body Sculpting",
     "description": "Physician-prescribed GLP-1 medical weight loss therapy designed to suppress appetite, regulate blood sugar, and support sustained body fat reduction with ongoing doctor reviews.",
-    "image": "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/slimming-pen-program.webp",
     "startingPrice": 155,
     "currency": "£",
     "procedureTime": "Medical Consult",
@@ -1558,14 +1566,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Nutrition and metabolic support guide"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792699532204
   },
   {
     "id": "cryo-fat-freezing",
     "title": "Fat Freezing Cryo Body Slimming (Cryolipolysis)",
     "category": "Body Sculpting",
     "description": "Controlled medical cooling technology freezing subcutaneous fat cells to -9°C, triggering natural apoptosis and elimination through the lymphatic system without needles or surgery.",
-    "image": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/cryo-fat-freezing.webp",
     "startingPrice": 95,
     "currency": "£",
     "procedureTime": "45 - 60 Mins",
@@ -1596,14 +1605,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Dual lymphatic massage"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792699301151
   },
   {
     "id": "emsculpt-body-sculpt",
     "title": "EMSCULPT Body Sculpt & Tightening",
     "category": "Body Sculpting",
     "description": "High-Intensity Electromagnetic Technology (HIFEM) producing 20,000 supramaximal contractions per session to simultaneously build muscle and burn deep fat.",
-    "image": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/emsculpt-body-sculpt.webp",
     "startingPrice": 275,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -1637,14 +1647,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Muscle tone & circumference logs"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792699609895
   },
   {
     "id": "morpheus8-body",
     "title": "Morpheus8 Body Treatment",
     "category": "Body Sculpting",
     "description": "Deep RF microneedling penetrating up to 7-8mm with Burst technology to melt body fat, remodel cellulite, and tighten lax skin on abdomen, thighs, and knees.",
-    "image": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/morpheus8-body.webp",
     "startingPrice": 200,
     "currency": "£",
     "procedureTime": "60 Mins",
@@ -1676,14 +1687,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Clinical progress photos"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792765472462
   },
   {
     "id": "body-slimming-cellulite",
     "title": "Body Slimming for Fat Loss & Cellulite Reduction",
     "category": "Body Sculpting",
     "description": "Multi-technology lymphatic drainage and radiofrequency vacuum cavitation breaking down fibrotic septae bands and smoothing orange-peel skin texture.",
-    "image": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/body-slimming-cellulite.webp",
     "startingPrice": 195,
     "currency": "£",
     "procedureTime": "60 Mins",
@@ -1702,14 +1714,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Lymphatic flush"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792765509619
   },
   {
     "id": "gold-facial-special",
     "title": "Facial - Gold MONDAY AND FRIDAY SPECIAL",
     "category": "Advanced Facials",
     "description": "Decadent 24-karat gold leaf facial treatment infused with cellular antioxidants to combat free-radical damage and deliver luminous red-carpet radiance (40min).",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/gold-facial-special.webp",
     "startingPrice": 95,
     "currency": "£",
     "procedureTime": "40 Mins",
@@ -1730,14 +1743,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Finishing radiance cream"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792765556665
   },
   {
     "id": "high-frequency-acne-facial",
     "title": "Facial - High Frequency for Acne",
     "category": "Advanced Facials",
     "description": "Gentle electrical current producing oxygen ozone directly inside pores to eliminate stubborn acne-causing P. acnes bacteria and speed healing (30min).",
-    "image": "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/high-frequency-acne-facial.webp",
     "startingPrice": 55,
     "currency": "£",
     "procedureTime": "30 Mins",
@@ -1756,14 +1770,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Soothing zinc lotion"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792765622463
   },
   {
     "id": "extractions-scrubber-steamer",
     "title": "Facial - Extractions with Scrubber, Steamer & Suction",
     "category": "Advanced Facials",
     "description": "Deep cleansing medical facial combining warm ozone steam, ultrasonic skin scrubber vibrations, and gentle vacuum suction to unclog congested pores (45min).",
-    "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/extractions-scrubber-steamer.webp",
     "startingPrice": 55,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1783,14 +1798,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Antibacterial finish"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792766936877
   },
   {
     "id": "led-light-therapy",
     "title": "Facial - LED Light Therapy",
     "category": "Advanced Facials",
     "description": "Specific wavelengths of medical light (Red 633nm for collagen, Blue 415nm for acne, Near-Infrared 830nm for deep healing) (45min).",
-    "image": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/led-light-therapy.webp",
     "startingPrice": 25,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1809,14 +1825,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Finishing barrier cream"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792766499623
   },
   {
     "id": "oxygen-o2-dome-facial",
     "title": "Facial - Oxygen O2 Dome",
     "category": "Advanced Facials",
     "description": "Pure 90% hyperbaric oxygen and anion mist delivered under a sealed dome to accelerate cellular repair, kill anaerobic acne bacteria, and rejuvenate stressed skin (45min).",
-    "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/oxygen-o2-dome-facial.webp",
     "startingPrice": 90,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1835,14 +1852,15 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Anion dome immersion"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792766528485
   },
   {
     "id": "diamond-microdermabrasion",
     "title": "Facial - Diamond Tip Microdermabrasion",
     "category": "Advanced Facials",
     "description": "Non-chemical mechanical diamond exfoliation vacuuming dead surface cells away to smooth coarse texture, reduce dullness, and improve skincare absorption (45min).",
-    "image": "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=800&q=80",
+    "image": "/assets/treatments/diamond-microdermabrasion.webp",
     "startingPrice": 60,
     "currency": "£",
     "procedureTime": "45 Mins",
@@ -1861,7 +1879,8 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
           "Hydrating SPF 50 shield"
         ]
       }
-    ]
+    ],
+    "updatedAt": 1792766541969
   },
   {
     "id": "egf-facial-special",
