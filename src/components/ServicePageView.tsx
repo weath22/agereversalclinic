@@ -136,7 +136,11 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
               beforeImage={data.beforeImage}
               afterImage={data.afterImage}
               treatmentName={data.title}
+              treatmentId={data.id}
+              treatmentCategory={data.category}
               clinicalComparisonMedia={data.clinicalComparisonMedia}
+              customBeforeAfterPairs={data.customBeforeAfterPairs}
+              excludedGalleryPairIds={data.excludedGalleryPairIds}
             />
           </div>
 
@@ -184,13 +188,16 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
           )}
 
           {/* Section 3.3: Dermal Layer Depth Analysis - Spacious Full Showcase */}
-          <div className="pt-16 border-t border-silver-100 max-w-5xl mx-auto w-full">
-            <SkinLayerTargets
-              targetLayer={data.targetLayer}
-              targetDepth={data.targetLayerDepth}
-              treatmentName={data.title}
-            />
-          </div>
+          {data.profilerEnabled !== false && (
+            <div className="pt-16 border-t border-silver-100 max-w-5xl mx-auto w-full">
+              <SkinLayerTargets
+                targetLayer={data.targetLayer}
+                targetDepth={data.targetLayerDepth}
+                treatmentName={data.title}
+                customSpecs={data.dermalSpecs}
+              />
+            </div>
+          )}
 
           {/* Section 3.4: Clinical Care Guidelines - Spacious Full Showcase */}
           <div className="pt-16 border-t border-silver-100 max-w-5xl mx-auto w-full">

@@ -45,7 +45,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
     : CLINICAL_TREATMENT_ITEMS;
 
   return (
-    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200">
+    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200 isolate">
       {/* Soft Fade Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
@@ -63,7 +63,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
           {/* Left Column: Text & Editorial Content (Properly scaled for mobile screens) */}
           <div className="w-full lg:w-5/12 lg:max-w-[420px] relative">
             <div className="relative mb-4 sm:mb-6">
-              <span className="absolute -top-6 sm:-top-8 md:-top-10 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-black/15 select-none uppercase tracking-wider">
+              <span className="absolute -top-5 sm:-top-7 md:-top-9 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-black/15 select-none uppercase tracking-wider pointer-events-none">
                 {treatmentsConfig?.editorialHeading || "rejuvenation"}
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-light font-serif text-slate-950 leading-tight uppercase relative z-10 pt-2 sm:pt-3">
@@ -116,10 +116,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[4/3] border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-7 group relative overflow-hidden aspect-[4/3] bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Radiance Protocol" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('radiance-protocol', TREATMENT_IMAGES[0])}
                   onError={(e) => {
@@ -139,10 +141,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-square md:aspect-auto border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-5 group relative overflow-hidden aspect-square md:aspect-auto bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Volume Definition" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('volume-definition', TREATMENT_IMAGES[1])}
                   onError={(e) => {
@@ -162,10 +166,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-[4/3] md:aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-5 group relative overflow-hidden aspect-[4/3] md:aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Symmetry Mastered" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('symmetry-mastered', TREATMENT_IMAGES[2])}
                   onError={(e) => {
@@ -185,10 +191,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[16/9] md:aspect-auto border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-7 group relative overflow-hidden aspect-[16/9] md:aspect-auto bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Anatomical Precision" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('anatomical-precision', TREATMENT_IMAGES[3])}
                   onError={(e) => {
@@ -208,10 +216,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-6 group relative overflow-hidden aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Lash Extension Art" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('lash-extension-art', TREATMENT_IMAGES[4])}
                   onError={(e) => {
@@ -231,10 +241,12 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <motion.div 
                 whileHover={{ scale: 1.01, y: -2 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
+                className="md:col-span-6 group relative overflow-hidden aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
               >
                 <img 
                   alt="Advanced Portrait" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                   src={getTreatmentImagePath('advanced-portrait', TREATMENT_IMAGES[5])}
                   onError={(e) => {

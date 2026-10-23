@@ -4,6 +4,7 @@ interface ServiceOverviewProps {
   data: {
     title: string;
     description: string;
+    protocolQuote?: string;
     overviewMedia?: OverviewMediaConfig;
     imageUrl?: string;
   };
@@ -21,11 +22,11 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
   const frontTitle = frontMedia?.seoTitle || data.title;
 
   return (
-    <div id="service-overview" className="max-w-5xl mx-auto w-full">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
+    <div id="service-overview" className="max-w-5xl lg:max-w-6xl mx-auto w-full">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-14 items-center">
         
-        {/* Left side on desktop: overlapping clinical treatment images */}
-        <div className="md:col-span-5 relative w-full aspect-[1.0] flex items-center justify-center">
+        {/* Left side on desktop: overlapping clinical treatment images (bigger on desktop ONLY) */}
+        <div className="md:col-span-5 lg:col-span-6 relative w-full aspect-[1.0] lg:aspect-[1.06] flex items-center justify-center">
           {/* Luxury soft background watermark lines */}
           <div className="absolute -bottom-6 -left-6 w-40 h-40 opacity-20 pointer-events-none select-none z-0">
             <svg viewBox="0 0 100 100" className="w-full h-full text-silver-300 stroke-current fill-none stroke-[0.85]" aria-hidden="true">
@@ -37,7 +38,7 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
           </div>
 
           {/* Back/Top-Left Card */}
-          <div className="absolute top-[4%] left-0 w-[72%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-silver-100 z-10 transition-all duration-500 hover:scale-103 hover:z-25 group">
+          <div className="absolute top-[4%] lg:top-[1%] left-0 lg:-left-2 w-[72%] lg:w-[82%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)] lg:shadow-[0_12px_45px_rgba(0,0,0,0.1)] border border-silver-100 z-10 transition-all duration-500 hover:scale-103 hover:z-25 group">
             <img
               src={backUrl}
               alt={backAlt}
@@ -49,7 +50,7 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
           </div>
 
           {/* Front/Bottom-Right Card */}
-          <div className="absolute bottom-[-4%] right-0 w-[72%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.12)] border border-silver-150 z-20 transition-all duration-500 hover:scale-105 hover:shadow-[0_25px_60px_rgba(0,0,0,0.16)] group">
+          <div className="absolute bottom-[-4%] lg:bottom-[-6%] right-0 lg:-right-2 w-[72%] lg:w-[82%] aspect-[4/3] rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.12)] lg:shadow-[0_25px_65px_rgba(0,0,0,0.18)] border border-silver-150 z-20 transition-all duration-500 hover:scale-105 hover:shadow-[0_25px_60px_rgba(0,0,0,0.16)] group">
             <img
               src={frontUrl}
               alt={frontAlt}
@@ -62,7 +63,7 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
         </div>
 
         {/* Right side on desktop: Treatment description and Philosophy */}
-        <div className="md:col-span-7 space-y-4">
+        <div className="md:col-span-7 lg:col-span-6 space-y-4 lg:pl-3">
           <span className="text-[10px] font-black tracking-widest uppercase text-rose-gold block">
             Scientific Profile
           </span>
@@ -78,7 +79,7 @@ export default function ServiceOverview({ data }: ServiceOverviewProps) {
               Philosophy & Protocol
             </span>
             <p className="text-sm text-sky-900 font-medium italic leading-relaxed">
-              Every protocol is strictly diagnostic-first, ensuring high safety parameters and clinical efficacy tailored exactly to your dermal matrix.
+              {data.protocolQuote || "Every protocol is strictly diagnostic-first, ensuring high safety parameters and clinical efficacy tailored exactly to your dermal matrix."}
             </p>
           </div>
         </div>

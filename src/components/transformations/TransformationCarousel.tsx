@@ -5,11 +5,17 @@ import { motion, AnimatePresence } from 'motion/react';
 interface TransformationCarouselProps {
   title: string;
   images: string[];
+  beforeAltText?: string;
+  afterAltText?: string;
+  seoTitle?: string;
 }
 
 export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
   title,
   images,
+  beforeAltText,
+  afterAltText,
+  seoTitle,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -102,25 +108,38 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
             }}
             transition={{ type: 'spring', stiffness: 260, damping: 28 }}
           >
-            {images.map((imgUrl, imgIdx) => (
-              <div
-                key={imgIdx}
-                className="shrink-0 w-full sm:w-[calc(50%-0.625rem)] overflow-hidden rounded-none sm:rounded-xl bg-stone-100 border-y sm:border border-stone-200/80 group select-none"
-              >
-                <div className="relative aspect-[1/1] sm:aspect-[16/11] w-full overflow-hidden">
-                  <img
-                    src={imgUrl}
-                    alt={`${title} - result ${imgIdx + 1}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover sm:object-cover transition-transform duration-700 sm:group-hover:scale-105 pointer-events-none"
-                  />
-                  <div className="absolute bottom-3 right-3 sm:bottom-2.5 sm:right-2.5 bg-black/70 backdrop-blur-xs text-white text-[11px] sm:text-[10px] font-sans font-medium px-2.5 py-0.5 rounded-full shadow-sm">
-                    {imgIdx + 1} / {images.length}
+            {images.map((imgUrl, imgIdx) => {
+              const resolvedAlt =
+                imgIdx === 0 && beforeAltText
+                  ? beforeAltText
+                  : imgIdx === 1 && afterAltText
+                  ? afterAltText
+                  : `${title} - Clinical Result ${imgIdx + 1} at Age Reversal Clinics London`;
+              const resolvedTitle = seoTitle
+                ? `${seoTitle} (${imgIdx === 0 ? 'Before' : imgIdx === 1 ? 'After' : `View ${imgIdx + 1}`})`
+                : `${title} — Age Reversal Clinics`;
+
+              return (
+                <div
+                  key={imgIdx}
+                  className="shrink-0 w-full sm:w-[calc(50%-0.625rem)] overflow-hidden rounded-none sm:rounded-xl bg-stone-100 border-y sm:border border-stone-200/80 group select-none"
+                >
+                  <div className="relative aspect-[1/1] sm:aspect-[16/11] w-full overflow-hidden">
+                    <img
+                      src={imgUrl}
+                      alt={resolvedAlt}
+                      title={resolvedTitle}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover sm:object-cover transition-transform duration-700 sm:group-hover:scale-105 pointer-events-none"
+                    />
+                    <div className="absolute bottom-3 right-3 sm:bottom-2.5 sm:right-2.5 bg-black/70 backdrop-blur-xs text-white text-[11px] sm:text-[10px] font-sans font-medium px-2.5 py-0.5 rounded-full shadow-sm">
+                      {imgIdx + 1} / {images.length}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
         </div>
 

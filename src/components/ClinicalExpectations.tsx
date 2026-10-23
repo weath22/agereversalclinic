@@ -7,6 +7,8 @@ interface ClinicalExpectationsProps {
     downtime: string;
     comfortLevel: string;
     recommendedSessions: string;
+    anesthesia?: string;
+    longevity?: string;
   };
 }
 
@@ -21,8 +23,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
         
         {/* Procedure Time */}
-        <div className="flex items-start space-x-3.5">
-          <Clock className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
+        <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+          <Clock className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Procedure Time
@@ -34,8 +36,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Downtime */}
-        <div className="flex items-start space-x-3.5">
-          <Compass className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
+        <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+          <Compass className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Recovery & Downtime
@@ -47,8 +49,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Comfort Level */}
-        <div className="flex items-start space-x-3.5">
-          <Sparkles className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
+        <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+          <Sparkles className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Comfort Level
@@ -60,8 +62,8 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
         </div>
 
         {/* Recommended Sessions */}
-        <div className="flex items-start space-x-3.5">
-          <Calendar className="h-5 w-5 text-rose-gold shrink-0 mt-0.5" />
+        <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+          <Calendar className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
               Recommended Plan
@@ -71,6 +73,36 @@ export default function ClinicalExpectations({ data }: ClinicalExpectationsProps
             </span>
           </div>
         </div>
+
+        {/* Anesthesia / Numbing (if specified) */}
+        {data.anesthesia && (
+          <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+            <Sparkles className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
+                Anesthesia / Numbing
+              </span>
+              <span className="text-sm font-semibold text-silver-950">
+                {data.anesthesia}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Longevity / Duration of Results (if specified) */}
+        {data.longevity && (
+          <div className="flex flex-row lg:flex-col items-start space-x-3.5 lg:space-x-0">
+            <Clock className="h-5 w-5 lg:h-8 lg:w-8 text-rose-gold shrink-0 mt-0.5 lg:mt-0 lg:mb-2.5" strokeWidth={1.6} />
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-silver-400 block">
+                Expected Longevity
+              </span>
+              <span className="text-sm font-semibold text-silver-950">
+                {data.longevity}
+              </span>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

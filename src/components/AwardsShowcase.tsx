@@ -58,8 +58,7 @@ export default function AwardsShowcase() {
   return (
     <section 
       ref={sectionRef}
-      className="py-14 sm:py-20 md:py-28 bg-[#faf9f8] border-y border-luxury-border overflow-hidden relative"
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}
+      className="py-14 sm:py-20 md:py-28 bg-[#faf9f8] border-y border-luxury-border overflow-hidden relative isolate"
     >
       {/* Keyframes for Hardware-Accelerated translate3d Infinite Marquee */}
       <style>{`
@@ -92,6 +91,9 @@ export default function AwardsShowcase() {
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtB50YnOlyADPuedg2qMzTGO8xfnwOcB7t2-m7_npkuSx1BTCC5UlaJwIdCO6x9ZxKYyMLa3yMXQul9a3Eqcb0D99YLu85cpSvpTEPjnGb1LASgnsPiZNc16H2bbqdwGvMNfakarMRTE7wT9V_i8C6YgRCdQCCE_ym_S8foYNXQtMhkCUQPh0nS01kyTovtyQCHAmrQD15ZBojWP5UyPQs3_I2UV1O9uA38vdL-97__HRpL4P8mETpoJKWggqKuB8N-w"
           alt="Atelier Aura Prestigious Gold Sculptures and Laureate Trophies"
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
         />
         {/* Subtle whitish fade overlay for aesthetic clarity & contrast */}
@@ -113,7 +115,7 @@ export default function AwardsShowcase() {
       </div>
 
       {/* Scrolling Marquee Area */}
-      <div className="relative z-10 w-full flex overflow-x-hidden py-2 group/track">
+      <div className="relative z-10 w-full flex overflow-x-hidden py-2 group/track isolate">
         <div
           className={`awards-hardware-track space-x-5 sm:space-x-7 shrink-0 pr-5 sm:pr-7 ${
             !isInView ? 'paused' : ''
@@ -134,6 +136,7 @@ export default function AwardsShowcase() {
                     src={imageUrl}
                     alt={award.title}
                     loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                     referrerPolicy="no-referrer"
                   />

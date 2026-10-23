@@ -727,15 +727,48 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
       pairs: [
         {
           id: 'pair-1',
+          treatmentGroupId: 'anti-aging',
+          linkedTreatmentId: 'exosome',
+          linkedTreatmentTitle: 'Exosome Skin & Scalp Therapy',
           title: 'Skin Treatment - 12 Wks',
+          duration: '12 Weeks',
+          sessions: 3,
+          beforeAltText: 'Full Face Cellular Skin Rejuvenation Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Full Face Cellular Skin Rejuvenation After 12 Weeks at Age Reversal Clinics London',
+          seoTitle: 'Skin Rejuvenation 12 Weeks Before & After | Age Reversal Clinics',
+          seoKeywords: ['skin rejuvenation before and after', 'anti-aging clinic london', 'exosome skin therapy results'],
           beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
           afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO'
         },
         {
           id: 'pair-5',
+          treatmentGroupId: 'anti-aging',
+          linkedTreatmentId: 'profhilo',
+          linkedTreatmentTitle: 'Profhilo Bio-Remodeling',
           title: 'Anti-Aging - 8 Wks',
+          duration: '8 Weeks',
+          sessions: 2,
+          beforeAltText: 'Anti-Aging Bio-Remodeling Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Anti-Aging Bio-Remodeling After 8 Weeks at Age Reversal Clinics London',
+          seoTitle: 'Anti-Aging 8 Weeks Before & After Result | Age Reversal Clinics',
+          seoKeywords: ['profhilo before and after london', 'anti-aging treatment results', 'collagen bio-remodeling'],
           beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQHcq9zpePKkMqtIMFzx_zJA6A2MHoEn6csMvjhOOX7ANTgntEGIHbHHzkJdrRGuvr_rnNYa6j_vcZm7V9bkSv83qNQwd18XJJA14YTUOLU2diwqx3hP_e-l8axRA5ZOsfN1xGiRO0pPe2sb4cNQEz8psyAxBRjvefn1MvexT-2iAwkVKIyT8R_56LKMScwW7_sMvuBzMGXxdp0I1cFNoqfp7K5RhhrtrwcfrUPw1dRPmX60Zc0esbeUgaFqwO959IBqnu8sf8OA4w',
           afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCZoLjpjMEmJNM6EwzVC9AzZEWfQUVa-TmVyM-NgPL8ONCjzwY7nZ6rFqOxJ9jyK0OMnlIij8h8SOt93jaHfSglwGqtwAN3uabUuoux0yNyPzieFFX7iyB4YhjLSsBzd2BRDjEDVB1RlXcG4VC8SswApL8QbBnPLshzCzMX8LSdFYZsa0PRI6MM6b7I67HIl-B6YLhZAH5ZI9mcghNQsybRemIqmq4LWl9BCKjn5KaTyU1RyMrHYkwMgx1ABZOJ1-OJiLkjF-5mIKY0'
+        },
+        {
+          id: 'pair-8',
+          treatmentGroupId: 'anti-aging',
+          linkedTreatmentId: 'ultherapy',
+          linkedTreatmentTitle: 'Ultherapy Prime SMAS Lift',
+          title: 'Micro-Focused SMAS Tightening',
+          duration: '16 Weeks',
+          sessions: 3,
+          beforeAltText: 'Ultherapy Micro-Focused SMAS Tightening Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Ultherapy Micro-Focused SMAS Tightening After Treatment at Age Reversal Clinics London',
+          seoTitle: 'SMAS Tightening & Jawline Lift Before & After | Age Reversal Clinics',
+          seoKeywords: ['ultherapy before and after london', 'non-surgical facelift results', 'smas lifting clinic'],
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
+          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM'
         }
       ]
     },
@@ -745,21 +778,69 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
       pairs: [
         {
           id: 'pair-2',
+          treatmentGroupId: 'acne-scarring',
+          linkedTreatmentId: 'co2-laser',
+          linkedTreatmentTitle: 'Fractional CO2 Laser Resurfacing',
           title: 'Laser Therapy & Skin Revision',
+          duration: '12 Weeks',
+          sessions: 3,
+          beforeAltText: 'Laser Therapy and Acne Scar Revision Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Laser Therapy and Acne Scar Revision After Treatment at Age Reversal Clinics London',
+          seoTitle: 'Laser Therapy & Acne Scar Revision Before & After | Age Reversal Clinics',
+          seoKeywords: ['acne scar laser before and after', 'skin resurfacing london', 'dermal texture revision'],
           beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKPf3nijQRz9NaEd_b-5EiczAejYyrgh_dwMC6S-1-7Hi8EJJnt8_x2x-i1qG-qJ0BxvXbk_PeIeusHvMggQrPf2ijjCJ-yYtr-Ur19sJw4_NIIAlLMv1S2ct_OUVp3CJNba1hCLXrrPOcfhQAQUcgqZJFcuUL6Q4KXUwM1ALRAeo6Bb79xdI4FoLRUFAP9_MlbZ8tUedBAnuVrheDWpnRtLnB17gtdOx3OFGMbTVs5jhXXnZD6b-y7OCBnlBNOtqOPMcKxAdzDKRk',
           afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFNbqNx3wVVcZoA9IP87KJkDnMZI-8uRSd-RL2-LhuxC6ADEkgMcpBDJ22CU3U7a_ZOllNge5XasdFvVaBYUhCDohAZdRi0HT1ymJ1s_FMyiXt8pJl7NGhaLkKATrZlXl3B2mFW01fD4Mzp3ixyyLcDfCdjXdPi58MzBZ-GTgGk7w7Ks96hydwAbc4rURmQ3Pel8YEcOvxIX5UbwIKvB4OdEuyDc-z_RnH-USDoP7hJ2AJkw4zTdCS7FDF6Vo4RFbWikgnECIa4gKP'
+        },
+        {
+          id: 'pair-6',
+          treatmentGroupId: 'acne-scarring',
+          linkedTreatmentId: 'polynucleotides',
+          linkedTreatmentTitle: 'Polynucleotides Cellular Repair',
+          title: 'Volumetric Resurfacing & Texture',
+          duration: '8 Weeks',
+          sessions: 3,
+          beforeAltText: 'Polynucleotide Volumetric Resurfacing Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Polynucleotide Volumetric Resurfacing After Treatment at Age Reversal Clinics London',
+          seoTitle: 'Volumetric Resurfacing & Texture Before & After | Age Reversal Clinics',
+          seoKeywords: ['polynucleotides before and after', 'under eye brightening london', 'skin texture repair'],
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
+          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY'
         }
       ]
     },
     {
       id: 'facial-harmony',
-      name: 'Facial Harmony',
+      name: 'Facial Harmony & Injectables',
       pairs: [
         {
           id: 'pair-3',
-          title: 'Advanced Aesthetics',
+          treatmentGroupId: 'facial-harmony',
+          linkedTreatmentId: 'dermal-fillers',
+          linkedTreatmentTitle: 'Bespoke Dermal Fillers & Facial Harmonisation',
+          title: 'Advanced Aesthetics Profile',
+          duration: 'Single Session',
+          sessions: 1,
+          beforeAltText: '3D Facial Profile Harmonisation Before Dermal Fillers at Age Reversal Clinics London',
+          afterAltText: '3D Facial Profile Harmonisation After Dermal Fillers at Age Reversal Clinics London',
+          seoTitle: 'Facial Profile Harmonisation Before & After | Age Reversal Clinics',
+          seoKeywords: ['dermal fillers before and after london', 'facial harmonisation results', 'lip and chin filler london'],
           beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
           afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le'
+        },
+        {
+          id: 'pair-7',
+          treatmentGroupId: 'facial-harmony',
+          linkedTreatmentId: 'morpheus8',
+          linkedTreatmentTitle: 'Morpheus8 RF Microneedling',
+          title: 'Subdermal Lifting & Tone',
+          duration: '12 Weeks',
+          sessions: 3,
+          beforeAltText: 'Morpheus8 Subdermal Lifting Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Morpheus8 Subdermal Lifting After Treatment at Age Reversal Clinics London',
+          seoTitle: 'Subdermal Lifting & Tone Before & After | Age Reversal Clinics',
+          seoKeywords: ['morpheus8 before and after london', 'jawline tightening results', 'rf microneedling london'],
+          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
+          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLv5evIx7Bexs-9iJGxOP9dKFElgqCjw3duyD5PU_MlEubT0SyTO7PuZhJtmqUZf6JcUhS8jDhV8HW0kBhWUb4MYYalT72IO5pVBeVZs2593mjjAC6tI1ZOA1a9xGgg-M5J5waWMYO9uVD4zle9guZj31tQOME7032wvttEoahsd7HhWFooW0oUTyDgrytGK4oKIN0d2mGO5oLnx-NQ5sF7-OZHtA3a9_sCrUegKiXGZwpy_05469C2zVgo'
         }
       ]
     },
@@ -769,11 +850,30 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
       pairs: [
         {
           id: 'pair-4',
-          title: 'Vertical Comparison',
+          treatmentGroupId: 'clinical-hair',
+          linkedTreatmentId: 'prp-hair',
+          linkedTreatmentTitle: 'PRP Hair Restoration Therapy',
+          title: 'Vertical Hair Follicle Density',
+          duration: '20 Weeks',
+          sessions: 4,
+          beforeAltText: 'Clinical Hair Follicle Density Before Treatment at Age Reversal Clinics London',
+          afterAltText: 'Clinical Hair Follicle Density After 20 Weeks at Age Reversal Clinics London',
+          seoTitle: 'Clinical Hair Restoration Before & After | Age Reversal Clinics',
+          seoKeywords: ['hair restoration before and after london', 'prp hair loss results', 'scalp density treatment'],
           beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
           afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd'
         }
       ]
+    },
+    {
+      id: 'body-sculpting',
+      name: 'Body Sculpting & Tightening',
+      pairs: []
+    },
+    {
+      id: 'advanced-facials',
+      name: 'Advanced Clinical Facials',
+      pairs: []
     }
   ]
 };
@@ -1292,14 +1392,233 @@ export function saveTreatmentsConfig(config: TreatmentsConfig): TreatmentsConfig
   return config;
 }
 
+export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').BeforeAfterPair): void {
+  if (!pair) return;
+
+  const keywords = Array.from(
+    new Set(
+      (pair.seoKeywords || [])
+        .map((k) => k.trim())
+        .filter(Boolean)
+    )
+  );
+
+  // 1. Register Before & After photos in the Central Media Asset Library for Google Image SEO tracking
+  try {
+    if (pair.beforeImage && !pair.beforeImage.includes('unsplash.com')) {
+      registerMediaAsset({
+        name: `${pair.title} (Before Treatment)`,
+        url: pair.beforeImage,
+        mediaType: 'image',
+        category: 'Before & After',
+        altText:
+          pair.beforeAltText ||
+          `${pair.title} Before Treatment at Age Reversal Clinics London`,
+        seoKeywords: keywords,
+      });
+    }
+    if (pair.afterImage && !pair.afterImage.includes('unsplash.com')) {
+      registerMediaAsset({
+        name: `${pair.title} (After Treatment)`,
+        url: pair.afterImage,
+        mediaType: 'image',
+        category: 'Before & After',
+        altText:
+          pair.afterAltText ||
+          `${pair.title} After Treatment Result at Age Reversal Clinics London`,
+        seoKeywords: keywords,
+      });
+    }
+  } catch (err) {
+    console.warn('Could not register Before & After assets to central library:', err);
+  }
+
+  if (keywords.length === 0 || (!pair.linkedTreatmentId && !pair.linkedTreatmentTitle)) {
+    return;
+  }
+
+  const targetId = (pair.linkedTreatmentId || '').toLowerCase().trim();
+  const targetTitle = (pair.linkedTreatmentTitle || '').toLowerCase().trim();
+
+  // 2. Merge SEO keywords into linked treatment in treatment_pricing_data
+  try {
+    const pricingData = getTreatmentPricingData();
+    let pricingUpdated = false;
+    const nextPricing = pricingData.map((item) => {
+      const idMatches = targetId && item.id.toLowerCase() === targetId;
+      const titleMatches = targetTitle && item.title.toLowerCase() === targetTitle;
+      if (idMatches || titleMatches) {
+        const existingKw = item.seoKeywords || [];
+        const mergedKw = Array.from(new Set([...existingKw, ...keywords]));
+        if (mergedKw.length !== existingKw.length) {
+          pricingUpdated = true;
+          return { ...item, seoKeywords: mergedKw };
+        }
+      }
+      return item;
+    });
+
+    if (pricingUpdated) {
+      saveTreatmentPricingData(nextPricing);
+    }
+  } catch (err) {
+    console.warn('Could not sync Before & After SEO keywords to treatment pricing:', err);
+  }
+
+  // 3. Merge SEO keywords into linked treatment in clinical_treatment_details
+  try {
+    const detailsDb = getTreatmentDetailsConfig();
+    if (detailsDb && typeof detailsDb === 'object') {
+      let detailsUpdated = false;
+      const nextDetailsDb: Record<string, any> = { ...detailsDb };
+
+      for (const key of Object.keys(nextDetailsDb)) {
+        const tr = nextDetailsDb[key];
+        if (!tr) continue;
+        const trId = String(tr.id || key).toLowerCase();
+        const trTitle = String(tr.title || '').toLowerCase();
+        const matches =
+          (targetId && (trId === targetId || targetId.includes(trId) || trId.includes(targetId))) ||
+          (targetTitle && trTitle === targetTitle);
+
+        if (matches) {
+          const existingKw: string[] = Array.isArray(tr.seoKeywords) ? tr.seoKeywords : [];
+          const mergedKw = Array.from(new Set([...existingKw, ...keywords]));
+          if (mergedKw.length !== existingKw.length) {
+            nextDetailsDb[key] = { ...tr, seoKeywords: mergedKw };
+            detailsUpdated = true;
+          }
+        }
+      }
+
+      if (detailsUpdated) {
+        saveTreatmentDetailsConfig(nextDetailsDb);
+      }
+    }
+  } catch (err) {
+    console.warn('Could not sync Before & After SEO keywords to clinical_treatment_details:', err);
+  }
+}
+
 export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
   initializeAdminStore();
-  return getStorageItem<BeforeAfterGalleryConfig>(GALLERY_CONFIG_KEY, getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG));
+  const stored = getStorageItem<BeforeAfterGalleryConfig>(
+    GALLERY_CONFIG_KEY,
+    getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG)
+  );
+
+  // Ensure all existing treatment groups are always available
+  const fixedGroups = [
+    { id: 'anti-aging', name: 'Anti-Aging Rejuvenation' },
+    { id: 'acne-scarring', name: 'Acne & Scarring' },
+    { id: 'facial-harmony', name: 'Facial Harmony & Injectables' },
+    { id: 'clinical-hair', name: 'Clinical Hair Restoration' },
+    { id: 'body-sculpting', name: 'Body Sculpting & Tightening' },
+    { id: 'advanced-facials', name: 'Advanced Clinical Facials' },
+  ];
+
+  const existingMap = new Map(
+    (stored?.categories || []).map((c) => [c.id, c])
+  );
+
+  const normalizedCategories = fixedGroups.map((group) => {
+    const found = existingMap.get(group.id);
+    return {
+      id: group.id,
+      name: found?.name || group.name,
+      pairs: (found?.pairs || []).map((p) => ({
+        ...p,
+        treatmentGroupId: p.treatmentGroupId || group.id,
+        beforeAltText:
+          p.beforeAltText ||
+          `${p.title} Before ${group.name} Treatment at Age Reversal Clinics London`,
+        afterAltText:
+          p.afterAltText ||
+          `${p.title} After ${group.name} Treatment Result at Age Reversal Clinics London`,
+        seoTitle: p.seoTitle || `${p.title} — Before & After Result | Age Reversal Clinics`,
+        seoKeywords:
+          p.seoKeywords && p.seoKeywords.length > 0
+            ? p.seoKeywords
+            : [`${p.title.toLowerCase()} before and after`, `${group.name.toLowerCase()} london`, 'age reversal clinics results'],
+      })),
+    };
+  });
+
+  return {
+    heading: stored?.heading || DEFAULT_GALLERY_CONFIG.heading,
+    description: stored?.description || DEFAULT_GALLERY_CONFIG.description,
+    categories: normalizedCategories,
+  };
 }
 
 export function saveBeforeAfterGalleryConfig(config: BeforeAfterGalleryConfig): BeforeAfterGalleryConfig {
   setStorageItem(GALLERY_CONFIG_KEY, config);
+  syncConfigToFile(GALLERY_CONFIG_KEY, config);
+
+  // Sync directly to dedicated Before & After gallery endpoint (updates siteCustomizations.json + transformationsData.ts)
+  if (typeof window !== 'undefined') {
+    fetch('/api/admin/before-after-gallery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config }),
+    }).catch((err) => {
+      console.warn('Could not sync Before & After gallery to server endpoint:', err);
+    });
+  }
+
+  // Sync SEO keywords from all pairs to their linked existing treatments & Central Asset Library
+  if (config?.categories) {
+    config.categories.forEach((cat) => {
+      (cat.pairs || []).forEach((pair) => {
+        syncBeforeAfterPairSeoToTreatments(pair);
+      });
+    });
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('before_after_gallery_updated', { detail: config }));
+  }
   return config;
+}
+
+export async function fetchRemoteBeforeAfterGalleryConfig(): Promise<BeforeAfterGalleryConfig | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/admin/before-after-gallery');
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.config && Array.isArray(data.config.categories)) {
+      setStorageItem(GALLERY_CONFIG_KEY, data.config);
+      return getBeforeAfterGalleryConfig();
+    }
+  } catch (err) {
+    console.warn('Could not fetch remote Before & After gallery config:', err);
+  }
+  return null;
+}
+
+export async function uploadBeforeAfterWebpImage(params: {
+  fileName: string;
+  dataUrl: string;
+  slot?: 'before' | 'after';
+  pairId?: string;
+}): Promise<{ url: string; fileName: string } | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/admin/transformations/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data?.url) {
+      return { url: data.url, fileName: data.fileName || params.fileName };
+    }
+  } catch (err) {
+    console.error('Error uploading Before & After WebP image:', err);
+  }
+  return null;
 }
 
 export function getWhyChooseUsConfig(): WhyChooseUsConfig {

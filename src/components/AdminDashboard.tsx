@@ -710,6 +710,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
             { id: 'clinic-info', label: 'Clinic Master Data', icon: Database },
             { id: 'treatment-media-studio', label: 'Treatment Media & SEO Studio', icon: Camera, badgeText: '6 Slots' },
             { id: 'treatment-pricing', label: 'Treatment Pricing & Media', icon: Sparkles },
+            { id: 'edit-gallery', label: 'Before & After Gallery', icon: Image, badgeText: 'SEO' },
             { id: 'treatment-images-hub', label: 'Treatment Images Hub', icon: Image },
             { id: 'consultations', label: 'Consultation Requests', count: consultations.length, icon: Users },
             { id: 'appointments', label: 'Faith Nzurike Slots', count: appointments.length, icon: Calendar },
@@ -1073,10 +1074,17 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
               </div>
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <button
-                  onClick={() => setActiveTab('treatment-pricing')}
+                  onClick={() => setActiveTab('edit-gallery')}
                   className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow cursor-pointer"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Image className="h-4 w-4" />
+                  <span>Before & After Gallery</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('treatment-pricing')}
+                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/25 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                >
+                  <Sparkles className="h-4 w-4 text-[#c5a880]" />
                   <span>Treatment Pricing & Media</span>
                 </button>
                 <button

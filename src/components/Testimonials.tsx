@@ -1,6 +1,8 @@
+import React, { useState, useEffect, useMemo } from 'react';
 import { TESTIMONIALS } from '../data';
 import { Star, Instagram, Facebook } from 'lucide-react';
 import { motion } from 'motion/react';
+import Pagination from './Pagination';
 
 interface TestimonialsProps {
   treatmentId?: string;
@@ -8,25 +10,30 @@ interface TestimonialsProps {
 }
 
 export default function Testimonials({ treatmentId, category }: TestimonialsProps = {}) {
-  // Filter testimonials based on relevance, fallback to general/all if none
-  const matched = treatmentId ? TESTIMONIALS.filter(t => t.treatmentId === treatmentId) : [];
-  let displayTestimonials = [...matched];
-
-  if (displayTestimonials.length < 2 && category) {
-    const categoryMatched = TESTIMONIALS.filter(
-      t => t.category === category && !displayTestimonials.some(existing => existing.id === t.id)
+  // Filter testimonials based on relevance (treatment match first, then category, then general)
+  const allRelevantTestimonials = useMemo(() => {
+    const matched = treatmentId ? TESTIMONIALS.filter(t => t.treatmentId === treatmentId) : [];
+    const categoryMatched = category
+      ? TESTIMONIALS.filter(t => t.category === category && !matched.some(m => m.id === t.id))
+      : [];
+    const others = TESTIMONIALS.filter(
+      t => !matched.some(m => m.id === t.id) && !categoryMatched.some(c => c.id === t.id)
     );
-    displayTestimonials = [...displayTestimonials, ...categoryMatched];
-  }
+    const combined = [...matched, ...categoryMatched, ...others];
+    return combined.length > 0 ? combined : TESTIMONIALS;
+  }, [treatmentId, category]);
 
-  if (displayTestimonials.length < 2) {
-    const standard = TESTIMONIALS.filter(
-      t => !displayTestimonials.some(existing => existing.id === t.id)
-    );
-    displayTestimonials = [...displayTestimonials, ...standard].slice(0, 2);
-  } else {
-    displayTestimonials = displayTestimonials.slice(0, 2);
-  }
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
+  const totalPages = Math.max(1, Math.ceil(allRelevantTestimonials.length / itemsPerPage));
+
+  // Reset to page 1 when switching treatments or categories
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [treatmentId, category]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const displayTestimonials = allRelevantTestimonials.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <section id="reviews" className="py-24 bg-white border-t border-silver-200">
@@ -53,11 +60,10 @@ export default function Testimonials({ treatmentId, category }: TestimonialsProp
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {displayTestimonials.map((testimonial, idx) => (
             <motion.div
-              key={testimonial.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              key={`${currentPage}-${testimonial.id}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08, duration: 0.4 }}
               className="bg-silver-100 p-4.5 sm:p-7 md:p-10 rounded-2xl relative shadow-sm border border-silver-200 hover:shadow-md transition-shadow flex flex-col justify-between"
             >
               <div>
@@ -113,37 +119,16 @@ export default function Testimonials({ treatmentId, category }: TestimonialsProp
           ))}
         </div>
 
-        {/* Carousel Pagination */}
-        <div className="flex items-center justify-center gap-6 pt-16">
-          <button
-            aria-label="Previous Page"
-            className="w-10 h-10 flex items-center justify-center rounded-full border border-silver-300 text-silver-600 hover:bg-silver-200 transition-colors shrink-0"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          </button>
-          
-          <div className="flex items-center gap-3">
-            {[1, 2, 3].map((pageNum) => (
-              <button
-                key={pageNum}
-                className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold text-sm transition-all duration-200 ${
-                  pageNum === 1
-                    ? 'bg-silver-900 text-white font-extrabold'
-                    : 'text-silver-600 hover:bg-silver-200'
-                }`}
-              >
-                {pageNum}
-              </button>
-            ))}
+        {/* Dynamic Reusable Pagination */}
+        {totalPages > 1 && (
+          <div className="pt-14 sm:pt-16">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
           </div>
-
-          <button
-            aria-label="Next Page"
-            className="w-10 h-10 flex items-center justify-center rounded-full border border-silver-300 text-silver-600 hover:bg-silver-200 transition-colors shrink-0"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-          </button>
-        </div>
+        )}
 
       </div>
     </section>

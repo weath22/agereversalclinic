@@ -27,6 +27,33 @@ export interface TreatmentDetail {
   postCare: string[];
   additionalImages?: string[];
 
+  // Clinical expectations & overview additions
+  protocolQuote?: string;
+  anesthesia?: string;
+  longevity?: string;
+
+  // Dermal Profiler Calibration Studio
+  profilerEnabled?: boolean;
+  dermalSpecs?: {
+    frequency?: string;
+    energy?: string;
+    temperature?: string;
+    mechanism?: string;
+  };
+
+  // Mirrored Before & After and custom pairs
+  customBeforeAfterPairs?: Array<{
+    id: string;
+    beforeImage: string;
+    afterImage: string;
+    title: string;
+    duration?: string;
+    sessions?: number | string;
+    beforeAltText?: string;
+    afterAltText?: string;
+  }>;
+  excludedGalleryPairIds?: string[];
+
   // 6 Dedicated Component Slots (Rich Media & SEO)
   coverMedia?: TreatmentMediaItem;
   heroMedia?: TreatmentMediaItem;

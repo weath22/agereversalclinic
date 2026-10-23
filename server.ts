@@ -24,8 +24,19 @@ const srcAssetsDir = path.resolve(__dirname, 'src/assets/images');
 const publicTreatmentsDir = path.resolve(__dirname, 'public/assets/treatments');
 const srcTreatmentsDir = path.resolve(__dirname, 'src/assets/images/treatments');
 const distTreatmentsDir = path.resolve(__dirname, 'dist/assets/treatments');
+const publicTransformationsDir = path.resolve(__dirname, 'public/assets/transformations');
+const srcTransformationsDir = path.resolve(__dirname, 'src/assets/images/transformations');
+const distTransformationsDir = path.resolve(__dirname, 'dist/assets/transformations');
 
-for (const dir of [uploadsDir, publicAssetsDir, srcAssetsDir, publicTreatmentsDir, srcTreatmentsDir]) {
+for (const dir of [
+  uploadsDir,
+  publicAssetsDir,
+  srcAssetsDir,
+  publicTreatmentsDir,
+  srcTreatmentsDir,
+  publicTransformationsDir,
+  srcTransformationsDir,
+]) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -34,43 +45,51 @@ for (const dir of [uploadsDir, publicAssetsDir, srcAssetsDir, publicTreatmentsDi
 // ============================================================================
 // TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
 // ============================================================================
-// Ensure assets in src/assets/images/treatments (source/git) and public/assets/treatments (Vite public)
+// Ensure assets in src/assets/images/treatments & transformations (source/git)
+// and public/assets/treatments & transformations (Vite public)
 // are mirrored and kept in sync so neither environment loses images upon server restart or build.
 try {
-  if (fs.existsSync(srcTreatmentsDir) && fs.existsSync(publicTreatmentsDir)) {
-    const srcFiles = fs.readdirSync(srcTreatmentsDir);
-    for (const f of srcFiles) {
-      const srcFile = path.join(srcTreatmentsDir, f);
-      const pubFile = path.join(publicTreatmentsDir, f);
-      if (fs.statSync(srcFile).isFile() && !fs.existsSync(pubFile)) {
-        fs.copyFileSync(srcFile, pubFile);
-        console.log(`[Production Mirror Sync] Synced ${f} from src to public assets`);
-      }
-    }
+  const mirrorPairs: Array<[string, string]> = [
+    [srcTreatmentsDir, publicTreatmentsDir],
+    [srcTransformationsDir, publicTransformationsDir],
+  ];
 
-    const pubFiles = fs.readdirSync(publicTreatmentsDir);
-    for (const f of pubFiles) {
-      const pubFile = path.join(publicTreatmentsDir, f);
-      const srcFile = path.join(srcTreatmentsDir, f);
-      if (fs.statSync(pubFile).isFile() && !fs.existsSync(srcFile)) {
-        fs.copyFileSync(pubFile, srcFile);
-        console.log(`[Production Mirror Sync] Synced ${f} from public to src assets`);
+  for (const [srcDir, pubDir] of mirrorPairs) {
+    if (fs.existsSync(srcDir) && fs.existsSync(pubDir)) {
+      const srcFiles = fs.readdirSync(srcDir);
+      for (const f of srcFiles) {
+        const srcFile = path.join(srcDir, f);
+        const pubFile = path.join(pubDir, f);
+        if (fs.statSync(srcFile).isFile() && !fs.existsSync(pubFile)) {
+          fs.copyFileSync(srcFile, pubFile);
+          console.log(`[Production Mirror Sync] Synced ${f} from src to public assets`);
+        }
       }
-    }
 
-    // Purge any redundant non-webp duplicate pairs (e.g. legacy .png/.jpg when .webp exists)
-    for (const dir of [publicTreatmentsDir, srcTreatmentsDir]) {
-      if (fs.existsSync(dir)) {
-        const allFiles = fs.readdirSync(dir);
-        for (const file of allFiles) {
-          const ext = path.extname(file).toLowerCase();
-          if (ext !== '.webp') {
-            const base = path.basename(file, ext);
-            if (fs.existsSync(path.join(dir, `${base}.webp`))) {
-              try {
-                fs.unlinkSync(path.join(dir, file));
-                console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
-              } catch {}
+      const pubFiles = fs.readdirSync(pubDir);
+      for (const f of pubFiles) {
+        const pubFile = path.join(pubDir, f);
+        const srcFile = path.join(srcDir, f);
+        if (fs.statSync(pubFile).isFile() && !fs.existsSync(srcFile)) {
+          fs.copyFileSync(pubFile, srcFile);
+          console.log(`[Production Mirror Sync] Synced ${f} from public to src assets`);
+        }
+      }
+
+      // Purge any redundant non-webp duplicate pairs (e.g. legacy .png/.jpg when .webp exists)
+      for (const dir of [pubDir, srcDir]) {
+        if (fs.existsSync(dir)) {
+          const allFiles = fs.readdirSync(dir);
+          for (const file of allFiles) {
+            const ext = path.extname(file).toLowerCase();
+            if (ext !== '.webp') {
+              const base = path.basename(file, ext);
+              if (fs.existsSync(path.join(dir, `${base}.webp`))) {
+                try {
+                  fs.unlinkSync(path.join(dir, file));
+                  console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
+                } catch {}
+              }
             }
           }
         }
@@ -92,6 +111,17 @@ if (fs.existsSync(distTreatmentsDir)) {
 app.use('/assets/treatments', (_req, res) => {
   res.status(404).end();
 });
+
+app.use('/assets/transformations', express.static(publicTransformationsDir));
+app.use('/assets/transformations', express.static(srcTransformationsDir));
+if (fs.existsSync(distTransformationsDir)) {
+  app.use('/assets/transformations', express.static(distTransformationsDir));
+}
+// Fast 404 for missing transformation images so they never fall through to Vite SPA HTML middleware
+app.use('/assets/transformations', (_req, res) => {
+  res.status(404).end();
+});
+
 app.use('/assets', express.static(publicAssetsDir));
 app.use('/assets', express.static(srcAssetsDir));
 app.use(express.static(path.resolve(__dirname, 'public')));
@@ -100,6 +130,73 @@ app.use(express.static(path.resolve(__dirname, 'public')));
 const customizationsPath = path.resolve(__dirname, 'src/data/siteCustomizations.json');
 const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
 const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
+const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
+
+const GROUP_TO_TRANSFORMATION_CATEGORY: Record<string, string> = {
+  'anti-aging': 'Regenerative Biotech',
+  'acne-scarring': 'Skin Texture & Scars',
+  'facial-harmony': 'Facial Rejuvenation',
+  'clinical-hair': 'Hair Density',
+  'body-sculpting': 'Lifting & Contouring',
+  'advanced-facials': 'Skin Texture & Scars',
+};
+
+function syncTransformationsDataTs(galleryConfig: any): void {
+  if (!galleryConfig || !Array.isArray(galleryConfig.categories) || !fs.existsSync(transformationsDataPath)) {
+    return;
+  }
+  try {
+    const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+    const syncedCases: any[] = [];
+
+    for (const cat of galleryConfig.categories) {
+      const mappedCategory = GROUP_TO_TRANSFORMATION_CATEGORY[cat.id] || 'Facial Rejuvenation';
+      for (const pair of cat.pairs || []) {
+        if (!pair || pair.hidden || defaultPairIds.has(pair.id)) continue;
+        syncedCases.push({
+          id: pair.id,
+          title: pair.title,
+          category: mappedCategory,
+          tag: cat.name,
+          patientInfo: pair.linkedTreatmentTitle || cat.name,
+          duration: pair.duration || '8 Weeks',
+          sessions: pair.sessions || 1,
+          concern: pair.seoTitle || `${pair.title} clinical transformation at Age Reversal Clinics.`,
+          beforeImage: pair.beforeImage,
+          afterImage: pair.afterImage,
+          galleryImages: [pair.beforeImage, pair.afterImage],
+          recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : ['exosome', 'profhilo'],
+          recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
+          treatmentGroupId: pair.treatmentGroupId || cat.id,
+          linkedTreatmentId: pair.linkedTreatmentId,
+          beforeAltText: pair.beforeAltText,
+          afterAltText: pair.afterAltText,
+          seoTitle: pair.seoTitle,
+          seoKeywords: pair.seoKeywords || [],
+          featured: Boolean(pair.featured),
+          updatedAt: pair.updatedAt || Date.now(),
+        });
+      }
+    }
+
+    const existingContent = fs.readFileSync(transformationsDataPath, 'utf-8');
+    const startMarker = 'export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] =';
+    const endMarker = 'export function getRecommendedTreatmentsForCase';
+    const startIdx = existingContent.indexOf(startMarker);
+    const endIdx = existingContent.indexOf(endMarker);
+
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const updatedTs =
+        existingContent.slice(0, startIdx) +
+        `${startMarker} ${JSON.stringify(syncedCases, null, 2)};\n\n` +
+        existingContent.slice(endIdx);
+      fs.writeFileSync(transformationsDataPath, updatedTs, 'utf-8');
+      console.log(`[Admin] Synced ${syncedCases.length} Before & After transformation case(s) to ${transformationsDataPath}`);
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not sync transformationsData.ts:', err);
+  }
+}
 
 function generateTreatmentPricingTs(items: any[]): string {
   // Preserve all interfaces, projection helpers, and sub-option definitions in src/data/treatmentPricing.ts
@@ -605,6 +702,11 @@ app.post('/api/admin/save-to-files', (req, res) => {
       }
     }
 
+    // If homepage_gallery_config_v6 is part of this save, also sync into src/data/transformationsData.ts
+    if (existing.homepage_gallery_config_v6 && typeof existing.homepage_gallery_config_v6 === 'object') {
+      syncTransformationsDataTs(existing.homepage_gallery_config_v6);
+    }
+
     existing.lastSynced = new Date().toISOString();
 
     fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
@@ -617,6 +719,120 @@ app.post('/api/admin/save-to-files', (req, res) => {
     });
   } catch (error) {
     console.error('Error writing customizations to file:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// ============================================================================
+// BEFORE & AFTER GALLERY: PERSISTENCE & WEBP UPLOAD ENDPOINTS
+// ============================================================================
+app.get('/api/admin/before-after-gallery', (_req, res) => {
+  try {
+    if (fs.existsSync(customizationsPath)) {
+      const existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      if (existing && existing.homepage_gallery_config_v6) {
+        return res.json({
+          success: true,
+          data: existing.homepage_gallery_config_v6,
+          updatedAt: existing.lastSynced || null,
+        });
+      }
+    }
+    return res.json({ success: true, data: null });
+  } catch (error) {
+    console.error('[Admin] Error reading Before & After gallery config:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+app.post('/api/admin/before-after-gallery', (req, res) => {
+  try {
+    const config = req.body?.config || req.body?.data || req.body;
+    if (!config || !Array.isArray(config.categories)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Before & After gallery configuration payload.',
+      });
+    }
+
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    existing.homepage_gallery_config_v6 = config;
+    existing.lastSynced = new Date().toISOString();
+
+    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    syncTransformationsDataTs(config);
+
+    console.log(`[Admin] Persisted Before & After gallery config to siteCustomizations.json and transformationsData.ts`);
+    return res.json({
+      success: true,
+      message: 'Before & After gallery saved to siteCustomizations.json and transformationsData.ts',
+      updatedAt: existing.lastSynced,
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving Before & After gallery config:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// API: Upload a Before or After image in WebP format directly to /assets/transformations/
+app.post('/api/admin/transformations/upload-image', (req, res) => {
+  try {
+    const { pairId, slot, fileName, dataUrl, base64, title } = req.body || {};
+    if (!dataUrl && !base64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing image data (dataUrl or base64 required)',
+      });
+    }
+
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
+    const buffer = Buffer.from(rawData, 'base64');
+
+    const rawBase = fileName
+      ? path.basename(fileName, path.extname(fileName))
+      : `${pairId || title || 'ba'}-${slot || 'image'}`;
+    const safeSlug = rawBase
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const timestamp = Date.now();
+    const safeWebpName = `${safeSlug}-${timestamp}.webp`;
+
+    const publicTransformationPath = path.join(publicTransformationsDir, safeWebpName);
+    const srcTransformationPath = path.join(srcTransformationsDir, safeWebpName);
+
+    fs.writeFileSync(publicTransformationPath, buffer);
+    fs.writeFileSync(srcTransformationPath, buffer);
+
+    if (fs.existsSync(distTransformationsDir)) {
+      try {
+        fs.writeFileSync(path.join(distTransformationsDir, safeWebpName), buffer);
+      } catch (distErr) {
+        console.warn('[Admin] Could not write transformation WebP to distTransformationsDir:', distErr);
+      }
+    }
+
+    const cleanUrl = `/assets/transformations/${safeWebpName}`;
+    console.log(`[Admin] Saved Before & After WebP image to ${cleanUrl}`);
+
+    return res.json({
+      success: true,
+      url: cleanUrl,
+      rawPath: cleanUrl,
+      fileName: safeWebpName,
+      version: timestamp,
+      message: 'Before & After WebP image saved to /assets/transformations/ successfully!',
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving transformation WebP image:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
 });
@@ -662,11 +878,35 @@ app.post('/api/admin/upload-asset', (req, res) => {
   }
 });
 
-// API: List assets in src/assets/images and public/assets
+// API: List assets in src/assets/images, public/assets, and public/assets/transformations
 app.get('/api/admin/assets', (_req, res) => {
   try {
     const assetsList: Array<{ name: string; url: string; size: number; mtime: string; location: string }> = [];
     const seen = new Set<string>();
+
+    // Read public/assets/transformations & src/assets/images/transformations first
+    for (const transDir of [publicTransformationsDir, srcTransformationsDir]) {
+      if (fs.existsSync(transDir)) {
+        const files = fs.readdirSync(transDir);
+        for (const file of files) {
+          const url = `/assets/transformations/${file}`;
+          if (!seen.has(url)) {
+            const fullPath = path.join(transDir, file);
+            const stat = fs.statSync(fullPath);
+            if (stat.isFile()) {
+              seen.add(url);
+              assetsList.push({
+                name: file,
+                url,
+                size: stat.size,
+                mtime: stat.mtime.toISOString(),
+                location: 'public/assets/transformations'
+              });
+            }
+          }
+        }
+      }
+    }
 
     // Read public/assets
     if (fs.existsSync(publicAssetsDir)) {

@@ -19,6 +19,7 @@ import LatestNews from './components/LatestNews';
 import AwardsShowcase from './components/AwardsShowcase';
 import DoctorAppointment from './components/DoctorAppointment';
 import LocationsAndConsultation from './components/LocationsAndConsultation';
+import StayInformed from './components/StayInformed';
 import SocialVideoShowcase from './components/SocialVideoShowcase';
 import FloatingMenu from './components/FloatingMenu';
 import Footer from './components/Footer';
@@ -512,14 +513,14 @@ export default function App() {
             />
 
             {/* Specialist Areas with Sculptural Bust Background */}
-            <div 
-              className="relative overflow-hidden bg-[#faf9f8]"
-              style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}
-            >
+            <div className="relative overflow-hidden bg-[#faf9f8] isolate">
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
                   alt="Sculptural bust with pedestal in monochrome violet"
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
                 />
                 {/* Hardware-native alpha fade overlay */}
@@ -536,8 +537,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* 5. Editorial Treatment Teasers Section (Using the luxury background) */}
-            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '800px' }}>
+            {/* 5. Editorial Treatment Teasers Section */}
+            <div className="relative isolate">
               <Treatments 
                 onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
                 onTreatmentClick={(name) => setSelectedTreatment(name)}
@@ -546,10 +547,7 @@ export default function App() {
             </div>
 
             {/* 8. Breathtaking Interactive Before/After Gallery */}
-            <div 
-              className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042]"
-              style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
-            >
+            <div className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042] isolate">
               {/* Soft Fade Overlay (Matches Treatment component) */}
               <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
@@ -567,10 +565,7 @@ export default function App() {
             </div>
 
             {/* Why Choose Us Section with App's Theme Background */}
-            <div 
-              className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40"
-              style={{ contentVisibility: 'auto', containIntrinsicSize: '650px' }}
-            >
+            <div className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40 isolate">
               {/* Soft Fade Overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/25 to-white/50 pointer-events-none" />
 
@@ -587,11 +582,13 @@ export default function App() {
               </div>
             </div>       
 
-            {/* 13.6 Awards & Recognition Auto-scrolling Section (Escapes the background for future custom styling) */}
-            <AwardsShowcase />       
+            {/* 13.6 Awards & Recognition Auto-scrolling Section */}
+            <div className="relative isolate">
+              <AwardsShowcase />       
+            </div>
 
             {/* Our Locations and Preferred Consultation Sections from HTML request */}
-            <div>
+            <div className="relative isolate">
               <LocationsAndConsultation 
                 preselectedService={preferredService} 
                 onTreatmentClick={(name) => setSelectedTreatment(name)}
@@ -599,12 +596,12 @@ export default function App() {
             </div>
 
             {/* 10. Limited Time Promotional Banners */}
-            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '600px' }}>
+            <div className="relative isolate">
               <SpecialOffers onClaimOffer={handleClaimOffer} />
             </div>
 
             {/* Latest from The London Clinic Section */}
-            <div style={{ contentVisibility: 'auto', containIntrinsicSize: '700px' }}>
+            <div className="relative isolate">
               <LatestNews onArticleClick={setSelectedArticle} />
             </div>
           </>
@@ -612,15 +609,20 @@ export default function App() {
         </Suspense>
       </main>
 
+      {/* 14. Stay Informed Newsletter Subscription */}
+      <div className="relative isolate">
+        <StayInformed />
+      </div>
+
       {/* 14.5 Social Media Reels / Video Showcase (Excluded on Pricing Page to save bandwidth) */}
       {!isPricingOpen && (
-        <div style={{ contentVisibility: 'auto', containIntrinsicSize: '500px' }}>
+        <div className="relative isolate">
           <SocialVideoShowcase />
         </div>
       )}
 
       {/* 15. Footnotes and Sitemap */}
-      <div style={{ contentVisibility: 'auto', containIntrinsicSize: '400px' }}>
+      <div className="relative isolate">
         <Footer />
       </div>
 

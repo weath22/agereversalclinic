@@ -108,8 +108,8 @@ export default function SpecialistAreas({
             </div>
           </header>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 mb-6 sm:mb-10 md:mb-14 -mx-1.5">
+          {/* Cards Grid: 2 per row on desktop screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-10 md:mb-14 -mx-1.5">
             <AnimatePresence mode="wait">
               {currentTreatments.map((treatment, idx) => (
                 <motion.article
@@ -123,12 +123,13 @@ export default function SpecialistAreas({
                   }
                   className="group bg-white/95 backdrop-blur-md overflow-hidden border border-white/30 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_10px_35px_-5px_rgba(0,0,0,0.25)] hover:shadow-2xl hover:-translate-y-1 rounded-xl"
                 >
-                  <div className="aspect-[4/3] overflow-hidden bg-luxury-secondary relative">
+                  <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-luxury-secondary relative">
                     <img
                       src={treatment.coverMedia?.url || treatment.image}
                       alt={treatment.coverMedia?.altText || treatment.title}
                       title={treatment.coverMedia?.seoTitle || treatment.title}
                       loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                       referrerPolicy="no-referrer"
                     />
@@ -139,10 +140,10 @@ export default function SpecialistAreas({
                       </span>
                     )}
                   </div>
-                  <div className="p-5 sm:p-6 md:p-7 flex-grow flex flex-col justify-between">
+                  <div className="p-3.5 sm:p-6 md:p-7 flex-grow flex flex-col justify-between">
                     <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-serif font-normal text-lg sm:text-xl text-luxury-text group-hover:text-luxury-subtext transition-colors leading-tight">
+                      <div className="flex justify-between items-center mb-2 sm:mb-3">
+                        <h3 className="font-serif font-normal text-base sm:text-xl text-luxury-text group-hover:text-luxury-subtext transition-colors leading-tight">
                           {treatment.title}
                         </h3>
                         <ChevronRight

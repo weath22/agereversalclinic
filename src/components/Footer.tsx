@@ -153,43 +153,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Newsletter Subscription Block */}
-        <div className="border-t border-[#D8C2A3]/20 pt-12 pb-2 mb-8 text-center max-w-3xl mx-auto">
-          <h3 className="text-2xl md:text-3xl font-serif font-light text-white mb-2 tracking-tight">Stay Informed</h3>
-          <p className="text-xs sm:text-sm text-white/70 mb-6 font-light max-w-xl mx-auto leading-relaxed">
-            Subscribe to our newsletter for latest treatments and exclusive insights.
-          </p>
-          <form className="max-w-3xl mx-auto" onSubmit={(e) => e.preventDefault()}>
-            <div className="grid grid-cols-2 md:flex md:flex-row gap-3 items-center justify-center">
-              {/* First Name - Visible on mobile (left) and desktop */}
-              <input 
-                type="text" 
-                placeholder="First Name" 
-                className="w-full col-span-1 md:w-36 lg:w-40 px-4 sm:px-5 py-3 rounded-full border border-white/15 bg-white/5 text-white placeholder:text-white/40 text-xs sm:text-sm font-sans font-light focus:outline-none focus:border-[#D8C2A3] focus:bg-white/10 transition-all" 
-              />
-              {/* Last Name - Visible on mobile (right) and desktop */}
-              <input 
-                type="text" 
-                placeholder="Last Name" 
-                className="w-full col-span-1 md:w-36 lg:w-40 px-4 sm:px-5 py-3 rounded-full border border-white/15 bg-white/5 text-white placeholder:text-white/40 text-xs sm:text-sm font-sans font-light focus:outline-none focus:border-[#D8C2A3] focus:bg-white/10 transition-all" 
-              />
-              {/* Email Address - Full width on mobile, inline on desktop */}
-              <input 
-                type="email" 
-                placeholder="Enter your email address" 
-                required
-                className="w-full col-span-2 md:w-60 lg:w-68 px-5 py-3 rounded-full border border-white/15 bg-white/5 text-white placeholder:text-white/40 text-xs sm:text-sm font-sans font-light focus:outline-none focus:border-[#D8C2A3] focus:bg-white/10 transition-all" 
-              />
-              {/* Subscribe button */}
-              <button 
-                type="submit" 
-                className="w-full col-span-2 md:w-auto bg-[#D8C2A3] hover:bg-white text-black px-8 py-3 rounded-full text-[11px] font-sans font-semibold uppercase tracking-[0.2em] hover:shadow-[0_0_20px_rgba(216,194,163,0.35)] transition-all whitespace-nowrap cursor-pointer shadow-md"
-              >
-                Subscribe
-              </button>
-            </div>
-          </form>
-        </div>
 
         {/* Standalone Back to Top Item */}
         <div className="flex justify-center items-center my-8">

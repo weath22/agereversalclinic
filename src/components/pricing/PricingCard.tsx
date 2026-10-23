@@ -5,7 +5,7 @@ import { getTreatmentImagePath } from '../../utils/treatmentImageHelper';
 
 interface PricingCardProps {
   treatment: TreatmentPricingCardSummary;
-  onChoosePackage: (treatment: TreatmentPricingCardSummary) => void;
+  onChoosePackage: (treatment: any) => void;
 }
 
 export const PricingCard: React.FC<PricingCardProps> = ({

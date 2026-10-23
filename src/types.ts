@@ -228,16 +228,38 @@ export interface TreatmentsConfig {
 }
 
 // BEFORE & AFTER GALLERY CONFIGS
+export type ExistingTreatmentGroupId =
+  | 'anti-aging'
+  | 'acne-scarring'
+  | 'facial-harmony'
+  | 'clinical-hair'
+  | 'body-sculpting'
+  | 'advanced-facials'
+  | 'iv-wellness';
+
 export interface BeforeAfterPair {
   id: string;
   title: string;
   beforeImage: string;
   afterImage: string;
+  treatmentGroupId?: ExistingTreatmentGroupId | string;
+  linkedTreatmentId?: string;
+  linkedTreatmentTitle?: string;
+  beforeAltText?: string;
+  afterAltText?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
+  duration?: string;
+  sessions?: number;
+  featured?: boolean;
+  hidden?: boolean;
+  updatedAt?: number | string;
 }
 
 export interface BeforeAfterCategory {
-  id: string;
+  id: ExistingTreatmentGroupId | string;
   name: string;
+  treatmentCategory?: string;
   pairs: BeforeAfterPair[];
 }
 

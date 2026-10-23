@@ -1,7 +1,64 @@
-import { TreatmentPricingItem, TREATMENT_PRICING_DATA } from './treatmentPricing';
+import { TreatmentPricingItem, TREATMENT_PRICING_DATA, TreatmentCategory } from './treatmentPricing';
 import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
 import { ShopProduct } from '../types/shop';
 import { SHOP_PRODUCTS } from './shopProducts';
+import { ExistingTreatmentGroupId } from '../types';
+
+export interface ExistingBeforeAfterTreatmentGroup {
+  id: ExistingTreatmentGroupId;
+  name: string;
+  transformationCategory: TransformationCase['category'];
+  pricingCategory: TreatmentCategory;
+  defaultKeywords: string[];
+}
+
+/**
+ * Existing Treatment Groups under which Before & After image pairs can be added in the Admin Panel.
+ */
+export const EXISTING_BEFORE_AFTER_TREATMENT_GROUPS: ExistingBeforeAfterTreatmentGroup[] = [
+  {
+    id: 'anti-aging',
+    name: 'Anti-Aging Rejuvenation',
+    transformationCategory: 'Regenerative Biotech',
+    pricingCategory: 'Face & Injectables',
+    defaultKeywords: ['anti-aging clinic london', 'before and after skin rejuvenation', 'age reversal clinics london'],
+  },
+  {
+    id: 'acne-scarring',
+    name: 'Acne & Scarring',
+    transformationCategory: 'Skin Texture & Scars',
+    pricingCategory: 'Advanced Facials',
+    defaultKeywords: ['acne scar removal before and after', 'laser skin resurfacing london', 'skin texture revision'],
+  },
+  {
+    id: 'facial-harmony',
+    name: 'Facial Harmony & Injectables',
+    transformationCategory: 'Facial Rejuvenation',
+    pricingCategory: 'Face & Injectables',
+    defaultKeywords: ['dermal fillers before and after london', 'facial contouring results', 'non-surgical lift london'],
+  },
+  {
+    id: 'clinical-hair',
+    name: 'Clinical Hair Restoration',
+    transformationCategory: 'Hair Density',
+    pricingCategory: 'Hair & Beauty',
+    defaultKeywords: ['hair restoration before and after', 'prp hair density results london', 'scalp rejuvenation clinic'],
+  },
+  {
+    id: 'body-sculpting',
+    name: 'Body Sculpting & Tightening',
+    transformationCategory: 'Lifting & Contouring',
+    pricingCategory: 'Body Sculpting',
+    defaultKeywords: ['body sculpting before and after', 'non-surgical fat reduction london', 'skin tightening results'],
+  },
+  {
+    id: 'advanced-facials',
+    name: 'Advanced Clinical Facials',
+    transformationCategory: 'Skin Texture & Scars',
+    pricingCategory: 'Advanced Facials',
+    defaultKeywords: ['medical facial before and after', 'hydrafacial results london', 'chemical peel transformation'],
+  },
+];
 
 export interface TransformationCase {
   id: string;
@@ -17,6 +74,15 @@ export interface TransformationCase {
   galleryImages: string[];
   recommendedTreatmentIds: string[];
   recommendedProductIds: string[];
+  treatmentGroupId?: ExistingTreatmentGroupId | string;
+  linkedTreatmentId?: string;
+  beforeAltText?: string;
+  afterAltText?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
+  featured?: boolean;
+  hidden?: boolean;
+  updatedAt?: number | string;
 }
 
 export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
@@ -146,6 +212,8 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
   }
 ];
 
+export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [];
+
 export function getRecommendedTreatmentsForCase(caseItem: TransformationCase): TreatmentPricingItem[] {
   return caseItem.recommendedTreatmentIds
     .map(id => getHybridTreatmentPricing(id))
@@ -157,3 +225,4 @@ export function getRecommendedProductsForCase(caseItem: TransformationCase): Sho
     .map(id => SHOP_PRODUCTS.find(p => p.id === id))
     .filter((p): p is ShopProduct => !!p);
 }
+

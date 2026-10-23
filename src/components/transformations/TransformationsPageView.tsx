@@ -1,7 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Calendar, CheckCircle2, Sparkles, ShoppingBag, ChevronRight, X } from 'lucide-react';
-import { CLINICAL_TRANSFORMATION_CASES, TransformationCase, getRecommendedTreatmentsForCase, getRecommendedProductsForCase } from '../../data/transformationsData';
+import {
+  CLINICAL_TRANSFORMATION_CASES,
+  ADMIN_SYNCED_TRANSFORMATION_CASES,
+  EXISTING_BEFORE_AFTER_TREATMENT_GROUPS,
+  TransformationCase,
+  getRecommendedTreatmentsForCase,
+  getRecommendedProductsForCase,
+} from '../../data/transformationsData';
+import { getBeforeAfterGalleryConfig, fetchRemoteBeforeAfterGalleryConfig } from '../../lib/adminStore';
+import { BeforeAfterGalleryConfig } from '../../types';
 import { PricingCard } from '../pricing/PricingCard';
 import { PackageSelectModal } from '../pricing/PackageSelectModal';
 import { ProductCard } from '../shop/ProductCard';
@@ -27,6 +36,9 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   initialCaseId,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategoryFilter || 'All');
+  const [galleryConfig, setGalleryConfig] = useState<BeforeAfterGalleryConfig>(() =>
+    getBeforeAfterGalleryConfig()
+  );
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
   const [activeBottomSheet, setActiveBottomSheet] = useState<{ type: 'treatments' | 'products'; caseItem: TransformationCase } | null>(null);
   
@@ -39,12 +51,116 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   } = useTreatmentCart();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.localStorage.getItem('homepage_gallery_config_v6')) {
+      fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
+        if (remote) setGalleryConfig(remote);
+      });
+    }
+    const handleGalleryUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<BeforeAfterGalleryConfig>;
+      if (customEvent.detail) {
+        setGalleryConfig(customEvent.detail);
+      } else {
+        setGalleryConfig(getBeforeAfterGalleryConfig());
+      }
+    };
+    window.addEventListener('before_after_gallery_updated', handleGalleryUpdate);
+    return () => window.removeEventListener('before_after_gallery_updated', handleGalleryUpdate);
+  }, []);
+
   const categories = ['All', 'Facial Rejuvenation', 'Skin Texture & Scars', 'Lifting & Contouring', 'Regenerative Biotech', 'Hair Density'];
 
+  const allCases = useMemo(() => {
+    const defaultCaseIds = new Set(CLINICAL_TRANSFORMATION_CASES.map((c) => c.id));
+    const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+
+    const adminCases: TransformationCase[] = (galleryConfig?.categories || []).flatMap((cat) => {
+      const groupMeta = EXISTING_BEFORE_AFTER_TREATMENT_GROUPS.find((g) => g.id === cat.id);
+      const mappedCategory = groupMeta?.transformationCategory || 'Facial Rejuvenation';
+
+      return (cat.pairs || [])
+        .filter((p) => !p.hidden && !defaultCaseIds.has(p.id) && !defaultPairIds.has(p.id))
+        .map((pair): TransformationCase => ({
+          id: pair.id,
+          title: pair.title,
+          category: mappedCategory,
+          tag: cat.name,
+          patientInfo: pair.linkedTreatmentTitle || cat.name,
+          duration: pair.duration || '8 Weeks',
+          sessions: pair.sessions || 1,
+          concern: pair.seoTitle || `${pair.title} clinical transformation at Age Reversal Clinics.`,
+          beforeImage: pair.beforeImage,
+          afterImage: pair.afterImage,
+          galleryImages: [pair.beforeImage, pair.afterImage],
+          recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : ['exosome', 'profhilo'],
+          recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
+          treatmentGroupId: pair.treatmentGroupId || cat.id,
+          linkedTreatmentId: pair.linkedTreatmentId,
+          beforeAltText: pair.beforeAltText,
+          afterAltText: pair.afterAltText,
+          seoTitle: pair.seoTitle,
+          seoKeywords: pair.seoKeywords,
+          featured: pair.featured,
+          updatedAt: pair.updatedAt,
+        }));
+    });
+
+    const combined = [...adminCases, ...ADMIN_SYNCED_TRANSFORMATION_CASES, ...CLINICAL_TRANSFORMATION_CASES];
+    const seen = new Set<string>();
+    return combined.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [galleryConfig]);
+
   const filteredCases = useMemo(() => {
-    if (selectedCategory === 'All') return CLINICAL_TRANSFORMATION_CASES;
-    return CLINICAL_TRANSFORMATION_CASES.filter(c => c.category === selectedCategory);
-  }, [selectedCategory]);
+    if (selectedCategory === 'All') return allCases;
+    return allCases.filter((c) => c.category === selectedCategory);
+  }, [selectedCategory, allCases]);
+
+  // Schema.org/ImageObject Structured Data for Google Image Search
+  const structuredDataJson = useMemo(() => {
+    const imageObjects = filteredCases.flatMap((c) => {
+      const kw = (c.seoKeywords || [c.title, c.tag, 'before and after', 'Age Reversal Clinics London']).join(', ');
+      return [
+        {
+          '@type': 'ImageObject',
+          contentUrl: c.beforeImage,
+          name: c.seoTitle ? `${c.seoTitle} (Before)` : `${c.title} Before Treatment`,
+          description:
+            c.beforeAltText || `${c.title} Before ${c.tag} Treatment at Age Reversal Clinics London`,
+          keywords: kw,
+          creator: {
+            '@type': 'MedicalBusiness',
+            name: 'Age Reversal Clinics',
+          },
+        },
+        {
+          '@type': 'ImageObject',
+          contentUrl: c.afterImage,
+          name: c.seoTitle ? `${c.seoTitle} (After)` : `${c.title} After Treatment`,
+          description:
+            c.afterAltText || `${c.title} After ${c.tag} Treatment Result at Age Reversal Clinics London`,
+          keywords: kw,
+          creator: {
+            '@type': 'MedicalBusiness',
+            name: 'Age Reversal Clinics',
+          },
+        },
+      ];
+    });
+
+    return JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'ImageGallery',
+      name: 'Age Reversal Clinics Patient Before & After Transformations',
+      description:
+        'Unretouched clinical before and after patient photography and treatment pathways at Age Reversal Clinics London.',
+      image: imageObjects,
+    });
+  }, [filteredCases]);
 
   const handleAddToCart = (product: ShopProduct) => {
     addToCart(product, 1, false);
@@ -66,6 +182,12 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
 
   return (
     <div className="bg-[#FAF8F5] text-stone-900 min-h-screen pt-4 pb-0 sm:pb-20 selection:bg-rose-gold selection:text-stone-900">
+      {/* Google Image Search Schema.org ImageObject Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: structuredDataJson }}
+      />
+
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -188,6 +310,9 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
               <TransformationCarousel
                 title={caseItem.title}
                 images={caseItem.galleryImages && caseItem.galleryImages.length > 0 ? caseItem.galleryImages : [caseItem.beforeImage, caseItem.afterImage]}
+                beforeAltText={caseItem.beforeAltText}
+                afterAltText={caseItem.afterAltText}
+                seoTitle={caseItem.seoTitle}
               />
 
               {/* Discover More Widget (Google AI entries style) */}

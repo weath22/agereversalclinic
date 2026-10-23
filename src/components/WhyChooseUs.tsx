@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Icons from 'lucide-react';
 import { motion } from 'motion/react';
 import { getWhyChooseUsConfig } from '../lib/adminStore';
@@ -30,16 +30,51 @@ export default function WhyChooseUs() {
   const [config, setConfig] = useState<WhyChooseUsConfig | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeScrollIndex, setActiveScrollIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Mouse drag-to-scroll support for desktop and tablet pointing devices
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftPos, setScrollLeftPos] = useState(0);
 
   useEffect(() => {
     setConfig(getWhyChooseUsConfig());
   }, []);
 
-  const handleScroll = () => {
+  const updateScrollState = useCallback(() => {
     if (!scrollContainerRef.current) return;
-    const { scrollLeft, clientWidth } = scrollContainerRef.current;
-    const newIndex = Math.round(scrollLeft / (clientWidth * 0.75));
-    setActiveScrollIndex(Math.min(newIndex, (config?.pillars.length || 4) - 1));
+    const { scrollLeft, scrollWidth, clientWidth, children } = scrollContainerRef.current;
+    
+    setCanScrollLeft(scrollLeft > 8);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8);
+
+    if (children.length > 0) {
+      const firstChild = children[0] as HTMLElement;
+      const cardWidth = firstChild.getBoundingClientRect().width;
+      const gap = 24;
+      const index = Math.round(scrollLeft / (cardWidth + gap));
+      const maxIndex = (config?.pillars.length || 4) - 1;
+      setActiveScrollIndex(Math.max(0, Math.min(index, maxIndex)));
+    }
+  }, [config?.pillars.length]);
+
+  useEffect(() => {
+    updateScrollState();
+    window.addEventListener('resize', updateScrollState);
+    return () => window.removeEventListener('resize', updateScrollState);
+  }, [updateScrollState]);
+
+  const slide = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const firstCard = container.children[0] as HTMLElement | undefined;
+    const scrollDelta = firstCard ? firstCard.offsetWidth + 24 : container.clientWidth * 0.75;
+
+    container.scrollBy({
+      left: direction === 'left' ? -scrollDelta : scrollDelta,
+      behavior: 'smooth'
+    });
   };
 
   const scrollToPillar = (index: number) => {
@@ -54,6 +89,30 @@ export default function WhyChooseUs() {
     }
   };
 
+  // Drag-to-scroll event handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeftPos(scrollContainerRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 1.4;
+    scrollContainerRef.current.scrollLeft = scrollLeftPos - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
   if (!config) return null;
 
   return (
@@ -64,7 +123,7 @@ export default function WhyChooseUs() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10">
         
-        {/* Header Block (Responsive margins) */}
+        {/* Header Block (Classic centered styling without top buttons) */}
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <span className="text-[10px] sm:text-xs font-sans font-medium text-luxury-gold uppercase tracking-[0.25em] block mb-2 sm:mb-3">
             Clinical Distinction
@@ -75,78 +134,112 @@ export default function WhyChooseUs() {
           <div className="w-12 h-[1px] bg-luxury-gold mx-auto mt-5 sm:mt-8" />
         </div>
 
-        {/* Pillars Container: Clean full-bleed image cards with overlay details */}
-        <div
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 overflow-x-auto md:overflow-visible snap-x snap-mandatory px-4 sm:px-6 md:px-0 -mx-4 sm:-mx-6 md:mx-0 pb-4 md:pb-0 no-scrollbar items-stretch"
-        >
-          {config.pillars.map((pillar, idx) => {
-            // Resolve icon dynamically
-            const IconComponent = (Icons as any)[pillar.iconName] || Icons.Building;
-            
-            // Resolve image & badge (from pillar config, with fallback)
-            const fallback = PILLAR_IMAGES_FALLBACK[pillar.id] || {
-              image: 'https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY',
-              badge: 'Aesthetic Standard'
-            };
-            const imageUrl = pillar.imageUrl || fallback.image;
-            const badgeText = pillar.badge || fallback.badge;
+        {/* Carousel Wrapper: Edge Navigation Brackets on Desktop & Tablet Only */}
+        <div className="relative group/carousel">
+          {/* Left Navigation Bracket: Placed on the edge of the cards on desktop and tablet only */}
+          <button
+            type="button"
+            onClick={() => slide('left')}
+            disabled={!canScrollLeft}
+            aria-label="Previous standard"
+            className="hidden md:flex absolute -left-3 md:-left-5 lg:-left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg:w-12 lg:h-12 rounded-full border border-luxury-border/90 hover:border-luxury-gold bg-white/95 backdrop-blur-md text-luxury-text hover:text-luxury-gold items-center justify-center transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-md hover:shadow-xl active:scale-95 cursor-pointer"
+          >
+            <Icons.ChevronLeft className="w-5 h-5" strokeWidth={2} />
+          </button>
 
-            return (
-              <motion.div
-                key={pillar.id}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.08 }}
-                className="min-w-[260px] sm:min-w-[280px] md:min-w-0 flex-1 snap-center group relative overflow-hidden rounded-2xl border border-luxury-border/80 hover:border-luxury-gold/60 transition-all duration-500 cursor-pointer shadow-xs hover:shadow-xl aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between"
-              >
-                {/* Full-bleed background image with smooth zoom */}
-                <img
-                  src={imageUrl}
-                  alt={pillar.title}
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                  referrerPolicy="no-referrer"
-                />
+          {/* Pillars Track: Slidable horizontally on mobile, tablet, and desktop */}
+          <div
+            ref={scrollContainerRef}
+            onScroll={updateScrollState}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            className={`flex gap-4 sm:gap-6 lg:gap-7 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar items-stretch pl-4 pr-6 sm:px-6 md:px-0 -mx-4 sm:-mx-6 md:mx-0 scroll-pl-4 sm:scroll-pl-6 md:scroll-pl-0 py-3 ${
+              isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+            }`}
+          >
+            {config.pillars.map((pillar, idx) => {
+              // Resolve icon dynamically
+              const IconComponent = (Icons as any)[pillar.iconName] || Icons.Building;
+              
+              // Resolve image & badge (from pillar config, with fallback)
+              const fallback = PILLAR_IMAGES_FALLBACK[pillar.id] || {
+                image: 'https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY',
+                badge: 'Aesthetic Standard'
+              };
+              const imageUrl = pillar.imageUrl || fallback.image;
+              const badgeText = pillar.badge || fallback.badge;
 
-                {/* Bottom gradient scrim affecting only the details text */}
-                <div className="absolute inset-x-0 bottom-0 h-[48%] bg-gradient-to-t from-black/92 via-black/60 to-transparent pointer-events-none transition-opacity duration-300" />
+              return (
+                <motion.div
+                  key={pillar.id}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: idx * 0.08 }}
+                  className="w-[270px] sm:w-[310px] md:w-[340px] lg:w-[330px] xl:w-[360px] shrink-0 snap-start group relative overflow-hidden rounded-2xl border border-luxury-border/80 hover:border-luxury-gold/60 transition-all duration-500 cursor-pointer shadow-xs hover:shadow-xl aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between select-none"
+                >
+                  {/* Full-bleed background image with smooth zoom */}
+                  <img
+                    src={imageUrl}
+                    alt={pillar.title}
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 pointer-events-none"
+                    referrerPolicy="no-referrer"
+                  />
 
-                {/* Top Overlay Bar: Badge & Floating Icon (closer to top and edges) */}
-                <div className="relative z-10 p-2.5 sm:p-3 md:p-3.5 flex items-center justify-between w-full">
-                  <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[8.5px] sm:text-[9.5px] font-sans font-semibold tracking-wider uppercase bg-white/90 backdrop-blur-md text-luxury-text border border-white/80 shadow-xs">
-                    {badgeText}
-                  </span>
+                  {/* Subtle top gradient scrim for badge & icon clarity */}
+                  <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/45 via-black/15 to-transparent pointer-events-none" />
 
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-md border border-white/80 flex items-center justify-center text-luxury-text group-hover:bg-luxury-text group-hover:text-luxury-gold transition-all duration-300 shadow-xs">
-                    <IconComponent className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.75} />
+                  {/* Top Overlay Bar: Clean outlined Badge & Outlined Icon with enhanced size and border */}
+                  <div className="relative z-10 p-3.5 sm:p-4 md:p-4.5 flex items-center justify-between w-full pointer-events-none">
+                    <span className="inline-flex items-center px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-sans font-medium tracking-wider uppercase bg-transparent border-[1.5px] border-white/80 text-white backdrop-blur-[2px] shadow-xs group-hover:border-luxury-gold group-hover:text-luxury-gold transition-colors duration-300">
+                      {badgeText}
+                    </span>
+
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent border-[1.5px] border-white/80 flex items-center justify-center text-white backdrop-blur-[2px] shadow-xs group-hover:border-luxury-gold group-hover:text-luxury-gold transition-colors duration-300">
+                      <IconComponent className="h-4 w-4 sm:h-4.5 sm:w-4.5" strokeWidth={2} />
+                    </div>
                   </div>
-                </div>
 
-                {/* Bottom Overlay: Details positioned closer to edges, cleanly integrated over the image */}
-                <div className="relative z-10 p-2.5 sm:p-3 md:p-3.5 pb-3 sm:pb-3.5 md:pb-4 flex flex-col justify-end">
-                  <h3 className="font-serif font-normal text-white text-sm sm:text-base md:text-lg mb-1 leading-snug drop-shadow-sm group-hover:text-luxury-gold transition-colors duration-300">
-                    {pillar.title}
-                  </h3>
-                  
-                  <p className="font-sans text-[10.5px] sm:text-[11.5px] text-white/80 font-light leading-relaxed line-clamp-3">
-                    {pillar.description}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+                  {/* Bottom Dark Transparent Bar: Styled like treatment pricing cards */}
+                  <div className="absolute inset-x-0 bottom-0 w-full bg-noir-900/65 sm:bg-noir-900/60 backdrop-blur-[2px] border-t border-white/10 p-3.5 sm:p-4 md:p-4.5 z-20 flex flex-col justify-end pointer-events-none transition-colors duration-300 group-hover:bg-noir-900/75">
+                    <h3 className="font-serif font-normal text-white text-sm sm:text-base md:text-lg mb-1 leading-snug drop-shadow-sm group-hover:text-luxury-gold transition-colors duration-300">
+                      {pillar.title}
+                    </h3>
+                    
+                    <p className="font-sans text-xs sm:text-[13px] md:text-sm text-white/90 font-light leading-relaxed line-clamp-3">
+                      {pillar.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Right Navigation Bracket: Placed on the edge of the cards on desktop and tablet only */}
+          <button
+            type="button"
+            onClick={() => slide('right')}
+            disabled={!canScrollRight}
+            aria-label="Next standard"
+            className="hidden md:flex absolute -right-3 md:-right-5 lg:-right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg:w-12 lg:h-12 rounded-full border border-luxury-border/90 hover:border-luxury-gold bg-white/95 backdrop-blur-md text-luxury-text hover:text-luxury-gold items-center justify-center transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-md hover:shadow-xl active:scale-95 cursor-pointer"
+          >
+            <Icons.ChevronRight className="w-5 h-5" strokeWidth={2} />
+          </button>
         </div>
 
-        {/* Mobile Swipe Navigation Dots */}
+        {/* Mobile Swipe Navigation Dots (Mobile only) */}
         <div className="flex md:hidden items-center justify-center gap-2 mt-4 pt-2">
           {config.pillars.map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => scrollToPillar(i)}
-              aria-label={`Scroll to benefit ${i + 1}`}
+              aria-label={`Scroll to standard ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 activeScrollIndex === i ? 'w-6 bg-luxury-text' : 'w-1.5 bg-luxury-border'
               }`}
@@ -154,11 +247,28 @@ export default function WhyChooseUs() {
           ))}
         </div>
 
-        {/* Mobile Swipe Hint */}
+        {/* Mobile Swipe Hint (Mobile only) */}
         <div className="md:hidden text-center mt-2">
           <span className="font-sans text-[10px] text-luxury-muted tracking-wider uppercase">
-            &larr; View all standards &rarr;
+            &larr; Swipe to view all standards &rarr;
           </span>
+        </div>
+
+        {/* Desktop & Tablet Navigation Dots */}
+        <div className="hidden md:flex items-center justify-center gap-2 mt-6 pt-2">
+          {config.pillars.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => scrollToPillar(i)}
+              aria-label={`Scroll to standard ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                activeScrollIndex === i 
+                  ? 'w-7 lg:w-8 bg-luxury-text shadow-xs' 
+                  : 'w-1.5 lg:w-2 bg-luxury-border hover:bg-luxury-gold/60'
+              }`}
+            />
+          ))}
         </div>
       </div>
     </section>

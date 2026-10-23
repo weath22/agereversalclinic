@@ -489,7 +489,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       {/* 1. Our Locations Section */}
       <section 
         id="locations"
-        className="py-20 relative overflow-hidden bg-cover bg-center border-b border-luxury-border/40"
+        className="py-20 relative overflow-hidden bg-cover bg-center border-b border-luxury-border/40 isolate bg-luxury-secondary/30"
         style={{
           backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.2)), url("${locationsConfig?.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw'}")`
         }}
@@ -519,6 +519,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                       src={displayImage}
                       alt={loc.name}
                       loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
                       referrerPolicy="no-referrer"
                       onError={(e) => {
