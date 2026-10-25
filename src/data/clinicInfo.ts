@@ -100,9 +100,9 @@ export const CLINIC_DATA: ClinicData = {
   ],
   "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
   "logo": {
-    "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+    "icon": "/assets/1792949260148-age_reversal_clinic_uk_groove_park_london.png",
     "alt": "Age Reversal Clinics Logo",
-    "full": "/assets/1791726190127-arc-logo__2_.webp"
+    "full": "/assets/1792949271165-age_reversal_clinic_uk_groove_park_london.png"
   },
   "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
   "interiorPhotos": [

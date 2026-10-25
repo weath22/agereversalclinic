@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Play, Volume2, VolumeX, X, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 
 interface VideoItem {
   id: string;
@@ -50,12 +50,13 @@ export default function SocialVideoShowcase() {
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasEnteredViewport, setHasEnteredViewport] = useState(false);
   const [isInViewport, setIsInViewport] = useState(false);
+  const [readyVideos, setReadyVideos] = useState<Record<string, boolean>>({});
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const previewVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const modalVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Lazy-load the 4 preview videos ONLY when SocialVideoShowcase enters the viewport
+  // Lazy-load the 4 preview videos when SocialVideoShowcase approaches the viewport
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === "undefined") {
@@ -73,198 +74,233 @@ export default function SocialVideoShowcase() {
           setHasEnteredViewport(true);
         }
       },
-      { rootMargin: "150px 0px", threshold: 0.05 }
+      { rootMargin: "120px 0px", threshold: 0.05 }
     );
 
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  // Pause preview videos when scrolled out of view or when the modal player is open
-  // so 100% of network bandwidth is dedicated to the active video
+  // Debounce play/pause slightly on fast scroll so the browser doesn't thrash decoders mid-scroll
   useEffect(() => {
-    Object.values(previewVideoRefs.current).forEach((videoEl) => {
-      if (!videoEl) return;
-      if (isInViewport && !activeVideo) {
-        videoEl.play().catch(() => {});
-      } else {
-        videoEl.pause();
+    let rafId: number | null = null;
+    const timerId = window.setTimeout(() => {
+      rafId = window.requestAnimationFrame(() => {
+        Object.values(previewVideoRefs.current).forEach((videoEl) => {
+          if (!videoEl) return;
+          if (isInViewport && !activeVideo) {
+            if (videoEl.paused) {
+              videoEl.play().catch(() => {});
+            }
+          } else if (!videoEl.paused) {
+            videoEl.pause();
+          }
+        });
+      });
+    }, 60);
+
+    return () => {
+      window.clearTimeout(timerId);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
       }
-    });
+    };
   }, [isInViewport, activeVideo]);
 
-  const handlePreviewTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (video.currentTime >= PREVIEW_DURATION_SECONDS) {
-      video.currentTime = 0;
-      if (isInViewport && !activeVideo) {
-        video.play().catch(() => {});
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!activeVideo) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveVideo(null);
       }
-    }
-  };
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeVideo]);
 
-  const handleOpenVideo = (item: VideoItem) => {
+  const handlePreviewTimeUpdate = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = e.currentTarget;
+      if (video.currentTime >= PREVIEW_DURATION_SECONDS) {
+        video.currentTime = 0;
+      }
+    },
+    []
+  );
+
+  const handleVideoLoadedData = useCallback((id: string) => {
+    setReadyVideos((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
+  }, []);
+
+  const handleOpenVideo = useCallback((item: VideoItem) => {
     setIsBuffering(true);
     setActiveVideo(item);
     setIsMuted(false);
-  };
+  }, []);
 
-  const handleToggleMute = () => {
+  const handleToggleMute = useCallback(() => {
     if (modalVideoRef.current) {
-      modalVideoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      const nextMuted = !modalVideoRef.current.muted;
+      modalVideoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
     }
-  };
+  }, []);
 
   return (
     <section ref={sectionRef} className="w-full py-0">
-      <div className="w-full max-w-full mx-auto">
-        <div className="css-1c2fuzs">
-          <div className="grid grid-cols-2 gap-1 md:grid-cols-4">
-            {SOCIAL_VIDEOS.map((item) => {
-              // Media Fragment URI (#t=0,5) tells the browser/CDN only to fetch & play the 0–5s range for preview
-              const previewSrc = hasEnteredViewport
-                ? `${item.videoUrl}#t=0,${PREVIEW_DURATION_SECONDS}`
-                : undefined;
+      <div className="w-full max-w-full mx-auto overflow-hidden">
+        <div className="grid grid-cols-2 gap-1 sm:gap-1.5 md:grid-cols-4">
+          {SOCIAL_VIDEOS.map((item) => {
+            const previewSrc = hasEnteredViewport
+              ? `${item.videoUrl}#t=0,${PREVIEW_DURATION_SECONDS}`
+              : undefined;
+            const isVideoReady = Boolean(readyVideos[item.id]);
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleOpenVideo(item)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleOpenVideo(item);
-                    }
-                  }}
-                  className="group relative h-72 w-full cursor-pointer overflow-hidden bg-noir-900 md:h-[600px] select-none"
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Play video by ${item.handle}`}
-                >
-                  {/* Background Video (5-Second Preview Loop, Lazy-Loaded on Scroll) */}
-                  <div className="h-full w-full opacity-90 transition-opacity duration-300 group-hover:opacity-100">
-                    <video
-                      ref={(node) => {
-                        previewVideoRefs.current[item.id] = node;
-                      }}
-                      src={previewSrc}
-                      poster={item.posterUrl}
-                      autoPlay={hasEnteredViewport && !activeVideo}
-                      muted
-                      playsInline
-                      preload={hasEnteredViewport ? "metadata" : "none"}
-                      onTimeUpdate={handlePreviewTimeUpdate}
-                      onEnded={(e) => {
-                        e.currentTarget.currentTime = 0;
-                        if (isInViewport && !activeVideo) {
-                          e.currentTarget.play().catch(() => {});
-                        }
-                      }}
-                      aria-hidden="true"
-                      className="h-full w-full object-cover object-top"
-                    >
-                      <track
-                        kind="captions"
-                        src="/assets/captions/decorative.vtt"
-                        srcLang="en"
-                        label="English"
-                        default
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleOpenVideo(item)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleOpenVideo(item);
+                  }
+                }}
+                className="group relative h-64 min-h-[240px] sm:h-80 md:h-[460px] lg:h-[600px] w-full cursor-pointer overflow-hidden bg-[#0c0c10] select-none [contain:layout_paint] transform-gpu"
+                role="button"
+                tabIndex={0}
+                aria-label={`Play video by ${item.handle}`}
+              >
+                {/* Static Poster Layer (prevents black flashes or layout breaks during fast scroll on small devices) */}
+                <img
+                  src={item.posterUrl}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 h-full w-full object-cover object-top pointer-events-none select-none"
+                />
+
+                {/* Background Video (5-Second Preview Loop, Lazy-Loaded on Scroll) */}
+                {hasEnteredViewport && (
+                  <video
+                    ref={(node) => {
+                      previewVideoRefs.current[item.id] = node;
+                    }}
+                    src={previewSrc}
+                    poster={item.posterUrl}
+                    autoPlay={isInViewport && !activeVideo}
+                    loop
+                    muted
+                    playsInline
+                    disablePictureInPicture
+                    disableRemotePlayback
+                    preload="metadata"
+                    onLoadedData={() => handleVideoLoadedData(item.id)}
+                    onTimeUpdate={handlePreviewTimeUpdate}
+                    aria-hidden="true"
+                    className={`relative z-[1] h-full w-full object-cover object-top pointer-events-none transition-opacity duration-300 ${
+                      isVideoReady ? "opacity-90 group-hover:opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <track
+                      kind="captions"
+                      src="/assets/captions/decorative.vtt"
+                      srcLang="en"
+                      label="English"
+                      default
+                    />
+                  </video>
+                )}
+
+                {/* Vignette Gradient Overlay */}
+                <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/70 via-black/15 to-transparent pointer-events-none" />
+
+                {/* Play Button Overlay and Username */}
+                <div className="absolute inset-0 z-[3] flex flex-col justify-between p-3 sm:p-5 xl:p-8 pointer-events-none">
+                  {/* Center Simulated Frosted-Glass Play Button (Zero backdrop-filter GPU lag) */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-[72px] md:h-[72px] rounded-full border border-white/40 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.34)_0%,rgba(255,255,255,0.16)_45%,rgba(18,18,24,0.58)_100%)] shadow-[0_8px_24px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-transform duration-300 ease-out group-hover:scale-105 group-active:scale-95 transform-gpu">
+                      {/* Inner Specular Rim */}
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-[2px] rounded-full border border-white/15 pointer-events-none"
                       />
-                    </video>
+                      <Play
+                        className="h-5 w-5 sm:h-7 sm:w-7 md:h-8 md:w-8 text-white fill-white translate-x-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
 
-                  {/* Light Vignette Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent pointer-events-none" />
-
-                  {/* Play Button Overlay and Username */}
-                  <div className="absolute left-0 top-0 h-full w-full flex flex-col justify-between p-4 xl:p-8 pointer-events-none">
-                    {/* Center Play Icon with Reduced Black Intensity */}
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="rounded-full bg-black/25 p-4 sm:p-5 backdrop-blur-md border border-white/30 group-hover:scale-110 group-hover:bg-black/40 group-hover:border-white/50 transition-all duration-300 shadow-lg">
-                        <Play
-                          className="h-7 w-7 text-white sm:h-10 sm:w-10 fill-white translate-x-0.5"
-                          strokeWidth={1.5}
-                          aria-hidden="true"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Bottom Handle */}
-                    <div className="flex items-end">
-                      <p className="text-left text-base text-white lg:text-2xl font-serif font-light tracking-wide drop-shadow-md">
-                        {item.handle}
-                      </p>
-                    </div>
+                  {/* Bottom Handle */}
+                  <div className="flex items-end min-w-0">
+                    <p className="truncate text-left text-xs sm:text-sm md:text-base lg:text-2xl text-white font-serif font-light tracking-wide drop-shadow-[0_2px_6px_rgba(0,0,0,0.75)]">
+                      {item.handle}
+                    </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Full Video Modal Player with Progressive Chunk Streaming on Click */}
-      <AnimatePresence>
-        {activeVideo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      {/* Full Video Modal Player rendered in document.body portal so it is never masked by section bounds */}
+      {activeVideo &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            <div
+              className="fixed inset-0 bg-black/85 transition-opacity"
               onClick={() => setActiveVideo(null)}
             />
 
             {/* Video Modal Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              className="relative w-full max-w-sm sm:max-w-md h-[80vh] max-h-[750px] bg-black rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col border border-white/10"
-            >
+            <div className="relative w-full max-w-[340px] sm:max-w-md h-[80vh] max-h-[750px] bg-black rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col border border-white/15 transform-gpu">
               {/* Top Controls */}
-              <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between pointer-events-auto">
-                <span className="text-white text-sm font-medium tracking-wide bg-black/50 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10">
+              <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between gap-2 pointer-events-auto">
+                <span className="truncate max-w-[60%] text-white text-xs sm:text-sm font-medium tracking-wide px-3.5 py-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.82)_0%,rgba(16,16,22,0.88)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]">
                   {activeVideo.handle}
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleToggleMute}
-                    className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/90 transition-colors border border-white/10 cursor-pointer"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center hover:brightness-110 transition-all border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.82)_0%,rgba(16,16,22,0.88)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] cursor-pointer"
                     aria-label={isMuted ? "Unmute video" : "Mute video"}
                   >
                     {isMuted ? (
-                      <VolumeX className="w-5 h-5" />
+                      <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
                     ) : (
-                      <Volume2 className="w-5 h-5" />
+                      <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     )}
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveVideo(null)}
-                    className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/90 transition-colors border border-white/10 cursor-pointer"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center hover:brightness-110 transition-all border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.82)_0%,rgba(16,16,22,0.88)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] cursor-pointer"
                     aria-label="Close modal"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </div>
 
-              {/* Smooth Chunk Buffering Indicator for Slower Networks */}
+              {/* Smooth Chunk Buffering Indicator */}
               {isBuffering && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 pointer-events-none">
-                  <div className="rounded-full bg-black/60 p-3.5 backdrop-blur-md border border-white/15">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 pointer-events-none">
+                  <div className="rounded-full p-3.5 border border-white/25 bg-[radial-gradient(circle_at_30%_25%,rgba(60,60,72,0.85),rgba(16,16,22,0.92))] shadow-lg">
                     <Loader2 className="w-6 h-6 text-white animate-spin" />
                   </div>
                 </div>
               )}
 
-              {/* Full Video Player (Streams via HTTP Byte-Range Chunks) */}
+              {/* Full Video Player */}
               <video
                 ref={modalVideoRef}
                 autoPlay
@@ -280,10 +316,11 @@ export default function SocialVideoShowcase() {
                 className="w-full h-full object-cover"
                 src={activeVideo.videoUrl}
               />
-            </motion.div>
-          </div>
+            </div>
+          </div>,
+          document.body
         )}
-      </AnimatePresence>
     </section>
   );
 }
+

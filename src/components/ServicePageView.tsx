@@ -110,7 +110,7 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       <ServiceHero data={data} onClose={onClose} onBook={onBook} />
 
       {/* 3. Detailed Clinical Information Section (Under the Hero) */}
-      <section id="clinical-details-section" className="bg-white py-16 md:py-24 border-b border-silver-150 relative z-10">
+      <section id="clinical-details-section" className="bg-white py-16 md:py-24 border-b border-silver-150 relative z-10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-16">
           
           {/* Section 3.1: Scientific Profile & Overview (Full Width row) */}

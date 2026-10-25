@@ -24,7 +24,10 @@ import {
   FooterConfig,
   FloatingMenuConfig,
   ProfilePageConfig,
-  MediaAssetRecord
+  MediaAssetRecord,
+  ProtocolStepItem,
+  TreatmentProtocolGroup,
+  ClinicalProtocolsConfig
 } from '../types';
 import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
 import { 
@@ -35,8 +38,10 @@ import {
   projectTreatmentCardSummary,
   filterAndSortTreatmentCards,
   TREATMENT_PRICING_DATA, 
-  TREATMENT_PRICING_CATEGORIES 
+  TREATMENT_PRICING_CATEGORIES,
+  PRICING_CATEGORIES
 } from '../data/treatmentPricing';
+import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
 // Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
 let _siteCustomizationsCache: Record<string, any> | null = null;
 let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
@@ -98,6 +103,7 @@ const PROFILE_PAGE_CONFIG_KEY = 'profile_page_config';
 const CLINIC_INFO_DATA_KEY = 'clinic_info_data';
 const TREATMENT_PRICING_DATA_KEY = 'treatment_pricing_data';
 const CENTRAL_MEDIA_ASSETS_KEY = 'central_clinic_media_assets';
+export const CLINICAL_PROTOCOLS_CONFIG_KEY = 'clinical_protocols_config';
 
 export const INITIAL_MEDIA_ASSETS: MediaAssetRecord[] = [
   {
@@ -386,7 +392,7 @@ function setStorageItem<T>(key: string, value: T): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     // Asynchronously write changes directly to project source files on server disk
-    if (key.startsWith('homepage_') || key.startsWith('profile_')) {
+    if (key.startsWith('homepage_') || key.startsWith('profile_') || key.startsWith('clinical_')) {
       syncConfigToFile(key, value);
     }
   } catch (error) {
@@ -1132,6 +1138,512 @@ const DEFAULT_FLOATING_MENU_CONFIG: FloatingMenuConfig = {
   welcomeMessage: "Hello! How can we help you today?"
 };
 
+export const DEFAULT_CLINICAL_PROTOCOLS_CONFIG: ClinicalProtocolsConfig = {
+  protocols: {
+    exosome: {
+      id: 'exosome',
+      name: 'Exosome Regenerative Therapy',
+      subtitle: 'Cellular Signaling & Dermal Matrix Restoration',
+      category: 'Advanced Facials',
+      branchId: 'medical-facials',
+      branchName: 'Clinical & Medical Facials',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'exo-1',
+          stepNumber: 1,
+          title: 'Epidermal Clearing',
+          description: 'The skin surface is meticulously cleansed and prepared using medical-grade formulations to ensure zero barrier interference.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Surface Epidermis'
+        },
+        {
+          id: 'exo-2',
+          stepNumber: 2,
+          title: 'Pathway Micro-Channels',
+          description: 'Microscopic pathways are gently opened in the dermis, setting up the structural guide channels for deep cell permeability.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 2 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Upper Papillary Dermis'
+        },
+        {
+          id: 'exo-3',
+          stepNumber: 3,
+          title: 'Exosome Influx',
+          description: 'Pure, clinical-grade signaling exosomes are introduced, delivering growth factors and signaling lipids directly to the deep dermal matrix.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Deep Dermal Matrix'
+        },
+        {
+          id: 'exo-4',
+          stepNumber: 4,
+          title: 'Cellular Sealing',
+          description: 'A soothing bio-active sealant is applied to calm the tissue, lock in the exosomes, and initiate immediate cellular repair.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 4 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Lipid Moisture Barrier'
+        }
+      ]
+    },
+    profhilo: {
+      id: 'profhilo',
+      name: 'Profhilo Bio-Remodeling',
+      subtitle: 'Multi-Level Dermal Remodeling & Hydration Diffusion',
+      category: 'Face & Injectables',
+      branchId: 'skin-boosters',
+      branchName: 'Skin Boosters & Bioremodeling',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'prof-1',
+          stepNumber: 1,
+          title: 'BAP Mapping',
+          description: 'Meticulous marking of the 5 key Bio Aesthetic Points (BAP) on each side of the face to optimize dermal diffusion.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Anatomical BAP Vector Sites'
+        },
+        {
+          id: 'prof-2',
+          stepNumber: 2,
+          title: 'Micro-Targeted Delivery',
+          description: 'Ultra-pure hyaluronic acid is precisely injected at calibrated depths into each designated BAP site with minimal discomfort.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Mid-Dermal Interstitial Space'
+        },
+        {
+          id: 'prof-3',
+          stepNumber: 3,
+          title: 'Dynamic Hydration Diffusion',
+          description: 'The dual-weight hyaluronic acid complex begins to slowly diffuse evenly across the surrounding skin tissues.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Subdermal Tissue Compartments'
+        },
+        {
+          id: 'prof-4',
+          stepNumber: 4,
+          title: 'Bio-Remodeling Cycle',
+          description: 'Continuous stimulation of 4 distinct collagen and elastin types, progressively lifting and remodeling sagging skin tissue.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 4 • Long-term',
+          duration: 'Ongoing',
+          focusArea: 'Extracellular Fibroblast Matrix'
+        }
+      ]
+    },
+    morpheus8: {
+      id: 'morpheus8',
+      name: 'Morpheus8 RF Microneedling',
+      subtitle: 'Fractional Radiofrequency & Subdermal Adipose Remodeling',
+      category: 'Face & Injectables',
+      branchId: 'high-tech-lifting',
+      branchName: 'High-Tech Lifting & Laser',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'morph-1',
+          stepNumber: 1,
+          title: 'Subdermal Mapping',
+          description: 'Calibrating needle penetration depths (ranging from 1mm to 4mm) to target the specific thickness of skin and localized fat.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Subcutaneous Depth Calibration'
+        },
+        {
+          id: 'morph-2',
+          stepNumber: 2,
+          title: 'Micro-Needle Penetration',
+          description: 'Gold-plated microneedles gently enter the skin to the exact pre-calibrated depth to deliver subdermal energy.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Sub-Epidermal Matrix'
+        },
+        {
+          id: 'morph-3',
+          stepNumber: 3,
+          title: 'RF Coagulation & Contraction',
+          description: 'Radiofrequency energy pulses through the needle tips, heating and remodeling subdermal adipose tissue and contracting fibers.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 25 mins',
+          duration: '25 mins',
+          focusArea: 'Deep SMAS & Fibroseptal Network'
+        },
+        {
+          id: 'morph-4',
+          stepNumber: 4,
+          title: 'Neocollagenesis Trigger',
+          description: 'Immediate contraction coupled with long-term collagen building results in a tighter, contoured, and lifted facial structure.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 4 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Dermal Structural Framework'
+        }
+      ]
+    },
+    ultherapy: {
+      id: 'ultherapy',
+      name: 'Ultherapy Ultrasound Lift',
+      subtitle: 'Micro-Focused Ultrasound with Deep SMAS Visualization',
+      category: 'Face & Injectables',
+      branchId: 'high-tech-lifting',
+      branchName: 'High-Tech Lifting & Laser',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'ulth-1',
+          stepNumber: 1,
+          title: 'Real-Time Visualization',
+          description: 'Using high-resolution ultrasound imaging to see beneath the skin and precisely identify the target SMAS muscle layers.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'SMAS Ultrasound Imaging'
+        },
+        {
+          id: 'ulth-2',
+          stepNumber: 2,
+          title: 'Calibrated Energy Delivery',
+          description: 'Directing focused thermal points precisely at three distinct depths (1.5mm, 3.0mm, and 4.5mm) bypassing the skin surface.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 30 mins',
+          duration: '30 mins',
+          focusArea: 'Multi-Depth Thermal Deposition'
+        },
+        {
+          id: 'ulth-3',
+          stepNumber: 3,
+          title: 'Tissue Coagulation',
+          description: 'Micro-focused ultrasound waves create tiny thermal spots that trigger immediate contraction of the foundational SMAS layer.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Deep Muscular Aponeurotic System'
+        },
+        {
+          id: 'ulth-4',
+          stepNumber: 4,
+          title: 'Progressive Tissue Lifting',
+          description: 'A natural healing cascade begins, building new, healthy collagen fibers that lift and firm the skin over 2 to 3 months.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 4 • Long-term',
+          duration: '2-3 Months',
+          focusArea: 'Structural Neocollagenesis'
+        }
+      ]
+    },
+    polynucleotide: {
+      id: 'polynucleotide',
+      name: 'Polynucleotides Dermal Repair',
+      subtitle: 'Cellular DNA Fraction Regeneration & Under-Eye Rejuvenation',
+      category: 'Face & Injectables',
+      branchId: 'skin-boosters',
+      branchName: 'Skin Boosters & Bioremodeling',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'poly-1',
+          stepNumber: 1,
+          title: 'Dermal Scanning & Marking',
+          description: 'Mapping targeted treatment zones such as the delicate under-eye tear troughs, lip lines, or areas of active dehydration.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Periorbital & Target Zones'
+        },
+        {
+          id: 'poly-2',
+          stepNumber: 2,
+          title: 'DNA Fraction Infusion',
+          description: 'Administering micro-droplets of highly purified polynucleotides directly into the damaged dermal layers.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Papillary Dermis Infusion'
+        },
+        {
+          id: 'poly-3',
+          stepNumber: 3,
+          title: 'Cellular Instruction',
+          description: 'The polynucleotide chains bind to cellular receptors, instructing fatigued cells to actively repair and regenerate tissue.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Fibroblast Membrane Receptors'
+        },
+        {
+          id: 'poly-4',
+          stepNumber: 4,
+          title: 'Structural Regeneration',
+          description: 'Accelerated synthesis of Type I collagen, enhanced skin elasticity, and improved micro-circulation for a glowing finish.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 4 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Micro-Circulatory Bed'
+        }
+      ]
+    },
+    lip: {
+      id: 'lip',
+      name: 'Lip Augmentation & Contour',
+      subtitle: 'Anatomical Cupid\'s Bow Sculpting & Hydration Integration',
+      category: 'Face & Injectables',
+      branchId: 'dermal-fillers',
+      branchName: 'Dermal Fillers (1ml)',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'lip-1',
+          stepNumber: 1,
+          title: 'Symmetry Analysis',
+          description: 'Evaluating lip proportions, Cupid\'s bow definition, and lip borders to design a custom, harmonious shape.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Vermilion Border & Philtrum'
+        },
+        {
+          id: 'lip-2',
+          stepNumber: 2,
+          title: 'Calibrated Micro-Needling',
+          description: 'Utilizing premium hyaluronic gel blended with anesthetic lidocaine to ensure a comfortable and controlled sculpting session.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Sub-Mucosal Tissue'
+        },
+        {
+          id: 'lip-3',
+          stepNumber: 3,
+          title: 'Precision Volumization',
+          description: 'Delicate dermal sculpting to fill vertical lines, restore proportional volume, and define natural borders.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Oral Commissure & Body of Lip'
+        },
+        {
+          id: 'lip-4',
+          stepNumber: 4,
+          title: 'Hydration Integration',
+          description: 'The hyaluronic gel integrates with the lip tissue, locking in deep moisture for a soft, lush, and hydrated pout.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 4 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Superficial Lip Mucosa'
+        }
+      ]
+    },
+    buttock: {
+      id: 'buttock',
+      name: 'Gluteal Contouring & Bio-Stimulation',
+      subtitle: 'PLLA Collagen Induction & Projection Sculpting',
+      category: 'Body Sculpting',
+      branchId: 'body-contouring',
+      branchName: 'Body Contouring & Fat Loss',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'butt-1',
+          stepNumber: 1,
+          title: 'Vector Mapping',
+          description: 'Charting gluteal contours, highlighting hip dips, and mapping target vectors for optimal projection and lift.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Lateral Hip Dip & Upper Pole Vectors'
+        },
+        {
+          id: 'butt-2',
+          stepNumber: 2,
+          title: 'Bio-Stimulator Infusion',
+          description: 'Administering high-density poly-L-lactic acid (PLLA) bio-stimulator gel into the deep subcutaneous adipose layers.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 30 mins',
+          duration: '30 mins',
+          focusArea: 'Deep Subcutaneous Adipose Plane'
+        },
+        {
+          id: 'butt-3',
+          stepNumber: 3,
+          title: 'Structural Massage',
+          description: 'Using specialized manual massage techniques to distribute the micro-particles evenly for perfectly smooth contours.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Subdermal Micro-Particle Distribution'
+        },
+        {
+          id: 'butt-4',
+          stepNumber: 4,
+          title: 'Sustained Collagenesis',
+          description: 'The bio-stimulating particles trigger gradual, long-term collagen building, filling and rounding contours over 4-6 weeks.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 4 • Long-term',
+          duration: '4-6 Weeks',
+          focusArea: 'Fibroblast Proliferation & Volume'
+        }
+      ]
+    },
+    blepharoplasty: {
+      id: 'blepharoplasty',
+      name: 'Non-Surgical Blepharoplasty',
+      subtitle: 'Precision Plasma Sublimation & Eyelid Contraction',
+      category: 'Face & Injectables',
+      branchId: 'high-tech-lifting',
+      branchName: 'High-Tech Lifting & Laser',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'bleph-1',
+          stepNumber: 1,
+          title: 'Laxity Mapping',
+          description: 'Analyzing excess upper or lower eyelid skin and marking the micro-contraction guide path for exact sublimation.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Periorbital Skin Fold & Crease'
+        },
+        {
+          id: 'bleph-2',
+          stepNumber: 2,
+          title: 'Plasma Arc Application',
+          description: 'A precision device creates focused plasma energy points, instantly sublimating the outermost epidermal layer.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Superficial Epidermal Keratinocytes'
+        },
+        {
+          id: 'bleph-3',
+          stepNumber: 3,
+          title: 'Immediate Contraction',
+          description: 'The plasma micro-arcs trigger immediate shrinkage of loose skin cells, tightening drooping tissue with zero bleeding.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 15 mins',
+          duration: '15 mins',
+          focusArea: 'Stratum Corneum Retraction'
+        },
+        {
+          id: 'bleph-4',
+          stepNumber: 4,
+          title: 'Epidermal Re-Surfacing',
+          description: 'Micro-crusts form and naturally shed over 5-7 days, revealing fresh, remarkably tightened, and lifted eyelid skin.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 4 • 5-7 Days',
+          duration: '5-7 Days',
+          focusArea: 'Regenerative Re-Epithelialization'
+        }
+      ]
+    },
+    aqualyx: {
+      id: 'aqualyx',
+      name: 'Aqualyx Fat Dissolving',
+      subtitle: 'Targeted Lipolysis & Metabolic Adipose Clearance',
+      category: 'Body Sculpting',
+      branchId: 'fat-dissolving',
+      branchName: 'Fat Dissolving Injections (Aqualyx & Deso)',
+      updatedAt: '2026-10-24T00:00:00.000Z',
+      steps: [
+        {
+          id: 'aqua-1',
+          stepNumber: 1,
+          title: 'Adipose Assessment',
+          description: 'Identifying localized, stubborn fat pockets (such as double chins or love handles) and marking a precise grid guide.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 1 • 10 mins',
+          duration: '10 mins',
+          focusArea: 'Submental & Focal Fat Grids'
+        },
+        {
+          id: 'aqua-2',
+          stepNumber: 2,
+          title: 'Lipolytic Infusion',
+          description: 'Injecting the specialized Aqualyx deoxycholic acid formula directly into the center of the subcutaneous fat layer.',
+          image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+          phaseTag: 'Phase 2 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Deep Subcutaneous Adipocytes'
+        },
+        {
+          id: 'aqua-3',
+          stepNumber: 3,
+          title: 'Membrane Liquefaction',
+          description: 'The formulation dissolves the rigid lipid membranes, safely breaking down and liquefying target fat cells.',
+          image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+          phaseTag: 'Phase 3 • 20 mins',
+          duration: '20 mins',
+          focusArea: 'Phospholipid Bilayers'
+        },
+        {
+          id: 'aqua-4',
+          stepNumber: 4,
+          title: 'Metabolic Clearance',
+          description: 'The lymphatic system naturally processes and permanently flushes the dissolved fat lipids out of your body.',
+          image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+          phaseTag: 'Phase 4 • 3-4 Weeks',
+          duration: '3-4 Weeks',
+          focusArea: 'Lymphatic Drainage Pathway'
+        }
+      ]
+    }
+  },
+  defaultSteps: [
+    {
+      id: 'default-1',
+      stepNumber: 1,
+      title: 'Barrier Diagnosis',
+      description: 'We analyze your skin barrier, hydration levels, and target goals to tailor an optimal aesthetic prescription.',
+      image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+      phaseTag: 'Phase 1 • 10 mins',
+      duration: '10 mins',
+      focusArea: 'Epidermal Skin Barrier'
+    },
+    {
+      id: 'default-2',
+      stepNumber: 2,
+      title: 'Custom Pre-Conditioning',
+      description: 'Preparing the dermal matrix with premium medical-grade formulations specific to your skin health requirements.',
+      image: '/assets/aistudio/_________Disk_Google_cf269914.jpg',
+      phaseTag: 'Phase 2 • 15 mins',
+      duration: '15 mins',
+      focusArea: 'Cellular Hydration Prep'
+    },
+    {
+      id: 'default-3',
+      stepNumber: 3,
+      title: 'Precision Protocol Phase',
+      description: 'Administering the chosen targeted technologies or infusions under strict clinical safety parameters.',
+      image: '/assets/aistudio/Sheet_Face_Mask_Vector_Illustration_-_Graphics_by_Canva_a7a34ce5.jpg',
+      phaseTag: 'Phase 3 • 30 mins',
+      duration: '30 mins',
+      focusArea: 'Active Clinical Delivery'
+    },
+    {
+      id: 'default-4',
+      stepNumber: 4,
+      title: 'Protective Bio-Shielding',
+      description: 'Applying specialized regenerative formulations to soothe, seal, and maximize cellular rejuvenation.',
+      image: '/assets/aistudio/Face_Wash_free_icons_designed_by_Iconfromus_e0f9b71f.jpg',
+      phaseTag: 'Phase 4 • 10 mins',
+      duration: '10 mins',
+      focusArea: 'Barrier Seal & Defense'
+    }
+  ]
+};
+
 // Initialize databases if they don't exist
 export function initializeAdminStore(): void {
   if (typeof window === 'undefined') return;
@@ -1183,6 +1695,426 @@ export function initializeAdminStore(): void {
   if (!window.localStorage.getItem(SPECIAL_OFFERS_CONFIG_KEY)) {
     setStorageItem(SPECIAL_OFFERS_CONFIG_KEY, DEFAULT_SPECIAL_OFFERS_CONFIG);
   }
+  if (!window.localStorage.getItem(CLINICAL_PROTOCOLS_CONFIG_KEY)) {
+    setStorageItem(CLINICAL_PROTOCOLS_CONFIG_KEY, DEFAULT_CLINICAL_PROTOCOLS_CONFIG);
+  }
+}
+
+// CLINICAL PROTOCOL STORE METHODS (Customer & Admin Management)
+
+const OFFICIAL_PRICING_CATEGORY_SET = new Set<string>(
+  PRICING_CATEGORIES.filter((c) => c !== 'All Procedures')
+);
+
+const CORE_PROTOCOL_TAXONOMY_MAP: Record<
+  string,
+  { category: string; branchId: string; branchName: string }
+> = {
+  exosome: {
+    category: 'Advanced Facials',
+    branchId: 'medical-facials',
+    branchName: 'Clinical & Medical Facials'
+  },
+  profhilo: {
+    category: 'Face & Injectables',
+    branchId: 'skin-boosters',
+    branchName: 'Skin Boosters & Bioremodeling'
+  },
+  polynucleotide: {
+    category: 'Face & Injectables',
+    branchId: 'skin-boosters',
+    branchName: 'Skin Boosters & Bioremodeling'
+  },
+  lip: {
+    category: 'Face & Injectables',
+    branchId: 'dermal-fillers',
+    branchName: 'Dermal Fillers (1ml)'
+  },
+  blepharoplasty: {
+    category: 'Face & Injectables',
+    branchId: 'high-tech-lifting',
+    branchName: 'High-Tech Lifting & Laser'
+  },
+  ultherapy: {
+    category: 'Face & Injectables',
+    branchId: 'high-tech-lifting',
+    branchName: 'High-Tech Lifting & Laser'
+  },
+  morpheus8: {
+    category: 'Face & Injectables',
+    branchId: 'high-tech-lifting',
+    branchName: 'High-Tech Lifting & Laser'
+  },
+  buttock: {
+    category: 'Body Sculpting',
+    branchId: 'body-contouring',
+    branchName: 'Body Contouring & Fat Loss'
+  },
+  aqualyx: {
+    category: 'Body Sculpting',
+    branchId: 'fat-dissolving',
+    branchName: 'Fat Dissolving Injections (Aqualyx & Deso)'
+  }
+};
+
+/**
+ * Normalizes any protocol group's category and branch fields so they match
+ * PRICING_CATEGORIES and CLINICAL_AREAS_DB (even if loaded from older localStorage).
+ */
+export function normalizeProtocolGroupTaxonomy(
+  key: string,
+  group: TreatmentProtocolGroup
+): TreatmentProtocolGroup {
+  const normalizedKey = (key || group.id || '').toLowerCase().trim();
+
+  // 1. Check direct mapping for the 9 core protocols
+  if (CORE_PROTOCOL_TAXONOMY_MAP[normalizedKey]) {
+    const mapped = CORE_PROTOCOL_TAXONOMY_MAP[normalizedKey];
+    const hasOfficialCategory =
+      group.category && OFFICIAL_PRICING_CATEGORY_SET.has(group.category);
+    return {
+      ...group,
+      id: normalizedKey,
+      category: hasOfficialCategory ? group.category : mapped.category,
+      branchId: group.branchId || mapped.branchId,
+      branchName: group.branchName || mapped.branchName
+    };
+  }
+
+  // 2. Check CLINICAL_AREAS_DB for an exact treatment ID match
+  const dbMatch = findTreatmentInDB(normalizedKey);
+  if (dbMatch) {
+    const resolvedCategory =
+      dbMatch.category.id === 'iv-lounge-prp'
+        ? 'IV Drip Lounge & Wellness'
+        : dbMatch.area.name;
+    return {
+      ...group,
+      id: normalizedKey,
+      category:
+        group.category && OFFICIAL_PRICING_CATEGORY_SET.has(group.category)
+          ? group.category
+          : resolvedCategory,
+      branchId: group.branchId || dbMatch.category.id,
+      branchName: group.branchName || dbMatch.category.name
+    };
+  }
+
+  // 3. Check TREATMENT_PRICING_DATA for an exact ID match
+  const pricingMatch = TREATMENT_PRICING_DATA.find(
+    (item) => item.id.toLowerCase() === normalizedKey
+  );
+  if (pricingMatch) {
+    return {
+      ...group,
+      id: normalizedKey,
+      category:
+        group.category && OFFICIAL_PRICING_CATEGORY_SET.has(group.category)
+          ? group.category
+          : pricingMatch.category
+    };
+  }
+
+  // 4. Normalize legacy free-text category strings if not already in PRICING_CATEGORIES
+  let normalizedCategory = group.category || 'Face & Injectables';
+  if (!OFFICIAL_PRICING_CATEGORY_SET.has(normalizedCategory)) {
+    const catLower = normalizedCategory.toLowerCase();
+    if (catLower.includes('body') || catLower.includes('fat') || catLower.includes('glute')) {
+      normalizedCategory = 'Body Sculpting';
+    } else if (
+      catLower.includes('facial') &&
+      !catLower.includes('harmony') &&
+      !catLower.includes('inject')
+    ) {
+      normalizedCategory = 'Advanced Facials';
+    } else if (catLower.includes('iv') || catLower.includes('drip') || catLower.includes('wellness')) {
+      normalizedCategory = 'IV Drip Lounge & Wellness';
+    } else if (catLower.includes('hair') || catLower.includes('lash') || catLower.includes('brow') || catLower.includes('beauty')) {
+      normalizedCategory = 'Hair & Beauty';
+    } else if (catLower.includes('regenerative') && normalizedKey.includes('exo')) {
+      normalizedCategory = 'Advanced Facials';
+    } else {
+      normalizedCategory = 'Face & Injectables';
+    }
+  }
+
+  return {
+    ...group,
+    id: normalizedKey,
+    category: normalizedCategory
+  };
+}
+
+export function getClinicalProtocolsConfig(): ClinicalProtocolsConfig {
+  initializeAdminStore();
+  const stored = getStorageItem<ClinicalProtocolsConfig>(
+    CLINICAL_PROTOCOLS_CONFIG_KEY,
+    getFileDefault(CLINICAL_PROTOCOLS_CONFIG_KEY, DEFAULT_CLINICAL_PROTOCOLS_CONFIG)
+  );
+
+  if (!stored || !stored.protocols || typeof stored.protocols !== 'object') {
+    return DEFAULT_CLINICAL_PROTOCOLS_CONFIG;
+  }
+
+  // Merge default treatments and normalize categories & branches
+  const rawMerged: Record<string, TreatmentProtocolGroup> = {
+    ...DEFAULT_CLINICAL_PROTOCOLS_CONFIG.protocols,
+    ...stored.protocols
+  };
+
+  const mergedProtocols: Record<string, TreatmentProtocolGroup> = {};
+  for (const [key, group] of Object.entries(rawMerged)) {
+    if (group && typeof group === 'object') {
+      mergedProtocols[key] = normalizeProtocolGroupTaxonomy(key, group);
+    }
+  }
+
+  return {
+    protocols: mergedProtocols,
+    defaultSteps: Array.isArray(stored.defaultSteps) && stored.defaultSteps.length > 0
+      ? stored.defaultSteps
+      : DEFAULT_CLINICAL_PROTOCOLS_CONFIG.defaultSteps
+  };
+}
+
+export function saveClinicalProtocolsConfig(config: ClinicalProtocolsConfig): ClinicalProtocolsConfig {
+  setStorageItem(CLINICAL_PROTOCOLS_CONFIG_KEY, config);
+  syncConfigToFile(CLINICAL_PROTOCOLS_CONFIG_KEY, config);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('clinical_protocols_updated', { detail: config }));
+  }
+  return config;
+}
+
+/**
+ * Resolves the clinical protocol for any treatment ID across CLINICAL_AREAS_DB and TREATMENT_PRICING_DATA:
+ * 1. Dedicated custom protocol if configured for that exact ID
+ * 2. Parent family / branch protocol (e.g., filler-lips -> lip, aqualyx-small-single -> aqualyx, etc.)
+ * 3. Default 4-step clinical protocol enriched with the treatment's actual name, category, and branch
+ */
+export function getClinicalProtocolByTreatmentId(treatmentId: string): TreatmentProtocolGroup {
+  const config = getClinicalProtocolsConfig();
+  const normalizedId = (treatmentId || '').toLowerCase().trim();
+
+  // 1. Exact match in configured protocols
+  if (normalizedId && config.protocols[normalizedId]) {
+    return config.protocols[normalizedId];
+  }
+
+  // Lookup official metadata from CLINICAL_AREAS_DB or TREATMENT_PRICING_DATA if available
+  const dbMatch = normalizedId ? findTreatmentInDB(normalizedId) : null;
+  const pricingMatch = normalizedId
+    ? TREATMENT_PRICING_DATA.find((item) => item.id.toLowerCase() === normalizedId)
+    : undefined;
+
+  const resolvedTitle =
+    dbMatch?.item.name || pricingMatch?.title || undefined;
+  const resolvedCategory = dbMatch
+    ? dbMatch.category.id === 'iv-lounge-prp'
+      ? 'IV Drip Lounge & Wellness'
+      : dbMatch.area.name
+    : pricingMatch?.category || 'Face & Injectables';
+  const resolvedBranchId = dbMatch?.category.id;
+  const resolvedBranchName = dbMatch?.category.name;
+
+  // 2. Smart treatment family / keyword resolution
+  const familyProtocolMap: Array<{ match: (id: string) => boolean; targetKey: string }> = [
+    {
+      match: (id) =>
+        id.includes('profhilo') ||
+        id.includes('seventy-hyal') ||
+        id.includes('jalupro') ||
+        id.includes('skin-booster'),
+      targetKey: 'profhilo'
+    },
+    {
+      match: (id) =>
+        id.includes('polynucleotide') ||
+        id.includes('salmon-sperm') ||
+        id.includes('lumi-eyes') ||
+        id.includes('illuma') ||
+        id.includes('nucleofill'),
+      targetKey: 'polynucleotide'
+    },
+    {
+      match: (id) =>
+        id.includes('lip') ||
+        id.includes('filler') ||
+        id.includes('contour-package') ||
+        id.includes('rhinoplasty') ||
+        id.includes('tear-trough') ||
+        id.includes('cheek') ||
+        id.includes('jawline') ||
+        id.includes('chin'),
+      targetKey: 'lip'
+    },
+    {
+      match: (id) =>
+        id.includes('morpheus') ||
+        id.includes('rf-face') ||
+        id.includes('rf-microneedling') ||
+        id.includes('secret-rf'),
+      targetKey: 'morpheus8'
+    },
+    {
+      match: (id) =>
+        id.includes('ultherapy') ||
+        id.includes('hifu') ||
+        id.includes('ultrasound') ||
+        id.includes('endolift'),
+      targetKey: 'ultherapy'
+    },
+    {
+      match: (id) =>
+        id.includes('blepharoplasty') ||
+        id.includes('plasma') ||
+        id.includes('eyelid') ||
+        id.includes('plexr'),
+      targetKey: 'blepharoplasty'
+    },
+    {
+      match: (id) =>
+        id.includes('aqualyx') ||
+        id.includes('deso') ||
+        id.includes('lemon-bottle') ||
+        id.includes('fat-dissolv') ||
+        id.includes('lipolysis'),
+      targetKey: 'aqualyx'
+    },
+    {
+      match: (id) =>
+        id.includes('buttock') ||
+        id.includes('hip-dip') ||
+        id.includes('bbl') ||
+        id.includes('lanluma') ||
+        id.includes('sculptra-body') ||
+        id.includes('cavitation') ||
+        id.includes('body-contour'),
+      targetKey: 'buttock'
+    },
+    {
+      match: (id) =>
+        id.includes('exosome') ||
+        id.includes('microneedling') ||
+        id.includes('hydrafacial') ||
+        id.includes('biorepeel') ||
+        id.includes('chemical-peel') ||
+        id.includes('facial') ||
+        id.includes('dermaplaning'),
+      targetKey: 'exosome'
+    }
+  ];
+
+  for (const rule of familyProtocolMap) {
+    if (normalizedId && rule.match(normalizedId) && config.protocols[rule.targetKey]) {
+      const baseGroup = config.protocols[rule.targetKey];
+      return {
+        ...baseGroup,
+        name: resolvedTitle || baseGroup.name,
+        category: resolvedCategory || baseGroup.category,
+        branchId: resolvedBranchId || baseGroup.branchId,
+        branchName: resolvedBranchName || baseGroup.branchName
+      };
+    }
+  }
+
+  // 3. Look for partial key match in config.protocols
+  if (normalizedId) {
+    for (const [key, group] of Object.entries(config.protocols)) {
+      if (normalizedId.includes(key) || key.includes(normalizedId)) {
+        return {
+          ...group,
+          name: resolvedTitle || group.name,
+          category: resolvedCategory || group.category,
+          branchId: resolvedBranchId || group.branchId,
+          branchName: resolvedBranchName || group.branchName
+        };
+      }
+    }
+  }
+
+  // 4. Branch-level fallback resolution if treatment belongs to a known CLINICAL_AREAS_DB branch
+  if (resolvedBranchId) {
+    const branchDefaultProtocolKey: Record<string, string> = {
+      'skin-boosters': 'profhilo',
+      'dermal-fillers': 'lip',
+      'high-tech-lifting': 'morpheus8',
+      'fat-dissolving': 'aqualyx',
+      'body-contouring': 'buttock',
+      'medical-facials': 'exosome'
+    };
+
+    const mappedKey = branchDefaultProtocolKey[resolvedBranchId];
+    if (mappedKey && config.protocols[mappedKey]) {
+      const branchGroup = config.protocols[mappedKey];
+      return {
+        ...branchGroup,
+        id: normalizedId,
+        name: resolvedTitle || branchGroup.name,
+        category: resolvedCategory,
+        branchId: resolvedBranchId,
+        branchName: resolvedBranchName
+      };
+    }
+
+    // Or check if any user-created protocol already targets this branchId
+    const customBranchMatch = Object.values(config.protocols).find(
+      (g) => g.branchId === resolvedBranchId
+    );
+    if (customBranchMatch) {
+      return {
+        ...customBranchMatch,
+        id: normalizedId,
+        name: resolvedTitle || customBranchMatch.name,
+        category: resolvedCategory,
+        branchId: resolvedBranchId,
+        branchName: resolvedBranchName
+      };
+    }
+  }
+
+  // 5. Fallback to default 4-step clinical protocol with resolved treatment taxonomy
+  return {
+    id: normalizedId || 'general-protocol',
+    name: resolvedTitle || 'Clinical Aesthetic Protocol',
+    subtitle: resolvedBranchName
+      ? `${resolvedBranchName} • Standardized Precision Procedure`
+      : 'Standardized Precision Procedure',
+    category: resolvedCategory,
+    branchId: resolvedBranchId,
+    branchName: resolvedBranchName,
+    steps: config.defaultSteps,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+export function saveClinicalProtocolForTreatment(
+  treatmentId: string,
+  group: TreatmentProtocolGroup
+): ClinicalProtocolsConfig {
+  const current = getClinicalProtocolsConfig();
+  const normalizedId = (treatmentId || group.id || '').toLowerCase().trim();
+
+  const updatedProtocols: Record<string, TreatmentProtocolGroup> = {
+    ...current.protocols,
+    [normalizedId]: {
+      ...group,
+      id: normalizedId,
+      updatedAt: new Date().toISOString()
+    }
+  };
+
+  const updatedConfig: ClinicalProtocolsConfig = {
+    ...current,
+    protocols: updatedProtocols
+  };
+
+  return saveClinicalProtocolsConfig(updatedConfig);
+}
+
+export function resetClinicalProtocolsToDefault(): ClinicalProtocolsConfig {
+  return saveClinicalProtocolsConfig(DEFAULT_CLINICAL_PROTOCOLS_CONFIG);
 }
 
 
@@ -1944,11 +2876,73 @@ export function saveChatSessions(sessions: import('../types').ChatSession[]): vo
 }
 
 // Clinic Master Data (clinicInfo.ts) Store Management
+let _hasHydratedClinicDataFromServer = false;
+
+function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): ClinicData {
+  const fileDefault = getFileDefault<Partial<ClinicData> | null>('clinic_info_data', null);
+  const base: ClinicData = {
+    ...CLINIC_DATA,
+    ...(fileDefault || {}),
+    logo: {
+      ...CLINIC_DATA.logo,
+      ...(fileDefault?.logo || {}),
+      icon: fileDefault?.logo?.icon || CLINIC_DATA.logo.icon,
+      full: fileDefault?.logo?.full || CLINIC_DATA.logo.full,
+    },
+    socials: {
+      ...CLINIC_DATA.socials,
+      ...(fileDefault?.socials || {}),
+    },
+    interiorPhotos:
+      Array.isArray(fileDefault?.interiorPhotos) && fileDefault.interiorPhotos.length > 0
+        ? fileDefault.interiorPhotos
+        : CLINIC_DATA.interiorPhotos,
+    locations:
+      Array.isArray(fileDefault?.locations) && fileDefault.locations.length > 0
+        ? fileDefault.locations
+        : CLINIC_DATA.locations,
+  };
+
+  if (!candidate || typeof candidate !== 'object') {
+    return base;
+  }
+
+  return {
+    ...base,
+    ...candidate,
+    logo: {
+      ...base.logo,
+      ...(candidate.logo || {}),
+      icon: candidate.logo?.icon || base.logo.icon,
+      full: candidate.logo?.full || base.logo.full,
+      alt: candidate.logo?.alt || base.logo.alt,
+    },
+    socials: {
+      ...base.socials,
+      ...(candidate.socials || {}),
+    },
+    interiorPhotos:
+      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.length > 0
+        ? candidate.interiorPhotos
+        : base.interiorPhotos,
+    locations:
+      Array.isArray(candidate.locations) && candidate.locations.length > 0
+        ? candidate.locations
+        : base.locations,
+  };
+}
+
 export function getClinicData(): ClinicData {
-  return getStorageItem<ClinicData>(
-    CLINIC_INFO_DATA_KEY,
-    getFileDefault<ClinicData>('clinic_info_data', CLINIC_DATA)
-  );
+  if (typeof window !== 'undefined' && !_hasHydratedClinicDataFromServer) {
+    const hasLocalOverride = Boolean(window.localStorage.getItem(CLINIC_INFO_DATA_KEY));
+    if (!hasLocalOverride) {
+      _hasHydratedClinicDataFromServer = true;
+      fetchRemoteClinicData().catch(() => {});
+    }
+  }
+
+  const stored = getStorageItem<Partial<ClinicData> | null>(CLINIC_INFO_DATA_KEY, null);
+  return mergeWithBakedInClinicData(stored);
 }
 
 // Alias for requested name: getClinicDataConfig()

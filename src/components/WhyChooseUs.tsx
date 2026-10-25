@@ -42,56 +42,74 @@ export default function WhyChooseUs() {
     setConfig(getWhyChooseUsConfig());
   }, []);
 
+  const isProgrammaticScrollRef = useRef(false);
+  const programmaticTimeoutRef = useRef<number | null>(null);
+
   const updateScrollState = useCallback(() => {
     if (!scrollContainerRef.current) return;
     const { scrollLeft, scrollWidth, clientWidth, children } = scrollContainerRef.current;
-    
-    setCanScrollLeft(scrollLeft > 8);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8);
+    const maxIndex = (config?.pillars.length || 4) - 1;
 
-    if (children.length > 0) {
+    setCanScrollLeft(scrollLeft > 8 || activeScrollIndex > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8 || activeScrollIndex < maxIndex);
+
+    if (!isProgrammaticScrollRef.current && children.length > 0) {
       const firstChild = children[0] as HTMLElement;
       const cardWidth = firstChild.getBoundingClientRect().width;
       const gap = 24;
       const index = Math.round(scrollLeft / (cardWidth + gap));
-      const maxIndex = (config?.pillars.length || 4) - 1;
       setActiveScrollIndex(Math.max(0, Math.min(index, maxIndex)));
     }
-  }, [config?.pillars.length]);
+  }, [config?.pillars.length, activeScrollIndex]);
 
   useEffect(() => {
     updateScrollState();
     window.addEventListener('resize', updateScrollState);
-    return () => window.removeEventListener('resize', updateScrollState);
+    return () => {
+      window.removeEventListener('resize', updateScrollState);
+      if (programmaticTimeoutRef.current) {
+        window.clearTimeout(programmaticTimeoutRef.current);
+      }
+    };
   }, [updateScrollState]);
 
-  const slide = (direction: 'left' | 'right') => {
+  const scrollToPillar = (index: number) => {
+    const maxIndex = (config?.pillars.length || 4) - 1;
+    const clampedIndex = Math.max(0, Math.min(index, maxIndex));
+    setActiveScrollIndex(clampedIndex);
+
     if (!scrollContainerRef.current) return;
     const container = scrollContainerRef.current;
-    const firstCard = container.children[0] as HTMLElement | undefined;
-    const scrollDelta = firstCard ? firstCard.offsetWidth + 24 : container.clientWidth * 0.75;
-
-    container.scrollBy({
-      left: direction === 'left' ? -scrollDelta : scrollDelta,
-      behavior: 'smooth'
-    });
+    const targetCard = container.children[clampedIndex] as HTMLElement | undefined;
+    if (targetCard) {
+      isProgrammaticScrollRef.current = true;
+      if (programmaticTimeoutRef.current) {
+        window.clearTimeout(programmaticTimeoutRef.current);
+      }
+      const targetLeft = targetCard.offsetLeft - container.offsetLeft;
+      container.scrollTo({
+        left: targetLeft,
+        behavior: 'smooth'
+      });
+      programmaticTimeoutRef.current = window.setTimeout(() => {
+        isProgrammaticScrollRef.current = false;
+      }, 450);
+    }
   };
 
-  const scrollToPillar = (index: number) => {
-    if (!scrollContainerRef.current) return;
-    const cards = scrollContainerRef.current.children;
-    if (cards[index]) {
-      (cards[index] as HTMLElement).scrollIntoView({
-        behavior: 'smooth',
-        inline: 'start',
-        block: 'nearest'
-      });
-    }
+  const slide = (direction: 'left' | 'right') => {
+    const maxIndex = (config?.pillars.length || 4) - 1;
+    const nextIndex =
+      direction === 'left'
+        ? Math.max(0, activeScrollIndex - 1)
+        : Math.min(maxIndex, activeScrollIndex + 1);
+    scrollToPillar(nextIndex);
   };
 
   // Drag-to-scroll event handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
+    isProgrammaticScrollRef.current = false;
     setIsDragging(true);
     setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
     setScrollLeftPos(scrollContainerRef.current.scrollLeft);
@@ -155,7 +173,7 @@ export default function WhyChooseUs() {
             onMouseLeave={handleMouseLeave}
             onMouseUp={handleMouseUp}
             onMouseMove={handleMouseMove}
-            className={`flex gap-4 sm:gap-6 lg:gap-7 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar items-stretch pl-4 pr-6 sm:px-6 md:px-0 -mx-4 sm:-mx-6 md:mx-0 scroll-pl-4 sm:scroll-pl-6 md:scroll-pl-0 py-3 ${
+            className={`flex gap-4 sm:gap-6 lg:gap-7 overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar items-stretch pl-4 pr-6 sm:px-6 md:px-1 -mx-4 sm:-mx-6 md:mx-0 scroll-pl-4 sm:scroll-pl-6 md:scroll-pl-1 py-3 ${
               isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
             }`}
           >
@@ -170,16 +188,34 @@ export default function WhyChooseUs() {
               };
               const imageUrl = pillar.imageUrl || fallback.image;
               const badgeText = pillar.badge || fallback.badge;
+              const isFocusedCard = activeScrollIndex === idx;
 
               return (
                 <motion.div
                   key={pillar.id}
+                  tabIndex={0}
+                  onClick={() => scrollToPillar(idx)}
+                  onFocus={() => setActiveScrollIndex(idx)}
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.08 }}
-                  className="w-[270px] sm:w-[310px] md:w-[340px] lg:w-[330px] xl:w-[360px] shrink-0 snap-start group relative overflow-hidden rounded-2xl border border-luxury-border/80 hover:border-luxury-gold/60 transition-all duration-500 cursor-pointer shadow-xs hover:shadow-xl aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between select-none"
+                  className={`w-[270px] sm:w-[310px] md:w-[340px] lg:w-[330px] xl:w-[360px] shrink-0 snap-start group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between select-none focus:outline-none ${
+                    isFocusedCard
+                      ? 'border-2 border-luxury-gold ring-2 ring-luxury-gold/30 shadow-xl'
+                      : 'border border-luxury-border/80 hover:border-luxury-gold/60 shadow-xs hover:shadow-xl'
+                  }`}
                 >
+                  {/* High-visibility inner border ring so the focus border stays crisp above the full-bleed image and bottom bar */}
+                  <div
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 z-30 rounded-2xl transition-all duration-300 ${
+                      isFocusedCard
+                        ? 'border-2 border-luxury-gold shadow-[inset_0_0_0_1px_rgba(216,194,163,0.35)]'
+                        : 'border border-transparent group-hover:border-luxury-gold/50 group-focus-visible:border-2 group-focus-visible:border-luxury-gold'
+                    }`}
+                  />
+
                   {/* Full-bleed background image with smooth zoom */}
                   <img
                     src={imageUrl}
@@ -196,18 +232,36 @@ export default function WhyChooseUs() {
 
                   {/* Top Overlay Bar: Clean outlined Badge & Outlined Icon with enhanced size and border */}
                   <div className="relative z-10 p-3.5 sm:p-4 md:p-4.5 flex items-center justify-between w-full pointer-events-none">
-                    <span className="inline-flex items-center px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-sans font-medium tracking-wider uppercase bg-transparent border-[1.5px] border-white/80 text-white backdrop-blur-[2px] shadow-xs group-hover:border-luxury-gold group-hover:text-luxury-gold transition-colors duration-300">
+                    <span
+                      className={`inline-flex items-center px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-sans font-medium tracking-wider uppercase bg-transparent border-[1.5px] backdrop-blur-[2px] shadow-xs transition-colors duration-300 ${
+                        isFocusedCard
+                          ? 'border-luxury-gold text-luxury-gold'
+                          : 'border-white/80 text-white group-hover:border-luxury-gold group-hover:text-luxury-gold'
+                      }`}
+                    >
                       {badgeText}
                     </span>
 
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent border-[1.5px] border-white/80 flex items-center justify-center text-white backdrop-blur-[2px] shadow-xs group-hover:border-luxury-gold group-hover:text-luxury-gold transition-colors duration-300">
+                    <div
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent border-[1.5px] flex items-center justify-center backdrop-blur-[2px] shadow-xs transition-colors duration-300 ${
+                        isFocusedCard
+                          ? 'border-luxury-gold text-luxury-gold'
+                          : 'border-white/80 text-white group-hover:border-luxury-gold group-hover:text-luxury-gold'
+                      }`}
+                    >
                       <IconComponent className="h-4 w-4 sm:h-4.5 sm:w-4.5" strokeWidth={2} />
                     </div>
                   </div>
 
                   {/* Bottom Dark Transparent Bar: Styled like treatment pricing cards */}
                   <div className="absolute inset-x-0 bottom-0 w-full bg-noir-900/65 sm:bg-noir-900/60 backdrop-blur-[2px] border-t border-white/10 p-3.5 sm:p-4 md:p-4.5 z-20 flex flex-col justify-end pointer-events-none transition-colors duration-300 group-hover:bg-noir-900/75">
-                    <h3 className="font-serif font-normal text-white text-sm sm:text-base md:text-lg mb-1 leading-snug drop-shadow-sm group-hover:text-luxury-gold transition-colors duration-300">
+                    <h3
+                      className={`font-serif font-normal text-sm sm:text-base md:text-lg mb-1 leading-snug drop-shadow-sm transition-colors duration-300 ${
+                        isFocusedCard
+                          ? 'text-luxury-gold'
+                          : 'text-white group-hover:text-luxury-gold'
+                      }`}
+                    >
                       {pillar.title}
                     </h3>
                     

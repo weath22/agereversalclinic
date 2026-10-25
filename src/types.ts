@@ -469,3 +469,31 @@ export interface ChatSession {
   lastUpdated: string;
   unreadCountAdmin: number;
 }
+
+// CLINICAL PROTOCOL SCHEMA (Customer "The Clinical Protocol" Timeline & Admin Studio)
+export interface ProtocolStepItem {
+  id: string;
+  stepNumber: number;
+  title: string;
+  description: string;
+  image: string; // Image URL, uploaded asset path (e.g. /assets/aistudio/...), or SVG icon preset key
+  phaseTag?: string; // e.g. "Phase 1 • 10 mins"
+  duration?: string; // e.g. "10 mins"
+  focusArea?: string; // e.g. "Epidermal Stratum Corneum"
+}
+
+export interface TreatmentProtocolGroup {
+  id: string; // Treatment id matching treatment ID e.g. 'exosome', 'profhilo', 'morpheus8', etc.
+  name: string; // Display name e.g. "Exosome Regenerative Therapy"
+  subtitle?: string; // Optional short clinical subtitle
+  category?: string; // Official PRICING_CATEGORIES name e.g. "Face & Injectables", "Body Sculpting"
+  branchId?: string; // Official CLINICAL_AREAS_DB subcategory branch ID e.g. "skin-boosters", "dermal-fillers"
+  branchName?: string; // Official CLINICAL_AREAS_DB subcategory branch title
+  steps: ProtocolStepItem[];
+  updatedAt?: string;
+}
+
+export interface ClinicalProtocolsConfig {
+  protocols: Record<string, TreatmentProtocolGroup>; // keyed by treatmentId
+  defaultSteps: ProtocolStepItem[]; // fallback protocol steps
+}

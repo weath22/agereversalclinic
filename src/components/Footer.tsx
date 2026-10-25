@@ -154,42 +154,55 @@ export default function Footer() {
         </div>
 
 
-        {/* Standalone Back to Top Item */}
-        <div className="flex justify-center items-center my-8">
-          <button
-            type="button"
-            onClick={scrollToTop}
-            className="inline-flex items-center gap-2 text-xs font-sans font-medium uppercase tracking-[0.2em] text-[#D8C2A3] hover:text-white transition-colors duration-300 cursor-pointer group"
-            aria-label="Scroll back to top"
-          >
-            <span>Back to Top</span>
-            <ChevronUp className="w-4 h-4 text-[#D8C2A3] group-hover:text-white group-hover:-translate-y-1 transition-all duration-300" strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* Footnotes copyright & Accessibility Statement */}
-        <div className="border-t border-white/10 pt-10 text-center">
-          <p className="text-[10px] md:text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/50 mb-2 leading-relaxed">
-            COPYRIGHT &copy; {currentYear} THE LONDON COSMETIC CLINIC. ALL
-            RIGHTS RESERVED. <br className="sm:hidden" />
+        {/* Back to Top row (with Copyright on left and Accessibility Statement on right on desktop screens) */}
+        <div className="flex justify-center items-center lg:grid lg:grid-cols-3 lg:items-center my-8 lg:mt-8 lg:mb-0 gap-4">
+          <p className="hidden lg:block text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/50 leading-relaxed text-left">
+            COPYRIGHT &copy; {currentYear} THE LONDON COSMETIC CLINIC.
+            <br />
+            ALL RIGHTS RESERVED.
           </p>
 
-           <button
+          <div className="flex justify-center items-center">
+            <button
+              type="button"
+              onClick={scrollToTop}
+              className="inline-flex items-center gap-2 text-xs font-sans font-medium uppercase tracking-[0.2em] text-[#D8C2A3] hover:text-white transition-colors duration-300 cursor-pointer group"
+              aria-label="Scroll back to top"
+            >
+              <span>Back to Top</span>
+              <ChevronUp className="w-4 h-4 text-[#D8C2A3] group-hover:text-white group-hover:-translate-y-1 transition-all duration-300" strokeWidth={2} />
+            </button>
+          </div>
+
+          <div className="hidden lg:flex lg:justify-end lg:items-center">
+            <button
               type="button"
               onClick={() => setIsAccessibilityOpen(true)}
-              className="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-[#D8C2A3] hover:bg-white/5 border border-white/10 hover:border-[#D8C2A3]/40 transition-all duration-300 font-sans cursor-pointer group py-1.5 px-4 mb-3 rounded-full"
+              className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-[#D8C2A3] hover:bg-white/5 border border-white/10 hover:border-[#D8C2A3]/40 transition-all duration-300 font-sans cursor-pointer group py-1.5 px-4 rounded-full shrink-0"
               aria-label="Open Accessibility Statement"
             >
               <Accessibility className="w-3.5 h-3.5 text-[#D8C2A3] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
               <span className="underline underline-offset-4 decoration-white/20 group-hover:decoration-[#D8C2A3]">Accessibility Statement</span>
             </button>
-
-          {/* Accessibility Statement Trigger - Details hidden by default */}
-          <div className="border-t border-white/10 pt-6 flex justify-center items-center">
-            <p className="text-[10px] text-white/30 mb-8 font-sans font-light">
-            Designed by WEALTH: Wealth Graphics Website Development
-          </p>
           </div>
+        </div>
+
+        {/* Mobile & Tablet Footnotes copyright & Accessibility Statement (hidden on desktop from this line downward) */}
+        <div className="border-t border-white/10 pt-10 text-center lg:hidden">
+          <p className="text-[10px] md:text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/50 mb-2 leading-relaxed">
+            COPYRIGHT &copy; {currentYear} THE LONDON COSMETIC CLINIC. ALL
+            RIGHTS RESERVED. <br className="sm:hidden" />
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setIsAccessibilityOpen(true)}
+            className="inline-flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-[0.18em] text-white/60 hover:text-[#D8C2A3] hover:bg-white/5 border border-white/10 hover:border-[#D8C2A3]/40 transition-all duration-300 font-sans cursor-pointer group py-1.5 px-4 mb-3 rounded-full"
+            aria-label="Open Accessibility Statement"
+          >
+            <Accessibility className="w-3.5 h-3.5 text-[#D8C2A3] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            <span className="underline underline-offset-4 decoration-white/20 group-hover:decoration-[#D8C2A3]">Accessibility Statement</span>
+          </button>
         </div>
       </div>
 

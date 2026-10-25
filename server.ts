@@ -7,6 +7,7 @@ import {
   filterAndSortTreatmentCards,
   TreatmentSortOption,
 } from './src/data/treatmentPricing.ts';
+import { CLINIC_DATA } from './src/data/clinicInfo.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const uploadsDir = path.resolve(__dirname, 'public/uploads');
 const publicAssetsDir = path.resolve(__dirname, 'public/assets');
 const srcAssetsDir = path.resolve(__dirname, 'src/assets/images');
+const distAssetsDir = path.resolve(__dirname, 'dist/assets');
 const publicTreatmentsDir = path.resolve(__dirname, 'public/assets/treatments');
 const srcTreatmentsDir = path.resolve(__dirname, 'src/assets/images/treatments');
 const distTreatmentsDir = path.resolve(__dirname, 'dist/assets/treatments');
@@ -42,17 +44,41 @@ for (const dir of [
   }
 }
 
+// Path to site customizations and clinic info files
+const customizationsPath = path.resolve(__dirname, 'src/data/siteCustomizations.json');
+const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
+const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
+const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
+
 // ============================================================================
 // TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
 // ============================================================================
-// Ensure assets in src/assets/images/treatments & transformations (source/git)
-// and public/assets/treatments & transformations (Vite public)
-// are mirrored and kept in sync so neither environment loses images upon server restart or build.
+// Ensure assets in src/assets/images (and treatments & transformations subdirectories)
+// and public/assets (Vite public) are mirrored and kept in sync bidirectionally
+// so neither environment loses clinic logos, location photos, or procedure images upon server restart or build.
 try {
   const mirrorPairs: Array<[string, string]> = [
+    [srcAssetsDir, publicAssetsDir],
     [srcTreatmentsDir, publicTreatmentsDir],
     [srcTransformationsDir, publicTransformationsDir],
   ];
+
+  // Read active configuration files so the duplicate-extension cleaner never deletes
+  // any file actively referenced in clinicInfo.ts or siteCustomizations.json
+  const activeReferenceContent = [clinicInfoPath, customizationsPath]
+    .map((filePath) => {
+      try {
+        return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+      } catch {
+        return '';
+      }
+    })
+    .join('\n');
+
+  const isFileActivelyReferenced = (fileName: string): boolean => {
+    if (!fileName) return false;
+    return activeReferenceContent.includes(fileName);
+  };
 
   for (const [srcDir, pubDir] of mirrorPairs) {
     if (fs.existsSync(srcDir) && fs.existsSync(pubDir)) {
@@ -76,19 +102,28 @@ try {
         }
       }
 
-      // Purge any redundant non-webp duplicate pairs (e.g. legacy .png/.jpg when .webp exists)
-      for (const dir of [pubDir, srcDir]) {
-        if (fs.existsSync(dir)) {
-          const allFiles = fs.readdirSync(dir);
-          for (const file of allFiles) {
-            const ext = path.extname(file).toLowerCase();
-            if (ext !== '.webp') {
-              const base = path.basename(file, ext);
-              if (fs.existsSync(path.join(dir, `${base}.webp`))) {
-                try {
-                  fs.unlinkSync(path.join(dir, file));
-                  console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
-                } catch {}
+      // Purge redundant non-webp duplicate pairs ONLY in treatment/transformation subdirectories
+      // and NEVER delete any file actively referenced in clinicInfo.ts or siteCustomizations.json
+      const isRootGeneralAssetsPair = srcDir === srcAssetsDir || pubDir === publicAssetsDir;
+      if (!isRootGeneralAssetsPair) {
+        for (const dir of [pubDir, srcDir]) {
+          if (fs.existsSync(dir)) {
+            const allFiles = fs.readdirSync(dir);
+            for (const file of allFiles) {
+              const fullPath = path.join(dir, file);
+              if (!fs.statSync(fullPath).isFile()) continue;
+              const ext = path.extname(file).toLowerCase();
+              if (ext !== '.webp') {
+                if (isFileActivelyReferenced(file)) {
+                  continue;
+                }
+                const base = path.basename(file, ext);
+                if (fs.existsSync(path.join(dir, `${base}.webp`))) {
+                  try {
+                    fs.unlinkSync(fullPath);
+                    console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
+                  } catch {}
+                }
               }
             }
           }
@@ -124,13 +159,10 @@ app.use('/assets/transformations', (_req, res) => {
 
 app.use('/assets', express.static(publicAssetsDir));
 app.use('/assets', express.static(srcAssetsDir));
+if (fs.existsSync(distAssetsDir)) {
+  app.use('/assets', express.static(distAssetsDir));
+}
 app.use(express.static(path.resolve(__dirname, 'public')));
-
-// Path to site customizations and clinic info files
-const customizationsPath = path.resolve(__dirname, 'src/data/siteCustomizations.json');
-const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
-const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
-const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
 
 const GROUP_TO_TRANSFORMATION_CATEGORY: Record<string, string> = {
   'anti-aging': 'Regenerative Biotech',
@@ -364,13 +396,47 @@ export default CLINIC_DATA;
 }
 
 // API: Read clinic data (GET /api/admin/clinic-data and alias /api/admin/clinic-info)
-// Merges active default values with any saved overrides
+// Merges active default values from src/data/clinicInfo.ts with any saved overrides in siteCustomizations.json
+const parseClinicDataFromTsFile = (): Record<string, any> | null => {
+  if (!fs.existsSync(clinicInfoPath)) return null;
+  try {
+    const content = fs.readFileSync(clinicInfoPath, 'utf-8');
+    const marker = 'export const CLINIC_DATA: ClinicData = ';
+    const startIdx = content.indexOf(marker);
+    if (startIdx === -1) return null;
+    const jsonStart = content.indexOf('{', startIdx + marker.length);
+    const exportClinicInfoIdx = content.indexOf('export const CLINIC_INFO', jsonStart);
+    if (jsonStart === -1 || exportClinicInfoIdx === -1) return null;
+    let jsonBlock = content.slice(jsonStart, exportClinicInfoIdx).trim();
+    if (jsonBlock.endsWith(';')) {
+      jsonBlock = jsonBlock.slice(0, -1).trim();
+    }
+    return JSON.parse(jsonBlock);
+  } catch {
+    return null;
+  }
+};
+
 const getMergedClinicData = () => {
-  let customClinicData = null;
+  const diskTsClinicData = parseClinicDataFromTsFile();
+  const baseClinicData: Record<string, any> = {
+    ...CLINIC_DATA,
+    ...(diskTsClinicData || {}),
+    logo: {
+      ...(CLINIC_DATA.logo || {}),
+      ...(diskTsClinicData?.logo || {}),
+    },
+    socials: {
+      ...(CLINIC_DATA.socials || {}),
+      ...(diskTsClinicData?.socials || {}),
+    },
+  };
+
+  let customClinicData: Record<string, any> | null = null;
   if (fs.existsSync(customizationsPath)) {
     try {
       const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
-      if (customizations.clinic_info_data) {
+      if (customizations.clinic_info_data && typeof customizations.clinic_info_data === 'object') {
         customClinicData = customizations.clinic_info_data;
       }
     } catch (e) {
@@ -378,16 +444,130 @@ const getMergedClinicData = () => {
     }
   }
 
-  // If no saved customization, read from clinicInfo.ts or return fallback
-  if (!customClinicData && fs.existsSync(clinicInfoPath)) {
-    try {
-      // Return customClinicData if found in file or customizations
-    } catch {
-      // ignore
+  const merged = customClinicData
+    ? {
+        ...baseClinicData,
+        ...customClinicData,
+        logo: {
+          ...baseClinicData.logo,
+          ...(customClinicData.logo || {}),
+          icon: customClinicData.logo?.icon || baseClinicData.logo?.icon,
+          full: customClinicData.logo?.full || baseClinicData.logo?.full,
+        },
+        socials: {
+          ...baseClinicData.socials,
+          ...(customClinicData.socials || {}),
+        },
+        interiorPhotos:
+          Array.isArray(customClinicData.interiorPhotos) && customClinicData.interiorPhotos.length > 0
+            ? customClinicData.interiorPhotos
+            : baseClinicData.interiorPhotos,
+        locations:
+          Array.isArray(customClinicData.locations) && customClinicData.locations.length > 0
+            ? customClinicData.locations
+            : baseClinicData.locations,
+      }
+    : baseClinicData;
+
+  verifyAndRepairClinicDataAssets(merged);
+  return merged;
+};
+
+// Helper: Inspect all image paths in clinicData and ensure any /assets/... or /uploads/... file
+// exists in both public/assets/ and src/assets/images/ (plus dist/assets/ if present)
+const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
+  if (!clinicData || typeof clinicData !== 'object') return 0;
+
+  const rawUrls: string[] = [];
+  const pushIfString = (val: unknown) => {
+    if (typeof val === 'string' && val.trim()) {
+      rawUrls.push(val.trim());
+    }
+  };
+
+  pushIfString(clinicData.logo?.icon);
+  pushIfString(clinicData.logo?.full);
+  pushIfString(clinicData.ogImage);
+  pushIfString(clinicData.exteriorPhoto);
+
+  if (Array.isArray(clinicData.interiorPhotos)) {
+    for (const photo of clinicData.interiorPhotos) {
+      pushIfString(photo);
     }
   }
 
-  return customClinicData;
+  if (Array.isArray(clinicData.locations)) {
+    for (const loc of clinicData.locations) {
+      if (!loc || typeof loc !== 'object') continue;
+      pushIfString(loc.image);
+      if (Array.isArray(loc.gallery)) {
+        for (const galleryImg of loc.gallery) {
+          pushIfString(galleryImg);
+        }
+      }
+    }
+  }
+
+  const uniqueUrls = Array.from(new Set(rawUrls));
+  let repairedCount = 0;
+
+  for (const rawUrl of uniqueUrls) {
+    const cleanPath = rawUrl.split('?')[0].split('#')[0].trim();
+    if (!cleanPath.startsWith('/assets/') && !cleanPath.startsWith('/uploads/')) {
+      continue;
+    }
+
+    const fileName = path.basename(cleanPath);
+    if (!fileName) continue;
+
+    let requiredDirs: string[] = [];
+    let optionalDirs: string[] = [];
+
+    if (cleanPath.startsWith('/assets/treatments/')) {
+      requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
+      optionalDirs = fs.existsSync(distTreatmentsDir) ? [distTreatmentsDir] : [];
+    } else if (cleanPath.startsWith('/assets/transformations/')) {
+      requiredDirs = [publicTransformationsDir, srcTransformationsDir];
+      optionalDirs = fs.existsSync(distTransformationsDir) ? [distTransformationsDir] : [];
+    } else {
+      requiredDirs = [publicAssetsDir, srcAssetsDir, uploadsDir];
+      optionalDirs = fs.existsSync(distAssetsDir) ? [distAssetsDir] : [];
+    }
+
+    const allCandidateDirs = [...requiredDirs, ...optionalDirs];
+    const existingSourcePath = allCandidateDirs
+      .map((dir) => path.join(dir, fileName))
+      .find((candidatePath) => {
+        try {
+          return fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile();
+        } catch {
+          return false;
+        }
+      });
+
+    if (!existingSourcePath) {
+      console.warn(`[Admin Asset Verify] Referenced clinic asset not found on disk: ${cleanPath}`);
+      continue;
+    }
+
+    for (const targetDir of allCandidateDirs) {
+      try {
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true });
+        }
+        const targetFilePath = path.join(targetDir, fileName);
+        if (!fs.existsSync(targetFilePath)) {
+          fs.copyFileSync(existingSourcePath, targetFilePath);
+          repairedCount++;
+          console.log(`[Admin Asset Repair] Restored ${fileName} -> ${targetDir}`);
+        }
+      } catch (copyErr) {
+        console.warn(`[Admin Asset Repair] Could not copy ${fileName} to ${targetDir}:`, copyErr);
+      }
+    }
+  }
+
+  return repairedCount;
 };
 
 // Handler for saving clinic data
@@ -396,6 +576,13 @@ const handleSaveClinicData = (req: any, res: any) => {
     const clinicData = req.body.clinicData || req.body;
     if (!clinicData || typeof clinicData !== 'object' || !clinicData.name) {
       return res.status(400).json({ success: false, error: 'Invalid clinicData object. Must include at least a clinic name.' });
+    }
+
+    // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
+    // across public/assets/, src/assets/images/, public/uploads/, and dist/assets/
+    const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
+    if (repairedAssetCount > 0) {
+      console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
     }
 
     // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
@@ -837,7 +1024,7 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
   }
 });
 
-// API: Upload an asset directly into public/uploads
+// API: Upload an asset directly into src/assets/images, public/assets, public/uploads, and dist/assets
 app.post('/api/admin/upload-asset', (req, res) => {
   try {
     const { fileName, dataUrl, base64 } = req.body;
@@ -858,19 +1045,28 @@ app.post('/api/admin/upload-asset', (req, res) => {
 
     // Save to all target locations:
     // 1. src/assets/images for source code persistence & repository tracking
-    // 2. public/assets & public/uploads for direct browser URL access
+    // 2. public/assets & public/uploads for Vite build & direct browser URL access
+    // 3. dist/assets for live production build serving (if present)
     fs.writeFileSync(targetPath, buffer);
     fs.writeFileSync(publicAssetPath, buffer);
     fs.writeFileSync(srcAssetPath, buffer);
 
-    console.log(`[Admin] Saved asset to src/assets/images/${safeName} and public/assets/${safeName}`);
+    if (fs.existsSync(distAssetsDir)) {
+      try {
+        fs.writeFileSync(path.join(distAssetsDir, safeName), buffer);
+      } catch (distErr) {
+        console.warn('[Admin] Could not write uploaded asset to distAssetsDir:', distErr);
+      }
+    }
+
+    console.log(`[Admin] Saved asset to src/assets/images/${safeName}, public/assets/${safeName}, and public/uploads/${safeName}`);
 
     return res.json({
       success: true,
       url: `/assets/${safeName}`,
       backupUrl: `/uploads/${safeName}`,
       fileName: safeName,
-      message: 'Asset saved to src/assets/images and public/assets successfully!'
+      message: 'Asset saved to src/assets/images, public/assets, public/uploads, and dist/assets successfully!'
     });
   } catch (error) {
     console.error('Error saving asset:', error);

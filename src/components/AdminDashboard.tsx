@@ -127,6 +127,7 @@ import ClinicDataManager from './ClinicDataManager';
 import TreatmentPricingEditor from './TreatmentPricingEditor';
 import TreatmentImageManager from './TreatmentImageManager';
 import TreatmentMediaStudio from './TreatmentMediaStudio';
+import ClinicalProtocolsEditor from './ClinicalProtocolsEditor';
 
 
 interface AdminDashboardProps {
@@ -140,7 +141,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
   const [passcodeError, setPasscodeError] = useState('');
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'clinic-info' | 'treatment-pricing' | 'treatment-images-hub' | 'treatment-media-studio' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clinic-info' | 'clinical-protocols' | 'treatment-pricing' | 'treatment-images-hub' | 'treatment-media-studio' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isHomepageEditorsOpen, setIsHomepageEditorsOpen] = useState(false);
@@ -708,6 +709,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
           {[
             { id: 'overview', label: 'Dashboard Overview', icon: LayoutDashboard },
             { id: 'clinic-info', label: 'Clinic Master Data', icon: Database },
+            { id: 'clinical-protocols', label: 'Clinical Protocols & Icons', icon: Sparkles, badgeText: 'New' },
             { id: 'treatment-media-studio', label: 'Treatment Media & SEO Studio', icon: Camera, badgeText: '6 Slots' },
             { id: 'treatment-pricing', label: 'Treatment Pricing & Media', icon: Sparkles },
             { id: 'edit-gallery', label: 'Before & After Gallery', icon: Image, badgeText: 'SEO' },
@@ -914,6 +916,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
               <div className="text-[10px] uppercase font-bold tracking-widest text-[#c5a880] font-mono">The London Clinic Administration</div>
               <h1 className="font-serif font-black text-xl text-[#003334] capitalize">
                 {activeTab === 'overview' ? 'Dashboard Overview' : 
+                 activeTab === 'clinical-protocols' ? 'Clinical Protocols & Icons' :
                  activeTab === 'treatment-images-hub' ? 'Treatment Service Images Hub' :
                  activeTab === 'clinic-info' ? 'Clinic Master Data (src/data/clinicInfo.ts)' : 
                  activeTab === 'consultations' ? 'Consultation Requests' : 
@@ -1506,6 +1509,9 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
 
         {/* TAB: CLINIC MASTER DATA (clinicInfo.ts) */}
         {activeTab === 'clinic-info' && <ClinicDataManager />}
+
+        {/* TAB: CLINICAL PROTOCOLS & AESTHETIC ICONS */}
+        {activeTab === 'clinical-protocols' && <ClinicalProtocolsEditor />}
 
         {/* TAB: TREATMENT MEDIA & SEO STUDIO (Phase 3 & 4) */}
         {activeTab === 'treatment-media-studio' && <TreatmentMediaStudio onBackToClinic={onBackToClinic} />}
