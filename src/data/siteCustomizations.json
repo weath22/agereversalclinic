@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-25T18:55:21.981Z",
+  "lastSynced": "2026-10-26T11:24:15.134Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
@@ -2680,7 +2680,7 @@
       "title": "Facial - EGF (\"Epidermal Growth Factor\") MONDAY & FRIDAY SPECIAL",
       "category": "Advanced Facials",
       "description": "Biotech peptide facial utilizing concentrated epidermal growth factors to trigger rapid cell turnover and repair cellular matrix fatigue (40min).",
-      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/egf-facial-special.webp",
       "startingPrice": 115,
       "currency": "£",
       "procedureTime": "40 Mins",
@@ -2699,14 +2699,15 @@
             "Cellular recovery mask"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793012851905
     },
     {
       "id": "red-carpet-exfoliating-special",
       "title": "Facial - Red Carpet Exfoliating MONDAY & FRIDAY SPECIAL",
       "category": "Advanced Facials",
       "description": "Instant event-ready glow treatment combining fruit acid resurfacing, oxygenation, and firming botanical extracts without post-treatment peeling (45min).",
-      "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/red-carpet-exfoliating-special.webp",
       "startingPrice": 120,
       "currency": "£",
       "procedureTime": "45 Mins",
@@ -2725,14 +2726,15 @@
             "Contouring facial massage"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793012128577
     },
     {
       "id": "idebenone-facial-special",
       "title": "Facial - Idebenone Facial MONDAY & FRIDAY SPECIAL",
       "category": "Advanced Facials",
       "description": "Ultra-potent Idebenone antioxidant infusion (4x stronger than Vitamin C and 10x stronger than CoQ10) delivering maximum environmental age defense (40min).",
-      "image": "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/idebenone-facial-special.webp",
       "startingPrice": 105,
       "currency": "£",
       "procedureTime": "40 Mins",
@@ -2751,14 +2753,15 @@
             "Antioxidant seal"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793011352204
     },
     {
       "id": "aquafacial-clinical",
       "title": "Facial - Aquafacial",
       "category": "Advanced Facials",
       "description": "Vortex-fusion medical facial utilizing saline and AHA/BHA serums to vacuum-extract pores, gently peel, and saturate the skin with intensive peptides and antioxidants (1h).",
-      "image": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/aquafacial-clinical.webp",
       "startingPrice": 150,
       "currency": "£",
       "procedureTime": "1 Hour",
@@ -2779,14 +2782,15 @@
             "LED light booster"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793011160539
     },
     {
       "id": "microneedling-collagen-induction",
       "title": "Facial - Micro-Needling Collagen Induction Therapy",
       "category": "Advanced Facials",
       "description": "Medical precision dermapen creating thousands of microscopic micro-punctures to stimulate neocollagenesis, shrink pores, and soften pitted acne scarring (1h).",
-      "image": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/microneedling-collagen-induction.webp",
       "startingPrice": 150,
       "currency": "£",
       "procedureTime": "1 Hour",
@@ -2806,14 +2810,15 @@
             "Calming hyaluronic biocellulose mask"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793010675910
     },
     {
       "id": "ultimate-glass-skin-facial",
       "title": "Facial - Ultimate Glass Skin",
       "category": "Advanced Facials",
       "description": "The pinnacle 2-hour medical facial ritual combining diamond peel, pure oxygen infusion, microcurrent contouring, and deep active essence layering for a luminous porcelain glass complexion (2h).",
-      "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/ultimate-glass-skin-facial.webp",
       "startingPrice": 250,
       "currency": "£",
       "procedureTime": "2 Hours",
@@ -2836,14 +2841,15 @@
             "Custom botanical cocktail finish"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793010920879
     },
     {
       "id": "regenerative-scalp-facial",
       "title": "Regenerative Scalp Facial Combination",
       "category": "Advanced Facials",
       "description": "Synergistic 90-minute dual protocol revitalizing scalp hair follicle roots with trichological detox and steam while simultaneously performing a deep antioxidant facial (1h 30 min).",
-      "image": "https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/regenerative-scalp-facial.webp",
       "startingPrice": 95,
       "currency": "£",
       "procedureTime": "1h 30 Mins",
@@ -2862,14 +2868,15 @@
             "High frequency stimulation"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793011050931
     },
     {
       "id": "bb-glow-facial",
       "title": "BB Glow Facial",
       "category": "Advanced Facials",
       "description": "Nano-needling infusion of nutrient-rich tinted pigments and peptides into the upper epidermis to even skin tone, conceal redness, and leave a semi-permanent soft-focus glow.",
-      "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
+      "image": "/assets/treatments/bb-glow-facial.webp",
       "startingPrice": 180,
       "currency": "£",
       "procedureTime": "60 Mins",
@@ -2888,7 +2895,8 @@
             "Soothing LED therapy"
           ]
         }
-      ]
+      ],
+      "updatedAt": 1793008166829
     },
     {
       "id": "eyebrow-wax",
