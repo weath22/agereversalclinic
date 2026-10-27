@@ -1,69 +1,48 @@
-import { TreatmentPricingItem, TREATMENT_PRICING_DATA, TreatmentCategory } from './treatmentPricing';
+import { TreatmentPricingItem, TreatmentCategory } from './treatmentPricing';
 import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
 import { ShopProduct } from '../types/shop';
 import { SHOP_PRODUCTS } from './shopProducts';
 import { ExistingTreatmentGroupId } from '../types';
+import { ALL_SPECIALIST_TREATMENTS, TransformationCategoryType, ParentPricingCategory } from './specialistTreatments';
 
 export interface ExistingBeforeAfterTreatmentGroup {
   id: ExistingTreatmentGroupId;
   name: string;
-  transformationCategory: TransformationCase['category'];
-  pricingCategory: TreatmentCategory;
+  transformationCategory: TransformationCategoryType;
+  pricingCategory: ParentPricingCategory | TreatmentCategory;
   defaultKeywords: string[];
 }
 
 /**
- * Existing Treatment Groups under which Before & After image pairs can be added in the Admin Panel.
+ * Master Before & After Treatment Groups generated directly from the 24 specialist services.
  */
-export const EXISTING_BEFORE_AFTER_TREATMENT_GROUPS: ExistingBeforeAfterTreatmentGroup[] = [
-  {
-    id: 'anti-aging',
-    name: 'Anti-Aging Rejuvenation',
-    transformationCategory: 'Regenerative Biotech',
-    pricingCategory: 'Face & Injectables',
-    defaultKeywords: ['anti-aging clinic london', 'before and after skin rejuvenation', 'age reversal clinics london'],
-  },
-  {
-    id: 'acne-scarring',
-    name: 'Acne & Scarring',
-    transformationCategory: 'Skin Texture & Scars',
-    pricingCategory: 'Advanced Facials',
-    defaultKeywords: ['acne scar removal before and after', 'laser skin resurfacing london', 'skin texture revision'],
-  },
-  {
-    id: 'facial-harmony',
-    name: 'Facial Harmony & Injectables',
-    transformationCategory: 'Facial Rejuvenation',
-    pricingCategory: 'Face & Injectables',
-    defaultKeywords: ['dermal fillers before and after london', 'facial contouring results', 'non-surgical lift london'],
-  },
-  {
-    id: 'clinical-hair',
-    name: 'Clinical Hair Restoration',
-    transformationCategory: 'Hair Density',
-    pricingCategory: 'Hair & Beauty',
-    defaultKeywords: ['hair restoration before and after', 'prp hair density results london', 'scalp rejuvenation clinic'],
-  },
-  {
-    id: 'body-sculpting',
-    name: 'Body Sculpting & Tightening',
-    transformationCategory: 'Lifting & Contouring',
-    pricingCategory: 'Body Sculpting',
-    defaultKeywords: ['body sculpting before and after', 'non-surgical fat reduction london', 'skin tightening results'],
-  },
-  {
-    id: 'advanced-facials',
-    name: 'Advanced Clinical Facials',
-    transformationCategory: 'Skin Texture & Scars',
-    pricingCategory: 'Advanced Facials',
-    defaultKeywords: ['medical facial before and after', 'hydrafacial results london', 'chemical peel transformation'],
-  },
-];
+export const EXISTING_BEFORE_AFTER_TREATMENT_GROUPS: ExistingBeforeAfterTreatmentGroup[] =
+  ALL_SPECIALIST_TREATMENTS.map((item) => ({
+    id: item.id as ExistingTreatmentGroupId,
+    name: item.title,
+    transformationCategory: item.transformationCategory,
+    pricingCategory: item.pricingCategory,
+    defaultKeywords:
+      item.seoKeywords && item.seoKeywords.length > 0
+        ? item.seoKeywords
+        : [
+            `${item.title.toLowerCase()} before and after`,
+            'age reversal clinics london',
+            item.pricingCategory.toLowerCase(),
+          ],
+  }));
 
 export interface TransformationCase {
   id: string;
   title: string;
-  category: 'All' | 'Facial Rejuvenation' | 'Skin Texture & Scars' | 'Lifting & Contouring' | 'Regenerative Biotech' | 'Hair Density';
+  category:
+    | 'All'
+    | 'Facial Rejuvenation'
+    | 'Skin Texture & Scars'
+    | 'Lifting & Contouring'
+    | 'Regenerative Biotech'
+    | 'Hair Density'
+    | string;
   tag: string;
   patientInfo: string;
   duration: string;
@@ -88,9 +67,11 @@ export interface TransformationCase {
 export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
   {
     id: 'case-laser-skincare',
-    title: 'Laser Skincare Services',
+    title: 'Co@ Laser from',
     category: 'Skin Texture & Scars',
-    tag: 'Laser Resurfacing & Tone',
+    tag: 'Co@ Laser from',
+    treatmentGroupId: 'co2-laser-from',
+    linkedTreatmentId: 'co2-laser-from',
     patientInfo: 'Clinical Series',
     duration: '12 Weeks',
     sessions: 3,
@@ -107,14 +88,16 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-1.jpeg',
       'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-2.jpeg'
     ],
-    recommendedTreatmentIds: ['chemical-peel', 'exosome'],
+    recommendedTreatmentIds: ['co2-laser-from', 'facial-skin-care'],
     recommendedProductIds: ['st-antioxidant-gel-cleanser', 'st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
   },
   {
     id: 'case-exosome-rejuvenation',
-    title: 'Full Face Cellular Dermal Rejuvenation',
+    title: 'Profhilo 2ml',
     category: 'Regenerative Biotech',
-    tag: 'Cellular Regeneration',
+    tag: 'Profhilo 2ml',
+    treatmentGroupId: 'profhilo-2ml',
+    linkedTreatmentId: 'profhilo-2ml',
     patientInfo: 'Female, 44 Years',
     duration: '12 Weeks',
     sessions: 3,
@@ -127,14 +110,16 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/1.webp',
       'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp'
     ],
-    recommendedTreatmentIds: ['exosome', 'profhilo'],
+    recommendedTreatmentIds: ['profhilo-2ml', 'salmon-sperm-injection'],
     recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
   },
   {
     id: 'case-morpheus8-tightening',
-    title: 'Subdermal Jawline & Lower Face Tightening',
+    title: 'Morpheus8 treatment',
     category: 'Lifting & Contouring',
-    tag: 'RF Microneedling',
+    tag: 'Morpheus8 treatment',
+    treatmentGroupId: 'morpheus8-treatment',
+    linkedTreatmentId: 'morpheus8-treatment',
     patientInfo: 'Female, 51 Years',
     duration: '16 Weeks',
     sessions: 3,
@@ -147,14 +132,16 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/4-1.jpg',
       'https://lexaesthetics.com/storage/2024/01/3-2.jpg'
     ],
-    recommendedTreatmentIds: ['morpheus8', 'ultherapy'],
+    recommendedTreatmentIds: ['morpheus8-treatment', 'endolift-fiber-lift'],
     recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-gel-cleanser']
   },
   {
     id: 'case-polynucleotide-eyes-skin',
-    title: 'DNA Cellular Repair & Under-Eye Brightening',
-    category: 'Skin Texture & Scars',
-    tag: 'DNA Repair',
+    title: 'Salmon sperm injection',
+    category: 'Regenerative Biotech',
+    tag: 'Salmon sperm injection',
+    treatmentGroupId: 'salmon-sperm-injection',
+    linkedTreatmentId: 'salmon-sperm-injection',
     patientInfo: 'Female, 36 Years',
     duration: '8 Weeks',
     sessions: 3,
@@ -167,14 +154,16 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/1-5.png',
       'https://lexaesthetics.com/storage/2023/07/2.png'
     ],
-    recommendedTreatmentIds: ['polynucleotide', 'profhilo'],
+    recommendedTreatmentIds: ['salmon-sperm-injection', 'profhilo-2ml'],
     recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream']
   },
   {
     id: 'case-facial-harmony-contouring',
-    title: '3D Facial Profile Harmonisation & Lip Volume',
+    title: 'Dermal Fillers-1ml',
     category: 'Facial Rejuvenation',
-    tag: 'Dermal Artistry',
+    tag: 'Dermal Fillers-1ml',
+    treatmentGroupId: 'dermal-fillers-1ml',
+    linkedTreatmentId: 'dermal-fillers-1ml',
     patientInfo: 'Female, 33 Years',
     duration: 'Single Stage + Review',
     sessions: 1,
@@ -187,14 +176,16 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-1.jpeg',
       'https://lexaesthetics.com/storage/2024/01/Laser-Skincare-Services-2.jpeg'
     ],
-    recommendedTreatmentIds: ['lip-filler', 'dermal-fillers'],
+    recommendedTreatmentIds: ['dermal-fillers-1ml', 'anti-wrinkles-injection'],
     recommendedProductIds: ['st-antioxidant-matte-day-cream', 'st-antioxidant-mini-matte-day-cream']
   },
   {
     id: 'case-hair-restoration',
-    title: 'Clinical Follicle Density & Scalp Restoration',
+    title: 'Platelet-Rich Plasma (PRP)',
     category: 'Hair Density',
-    tag: 'Trichology Therapy',
+    tag: 'Platelet-Rich Plasma (PRP)',
+    treatmentGroupId: 'platelet-rich-plasma-prp',
+    linkedTreatmentId: 'platelet-rich-plasma-prp',
     patientInfo: 'Male, 38 Years',
     duration: '20 Weeks',
     sessions: 4,
@@ -207,7 +198,7 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
       'https://lexaesthetics.com/storage/2024/01/1.webp',
       'https://lexaesthetics.com/storage/2025/07/Laser-Skincare-Services-1.webp'
     ],
-    recommendedTreatmentIds: ['prp-hair', 'exosome'],
+    recommendedTreatmentIds: ['platelet-rich-plasma-prp', 'salmon-sperm-injection'],
     recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-gel-cleanser']
   }
 ];
@@ -225,4 +216,5 @@ export function getRecommendedProductsForCase(caseItem: TransformationCase): Sho
     .map(id => SHOP_PRODUCTS.find(p => p.id === id))
     .filter((p): p is ShopProduct => !!p);
 }
+
 

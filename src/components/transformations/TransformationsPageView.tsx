@@ -9,8 +9,14 @@ import {
   getRecommendedTreatmentsForCase,
   getRecommendedProductsForCase,
 } from '../../data/transformationsData';
-import { getBeforeAfterGalleryConfig, fetchRemoteBeforeAfterGalleryConfig } from '../../lib/adminStore';
-import { BeforeAfterGalleryConfig } from '../../types';
+import {
+  getBeforeAfterGalleryConfig,
+  fetchRemoteBeforeAfterGalleryConfig,
+  getMasterServices,
+  normalizeMasterBranch,
+  inferTransformationCategoryFromBranch,
+} from '../../lib/adminStore';
+import { BeforeAfterGalleryConfig, SpecialistArea } from '../../types';
 import { PricingCard } from '../pricing/PricingCard';
 import { PackageSelectModal } from '../pricing/PackageSelectModal';
 import { ProductCard } from '../shop/ProductCard';
@@ -39,6 +45,7 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const [galleryConfig, setGalleryConfig] = useState<BeforeAfterGalleryConfig>(() =>
     getBeforeAfterGalleryConfig()
   );
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
   const [activeBottomSheet, setActiveBottomSheet] = useState<{ type: 'treatments' | 'products'; caseItem: TransformationCase } | null>(null);
   
@@ -65,38 +72,67 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
         setGalleryConfig(getBeforeAfterGalleryConfig());
       }
     };
+    const handleMasterServicesUpdate = () => {
+      setMasterServices(getMasterServices());
+      setGalleryConfig(getBeforeAfterGalleryConfig());
+    };
     window.addEventListener('before_after_gallery_updated', handleGalleryUpdate);
-    return () => window.removeEventListener('before_after_gallery_updated', handleGalleryUpdate);
+    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+    window.addEventListener('storage', handleMasterServicesUpdate);
+    return () => {
+      window.removeEventListener('before_after_gallery_updated', handleGalleryUpdate);
+      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+      window.removeEventListener('storage', handleMasterServicesUpdate);
+    };
   }, []);
 
-  const categories = ['All', 'Facial Rejuvenation', 'Skin Texture & Scars', 'Lifting & Contouring', 'Regenerative Biotech', 'Hair Density'];
+  const liveTreatmentGroups = useMemo(() => {
+    if (masterServices && masterServices.length > 0) {
+      return masterServices.map((s) => {
+        const branch = normalizeMasterBranch(s.pricingCategory || s.category, s.title);
+        return {
+          id: s.id,
+          name: s.title,
+          pricingCategory: branch,
+          transformationCategory:
+            s.transformationCategory || inferTransformationCategoryFromBranch(branch, s.title),
+        };
+      });
+    }
+    return EXISTING_BEFORE_AFTER_TREATMENT_GROUPS;
+  }, [masterServices]);
+
+  const categories = useMemo(
+    () => ['All', ...liveTreatmentGroups.map((g) => g.name)],
+    [liveTreatmentGroups]
+  );
 
   const allCases = useMemo(() => {
     const defaultCaseIds = new Set(CLINICAL_TRANSFORMATION_CASES.map((c) => c.id));
     const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
 
     const adminCases: TransformationCase[] = (galleryConfig?.categories || []).flatMap((cat) => {
-      const groupMeta = EXISTING_BEFORE_AFTER_TREATMENT_GROUPS.find((g) => g.id === cat.id);
+      const groupMeta = liveTreatmentGroups.find((g) => g.id === cat.id);
       const mappedCategory = groupMeta?.transformationCategory || 'Facial Rejuvenation';
 
       return (cat.pairs || [])
         .filter((p) => !p.hidden && !defaultCaseIds.has(p.id) && !defaultPairIds.has(p.id))
         .map((pair): TransformationCase => ({
           id: pair.id,
-          title: pair.title,
+          title: groupMeta?.name || pair.title,
           category: mappedCategory,
-          tag: cat.name,
-          patientInfo: pair.linkedTreatmentTitle || cat.name,
+          tag: groupMeta?.name || cat.name,
+          patientInfo: groupMeta?.name || pair.linkedTreatmentTitle || cat.name,
           duration: pair.duration || '8 Weeks',
           sessions: pair.sessions || 1,
-          concern: pair.seoTitle || `${pair.title} clinical transformation at Age Reversal Clinics.`,
+          concern: pair.seoTitle || `${groupMeta?.name || pair.title} clinical transformation at Age Reversal Clinics.`,
           beforeImage: pair.beforeImage,
           afterImage: pair.afterImage,
           galleryImages: [pair.beforeImage, pair.afterImage],
-          recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : ['exosome', 'profhilo'],
+          recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : [cat.id, 'profhilo-2ml'],
           recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
           treatmentGroupId: pair.treatmentGroupId || cat.id,
-          linkedTreatmentId: pair.linkedTreatmentId,
+          linkedTreatmentId: pair.linkedTreatmentId || cat.id,
           beforeAltText: pair.beforeAltText,
           afterAltText: pair.afterAltText,
           seoTitle: pair.seoTitle,
@@ -106,19 +142,50 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
         }));
     });
 
-    const combined = [...adminCases, ...ADMIN_SYNCED_TRANSFORMATION_CASES, ...CLINICAL_TRANSFORMATION_CASES];
+    const syncedStaticCases = [...ADMIN_SYNCED_TRANSFORMATION_CASES, ...CLINICAL_TRANSFORMATION_CASES].map((c) => {
+      const groupMeta = liveTreatmentGroups.find(
+        (g) => g.id === c.treatmentGroupId || g.id === c.linkedTreatmentId
+      );
+      if (!groupMeta) return c;
+      return {
+        ...c,
+        title: groupMeta.name,
+        tag: groupMeta.name,
+        category: groupMeta.transformationCategory || c.category,
+      };
+    });
+
+    const combined = [...adminCases, ...syncedStaticCases];
     const seen = new Set<string>();
     return combined.filter((item) => {
       if (seen.has(item.id)) return false;
       seen.add(item.id);
       return true;
     });
-  }, [galleryConfig]);
+  }, [galleryConfig, liveTreatmentGroups]);
 
   const filteredCases = useMemo(() => {
     if (selectedCategory === 'All') return allCases;
-    return allCases.filter((c) => c.category === selectedCategory);
-  }, [selectedCategory, allCases]);
+    const selectedLower = selectedCategory.toLowerCase();
+    const matchedGroup = liveTreatmentGroups.find(
+      (g) => g.name.toLowerCase() === selectedLower || g.id.toLowerCase() === selectedLower
+    );
+    return allCases.filter((c) => {
+      if (matchedGroup) {
+        if (c.treatmentGroupId === matchedGroup.id || c.linkedTreatmentId === matchedGroup.id) {
+          return true;
+        }
+        if (c.recommendedTreatmentIds?.includes(matchedGroup.id)) {
+          return true;
+        }
+      }
+      return (
+        c.title.toLowerCase() === selectedLower ||
+        c.tag.toLowerCase() === selectedLower ||
+        c.category.toLowerCase() === selectedLower
+      );
+    });
+  }, [selectedCategory, allCases, liveTreatmentGroups]);
 
   // Schema.org/ImageObject Structured Data for Google Image Search
   const structuredDataJson = useMemo(() => {

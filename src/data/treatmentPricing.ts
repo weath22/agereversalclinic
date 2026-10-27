@@ -20,6 +20,339 @@ export type TreatmentCategory =
   | 'Hair & Beauty'
   | 'IV Drip Lounge & Wellness';
 
+export interface TreatmentSubGroup {
+  id: string; // e.g., 'anti-wrinkle'
+  name: string; // e.g., 'Anti-Wrinkle Injections (Botox)'
+}
+
+export interface TreatmentTaxonomyGroup {
+  id: string; // e.g., 'face-injectables'
+  name: string; // e.g., 'Face & Injectables'
+  subGroups: TreatmentSubGroup[];
+}
+
+export const DEFAULT_TREATMENT_TAXONOMY: TreatmentTaxonomyGroup[] = [
+  {
+    id: 'face-injectables',
+    name: 'Face & Injectables',
+    subGroups: [
+      { id: 'anti-wrinkles-injection', name: "Anti-wrinkle's injection" },
+      { id: 'dermal-fillers-1ml', name: 'Dermal Fillers-1ml' },
+      { id: 'profhilo-2ml', name: 'Profhilo 2ml' },
+      { id: 'salmon-sperm-injection', name: 'Salmon sperm injection' },
+      { id: 'platelet-rich-plasma-prp', name: 'Platelet-Rich Plasma (PRP)' },
+      { id: 'endolift-fiber-lift', name: 'Endolift - Fiber Lift' },
+      { id: 'emface-skin-tightening-and-lifting', name: 'Emface skin tightening and lifting' },
+    ],
+  },
+  {
+    id: 'body-sculpting',
+    name: 'Body Sculpting',
+    subGroups: [
+      { id: 'aqualyx-course-3', name: 'Aqualyx Course 3' },
+      { id: 'deso-face-and-body-course-of-1', name: 'Deso Face and body Course of 1' },
+      { id: 'deso-face-and-body-course-of-3', name: 'Deso Face and body Course of 3' },
+      { id: 'slimming-pen', name: 'Slimming pen' },
+      { id: 'emscuplt-body-sculpt-and-tightening', name: 'Emscuplt body sculpt and tightening' },
+      { id: 'body-slimming-fat-loss-cellulite-reduction', name: 'Body slimming for fat and loss Cellulite reduction' },
+    ],
+  },
+  {
+    id: 'advanced-facials',
+    name: 'Advanced Facials',
+    subGroups: [
+      { id: 'facial-skin-care', name: 'Facial skin care' },
+      { id: 'co2-laser-from', name: 'Co@ Laser from' },
+      { id: 'tattoo-removal', name: 'Tattoo removal' },
+      { id: 'morpheus8-treatment', name: 'Morpheus8 treatment' },
+    ],
+  },
+  {
+    id: 'hair-beauty',
+    name: 'Hair & Beauty',
+    subGroups: [
+      { id: 'lash-eyebrow', name: 'lash & eyebrow' },
+      { id: 'body-waxing', name: 'body waxing' },
+      { id: 'ladies-girls-cut-collors-treatments', name: 'Ladies & Girls Cut, Collors, Treatments' },
+      { id: 'men-and-kids', name: 'Men and Kids' },
+      { id: 'men-kids-services', name: 'Men / kids services' },
+      { id: 'semi-permanent-makeup', name: 'Semi-permanent makeup' },
+    ],
+  },
+  {
+    id: 'iv-drips-wellness',
+    name: 'IV Drips & Wellness',
+    subGroups: [
+      { id: 'iv-drip-lounge-course-of-1', name: 'IV Drip Lounge-course of 1' },
+    ],
+  },
+];
+
+export const LEGACY_BROCHURE_SUBGROUP_IDS = new Set([
+  'anti-wrinkle',
+  'dermal-fillers',
+  'skin-boosters',
+  'high-tech-lifting',
+  'fat-dissolving',
+  'body-contouring',
+  'high-tech-body',
+  'clinical-medical-facials',
+  'weekly-specials',
+  'light-oxygen-extractions',
+  'beauty-lashes-spmu',
+  'hair-salon-trichology',
+  'laser-hair-removal',
+  'booster-shots',
+  'wellness-immunity-drips',
+  'premium-infusions',
+]);
+
+export function inferTreatmentSubGroup(item: {
+  id: string;
+  category?: string;
+  badge?: string;
+  title?: string;
+}): { subGroupId: string; subCategory: string; parentCategory: TreatmentCategory } {
+  const cat = (item.category || '').toLowerCase();
+  const id = (item.id || '').toLowerCase();
+  const title = (item.title || '').toLowerCase();
+  const badge = (item.badge || '').toLowerCase();
+  const combined = `${id} ${title} ${badge}`;
+
+  // Cross-check specific specialist services first regardless of legacy category
+  if (combined.includes('prp') || combined.includes('platelet')) {
+    return {
+      subGroupId: 'platelet-rich-plasma-prp',
+      subCategory: 'Platelet-Rich Plasma (PRP)',
+      parentCategory: 'Face & Injectables',
+    };
+  }
+  if (combined.includes('co2') || combined.includes('co@')) {
+    return {
+      subGroupId: 'co2-laser-from',
+      subCategory: 'Co@ Laser from',
+      parentCategory: 'Advanced Facials',
+    };
+  }
+  if (combined.includes('tattoo')) {
+    return {
+      subGroupId: 'tattoo-removal',
+      subCategory: 'Tattoo removal',
+      parentCategory: 'Advanced Facials',
+    };
+  }
+  if (combined.includes('morpheus8') && !combined.includes('body')) {
+    return {
+      subGroupId: 'morpheus8-treatment',
+      subCategory: 'Morpheus8 treatment',
+      parentCategory: 'Advanced Facials',
+    };
+  }
+
+  // 1. Face & Injectables
+  if (cat.includes('face') || cat.includes('inject')) {
+    if (
+      combined.includes('botox') ||
+      combined.includes('wrinkle') ||
+      id.startsWith('botox-') ||
+      combined.includes('smile') ||
+      combined.includes('puppet') ||
+      combined.includes('neck bands') ||
+      combined.includes('jaw slimming') ||
+      combined.includes('chin dimpling')
+    ) {
+      return {
+        subGroupId: 'anti-wrinkles-injection',
+        subCategory: "Anti-wrinkle's injection",
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    if (
+      combined.includes('filler') ||
+      id.startsWith('filler-') ||
+      combined.includes('lip') ||
+      combined.includes('cheek') ||
+      combined.includes('rhinoplasty') ||
+      combined.includes('tear trough') ||
+      combined.includes('temples') ||
+      combined.includes('jaw & chin') ||
+      combined.includes('hand rejuvenation') ||
+      combined.includes('cleavage')
+    ) {
+      return {
+        subGroupId: 'dermal-fillers-1ml',
+        subCategory: 'Dermal Fillers-1ml',
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    if (combined.includes('profhilo')) {
+      return {
+        subGroupId: 'profhilo-2ml',
+        subCategory: 'Profhilo 2ml',
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    if (combined.includes('salmon') || combined.includes('polynucleotide') || combined.includes('pdrn')) {
+      return {
+        subGroupId: 'salmon-sperm-injection',
+        subCategory: 'Salmon sperm injection',
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    if (combined.includes('endolift') || combined.includes('fiber lift')) {
+      return {
+        subGroupId: 'endolift-fiber-lift',
+        subCategory: 'Endolift - Fiber Lift',
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    if (combined.includes('emface')) {
+      return {
+        subGroupId: 'emface-skin-tightening-and-lifting',
+        subCategory: 'Emface skin tightening and lifting',
+        parentCategory: 'Face & Injectables',
+      };
+    }
+    return {
+      subGroupId: 'anti-wrinkles-injection',
+      subCategory: "Anti-wrinkle's injection",
+      parentCategory: 'Face & Injectables',
+    };
+  }
+
+  // 2. Body Sculpting
+  if (cat.includes('body')) {
+    if (combined.includes('aqualyx') || id.startsWith('aqualyx-')) {
+      return {
+        subGroupId: 'aqualyx-course-3',
+        subCategory: 'Aqualyx Course 3',
+        parentCategory: 'Body Sculpting',
+      };
+    }
+    if (combined.includes('deso') || id.startsWith('deso-')) {
+      if (combined.includes('course-3') || combined.includes('course of 3')) {
+        return {
+          subGroupId: 'deso-face-and-body-course-of-3',
+          subCategory: 'Deso Face and body Course of 3',
+          parentCategory: 'Body Sculpting',
+        };
+      }
+      return {
+        subGroupId: 'deso-face-and-body-course-of-1',
+        subCategory: 'Deso Face and body Course of 1',
+        parentCategory: 'Body Sculpting',
+      };
+    }
+    if (combined.includes('slimming-pen') || combined.includes('slimming pen')) {
+      return {
+        subGroupId: 'slimming-pen',
+        subCategory: 'Slimming pen',
+        parentCategory: 'Body Sculpting',
+      };
+    }
+    if (combined.includes('emsculpt') || combined.includes('emscuplt') || combined.includes('morpheus8-body')) {
+      return {
+        subGroupId: 'emscuplt-body-sculpt-and-tightening',
+        subCategory: 'Emscuplt body sculpt and tightening',
+        parentCategory: 'Body Sculpting',
+      };
+    }
+    return {
+      subGroupId: 'body-slimming-fat-loss-cellulite-reduction',
+      subCategory: 'Body slimming for fat and loss Cellulite reduction',
+      parentCategory: 'Body Sculpting',
+    };
+  }
+
+  // 3. Advanced Facials
+  if (cat.includes('facial') || cat.includes('advanced')) {
+    return {
+      subGroupId: 'facial-skin-care',
+      subCategory: 'Facial skin care',
+      parentCategory: 'Advanced Facials',
+    };
+  }
+
+  // 4. Hair & Beauty
+  if (cat.includes('hair') || cat.includes('beauty')) {
+    if (combined.includes('lash') || combined.includes('eyebrow') || combined.includes('brow')) {
+      if (
+        combined.includes('spmu') ||
+        combined.includes('microblading') ||
+        combined.includes('micro-pigmentation') ||
+        combined.includes('ombre') ||
+        combined.includes('ombré') ||
+        combined.includes('powder brow')
+      ) {
+        return {
+          subGroupId: 'semi-permanent-makeup',
+          subCategory: 'Semi-permanent makeup',
+          parentCategory: 'Hair & Beauty',
+        };
+      }
+      return {
+        subGroupId: 'lash-eyebrow',
+        subCategory: 'lash & eyebrow',
+        parentCategory: 'Hair & Beauty',
+      };
+    }
+    if (
+      combined.includes('spmu') ||
+      combined.includes('semi-permanent') ||
+      combined.includes('lip blushing') ||
+      combined.includes('eyeliner') ||
+      combined.includes('party makeup')
+    ) {
+      return {
+        subGroupId: 'semi-permanent-makeup',
+        subCategory: 'Semi-permanent makeup',
+        parentCategory: 'Hair & Beauty',
+      };
+    }
+    if (combined.includes('wax') || combined.includes('laser-') || combined.includes('electrolysis') || combined.includes('soprano')) {
+      return {
+        subGroupId: 'body-waxing',
+        subCategory: 'body waxing',
+        parentCategory: 'Hair & Beauty',
+      };
+    }
+    if (combined.includes('men') || combined.includes('kid')) {
+      if (id === 'men-and-kids') {
+        return {
+          subGroupId: 'men-and-kids',
+          subCategory: 'Men and Kids',
+          parentCategory: 'Hair & Beauty',
+        };
+      }
+      return {
+        subGroupId: 'men-kids-services',
+        subCategory: 'Men / kids services',
+        parentCategory: 'Hair & Beauty',
+      };
+    }
+    return {
+      subGroupId: 'ladies-girls-cut-collors-treatments',
+      subCategory: 'Ladies & Girls Cut, Collors, Treatments',
+      parentCategory: 'Hair & Beauty',
+    };
+  }
+
+  // 5. IV Drips & Wellness
+  if (cat.includes('iv') || cat.includes('wellness') || cat.includes('drip')) {
+    return {
+      subGroupId: 'iv-drip-lounge-course-of-1',
+      subCategory: 'IV Drip Lounge-course of 1',
+      parentCategory: 'IV Drip Lounge & Wellness',
+    };
+  }
+
+  return {
+    subGroupId: 'anti-wrinkles-injection',
+    subCategory: "Anti-wrinkle's injection",
+    parentCategory: 'Face & Injectables',
+  };
+}
+
 import { TreatmentMediaItem } from '../types';
 export { getTreatmentImagePath, getTreatmentCardImage, handleTreatmentImageError } from '../utils/treatmentImageHelper';
 
@@ -27,6 +360,8 @@ export interface TreatmentPricingItem {
   id: string;
   title: string;
   category: TreatmentCategory;
+  subCategory?: string;
+  subGroupId?: string;
   description: string;
   image: string;
   startingPrice: number;
@@ -53,6 +388,8 @@ export interface TreatmentPricingCardSummary {
   id: string;
   title: string;
   category: TreatmentCategory;
+  subCategory?: string;
+  subGroupId?: string;
   description: string;
   image: string;
   startingPrice: number;
@@ -73,7 +410,7 @@ export interface TreatmentPricingCardSummary {
  * Exact column list for database/Supabase select queries (avoids wildcard '*' fetch)
  */
 export const TREATMENT_CARD_SUMMARY_COLUMNS =
-  'id, title, category, description, image, startingPrice, currency, badge, popular, hidden, isActive, updatedAt, coverMedia';
+  'id, title, category, subCategory, subGroupId, description, image, startingPrice, currency, badge, popular, hidden, isActive, updatedAt, coverMedia';
 
 /**
  * Projects a full TreatmentPricingItem down to TreatmentPricingCardSummary,
@@ -88,10 +425,17 @@ export function projectTreatmentCardSummary(
       ? ''
       : rawImage;
 
+  const hasLegacySubGroup = Boolean(item.subGroupId && LEGACY_BROCHURE_SUBGROUP_IDS.has(item.subGroupId));
+  const inferred = (!item.subGroupId || !item.subCategory || hasLegacySubGroup)
+    ? inferTreatmentSubGroup(item as any)
+    : null;
+
   const projected: TreatmentPricingCardSummary = {
     id: item.id,
     title: item.title,
-    category: item.category,
+    category: (inferred?.parentCategory || item.category) as TreatmentCategory,
+    subCategory: (hasLegacySubGroup ? inferred?.subCategory : item.subCategory) || inferred?.subCategory,
+    subGroupId: (hasLegacySubGroup ? inferred?.subGroupId : item.subGroupId) || inferred?.subGroupId,
     description: item.description,
     image: cleanImage,
     startingPrice: item.startingPrice,
@@ -1001,7 +1345,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'morpheus8-facial',
     title: 'Morpheus8 Facial RF Microneedling',
-    category: 'Face & Injectables',
+    category: 'Advanced Facials',
     description: 'Subdermal adipose remodeling that combines microneedling with radiofrequency to melt submental fat, rebuild elastin, and tighten skin up to 4mm deep.',
     image: 'https://images.unsplash.com/photo-1629909615184-74f495363b67?auto=format&fit=crop&w=800&q=80',
     startingPrice: 190,
@@ -1088,7 +1432,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'co2-laser-face-neck',
     title: 'CO2 Laser: Facial & Neck Resurfacing',
-    category: 'Face & Injectables',
+    category: 'Advanced Facials',
     description: 'Gold-standard micro-ablative fractional CO2 laser resurfacing vaporizing damaged epidermal columns to eliminate deep wrinkles, acne scarring, and severe photodamage.',
     image: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80',
     startingPrice: 300,
@@ -1110,7 +1454,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'co2-laser-hands',
     title: 'CO2 Laser: Hands Resurfacing',
-    category: 'Face & Injectables',
+    category: 'Advanced Facials',
     description: 'Ablative fractional CO2 laser renewal targeting sun spots, age pigmentation, crepey skin, and collagen depletion across the back of both hands.',
     image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80',
     startingPrice: 200,
@@ -1132,7 +1476,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'co2-laser-scars',
     title: 'CO2 Laser: Localized Scars',
-    category: 'Face & Injectables',
+    category: 'Advanced Facials',
     description: 'Ultra-targeted high-energy micro-fractional vaporization to remodel fibrous collagen bands in localized traumatic, surgical, or pitted acne scars.',
     image: 'https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80',
     startingPrice: 100,
@@ -1154,7 +1498,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'co2-laser-stretch-marks',
     title: 'CO2 Laser: Stretch Marks (Striae)',
-    category: 'Face & Injectables',
+    category: 'Advanced Facials',
     description: 'Thermal fractional coagulation stimulating deep fibroblasts to blend texture, contract wide margins, and restore elasticity in stretch marks on abdomen, hips, or thighs.',
     image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=800&q=80',
     startingPrice: 200,
@@ -2015,7 +2359,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'tattoo-removal-laser',
     title: 'Tattoo Removel (Laser)',
-    category: 'Hair & Beauty',
+    category: 'Advanced Facials',
     description: 'Q-Switched laser breaking down cosmetic or body ink pigments without scarring.',
     image: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=800&q=80',
     startingPrice: 350,
@@ -2113,9 +2457,29 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
     ]
   },
   {
+    id: 'men-and-kids',
+    title: 'Men and Kids Grooming & Cuts',
+    category: 'Hair & Beauty',
+    subGroupId: 'men-and-kids',
+    subCategory: 'Men and Kids',
+    description: 'Tailored precision grooming, contemporary styling, and gentle hair care services designed for gentlemen and young clients.',
+    image: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80',
+    startingPrice: 15,
+    currency: '£',
+    procedureTime: '20 - 30 Mins',
+    downtime: 'None',
+    badge: 'from £15',
+    packages: [
+      { id: 'men-kids-groom-1', name: 'Clipper Buzz / Trim £15', price: 15, sessions: 1, description: 'Clean clipper trim and edge cleanup.', includes: ['Clipper taper', 'Neck & edge cleanup'] },
+      { id: 'men-kids-groom-2', name: 'Gentlemen & Kids Scissor Cut £20', price: 20, sessions: 1, description: 'Precision scissor cut and styling.', includes: ['Scissor cut', 'Wash & styling'] }
+    ]
+  },
+  {
     id: 'mens-kids-services',
     title: "Men's / Kids Hair Service",
     category: 'Hair & Beauty',
+    subGroupId: 'men-kids-services',
+    subCategory: 'Men / kids services',
     description: 'Clean clipper trims, precision scissor cuts, and professional finishing pomade styling.',
     image: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=800&q=80',
     startingPrice: 15,
@@ -2341,7 +2705,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'prp-hair-loss',
     title: 'Platelet-Rich Plasma (PRP) for Hair Loss Treatment',
-    category: 'IV Drip Lounge & Wellness',
+    category: 'Face & Injectables',
     description: 'Autologous concentrated platelets packed with bioactive growth factors injected into the scalp to awaken dormant follicles and treat hair thinning.',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
     startingPrice: 150,
@@ -2355,7 +2719,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'prp-facial-treatment',
     title: 'Platelet-Rich Plasma (PRP) Facial Treatment',
-    category: 'IV Drip Lounge & Wellness',
+    category: 'Face & Injectables',
     description: 'Autologous platelet micro-infusion across the face (Vampire Facial) to stimulate collagen synthesis, tighten pores, and brighten skin tone.',
     image: 'https://images.unsplash.com/photo-1512290900672-1f0230f81d18?auto=format&fit=crop&w=800&q=80',
     startingPrice: 120,
@@ -2368,7 +2732,7 @@ export const TREATMENT_PRICING_DATA: TreatmentPricingItem[] = [
   {
     id: 'prp-cosmetic-injection',
     title: 'PRP Cosmetic Injection',
-    category: 'IV Drip Lounge & Wellness',
+    category: 'Face & Injectables',
     description: 'High-density platelet injection targeting delicate under-eye hollows, smile creases, or scars for natural autologous volume and repair.',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
     startingPrice: 180,

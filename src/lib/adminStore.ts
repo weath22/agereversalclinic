@@ -9,6 +9,7 @@ import {
   SpecialistArea,
   Treatment,
   BeforeAfterGalleryConfig,
+  BeforeAfterPair,
   WhyChooseUsConfig,
   AwardsConfig,
   OurLocationsConfig,
@@ -27,9 +28,21 @@ import {
   MediaAssetRecord,
   ProtocolStepItem,
   TreatmentProtocolGroup,
-  ClinicalProtocolsConfig
+  ClinicalProtocolsConfig,
+  MasterBranchCategory,
+  MASTER_BRANCH_CATEGORIES,
+  TransformationCategorySlug
 } from '../types';
-import { CLINIC_DATA, ClinicData, ClinicLocation, ClinicConsultationConfig } from '../data/clinicInfo';
+import {
+  CLINIC_DATA,
+  ClinicData,
+  ClinicLocation,
+  ClinicConsultationConfig,
+  ClinicProcessSection,
+  ClinicFacilityGallerySection,
+  ClinicTrustBrandsSection,
+  ClinicAccreditationsSection,
+} from '../data/clinicInfo';
 import { 
   TreatmentPricingItem, 
   TreatmentPricingCardSummary,
@@ -39,9 +52,14 @@ import {
   filterAndSortTreatmentCards,
   TREATMENT_PRICING_DATA, 
   TREATMENT_PRICING_CATEGORIES,
-  PRICING_CATEGORIES
+  PRICING_CATEGORIES,
+  TreatmentTaxonomyGroup,
+  TreatmentSubGroup,
+  DEFAULT_TREATMENT_TAXONOMY,
+  LEGACY_BROCHURE_SUBGROUP_IDS
 } from '../data/treatmentPricing';
 import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
+import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
 // Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
 let _siteCustomizationsCache: Record<string, any> | null = null;
 let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
@@ -103,7 +121,9 @@ const FLOATING_MENU_CONFIG_KEY = 'homepage_floating_menu_config';
 const PROFILE_PAGE_CONFIG_KEY = 'profile_page_config';
 const CLINIC_INFO_DATA_KEY = 'clinic_info_data';
 const TREATMENT_PRICING_DATA_KEY = 'treatment_pricing_data';
+export const TREATMENT_TAXONOMY_KEY = 'treatment_taxonomy_data';
 const CENTRAL_MEDIA_ASSETS_KEY = 'central_clinic_media_assets';
+const MASTER_SERVICES_CONFIG_KEY = 'master_services_config_v1';
 export const CLINICAL_PROTOCOLS_CONFIG_KEY = 'clinical_protocols_config';
 
 export const INITIAL_MEDIA_ASSETS: MediaAssetRecord[] = [
@@ -393,7 +413,13 @@ function setStorageItem<T>(key: string, value: T): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     // Asynchronously write changes directly to project source files on server disk
-    if (key.startsWith('homepage_') || key.startsWith('profile_') || key.startsWith('clinical_')) {
+    if (
+      key.startsWith('homepage_') ||
+      key.startsWith('profile_') ||
+      key.startsWith('clinical_') ||
+      key.startsWith('master_') ||
+      key.startsWith('treatment_')
+    ) {
       syncConfigToFile(key, value);
     }
   } catch (error) {
@@ -649,8 +675,10 @@ export async function syncAllConfigsToFiles(): Promise<{ success: boolean; messa
       [PROFILE_PAGE_CONFIG_KEY]: getProfilePageConfig(),
       [CLINIC_INFO_DATA_KEY]: getClinicData(),
       [TREATMENT_PRICING_DATA_KEY]: getTreatmentPricingData(),
+      [TREATMENT_TAXONOMY_KEY]: getTreatmentTaxonomy(),
       [TREATMENT_DETAILS_KEY]: getTreatmentDetailsConfig(),
-      [CENTRAL_MEDIA_ASSETS_KEY]: getRegisteredMediaAssets()
+      [CENTRAL_MEDIA_ASSETS_KEY]: getRegisteredMediaAssets(),
+      [MASTER_SERVICES_CONFIG_KEY]: getMasterServices()
     };
 
     const res = await fetch('/api/admin/save-to-files', {
@@ -689,205 +717,183 @@ const DEFAULT_HERO_CONFIG: HeroConfig = {
 const DEFAULT_SPECIALIST_AREAS_CONFIG: SpecialistAreasConfig = {
   heading: "Explore our specialist areas",
   description: "At Age Reversal Clinic, we offer advanced aesthetic diagnostics, world-leading practitioners, and fast access to appointments - often within 48 hours - so your transformation can begin in days, not months.",
-  areas: [
-    {
-      id: 'face',
-      title: 'Facial Injectables',
-      description: 'Advanced clinical injectables and facial contouring tailored for natural lift, harmony, and structural rejuvenation.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAOPTQtfj8J1bbB7SlVVRU6fYo2gWaZ-vP4FOmbQ0GK-wiSWxgFv7RrufflpNtjGP9Dk5eLV2kMfUIPVx1N4ETnRWMUGQ-pnWBcZCa97apM4cg71CV6hKaKDiQOlU26NKqLXuvzRkHrDNd-vXfy5u3MHCvpyxfbnHdk9lkm5vhjg9zIrK1aYJGwOOOPurVrXxbRr7FprgjD7ZzrUzhcc4DM6YdWc6J8P_jEx9W_ffwKfL2E8x3PIYt0_G8MTcbFUJlLtFYmgOa7s-OK'
-    },
-    {
-      id: 'skin',
-      title: 'Skin Rejuvenation',
-      description: 'State-of-the-art medical grade facials, laser therapies, and cellular treatments for luminous, clear skin.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2a_0Datjn8f2On3mNF7IY6_QgXkw0AQl1Il2WqYPqYqTU7wUKYRpJUg2xdA_d0B8SfBpbvVzzYOczvA85hXWv6hkb0snKG0UXUjP3EUDr0nkt_A_nINJJOIpGcQ2X_iD94V14qlhvJmRUp8In6cOEtlONSRSf5Kpdd8uA6VUX3SFIaBku4xsVbSvg9fE6K0FWVX-QGNWmY4jhYY70yZCEdfN_V3cezSz0jiycoy31X-hMxrw-bNoMrpEVo43FV1z8TnWKiqVpTdlK'
-    },
-    {
-      id: 'body',
-      title: 'Body Contouring',
-      description: 'High-definition body shaping using advanced clinical techniques, including dermal fillers and fat reduction.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R'
-    },
-    {
-      id: 'hair',
-      title: 'Hair Restoration',
-      description: 'Elite follicle stimulation and clinical growth induction therapies for healthy, robust hair restoration.',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH'
-    }
-  ]
+  areas: ALL_SPECIALIST_TREATMENTS.map((item) => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    image: item.image,
+    pricingCategory: item.pricingCategory,
+    transformationCategory: item.transformationCategory,
+    category: item.category,
+    duration: item.duration,
+    icon: item.icon,
+    coverMedia: item.coverMedia,
+    seoKeywords: item.seoKeywords
+  }))
 };
 
 const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
   editorialHeading: "rejuvenation",
   editorialSub: "Begin your transformation",
   description: "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.",
-  treatments: [
-    { id: '1', name: 'Permanent cosmetic makeup' },
-    { id: '2', name: 'Cosmetic makeup services' },
-    { id: '3', name: 'Facial Services' },
-    { id: '4', name: 'Tinting' }
+  treatments: ALL_SPECIALIST_TREATMENTS.map((item, idx) => ({
+    id: item.id,
+    name: item.title,
+    stepNumber: String(idx + 1).padStart(2, '0'),
+    description: item.description,
+    tag: item.pricingCategory || item.category,
+    image: item.image,
+    duration: item.duration
+  }))
+};
+
+const DEFAULT_GALLERY_PAIRS_BY_GROUP: Record<string, BeforeAfterPair[]> = {
+  'facial-skin-care': [
+    {
+      id: 'pair-1',
+      treatmentGroupId: 'facial-skin-care',
+      linkedTreatmentId: 'facial-skin-care',
+      linkedTreatmentTitle: 'Facial skin care',
+      title: 'Facial skin care',
+      duration: '12 Weeks',
+      sessions: 3,
+      beforeAltText: 'Facial skin care Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Facial skin care After 12 Weeks at Age Reversal Clinics London',
+      seoTitle: 'Facial skin care Before & After | Age Reversal Clinics',
+      seoKeywords: ['facial skin care before and after', 'anti-aging clinic london', 'clinical facial results'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
+      afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO'
+    }
+  ],
+  'co2-laser-from': [
+    {
+      id: 'pair-2',
+      treatmentGroupId: 'co2-laser-from',
+      linkedTreatmentId: 'co2-laser-from',
+      linkedTreatmentTitle: 'Co@ Laser from',
+      title: 'Co@ Laser from',
+      duration: '12 Weeks',
+      sessions: 3,
+      beforeAltText: 'Co@ Laser from Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Co@ Laser from After Treatment at Age Reversal Clinics London',
+      seoTitle: 'Co@ Laser from Before & After | Age Reversal Clinics',
+      seoKeywords: ['co2 laser before and after', 'skin resurfacing london', 'dermal texture revision'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKPf3nijQRz9NaEd_b-5EiczAejYyrgh_dwMC6S-1-7Hi8EJJnt8_x2x-i1qG-qJ0BxvXbk_PeIeusHvMggQrPf2ijjCJ-yYtr-Ur19sJw4_NIIAlLMv1S2ct_OUVp3CJNba1hCLXrrPOcfhQAQUcgqZJFcuUL6Q4KXUwM1ALRAeo6Bb79xdI4FoLRUFAP9_MlbZ8tUedBAnuVrheDWpnRtLnB17gtdOx3OFGMbTVs5jhXXnZD6b-y7OCBnlBNOtqOPMcKxAdzDKRk',
+      afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFNbqNx3wVVcZoA9IP87KJkDnMZI-8uRSd-RL2-LhuxC6ADEkgMcpBDJ22CU3U7a_ZOllNge5XasdFvVaBYUhCDohAZdRi0HT1ymJ1s_FMyiXt8pJl7NGhaLkKATrZlXl3B2mFW01fD4Mzp3ixyyLcDfCdjXdPi58MzBZ-GTgGk7w7Ks96hydwAbc4rURmQ3Pel8YEcOvxIX5UbwIKvB4OdEuyDc-z_RnH-USDoP7hJ2AJkw4zTdCS7FDF6Vo4RFbWikgnECIa4gKP'
+    }
+  ],
+  'dermal-fillers-1ml': [
+    {
+      id: 'pair-3',
+      treatmentGroupId: 'dermal-fillers-1ml',
+      linkedTreatmentId: 'dermal-fillers-1ml',
+      linkedTreatmentTitle: 'Dermal Fillers-1ml',
+      title: 'Dermal Fillers-1ml',
+      duration: 'Single Session',
+      sessions: 1,
+      beforeAltText: 'Dermal Fillers-1ml Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Dermal Fillers-1ml After Treatment at Age Reversal Clinics London',
+      seoTitle: 'Dermal Fillers-1ml Before & After | Age Reversal Clinics',
+      seoKeywords: ['dermal fillers 1ml before and after london', 'facial harmonisation results', 'lip and chin filler london'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
+      afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le'
+    }
+  ],
+  'platelet-rich-plasma-prp': [
+    {
+      id: 'pair-4',
+      treatmentGroupId: 'platelet-rich-plasma-prp',
+      linkedTreatmentId: 'platelet-rich-plasma-prp',
+      linkedTreatmentTitle: 'Platelet-Rich Plasma (PRP)',
+      title: 'Platelet-Rich Plasma (PRP)',
+      duration: '20 Weeks',
+      sessions: 4,
+      beforeAltText: 'Platelet-Rich Plasma (PRP) Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Platelet-Rich Plasma (PRP) After 20 Weeks at Age Reversal Clinics London',
+      seoTitle: 'Platelet-Rich Plasma (PRP) Before & After | Age Reversal Clinics',
+      seoKeywords: ['platelet rich plasma prp before and after london', 'prp hair loss results', 'scalp density treatment'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
+      afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd'
+    }
+  ],
+  'profhilo-2ml': [
+    {
+      id: 'pair-5',
+      treatmentGroupId: 'profhilo-2ml',
+      linkedTreatmentId: 'profhilo-2ml',
+      linkedTreatmentTitle: 'Profhilo 2ml',
+      title: 'Profhilo 2ml',
+      duration: '8 Weeks',
+      sessions: 2,
+      beforeAltText: 'Profhilo 2ml Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Profhilo 2ml After 8 Weeks at Age Reversal Clinics London',
+      seoTitle: 'Profhilo 2ml Before & After Result | Age Reversal Clinics',
+      seoKeywords: ['profhilo 2ml before and after london', 'anti-aging treatment results', 'collagen bio-remodeling'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQHcq9zpePKkMqtIMFzx_zJA6A2MHoEn6csMvjhOOX7ANTgntEGIHbHHzkJdrRGuvr_rnNYa6j_vcZm7V9bkSv83qNQwd18XJJA14YTUOLU2diwqx3hP_e-l8axRA5ZOsfN1xGiRO0pPe2sb4cNQEz8psyAxBRjvefn1MvexT-2iAwkVKIyT8R_56LKMScwW7_sMvuBzMGXxdp0I1cFNoqfp7K5RhhrtrwcfrUPw1dRPmX60Zc0esbeUgaFqwO959IBqnu8sf8OA4w',
+      afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCZoLjpjMEmJNM6EwzVC9AzZEWfQUVa-TmVyM-NgPL8ONCjzwY7nZ6rFqOxJ9jyK0OMnlIij8h8SOt93jaHfSglwGqtwAN3uabUuoux0yNyPzieFFX7iyB4YhjLSsBzd2BRDjEDVB1RlXcG4VC8SswApL8QbBnPLshzCzMX8LSdFYZsa0PRI6MM6b7I67HIl-B6YLhZAH5ZI9mcghNQsybRemIqmq4LWl9BCKjn5KaTyU1RyMrHYkwMgx1ABZOJ1-OJiLkjF-5mIKY0'
+    }
+  ],
+  'salmon-sperm-injection': [
+    {
+      id: 'pair-6',
+      treatmentGroupId: 'salmon-sperm-injection',
+      linkedTreatmentId: 'salmon-sperm-injection',
+      linkedTreatmentTitle: 'Salmon sperm injection',
+      title: 'Salmon sperm injection',
+      duration: '8 Weeks',
+      sessions: 3,
+      beforeAltText: 'Salmon sperm injection Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Salmon sperm injection After Treatment at Age Reversal Clinics London',
+      seoTitle: 'Salmon sperm injection Before & After | Age Reversal Clinics',
+      seoKeywords: ['salmon sperm injection before and after', 'polynucleotides london', 'skin texture repair'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
+      afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY'
+    }
+  ],
+  'morpheus8-treatment': [
+    {
+      id: 'pair-7',
+      treatmentGroupId: 'morpheus8-treatment',
+      linkedTreatmentId: 'morpheus8-treatment',
+      linkedTreatmentTitle: 'Morpheus8 treatment',
+      title: 'Morpheus8 treatment',
+      duration: '12 Weeks',
+      sessions: 3,
+      beforeAltText: 'Morpheus8 treatment Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Morpheus8 treatment After Treatment at Age Reversal Clinics London',
+      seoTitle: 'Morpheus8 treatment Before & After | Age Reversal Clinics',
+      seoKeywords: ['morpheus8 treatment before and after london', 'jawline tightening results', 'rf microneedling london'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
+      afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLv5evIx7Bexs-9iJGxOP9dKFElgqCjw3duyD5PU_MlEubT0SyTO7PuZhJtmqUZf6JcUhS8jDhV8HW0kBhWUb4MYYalT72IO5pVBeVZs2593mjjAC6tI1ZOA1a9xGgg-M5J5waWMYO9uVD4zle9guZj31tQOME7032wvttEoahsd7HhWFooW0oUTyDgrytGK4oKIN0d2mGO5oLnx-NQ5sF7-OZHtA3a9_sCrUegKiXGZwpy_05469C2zVgo'
+    }
+  ],
+  'emface-skin-tightening-and-lifting': [
+    {
+      id: 'pair-8',
+      treatmentGroupId: 'emface-skin-tightening-and-lifting',
+      linkedTreatmentId: 'emface-skin-tightening-and-lifting',
+      linkedTreatmentTitle: 'Emface skin tightening and lifting',
+      title: 'Emface skin tightening and lifting',
+      duration: '16 Weeks',
+      sessions: 3,
+      beforeAltText: 'Emface skin tightening and lifting Before Treatment at Age Reversal Clinics London',
+      afterAltText: 'Emface skin tightening and lifting After Treatment at Age Reversal Clinics London',
+      seoTitle: 'Emface skin tightening and lifting Before & After | Age Reversal Clinics',
+      seoKeywords: ['emface skin tightening and lifting before and after london', 'non-surgical facelift results', 'facial lifting clinic'],
+      beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
+      afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM'
+    }
   ]
 };
 
 const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
   heading: "Before & After Gallery",
   description: "Witness the transformative journeys of our patients. These unretouched, real clinical cases illustrate the precision-guided results we achieve daily across our specialist disciplines.",
-  categories: [
-    {
-      id: 'anti-aging',
-      name: 'Anti-Aging Rejuvenation',
-      pairs: [
-        {
-          id: 'pair-1',
-          treatmentGroupId: 'anti-aging',
-          linkedTreatmentId: 'exosome',
-          linkedTreatmentTitle: 'Exosome Skin & Scalp Therapy',
-          title: 'Skin Treatment - 12 Wks',
-          duration: '12 Weeks',
-          sessions: 3,
-          beforeAltText: 'Full Face Cellular Skin Rejuvenation Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Full Face Cellular Skin Rejuvenation After 12 Weeks at Age Reversal Clinics London',
-          seoTitle: 'Skin Rejuvenation 12 Weeks Before & After | Age Reversal Clinics',
-          seoKeywords: ['skin rejuvenation before and after', 'anti-aging clinic london', 'exosome skin therapy results'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu',
-          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO'
-        },
-        {
-          id: 'pair-5',
-          treatmentGroupId: 'anti-aging',
-          linkedTreatmentId: 'profhilo',
-          linkedTreatmentTitle: 'Profhilo Bio-Remodeling',
-          title: 'Anti-Aging - 8 Wks',
-          duration: '8 Weeks',
-          sessions: 2,
-          beforeAltText: 'Anti-Aging Bio-Remodeling Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Anti-Aging Bio-Remodeling After 8 Weeks at Age Reversal Clinics London',
-          seoTitle: 'Anti-Aging 8 Weeks Before & After Result | Age Reversal Clinics',
-          seoKeywords: ['profhilo before and after london', 'anti-aging treatment results', 'collagen bio-remodeling'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDQHcq9zpePKkMqtIMFzx_zJA6A2MHoEn6csMvjhOOX7ANTgntEGIHbHHzkJdrRGuvr_rnNYa6j_vcZm7V9bkSv83qNQwd18XJJA14YTUOLU2diwqx3hP_e-l8axRA5ZOsfN1xGiRO0pPe2sb4cNQEz8psyAxBRjvefn1MvexT-2iAwkVKIyT8R_56LKMScwW7_sMvuBzMGXxdp0I1cFNoqfp7K5RhhrtrwcfrUPw1dRPmX60Zc0esbeUgaFqwO959IBqnu8sf8OA4w',
-          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCZoLjpjMEmJNM6EwzVC9AzZEWfQUVa-TmVyM-NgPL8ONCjzwY7nZ6rFqOxJ9jyK0OMnlIij8h8SOt93jaHfSglwGqtwAN3uabUuoux0yNyPzieFFX7iyB4YhjLSsBzd2BRDjEDVB1RlXcG4VC8SswApL8QbBnPLshzCzMX8LSdFYZsa0PRI6MM6b7I67HIl-B6YLhZAH5ZI9mcghNQsybRemIqmq4LWl9BCKjn5KaTyU1RyMrHYkwMgx1ABZOJ1-OJiLkjF-5mIKY0'
-        },
-        {
-          id: 'pair-8',
-          treatmentGroupId: 'anti-aging',
-          linkedTreatmentId: 'ultherapy',
-          linkedTreatmentTitle: 'Ultherapy Prime SMAS Lift',
-          title: 'Micro-Focused SMAS Tightening',
-          duration: '16 Weeks',
-          sessions: 3,
-          beforeAltText: 'Ultherapy Micro-Focused SMAS Tightening Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Ultherapy Micro-Focused SMAS Tightening After Treatment at Age Reversal Clinics London',
-          seoTitle: 'SMAS Tightening & Jawline Lift Before & After | Age Reversal Clinics',
-          seoKeywords: ['ultherapy before and after london', 'non-surgical facelift results', 'smas lifting clinic'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvjSZco1dx7hVrPVVTpQCccko7If_cqC5uOFd2CXxLocZ1Oun9i5J-udXlCHNTRIGovtFU3pvvKxN6bGyBSymSOknWQSay0i9Yvs1QU_Ia9uCO5XIIvfi777lZLw3-q6LKf1n2pC8dBD3PP9G8Hn786rtUIjnDvBWn9TLNxvKzeXiqTpQjDapVzgPYwprK0lTqb8Rum95xgsa5gryXO4p2TwfrF4HD3T449sGZQOwQ5uYmWyZPyjK2xozM'
-        }
-      ]
-    },
-    {
-      id: 'acne-scarring',
-      name: 'Acne & Scarring',
-      pairs: [
-        {
-          id: 'pair-2',
-          treatmentGroupId: 'acne-scarring',
-          linkedTreatmentId: 'co2-laser',
-          linkedTreatmentTitle: 'Fractional CO2 Laser Resurfacing',
-          title: 'Laser Therapy & Skin Revision',
-          duration: '12 Weeks',
-          sessions: 3,
-          beforeAltText: 'Laser Therapy and Acne Scar Revision Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Laser Therapy and Acne Scar Revision After Treatment at Age Reversal Clinics London',
-          seoTitle: 'Laser Therapy & Acne Scar Revision Before & After | Age Reversal Clinics',
-          seoKeywords: ['acne scar laser before and after', 'skin resurfacing london', 'dermal texture revision'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKPf3nijQRz9NaEd_b-5EiczAejYyrgh_dwMC6S-1-7Hi8EJJnt8_x2x-i1qG-qJ0BxvXbk_PeIeusHvMggQrPf2ijjCJ-yYtr-Ur19sJw4_NIIAlLMv1S2ct_OUVp3CJNba1hCLXrrPOcfhQAQUcgqZJFcuUL6Q4KXUwM1ALRAeo6Bb79xdI4FoLRUFAP9_MlbZ8tUedBAnuVrheDWpnRtLnB17gtdOx3OFGMbTVs5jhXXnZD6b-y7OCBnlBNOtqOPMcKxAdzDKRk',
-          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCFNbqNx3wVVcZoA9IP87KJkDnMZI-8uRSd-RL2-LhuxC6ADEkgMcpBDJ22CU3U7a_ZOllNge5XasdFvVaBYUhCDohAZdRi0HT1ymJ1s_FMyiXt8pJl7NGhaLkKATrZlXl3B2mFW01fD4Mzp3ixyyLcDfCdjXdPi58MzBZ-GTgGk7w7Ks96hydwAbc4rURmQ3Pel8YEcOvxIX5UbwIKvB4OdEuyDc-z_RnH-USDoP7hJ2AJkw4zTdCS7FDF6Vo4RFbWikgnECIa4gKP'
-        },
-        {
-          id: 'pair-6',
-          treatmentGroupId: 'acne-scarring',
-          linkedTreatmentId: 'polynucleotides',
-          linkedTreatmentTitle: 'Polynucleotides Cellular Repair',
-          title: 'Volumetric Resurfacing & Texture',
-          duration: '8 Weeks',
-          sessions: 3,
-          beforeAltText: 'Polynucleotide Volumetric Resurfacing Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Polynucleotide Volumetric Resurfacing After Treatment at Age Reversal Clinics London',
-          seoTitle: 'Volumetric Resurfacing & Texture Before & After | Age Reversal Clinics',
-          seoKeywords: ['polynucleotides before and after', 'under eye brightening london', 'skin texture repair'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY'
-        }
-      ]
-    },
-    {
-      id: 'facial-harmony',
-      name: 'Facial Harmony & Injectables',
-      pairs: [
-        {
-          id: 'pair-3',
-          treatmentGroupId: 'facial-harmony',
-          linkedTreatmentId: 'dermal-fillers',
-          linkedTreatmentTitle: 'Bespoke Dermal Fillers & Facial Harmonisation',
-          title: 'Advanced Aesthetics Profile',
-          duration: 'Single Session',
-          sessions: 1,
-          beforeAltText: '3D Facial Profile Harmonisation Before Dermal Fillers at Age Reversal Clinics London',
-          afterAltText: '3D Facial Profile Harmonisation After Dermal Fillers at Age Reversal Clinics London',
-          seoTitle: 'Facial Profile Harmonisation Before & After | Age Reversal Clinics',
-          seoKeywords: ['dermal fillers before and after london', 'facial harmonisation results', 'lip and chin filler london'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD20NLhroXmHS02eweFz9RBF-OhZ1RaQuMYe3uKrQ3iyvZ-roWLw57bJ33sw80W5DRjj47x5XfDBbMjHImuC7GRyDB99DirCCEbVZV8CTtkxIlVvsv3muJIAVMTHXiXqyc5zkYEu_ONKT40va6LO1TTmuJIgnYDdf4IauNPrqGL0pqV8S7wijzbRu89PlKh7cdxVcMqll1kYNG8e8Oy-dy4Ftdm6rYT9ZMn2IlwhqOYW0ekq6d9NnIYN_xGqSaNcN5s4N1iiVJMk3GV',
-          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDccMXAIYxuO2yvwTqN8m4d8QLiy48sfir-uvPIXURN6mHE9KnhgzWARsOBlK9Mr7YK53ev5SNz0PPuGxVRLSblgomVrpZxwnyuJUkmY-Ozf1hCAotsXBatMbvNCyS04ZJlkaYgvTJNROZ-js6VboTaV_3ll-A3k6pNoAAipu9StjstMbS0Laznf_O50IKrmUFaecZ-yeGpZtc8RnmuWeJ_Qsqe53K1Vl0UbckdWbcqY249cXQYBmdHpG1v0uiCq0Ly6hPEjF90b3le'
-        },
-        {
-          id: 'pair-7',
-          treatmentGroupId: 'facial-harmony',
-          linkedTreatmentId: 'morpheus8',
-          linkedTreatmentTitle: 'Morpheus8 RF Microneedling',
-          title: 'Subdermal Lifting & Tone',
-          duration: '12 Weeks',
-          sessions: 3,
-          beforeAltText: 'Morpheus8 Subdermal Lifting Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Morpheus8 Subdermal Lifting After Treatment at Age Reversal Clinics London',
-          seoTitle: 'Subdermal Lifting & Tone Before & After | Age Reversal Clinics',
-          seoKeywords: ['morpheus8 before and after london', 'jawline tightening results', 'rf microneedling london'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
-          afterImage: 'https://lh3.googleusercontent.com/aida/AP1WRLv5evIx7Bexs-9iJGxOP9dKFElgqCjw3duyD5PU_MlEubT0SyTO7PuZhJtmqUZf6JcUhS8jDhV8HW0kBhWUb4MYYalT72IO5pVBeVZs2593mjjAC6tI1ZOA1a9xGgg-M5J5waWMYO9uVD4zle9guZj31tQOME7032wvttEoahsd7HhWFooW0oUTyDgrytGK4oKIN0d2mGO5oLnx-NQ5sF7-OZHtA3a9_sCrUegKiXGZwpy_05469C2zVgo'
-        }
-      ]
-    },
-    {
-      id: 'clinical-hair',
-      name: 'Clinical Hair Restoration',
-      pairs: [
-        {
-          id: 'pair-4',
-          treatmentGroupId: 'clinical-hair',
-          linkedTreatmentId: 'prp-hair',
-          linkedTreatmentTitle: 'PRP Hair Restoration Therapy',
-          title: 'Vertical Hair Follicle Density',
-          duration: '20 Weeks',
-          sessions: 4,
-          beforeAltText: 'Clinical Hair Follicle Density Before Treatment at Age Reversal Clinics London',
-          afterAltText: 'Clinical Hair Follicle Density After 20 Weeks at Age Reversal Clinics London',
-          seoTitle: 'Clinical Hair Restoration Before & After | Age Reversal Clinics',
-          seoKeywords: ['hair restoration before and after london', 'prp hair loss results', 'scalp density treatment'],
-          beforeImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR',
-          afterImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd'
-        }
-      ]
-    },
-    {
-      id: 'body-sculpting',
-      name: 'Body Sculpting & Tightening',
-      pairs: []
-    },
-    {
-      id: 'advanced-facials',
-      name: 'Advanced Clinical Facials',
-      pairs: []
-    }
-  ]
+  categories: ALL_SPECIALIST_TREATMENTS.map((item) => ({
+    id: item.id,
+    name: item.title,
+    pairs: DEFAULT_GALLERY_PAIRS_BY_GROUP[item.id] ? [...DEFAULT_GALLERY_PAIRS_BY_GROUP[item.id]] : []
+  }))
 };
 
 const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
@@ -1010,41 +1016,53 @@ const DEFAULT_TEAM_LEADERSHIP_CONFIG: TeamLeadershipConfig = {
 };
 
 const DEFAULT_PROCESS_CONFIG: ProcessConfig = {
-  heading: "Our Process",
-  description: "Your journey to exceptional results.",
-  steps: [
-    {
-      id: "step-1",
-      stepNumber: "01",
-      title: "Consultation",
-      image: "https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=400&fit=crop"
-    },
-    {
-      id: "step-2",
-      stepNumber: "02",
-      title: "Treatment Plan",
-      image: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=400&h=400&fit=crop"
-    }
-  ]
+  eyebrow: CLINIC_DATA.processSection?.eyebrow || "Our Process",
+  heading: CLINIC_DATA.processSection?.heading || "The Journey to Radiance",
+  description:
+    CLINIC_DATA.processSection?.subheading ||
+    "From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.",
+  seoKeywords: CLINIC_DATA.processSection?.seoKeywords || [],
+  steps:
+    CLINIC_DATA.processSection?.steps && CLINIC_DATA.processSection.steps.length > 0
+      ? CLINIC_DATA.processSection.steps
+      : [
+          {
+            id: "step-1",
+            stepNumber: "01",
+            title: "Comprehensive Consultation & Assessment",
+            image: "https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=400&fit=crop",
+          },
+          {
+            id: "step-2",
+            stepNumber: "02",
+            title: "Bespoke Treatment Plan",
+            image: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=400&h=400&fit=crop",
+          },
+        ],
 };
 
 const DEFAULT_FACILITY_INTERIORS_CONFIG: FacilityInteriorsConfig = {
-  heading: "Our Facilities",
+  eyebrow: CLINIC_DATA.facilityGallery?.eyebrow || "Our Facility",
+  heading: CLINIC_DATA.facilityGallery?.heading || "Clinic Gallery",
   description: "Experience world-class care in our state-of-the-art clinic.",
-  rooms: [
-    {
-      id: "room-1",
-      title: "Consultation Suite",
-      tag: "Private",
-      image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop"
-    },
-    {
-      id: "room-2",
-      title: "Treatment Room",
-      tag: "Clinical",
-      image: "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop"
-    }
-  ]
+  seoKeywords: CLINIC_DATA.facilityGallery?.seoKeywords || [],
+  rooms:
+    CLINIC_DATA.facilityGallery?.rooms && CLINIC_DATA.facilityGallery.rooms.length > 0
+      ? CLINIC_DATA.facilityGallery.rooms
+      : [
+          {
+            id: "room-1",
+            title: "Consultation Suite",
+            tag: "Private",
+            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop",
+          },
+          {
+            id: "room-2",
+            title: "Treatment Room",
+            tag: "Clinical",
+            image: "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop",
+          },
+        ],
 };
 
 const DEFAULT_TESTIMONIALS_CONFIG: TestimonialsConfig = {
@@ -1093,20 +1111,31 @@ const DEFAULT_SKINCARE_COLLECTION_CONFIG: SkincareCollectionConfig = {
 };
 
 const DEFAULT_TRUST_BRANDS_CONFIG: TrustBrandsConfig = {
-  brands: [
-    { id: 'bp-1', name: 'Lumina', iconType: 'circle' },
-    { id: 'bp-2', name: 'Aether', iconType: 'layers' },
-    { id: 'bp-3', name: 'Vera', iconType: 'pill' },
-    { id: 'bp-4', name: 'Zenith', iconType: 'shield' },
-    { id: 'bp-5', name: 'Nexus', iconType: 'instagram' }
-  ]
+  heading: CLINIC_DATA.trustBrandsSection?.heading || "Over 1,000+ Brands & Laboratories Trust Us",
+  seoKeywords: CLINIC_DATA.trustBrandsSection?.seoKeywords || [],
+  brands:
+    CLINIC_DATA.trustBrandsSection?.brands && CLINIC_DATA.trustBrandsSection.brands.length > 0
+      ? CLINIC_DATA.trustBrandsSection.brands
+      : [
+          { id: 'bp-1', name: 'Lumina', iconType: 'circle' },
+          { id: 'bp-2', name: 'Aether', iconType: 'layers' },
+          { id: 'bp-3', name: 'Vera', iconType: 'pill' },
+          { id: 'bp-4', name: 'Zenith', iconType: 'shield' },
+          { id: 'bp-5', name: 'Nexus', iconType: 'instagram' },
+        ],
 };
 
 const DEFAULT_ACCREDITATIONS_CONFIG: AccreditationsConfig = {
-  accreditations: [
-    { id: 'acc-1', text: 'CQC Registered' },
-    { id: 'acc-2', text: 'Save Face Accredited' }
-  ]
+  eyebrow: CLINIC_DATA.accreditationsSection?.eyebrow || "Accreditations & Certifications",
+  heading: CLINIC_DATA.accreditationsSection?.heading || "Excellence guaranteed. Trusted globally.",
+  description:
+    CLINIC_DATA.accreditationsSection?.description ||
+    "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
+  seoKeywords: CLINIC_DATA.accreditationsSection?.seoKeywords || [],
+  items: CLINIC_DATA.accreditations || [],
+  accreditations: (CLINIC_DATA.accreditations || ['CQC Registered', 'Save Face Accredited']).map(
+    (text, idx) => ({ id: `acc-${idx + 1}`, text })
+  ),
 };
 
 const DEFAULT_LATEST_NEWS_CONFIG: LatestNewsConfig = {
@@ -1703,6 +1732,12 @@ export function initializeAdminStore(): void {
   }
   if (!window.localStorage.getItem(CLINICAL_PROTOCOLS_CONFIG_KEY)) {
     setStorageItem(CLINICAL_PROTOCOLS_CONFIG_KEY, DEFAULT_CLINICAL_PROTOCOLS_CONFIG);
+  }
+  if (!window.localStorage.getItem(TREATMENT_TAXONOMY_KEY)) {
+    setStorageItem(
+      TREATMENT_TAXONOMY_KEY,
+      getFileDefault<TreatmentTaxonomyGroup[]>(TREATMENT_TAXONOMY_KEY, DEFAULT_TREATMENT_TAXONOMY)
+    );
   }
 }
 
@@ -2310,23 +2345,391 @@ export function saveHeroConfig(config: HeroConfig): HeroConfig {
   return config;
 }
 
+const DEFAULT_MASTER_SERVICES_BY_ID = new Map(
+  ALL_SPECIALIST_TREATMENTS.map((item) => [item.id, item])
+);
+
+export function normalizeMasterBranch(branch?: string, title?: string): MasterBranchCategory {
+  const cleaned = (branch || '').trim();
+  if ((MASTER_BRANCH_CATEGORIES as string[]).includes(cleaned)) {
+    return cleaned as MasterBranchCategory;
+  }
+  const lower = `${cleaned} ${title || ''}`.toLowerCase();
+  if (lower.includes('iv') || lower.includes('drip') || lower.includes('prp') || lower.includes('plasma') || lower.includes('wellness')) {
+    return 'IV Drips & Wellness';
+  }
+  if (lower.includes('aqualyx') || lower.includes('deso') || lower.includes('slimming') || lower.includes('emscuplt') || lower.includes('emsculpt') || lower.includes('cellulite') || lower.includes('body sculpt')) {
+    return 'Body Sculpting';
+  }
+  if (lower.includes('facial skin') || lower.includes('advanced facial')) {
+    return 'Advanced Facials';
+  }
+  if (
+    lower.includes('lash') ||
+    lower.includes('eyebrow') ||
+    lower.includes('wax') ||
+    lower.includes('cut') ||
+    lower.includes('collor') ||
+    lower.includes('men') ||
+    lower.includes('kid') ||
+    lower.includes('semi-permanent') ||
+    lower.includes('tattoo') ||
+    lower.includes('hair') ||
+    lower.includes('beauty')
+  ) {
+    return 'Hair & Beauty';
+  }
+  return 'Face & Injectables';
+}
+
+export function inferTransformationCategoryFromBranch(
+  branch: MasterBranchCategory | string,
+  title?: string
+): TransformationCategorySlug {
+  const normalizedBranch = normalizeMasterBranch(branch, title);
+  const lowerTitle = (title || '').toLowerCase();
+  if (normalizedBranch === 'Body Sculpting') return 'body-sculpting';
+  if (normalizedBranch === 'Advanced Facials') return 'advanced-facials';
+  if (normalizedBranch === 'Hair & Beauty') return 'clinical-hair';
+  if (normalizedBranch === 'IV Drips & Wellness') {
+    return lowerTitle.includes('prp') || lowerTitle.includes('plasma') ? 'clinical-hair' : 'anti-aging';
+  }
+  if (lowerTitle.includes('laser') || lowerTitle.includes('scar')) return 'acne-scarring';
+  if (lowerTitle.includes('filler') || lowerTitle.includes('semi-permanent')) return 'facial-harmony';
+  return 'anti-aging';
+}
+
+export function normalizeSpecialistServiceItem(raw: SpecialistArea, idx = 0): SpecialistArea {
+  const fallback =
+    DEFAULT_MASTER_SERVICES_BY_ID.get(raw.id) ||
+    ALL_SPECIALIST_TREATMENTS.find((t) => t.title.toLowerCase() === (raw.title || '').toLowerCase().trim());
+
+  const cleanTitle = (raw.title || fallback?.title || `Service ${idx + 1}`).trim();
+  const cleanId =
+    (raw.id || '').trim() ||
+    cleanTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') ||
+    `service-${idx + 1}`;
+
+  const pricingCategory = normalizeMasterBranch(
+    raw.pricingCategory || fallback?.pricingCategory || raw.category,
+    cleanTitle
+  );
+  const transformationCategory =
+    raw.transformationCategory ||
+    fallback?.transformationCategory ||
+    inferTransformationCategoryFromBranch(pricingCategory, cleanTitle);
+
+  return {
+    ...fallback,
+    ...raw,
+    id: cleanId,
+    title: cleanTitle,
+    description:
+      raw.description ||
+      fallback?.description ||
+      `Bespoke ${cleanTitle} protocol performed at Age Reversal Clinic.`,
+    image:
+      raw.image ||
+      fallback?.image ||
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
+    pricingCategory,
+    transformationCategory,
+    category: raw.category || pricingCategory,
+    duration: raw.duration || fallback?.duration || '45 Mins',
+    price: raw.price || '',
+    icon: raw.icon || fallback?.icon || 'Sparkles',
+    seoKeywords:
+      raw.seoKeywords && raw.seoKeywords.length > 0
+        ? raw.seoKeywords
+        : fallback?.seoKeywords || [`${cleanTitle.toLowerCase()} london`, pricingCategory.toLowerCase()],
+  };
+}
+
+export function getMasterServices(): SpecialistArea[] {
+  initializeAdminStore();
+  const storedMaster = getStorageItem<SpecialistArea[] | null>(
+    MASTER_SERVICES_CONFIG_KEY,
+    getFileDefault<SpecialistArea[] | null>(MASTER_SERVICES_CONFIG_KEY, null)
+  );
+
+  if (Array.isArray(storedMaster) && storedMaster.length > 0) {
+    return storedMaster.map((item, idx) => normalizeSpecialistServiceItem(item, idx));
+  }
+
+  const storedSpec = getStorageItem<SpecialistAreasConfig>(
+    SPECIALIST_AREAS_CONFIG_KEY,
+    getFileDefault(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG)
+  );
+  const legacyIds = new Set([
+    'face',
+    'skin',
+    'body',
+    'hair',
+    'facial-injectables',
+    'skin-rejuvenation',
+    'body-contouring',
+    'hair-restoration'
+  ]);
+  const isLegacyAreas =
+    !storedSpec?.areas ||
+    storedSpec.areas.length <= 4 ||
+    storedSpec.areas.every((a) => legacyIds.has(a.id));
+
+  const sourceList = isLegacyAreas ? DEFAULT_SPECIALIST_AREAS_CONFIG.areas : storedSpec.areas;
+  return sourceList.map((item, idx) => normalizeSpecialistServiceItem(item, idx));
+}
+
+export function getMasterServicesByBranch(): Record<MasterBranchCategory, SpecialistArea[]> {
+  const services = getMasterServices();
+  const grouped: Record<MasterBranchCategory, SpecialistArea[]> = {
+    'Face & Injectables': [],
+    'Body Sculpting': [],
+    'Advanced Facials': [],
+    'Hair & Beauty': [],
+    'IV Drips & Wellness': []
+  };
+
+  for (const service of services) {
+    const branch = normalizeMasterBranch(service.pricingCategory, service.title);
+    grouped[branch].push(service);
+  }
+  return grouped;
+}
+
+export function saveMasterServices(
+  services: SpecialistArea[],
+  options?: { heading?: string; description?: string }
+): SpecialistArea[] {
+  const normalizedServices = services.map((item, idx) => normalizeSpecialistServiceItem(item, idx));
+
+  // 1. Persist Master Services store
+  setStorageItem(MASTER_SERVICES_CONFIG_KEY, normalizedServices);
+  syncConfigToFile(MASTER_SERVICES_CONFIG_KEY, normalizedServices);
+
+  // 2. Auto-sync Homepage: Specialist Areas (homepage_specialist_areas_config_v4)
+  const currentSpec = getStorageItem<SpecialistAreasConfig>(
+    SPECIALIST_AREAS_CONFIG_KEY,
+    DEFAULT_SPECIALIST_AREAS_CONFIG
+  );
+  const nextSpecConfig: SpecialistAreasConfig = {
+    heading: options?.heading ?? currentSpec?.heading ?? DEFAULT_SPECIALIST_AREAS_CONFIG.heading,
+    description: options?.description ?? currentSpec?.description ?? DEFAULT_SPECIALIST_AREAS_CONFIG.description,
+    areas: normalizedServices
+  };
+  setStorageItem(SPECIALIST_AREAS_CONFIG_KEY, nextSpecConfig);
+  syncConfigToFile(SPECIALIST_AREAS_CONFIG_KEY, nextSpecConfig);
+
+  // 3. Auto-sync Homepage: Treatments (homepage_treatments_config)
+  const currentTreatConfig = getStorageItem<TreatmentsConfig>(
+    TREATMENTS_CONFIG_KEY,
+    DEFAULT_TREATMENTS_CONFIG
+  );
+  const existingTreatById = new Map(
+    (currentTreatConfig?.treatments || []).map((t) => [t.id, t])
+  );
+  const nextTreatments: Treatment[] = normalizedServices.map((item, idx) => {
+    const prev = existingTreatById.get(item.id);
+    return {
+      id: item.id,
+      name: item.title,
+      stepNumber: String(idx + 1).padStart(2, '0'),
+      description: item.description,
+      tag: item.pricingCategory || item.category || prev?.tag || 'Face & Injectables',
+      image: item.image,
+      duration: item.duration || prev?.duration || '45 Mins',
+      price: item.price !== undefined && item.price !== '' ? item.price : prev?.price
+    };
+  });
+  const nextTreatConfig: TreatmentsConfig = {
+    editorialHeading: currentTreatConfig?.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
+    editorialSub: currentTreatConfig?.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
+    description: currentTreatConfig?.description || DEFAULT_TREATMENTS_CONFIG.description,
+    treatments: nextTreatments
+  };
+  setStorageItem(TREATMENTS_CONFIG_KEY, nextTreatConfig);
+  syncConfigToFile(TREATMENTS_CONFIG_KEY, nextTreatConfig);
+
+  // 4. Auto-sync Homepage: Before & After Groups (homepage_gallery_config_v6)
+  const currentGallery = getBeforeAfterGalleryConfig();
+  const existingPairsByGroupId = new Map(
+    (currentGallery?.categories || []).map((c) => [c.id, c.pairs || []])
+  );
+  const nextGalleryConfig: BeforeAfterGalleryConfig = {
+    heading: currentGallery?.heading || DEFAULT_GALLERY_CONFIG.heading,
+    description: currentGallery?.description || DEFAULT_GALLERY_CONFIG.description,
+    categories: normalizedServices.map((item) => {
+      const existingPairs =
+        existingPairsByGroupId.get(item.id) ||
+        (DEFAULT_GALLERY_PAIRS_BY_GROUP[item.id] ? [...DEFAULT_GALLERY_PAIRS_BY_GROUP[item.id]] : []);
+      return {
+        id: item.id,
+        name: item.title,
+        pairs: existingPairs.map((p) => ({
+          ...p,
+          treatmentGroupId: item.id as any,
+          linkedTreatmentId: p.linkedTreatmentId || item.id,
+          linkedTreatmentTitle: item.title
+        }))
+      };
+    })
+  };
+  setStorageItem(GALLERY_CONFIG_KEY, nextGalleryConfig);
+  syncConfigToFile(GALLERY_CONFIG_KEY, nextGalleryConfig);
+
+  // 5. Auto-sync Pricing Catalog Categories if a matching service's parent branch was reassigned
+  try {
+    const pricingData = getTreatmentPricingData();
+    let pricingChanged = false;
+    const byId = new Map(normalizedServices.map((s) => [s.id.toLowerCase(), s]));
+    const byTitle = new Map(normalizedServices.map((s) => [s.title.toLowerCase(), s]));
+
+    const updatedPricing = pricingData.map((pItem) => {
+      const matchedService =
+        byId.get(pItem.id.toLowerCase()) || byTitle.get(pItem.title.toLowerCase());
+      if (matchedService && matchedService.pricingCategory) {
+        const targetCategory = normalizeMasterBranch(
+          matchedService.pricingCategory,
+          matchedService.title
+        );
+        if (pItem.category !== targetCategory || pItem.title !== matchedService.title) {
+          pricingChanged = true;
+          return {
+            ...pItem,
+            title: matchedService.title,
+            category: targetCategory as any
+          };
+        }
+      }
+      return pItem;
+    });
+
+    if (pricingChanged) {
+      saveTreatmentPricingData(updatedPricing);
+    }
+  } catch (err) {
+    console.warn('Could not sync master service branch changes to pricing data:', err);
+  }
+
+  // 6. Auto-sync Treatment Taxonomy from Master Services (unless triggered by saveTreatmentTaxonomy)
+  if (!_isSyncingTaxonomyAndServices) {
+    try {
+      _isSyncingTaxonomyAndServices = true;
+      const existingRawTax = getStorageItem<TreatmentTaxonomyGroup[] | null>(TREATMENT_TAXONOMY_KEY, null);
+      const syncedTaxonomy = buildTaxonomyFromMasterServices(normalizedServices, existingRawTax || undefined);
+      setStorageItem(TREATMENT_TAXONOMY_KEY, syncedTaxonomy);
+      syncConfigToFile(TREATMENT_TAXONOMY_KEY, syncedTaxonomy);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('treatment_taxonomy_updated', { detail: syncedTaxonomy }));
+      }
+    } catch (err) {
+      console.warn('Could not sync master services to treatment taxonomy:', err);
+    } finally {
+      _isSyncingTaxonomyAndServices = false;
+    }
+  }
+
+  // 7. Dispatch live events so Header, SpecialistAreas, Treatments, BeforeAfterGallery & Transformations update immediately
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('master_services_updated', {
+        detail: {
+          services: normalizedServices,
+          byBranch: getMasterServicesByBranch()
+        }
+      })
+    );
+    window.dispatchEvent(new CustomEvent('specialist_areas_updated', { detail: nextSpecConfig }));
+    window.dispatchEvent(new CustomEvent('treatments_config_updated', { detail: nextTreatConfig }));
+    window.dispatchEvent(new CustomEvent('gallery_config_updated', { detail: nextGalleryConfig }));
+  }
+
+  return normalizedServices;
+}
+
+export function resetMasterServicesToDefaults(): SpecialistArea[] {
+  const defaults = DEFAULT_SPECIALIST_AREAS_CONFIG.areas.map((item, idx) =>
+    normalizeSpecialistServiceItem(item, idx)
+  );
+  return saveMasterServices(defaults, {
+    heading: DEFAULT_SPECIALIST_AREAS_CONFIG.heading,
+    description: DEFAULT_SPECIALIST_AREAS_CONFIG.description
+  });
+}
+
 export function getSpecialistAreasConfig(): SpecialistAreasConfig {
   initializeAdminStore();
-  return getStorageItem<SpecialistAreasConfig>(SPECIALIST_AREAS_CONFIG_KEY, getFileDefault(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG));
+  const stored = getStorageItem<SpecialistAreasConfig>(
+    SPECIALIST_AREAS_CONFIG_KEY,
+    getFileDefault(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG)
+  );
+  const masterAreas = getMasterServices();
+  return {
+    heading: stored?.heading || DEFAULT_SPECIALIST_AREAS_CONFIG.heading,
+    description: stored?.description || DEFAULT_SPECIALIST_AREAS_CONFIG.description,
+    areas: masterAreas
+  };
 }
 
 export function saveSpecialistAreasConfig(config: SpecialistAreasConfig): SpecialistAreasConfig {
-  setStorageItem(SPECIALIST_AREAS_CONFIG_KEY, config);
-  return config;
+  const syncedAreas = saveMasterServices(config.areas || [], {
+    heading: config.heading,
+    description: config.description
+  });
+  return {
+    heading: config.heading,
+    description: config.description,
+    areas: syncedAreas
+  };
 }
 
 export function getTreatmentsConfig(): TreatmentsConfig {
   initializeAdminStore();
-  return getStorageItem<TreatmentsConfig>(TREATMENTS_CONFIG_KEY, getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG));
+  const stored = getStorageItem<TreatmentsConfig>(
+    TREATMENTS_CONFIG_KEY,
+    getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG)
+  );
+
+  const legacyNames = new Set([
+    'permanent cosmetic makeup',
+    'cosmetic makeup services',
+    'facial services',
+    'tinting',
+    'facial injectables & volume contouring',
+    'morpheus8 rf & deep skin tightening',
+    'ultherapy non-surgical smas lift',
+    'precision lip & facial dermal fillers',
+    'polynucleotide & exosome cellular therapy',
+    'fractional co2 laser & skin resurfacing',
+    'minor surgery & scars'
+  ]);
+
+  const isLegacyDefaultList =
+    !stored?.treatments ||
+    stored.treatments.length === 0 ||
+    stored.treatments.every(
+      (t) =>
+        ['1', '2', '3', '4', '5', '6', '7'].includes(String(t.id)) ||
+        legacyNames.has((t.name || '').toLowerCase().trim()) ||
+        /\b(birmingham|london|manchester|oxford)\b/i.test(t.name || '')
+    );
+
+  if (isLegacyDefaultList) {
+    return {
+      ...DEFAULT_TREATMENTS_CONFIG,
+      ...stored,
+      treatments: DEFAULT_TREATMENTS_CONFIG.treatments
+    };
+  }
+
+  return stored;
 }
 
 export function saveTreatmentsConfig(config: TreatmentsConfig): TreatmentsConfig {
   setStorageItem(TREATMENTS_CONFIG_KEY, config);
+  syncConfigToFile(TREATMENTS_CONFIG_KEY, config);
   return config;
 }
 
@@ -2445,28 +2848,112 @@ export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
     getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG)
   );
 
-  // Ensure all existing treatment groups are always available
-  const fixedGroups = [
-    { id: 'anti-aging', name: 'Anti-Aging Rejuvenation' },
-    { id: 'acne-scarring', name: 'Acne & Scarring' },
-    { id: 'facial-harmony', name: 'Facial Harmony & Injectables' },
-    { id: 'clinical-hair', name: 'Clinical Hair Restoration' },
-    { id: 'body-sculpting', name: 'Body Sculpting & Tightening' },
-    { id: 'advanced-facials', name: 'Advanced Clinical Facials' },
-  ];
+  // Generate treatment groups directly from the current Master Services list
+  const masterServices = getMasterServices();
+  const fixedGroups = (masterServices.length > 0 ? masterServices : ALL_SPECIALIST_TREATMENTS).map((item) => ({
+    id: item.id,
+    name: item.title,
+  }));
+  const validGroupIds = new Set(fixedGroups.map((g) => g.id));
 
-  const existingMap = new Map(
-    (stored?.categories || []).map((c) => [c.id, c])
-  );
+  // Map legacy group IDs and default pair IDs to the 24 new service IDs
+  const pairIdToGroupMap: Record<string, string> = {
+    'pair-1': 'facial-skin-care',
+    'pair-2': 'co2-laser-from',
+    'pair-3': 'dermal-fillers-1ml',
+    'pair-4': 'platelet-rich-plasma-prp',
+    'pair-5': 'profhilo-2ml',
+    'pair-6': 'salmon-sperm-injection',
+    'pair-7': 'morpheus8-treatment',
+    'pair-8': 'emface-skin-tightening-and-lifting',
+  };
+
+  const legacyGroupMap: Record<string, string> = {
+    'anti-aging': 'profhilo-2ml',
+    'acne-scarring': 'co2-laser-from',
+    'facial-harmony': 'dermal-fillers-1ml',
+    'clinical-hair': 'platelet-rich-plasma-prp',
+    'body-sculpting': 'emscuplt-body-sculpt-and-tightening',
+    'advanced-facials': 'facial-skin-care',
+  };
+
+  const legacyDefaultTitles = new Set([
+    'Skin Treatment - 12 Wks',
+    'Anti-Aging - 8 Wks',
+    'Micro-Focused SMAS Tightening',
+    'Laser Therapy & Skin Revision',
+    'Volumetric Resurfacing & Texture',
+    'Advanced Aesthetics',
+    'Advanced Aesthetics Profile',
+    'Subdermal Lifting & Tone',
+    'Vertical Hair Follicle Density',
+  ]);
+
+  const defaultPairById = new Map<string, BeforeAfterPair>();
+  Object.values(DEFAULT_GALLERY_PAIRS_BY_GROUP)
+    .flat()
+    .forEach((p) => defaultPairById.set(p.id, p));
+
+  const bucketedPairs = new Map<string, BeforeAfterPair[]>();
+  fixedGroups.forEach((g) => bucketedPairs.set(g.id, []));
+
+  const seenPairIds = new Set<string>();
+  const storedCategories = stored?.categories || [];
+  const hasAnyNewGroup = storedCategories.some((c) => validGroupIds.has(c.id));
+
+  for (const cat of storedCategories) {
+    for (const rawPair of cat.pairs || []) {
+      if (!rawPair || seenPairIds.has(rawPair.id)) continue;
+      seenPairIds.add(rawPair.id);
+
+      const targetGroupId =
+        (rawPair.id && pairIdToGroupMap[rawPair.id]) ||
+        (validGroupIds.has(cat.id) ? cat.id : legacyGroupMap[cat.id]) ||
+        fixedGroups[0].id;
+
+      const defaultPair = defaultPairById.get(rawPair.id);
+      const shouldUpgradeDefaultTitle =
+        defaultPair && (!rawPair.title || legacyDefaultTitles.has(rawPair.title));
+
+      const upgradedPair: BeforeAfterPair = {
+        ...defaultPair,
+        ...rawPair,
+        treatmentGroupId: targetGroupId as any,
+        title: shouldUpgradeDefaultTitle ? defaultPair.title : rawPair.title,
+        linkedTreatmentId: shouldUpgradeDefaultTitle
+          ? defaultPair.linkedTreatmentId
+          : rawPair.linkedTreatmentId || targetGroupId,
+        linkedTreatmentTitle: shouldUpgradeDefaultTitle
+          ? defaultPair.linkedTreatmentTitle
+          : rawPair.linkedTreatmentTitle || defaultPair?.linkedTreatmentTitle,
+      };
+
+      const list = bucketedPairs.get(targetGroupId) || [];
+      list.push(upgradedPair);
+      bucketedPairs.set(targetGroupId, list);
+    }
+  }
+
+  // Ensure all 8 default pairs are present if migrating from a legacy 5-pair snapshot
+  if (!hasAnyNewGroup) {
+    defaultPairById.forEach((defPair, pairId) => {
+      if (!seenPairIds.has(pairId)) {
+        const gId = defPair.treatmentGroupId || pairIdToGroupMap[pairId] || fixedGroups[0].id;
+        const list = bucketedPairs.get(gId) || [];
+        list.push({ ...defPair });
+        bucketedPairs.set(gId, list);
+      }
+    });
+  }
 
   const normalizedCategories = fixedGroups.map((group) => {
-    const found = existingMap.get(group.id);
+    const pairs = bucketedPairs.get(group.id) || [];
     return {
       id: group.id,
-      name: found?.name || group.name,
-      pairs: (found?.pairs || []).map((p) => ({
+      name: group.name,
+      pairs: pairs.map((p) => ({
         ...p,
-        treatmentGroupId: p.treatmentGroupId || group.id,
+        treatmentGroupId: (p.treatmentGroupId || group.id) as any,
         beforeAltText:
           p.beforeAltText ||
           `${p.title} Before ${group.name} Treatment at Age Reversal Clinics London`,
@@ -2477,7 +2964,11 @@ export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
         seoKeywords:
           p.seoKeywords && p.seoKeywords.length > 0
             ? p.seoKeywords
-            : [`${p.title.toLowerCase()} before and after`, `${group.name.toLowerCase()} london`, 'age reversal clinics results'],
+            : [
+                `${p.title.toLowerCase()} before and after`,
+                `${group.name.toLowerCase()} london`,
+                'age reversal clinics results',
+              ],
       })),
     };
   });
@@ -2566,7 +3057,7 @@ export function getWhyChooseUsConfig(): WhyChooseUsConfig {
     return {
       heading: clinicWhy.heading || DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
       subheading: clinicWhy.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
-      description: clinicWhy.subheading || clinicWhy.description || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+      description: clinicWhy.subheading || (clinicWhy as any).description || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
       pillars: clinicWhy.pillars,
     };
   }
@@ -2635,21 +3126,53 @@ export function saveTeamLeadershipConfig(config: TeamLeadershipConfig): TeamLead
 
 export function getProcessConfig(): ProcessConfig {
   initializeAdminStore();
+  const clinicProcess = getClinicData()?.processSection;
+  if (clinicProcess && Array.isArray(clinicProcess.steps) && clinicProcess.steps.length > 0) {
+    return {
+      eyebrow: clinicProcess.eyebrow || DEFAULT_PROCESS_CONFIG.eyebrow || 'Our Process',
+      heading: clinicProcess.heading || DEFAULT_PROCESS_CONFIG.heading,
+      description: clinicProcess.subheading || DEFAULT_PROCESS_CONFIG.description,
+      seoKeywords: Array.isArray(clinicProcess.seoKeywords)
+        ? clinicProcess.seoKeywords
+        : DEFAULT_PROCESS_CONFIG.seoKeywords || [],
+      steps: clinicProcess.steps,
+    };
+  }
   return getStorageItem<ProcessConfig>(PROCESS_CONFIG_KEY, getFileDefault(PROCESS_CONFIG_KEY, DEFAULT_PROCESS_CONFIG));
 }
 
 export function saveProcessConfig(config: ProcessConfig): ProcessConfig {
   setStorageItem(PROCESS_CONFIG_KEY, config);
+  syncConfigToFile(PROCESS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('process_config_updated', { detail: config }));
+  }
   return config;
 }
 
 export function getFacilityInteriorsConfig(): FacilityInteriorsConfig {
   initializeAdminStore();
+  const clinicFacility = getClinicData()?.facilityGallery;
+  if (clinicFacility && Array.isArray(clinicFacility.rooms) && clinicFacility.rooms.length > 0) {
+    return {
+      eyebrow: clinicFacility.eyebrow || DEFAULT_FACILITY_INTERIORS_CONFIG.eyebrow || 'Our Facility',
+      heading: clinicFacility.heading || DEFAULT_FACILITY_INTERIORS_CONFIG.heading,
+      description: DEFAULT_FACILITY_INTERIORS_CONFIG.description,
+      seoKeywords: Array.isArray(clinicFacility.seoKeywords)
+        ? clinicFacility.seoKeywords
+        : DEFAULT_FACILITY_INTERIORS_CONFIG.seoKeywords || [],
+      rooms: clinicFacility.rooms,
+    };
+  }
   return getStorageItem<FacilityInteriorsConfig>(FACILITY_INTERIORS_CONFIG_KEY, getFileDefault(FACILITY_INTERIORS_CONFIG_KEY, DEFAULT_FACILITY_INTERIORS_CONFIG));
 }
 
 export function saveFacilityInteriorsConfig(config: FacilityInteriorsConfig): FacilityInteriorsConfig {
   setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, config);
+  syncConfigToFile(FACILITY_INTERIORS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('facility_interiors_updated', { detail: config }));
+  }
   return config;
 }
 
@@ -2685,21 +3208,54 @@ export function saveSkincareCollectionConfig(config: SkincareCollectionConfig): 
 
 export function getTrustBrandsConfig(): TrustBrandsConfig {
   initializeAdminStore();
+  const clinicTrustBrands = getClinicData()?.trustBrandsSection;
+  if (clinicTrustBrands && Array.isArray(clinicTrustBrands.brands) && clinicTrustBrands.brands.length > 0) {
+    return {
+      heading: clinicTrustBrands.heading || DEFAULT_TRUST_BRANDS_CONFIG.heading,
+      seoKeywords: Array.isArray(clinicTrustBrands.seoKeywords)
+        ? clinicTrustBrands.seoKeywords
+        : DEFAULT_TRUST_BRANDS_CONFIG.seoKeywords || [],
+      brands: clinicTrustBrands.brands,
+    };
+  }
   return getStorageItem<TrustBrandsConfig>(TRUST_BRANDS_CONFIG_KEY, getFileDefault(TRUST_BRANDS_CONFIG_KEY, DEFAULT_TRUST_BRANDS_CONFIG));
 }
 
 export function saveTrustBrandsConfig(config: TrustBrandsConfig): TrustBrandsConfig {
   setStorageItem(TRUST_BRANDS_CONFIG_KEY, config);
+  syncConfigToFile(TRUST_BRANDS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('trust_brands_updated', { detail: config }));
+  }
   return config;
 }
 
 export function getAccreditationsConfig(): AccreditationsConfig {
   initializeAdminStore();
+  const clinicData = getClinicData();
+  const clinicAccSection = clinicData?.accreditationsSection;
+  const clinicAccList = Array.isArray(clinicData?.accreditations) ? clinicData.accreditations : [];
+  if (clinicAccSection || clinicAccList.length > 0) {
+    return {
+      eyebrow: clinicAccSection?.eyebrow || DEFAULT_ACCREDITATIONS_CONFIG.eyebrow || 'Accreditations & Certifications',
+      heading: clinicAccSection?.heading || DEFAULT_ACCREDITATIONS_CONFIG.heading,
+      description: clinicAccSection?.description || DEFAULT_ACCREDITATIONS_CONFIG.description,
+      seoKeywords: Array.isArray(clinicAccSection?.seoKeywords)
+        ? clinicAccSection.seoKeywords
+        : DEFAULT_ACCREDITATIONS_CONFIG.seoKeywords || [],
+      items: clinicAccList,
+      accreditations: clinicAccList.map((text, idx) => ({ id: `acc-${idx + 1}`, text })),
+    };
+  }
   return getStorageItem<AccreditationsConfig>(ACCREDITATIONS_CONFIG_KEY, getFileDefault(ACCREDITATIONS_CONFIG_KEY, DEFAULT_ACCREDITATIONS_CONFIG));
 }
 
 export function saveAccreditationsConfig(config: AccreditationsConfig): AccreditationsConfig {
   setStorageItem(ACCREDITATIONS_CONFIG_KEY, config);
+  syncConfigToFile(ACCREDITATIONS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('accreditations_updated', { detail: config }));
+  }
   return config;
 }
 
@@ -2914,6 +3470,10 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
   const fileWhyChooseUs = getFileDefault<WhyChooseUsConfig | null>(WHY_CHOOSE_US_CONFIG_KEY, null);
   const fileAwards = getFileDefault<AwardsConfig | null>(AWARDS_CONFIG_KEY, null);
   const fileConsultation = getFileDefault<ClinicConsultationConfig | null>(CONSULTATION_CONFIG_KEY, null);
+  const fileProcess = getFileDefault<ProcessConfig | null>(PROCESS_CONFIG_KEY, null);
+  const fileFacility = getFileDefault<FacilityInteriorsConfig | null>(FACILITY_INTERIORS_CONFIG_KEY, null);
+  const fileTrustBrands = getFileDefault<TrustBrandsConfig | null>(TRUST_BRANDS_CONFIG_KEY, null);
+  const fileAccreditations = getFileDefault<AccreditationsConfig | null>(ACCREDITATIONS_CONFIG_KEY, null);
 
   const defaultWhyChooseUs = CLINIC_DATA.whyChooseUs || {
     heading: DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
@@ -2979,6 +3539,34 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     ],
   };
 
+  const defaultProcessSection: ClinicProcessSection = CLINIC_DATA.processSection || {
+    eyebrow: DEFAULT_PROCESS_CONFIG.eyebrow || 'Our Process',
+    heading: DEFAULT_PROCESS_CONFIG.heading || 'The Journey to Radiance',
+    subheading: DEFAULT_PROCESS_CONFIG.description,
+    seoKeywords: DEFAULT_PROCESS_CONFIG.seoKeywords || [],
+    steps: DEFAULT_PROCESS_CONFIG.steps,
+  };
+
+  const defaultFacilityGallery: ClinicFacilityGallerySection = CLINIC_DATA.facilityGallery || {
+    eyebrow: DEFAULT_FACILITY_INTERIORS_CONFIG.eyebrow || 'Our Facility',
+    heading: DEFAULT_FACILITY_INTERIORS_CONFIG.heading || 'Clinic Gallery',
+    seoKeywords: DEFAULT_FACILITY_INTERIORS_CONFIG.seoKeywords || [],
+    rooms: DEFAULT_FACILITY_INTERIORS_CONFIG.rooms,
+  };
+
+  const defaultTrustBrandsSection: ClinicTrustBrandsSection = CLINIC_DATA.trustBrandsSection || {
+    heading: DEFAULT_TRUST_BRANDS_CONFIG.heading || 'Over 1,000+ Brands & Laboratories Trust Us',
+    seoKeywords: DEFAULT_TRUST_BRANDS_CONFIG.seoKeywords || [],
+    brands: DEFAULT_TRUST_BRANDS_CONFIG.brands,
+  };
+
+  const defaultAccreditationsSection: ClinicAccreditationsSection = CLINIC_DATA.accreditationsSection || {
+    eyebrow: DEFAULT_ACCREDITATIONS_CONFIG.eyebrow || 'Accreditations & Certifications',
+    heading: DEFAULT_ACCREDITATIONS_CONFIG.heading || 'Excellence guaranteed. Trusted globally.',
+    description: DEFAULT_ACCREDITATIONS_CONFIG.description,
+    seoKeywords: DEFAULT_ACCREDITATIONS_CONFIG.seoKeywords || [],
+  };
+
   const resolvedFileWhyChooseUs = fileDefault?.whyChooseUs || (fileWhyChooseUs ? {
     heading: fileWhyChooseUs.heading || defaultWhyChooseUs.heading,
     subheading: fileWhyChooseUs.subheading || fileWhyChooseUs.description || defaultWhyChooseUs.subheading,
@@ -2996,6 +3584,48 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
   } : null);
 
   const resolvedFileConsultation = fileDefault?.consultationConfig || fileConsultation;
+
+  const resolvedFileProcess: ClinicProcessSection | null = fileDefault?.processSection || (fileProcess ? {
+    eyebrow: fileProcess.eyebrow || defaultProcessSection.eyebrow,
+    heading: fileProcess.heading || defaultProcessSection.heading,
+    subheading: fileProcess.description || defaultProcessSection.subheading,
+    seoKeywords: Array.isArray(fileProcess.seoKeywords) && fileProcess.seoKeywords.length > 0
+      ? fileProcess.seoKeywords
+      : defaultProcessSection.seoKeywords,
+    steps: Array.isArray(fileProcess.steps) && fileProcess.steps.length > 0
+      ? fileProcess.steps
+      : defaultProcessSection.steps,
+  } : null);
+
+  const resolvedFileFacility: ClinicFacilityGallerySection | null = fileDefault?.facilityGallery || (fileFacility ? {
+    eyebrow: fileFacility.eyebrow || defaultFacilityGallery.eyebrow,
+    heading: fileFacility.heading || defaultFacilityGallery.heading,
+    seoKeywords: Array.isArray(fileFacility.seoKeywords) && fileFacility.seoKeywords.length > 0
+      ? fileFacility.seoKeywords
+      : defaultFacilityGallery.seoKeywords,
+    rooms: Array.isArray(fileFacility.rooms) && fileFacility.rooms.length > 0
+      ? fileFacility.rooms
+      : defaultFacilityGallery.rooms,
+  } : null);
+
+  const resolvedFileTrustBrands: ClinicTrustBrandsSection | null = fileDefault?.trustBrandsSection || (fileTrustBrands ? {
+    heading: fileTrustBrands.heading || defaultTrustBrandsSection.heading,
+    seoKeywords: Array.isArray(fileTrustBrands.seoKeywords) && fileTrustBrands.seoKeywords.length > 0
+      ? fileTrustBrands.seoKeywords
+      : defaultTrustBrandsSection.seoKeywords,
+    brands: Array.isArray(fileTrustBrands.brands) && fileTrustBrands.brands.length > 0
+      ? fileTrustBrands.brands
+      : defaultTrustBrandsSection.brands,
+  } : null);
+
+  const resolvedFileAccreditations: ClinicAccreditationsSection | null = fileDefault?.accreditationsSection || (fileAccreditations ? {
+    eyebrow: fileAccreditations.eyebrow || defaultAccreditationsSection.eyebrow,
+    heading: fileAccreditations.heading || defaultAccreditationsSection.heading,
+    description: fileAccreditations.description || defaultAccreditationsSection.description,
+    seoKeywords: Array.isArray(fileAccreditations.seoKeywords) && fileAccreditations.seoKeywords.length > 0
+      ? fileAccreditations.seoKeywords
+      : defaultAccreditationsSection.seoKeywords,
+  } : null);
 
   const base: ClinicData = {
     ...CLINIC_DATA,
@@ -3058,6 +3688,51 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(resolvedFileConsultation?.stayInTouchChannels) && resolvedFileConsultation.stayInTouchChannels.length > 0
           ? resolvedFileConsultation.stayInTouchChannels
           : defaultConsultationConfig.stayInTouchChannels,
+    },
+    processSection: {
+      eyebrow: resolvedFileProcess?.eyebrow || defaultProcessSection.eyebrow,
+      heading: resolvedFileProcess?.heading || defaultProcessSection.heading,
+      subheading: resolvedFileProcess?.subheading || defaultProcessSection.subheading,
+      seoKeywords:
+        Array.isArray(resolvedFileProcess?.seoKeywords) && resolvedFileProcess.seoKeywords.length > 0
+          ? resolvedFileProcess.seoKeywords
+          : defaultProcessSection.seoKeywords,
+      steps:
+        Array.isArray(resolvedFileProcess?.steps) && resolvedFileProcess.steps.length > 0
+          ? resolvedFileProcess.steps
+          : defaultProcessSection.steps,
+    },
+    facilityGallery: {
+      eyebrow: resolvedFileFacility?.eyebrow || defaultFacilityGallery.eyebrow,
+      heading: resolvedFileFacility?.heading || defaultFacilityGallery.heading,
+      seoKeywords:
+        Array.isArray(resolvedFileFacility?.seoKeywords) && resolvedFileFacility.seoKeywords.length > 0
+          ? resolvedFileFacility.seoKeywords
+          : defaultFacilityGallery.seoKeywords,
+      rooms:
+        Array.isArray(resolvedFileFacility?.rooms) && resolvedFileFacility.rooms.length > 0
+          ? resolvedFileFacility.rooms
+          : defaultFacilityGallery.rooms,
+    },
+    trustBrandsSection: {
+      heading: resolvedFileTrustBrands?.heading || defaultTrustBrandsSection.heading,
+      seoKeywords:
+        Array.isArray(resolvedFileTrustBrands?.seoKeywords) && resolvedFileTrustBrands.seoKeywords.length > 0
+          ? resolvedFileTrustBrands.seoKeywords
+          : defaultTrustBrandsSection.seoKeywords,
+      brands:
+        Array.isArray(resolvedFileTrustBrands?.brands) && resolvedFileTrustBrands.brands.length > 0
+          ? resolvedFileTrustBrands.brands
+          : defaultTrustBrandsSection.brands,
+    },
+    accreditationsSection: {
+      eyebrow: resolvedFileAccreditations?.eyebrow || defaultAccreditationsSection.eyebrow,
+      heading: resolvedFileAccreditations?.heading || defaultAccreditationsSection.heading,
+      description: resolvedFileAccreditations?.description || defaultAccreditationsSection.description,
+      seoKeywords:
+        Array.isArray(resolvedFileAccreditations?.seoKeywords) && resolvedFileAccreditations.seoKeywords.length > 0
+          ? resolvedFileAccreditations.seoKeywords
+          : defaultAccreditationsSection.seoKeywords,
     },
   };
 
@@ -3138,6 +3813,78 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
           ? candidate.consultationConfig.stayInTouchChannels
           : (base.consultationConfig?.stayInTouchChannels || defaultConsultationConfig.stayInTouchChannels),
     },
+    processSection: {
+      eyebrow:
+        candidate.processSection?.eyebrow ||
+        base.processSection?.eyebrow ||
+        defaultProcessSection.eyebrow,
+      heading:
+        candidate.processSection?.heading ||
+        base.processSection?.heading ||
+        defaultProcessSection.heading,
+      subheading:
+        candidate.processSection?.subheading ||
+        base.processSection?.subheading ||
+        defaultProcessSection.subheading,
+      seoKeywords:
+        Array.isArray(candidate.processSection?.seoKeywords)
+          ? candidate.processSection.seoKeywords
+          : (base.processSection?.seoKeywords || defaultProcessSection.seoKeywords),
+      steps:
+        Array.isArray(candidate.processSection?.steps) && candidate.processSection.steps.length > 0
+          ? candidate.processSection.steps
+          : (base.processSection?.steps || defaultProcessSection.steps),
+    },
+    facilityGallery: {
+      eyebrow:
+        candidate.facilityGallery?.eyebrow ||
+        base.facilityGallery?.eyebrow ||
+        defaultFacilityGallery.eyebrow,
+      heading:
+        candidate.facilityGallery?.heading ||
+        base.facilityGallery?.heading ||
+        defaultFacilityGallery.heading,
+      seoKeywords:
+        Array.isArray(candidate.facilityGallery?.seoKeywords)
+          ? candidate.facilityGallery.seoKeywords
+          : (base.facilityGallery?.seoKeywords || defaultFacilityGallery.seoKeywords),
+      rooms:
+        Array.isArray(candidate.facilityGallery?.rooms) && candidate.facilityGallery.rooms.length > 0
+          ? candidate.facilityGallery.rooms
+          : (base.facilityGallery?.rooms || defaultFacilityGallery.rooms),
+    },
+    trustBrandsSection: {
+      heading:
+        candidate.trustBrandsSection?.heading ||
+        base.trustBrandsSection?.heading ||
+        defaultTrustBrandsSection.heading,
+      seoKeywords:
+        Array.isArray(candidate.trustBrandsSection?.seoKeywords)
+          ? candidate.trustBrandsSection.seoKeywords
+          : (base.trustBrandsSection?.seoKeywords || defaultTrustBrandsSection.seoKeywords),
+      brands:
+        Array.isArray(candidate.trustBrandsSection?.brands) && candidate.trustBrandsSection.brands.length > 0
+          ? candidate.trustBrandsSection.brands
+          : (base.trustBrandsSection?.brands || defaultTrustBrandsSection.brands),
+    },
+    accreditationsSection: {
+      eyebrow:
+        candidate.accreditationsSection?.eyebrow ||
+        base.accreditationsSection?.eyebrow ||
+        defaultAccreditationsSection.eyebrow,
+      heading:
+        candidate.accreditationsSection?.heading ||
+        base.accreditationsSection?.heading ||
+        defaultAccreditationsSection.heading,
+      description:
+        candidate.accreditationsSection?.description ||
+        base.accreditationsSection?.description ||
+        defaultAccreditationsSection.description,
+      seoKeywords:
+        Array.isArray(candidate.accreditationsSection?.seoKeywords)
+          ? candidate.accreditationsSection.seoKeywords
+          : (base.accreditationsSection?.seoKeywords || defaultAccreditationsSection.seoKeywords),
+    },
   };
 }
 
@@ -3160,6 +3907,17 @@ export function getClinicDataConfig(): ClinicData {
 }
 
 export function updateClinicData(data: ClinicData): ClinicData {
+  // Keep interiorPhotos synced if facilityGallery.rooms has images
+  if (data.facilityGallery && Array.isArray(data.facilityGallery.rooms) && data.facilityGallery.rooms.length > 0) {
+    const roomImages = data.facilityGallery.rooms.map((r) => r.image).filter(Boolean);
+    if (roomImages.length > 0) {
+      data = {
+        ...data,
+        interiorPhotos: roomImages,
+      };
+    }
+  }
+
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(CLINIC_INFO_DATA_KEY, JSON.stringify(data));
 
@@ -3231,6 +3989,80 @@ export function updateClinicData(data: ClinicData): ClinicData {
     if (data.consultationConfig && typeof data.consultationConfig === 'object') {
       setStorageItem(CONSULTATION_CONFIG_KEY, data.consultationConfig);
       window.dispatchEvent(new CustomEvent('consultation_config_updated', { detail: data.consultationConfig }));
+    }
+
+    // Automatically synchronize homepage_process_config and dispatch process_config_updated
+    if (data.processSection && typeof data.processSection === 'object') {
+      const updatedProcess: ProcessConfig = {
+        eyebrow: data.processSection.eyebrow || DEFAULT_PROCESS_CONFIG.eyebrow || 'Our Process',
+        heading: data.processSection.heading || DEFAULT_PROCESS_CONFIG.heading,
+        description: data.processSection.subheading || DEFAULT_PROCESS_CONFIG.description,
+        seoKeywords: Array.isArray(data.processSection.seoKeywords)
+          ? data.processSection.seoKeywords
+          : DEFAULT_PROCESS_CONFIG.seoKeywords || [],
+        steps: Array.isArray(data.processSection.steps)
+          ? data.processSection.steps
+          : DEFAULT_PROCESS_CONFIG.steps,
+      };
+      setStorageItem(PROCESS_CONFIG_KEY, updatedProcess);
+      window.dispatchEvent(new CustomEvent('process_config_updated', { detail: updatedProcess }));
+    }
+
+    // Automatically synchronize homepage_facility_interiors_config and dispatch facility_interiors_updated
+    if (data.facilityGallery && typeof data.facilityGallery === 'object') {
+      const updatedFacility: FacilityInteriorsConfig = {
+        eyebrow: data.facilityGallery.eyebrow || DEFAULT_FACILITY_INTERIORS_CONFIG.eyebrow || 'Our Facility',
+        heading: data.facilityGallery.heading || DEFAULT_FACILITY_INTERIORS_CONFIG.heading,
+        description: DEFAULT_FACILITY_INTERIORS_CONFIG.description,
+        seoKeywords: Array.isArray(data.facilityGallery.seoKeywords)
+          ? data.facilityGallery.seoKeywords
+          : DEFAULT_FACILITY_INTERIORS_CONFIG.seoKeywords || [],
+        rooms: Array.isArray(data.facilityGallery.rooms)
+          ? data.facilityGallery.rooms
+          : DEFAULT_FACILITY_INTERIORS_CONFIG.rooms,
+      };
+      setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, updatedFacility);
+      window.dispatchEvent(new CustomEvent('facility_interiors_updated', { detail: updatedFacility }));
+    }
+
+    // Automatically synchronize homepage_trust_brands_config and dispatch trust_brands_updated
+    if (data.trustBrandsSection && typeof data.trustBrandsSection === 'object') {
+      const updatedTrustBrands: TrustBrandsConfig = {
+        heading: data.trustBrandsSection.heading || DEFAULT_TRUST_BRANDS_CONFIG.heading,
+        seoKeywords: Array.isArray(data.trustBrandsSection.seoKeywords)
+          ? data.trustBrandsSection.seoKeywords
+          : DEFAULT_TRUST_BRANDS_CONFIG.seoKeywords || [],
+        brands: Array.isArray(data.trustBrandsSection.brands)
+          ? data.trustBrandsSection.brands
+          : DEFAULT_TRUST_BRANDS_CONFIG.brands,
+      };
+      setStorageItem(TRUST_BRANDS_CONFIG_KEY, updatedTrustBrands);
+      window.dispatchEvent(new CustomEvent('trust_brands_updated', { detail: updatedTrustBrands }));
+    }
+
+    // Automatically synchronize homepage_accreditations_config and dispatch accreditations_updated
+    if (data.accreditationsSection || Array.isArray(data.accreditations)) {
+      const accList = Array.isArray(data.accreditations) ? data.accreditations : CLINIC_DATA.accreditations || [];
+      const updatedAccreditations: AccreditationsConfig = {
+        eyebrow:
+          data.accreditationsSection?.eyebrow ||
+          DEFAULT_ACCREDITATIONS_CONFIG.eyebrow ||
+          'Accreditations & Certifications',
+        heading:
+          data.accreditationsSection?.heading ||
+          DEFAULT_ACCREDITATIONS_CONFIG.heading ||
+          'Excellence guaranteed. Trusted globally.',
+        description:
+          data.accreditationsSection?.description ||
+          DEFAULT_ACCREDITATIONS_CONFIG.description,
+        seoKeywords: Array.isArray(data.accreditationsSection?.seoKeywords)
+          ? data.accreditationsSection.seoKeywords
+          : DEFAULT_ACCREDITATIONS_CONFIG.seoKeywords || [],
+        items: accList,
+        accreditations: accList.map((text, idx) => ({ id: `acc-${idx + 1}`, text })),
+      };
+      setStorageItem(ACCREDITATIONS_CONFIG_KEY, updatedAccreditations);
+      window.dispatchEvent(new CustomEvent('accreditations_updated', { detail: updatedAccreditations }));
     }
 
     window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
@@ -3508,6 +4340,244 @@ export async function getTreatmentPackageDetailsById(
 
   return getTreatmentPricingItemById(id);
 }
+
+// =========================================================================
+// Treatment Taxonomy & Manageable Hierarchy Store (Two-Tier Groups)
+// =========================================================================
+
+let _isSyncingTaxonomyAndServices = false;
+
+const CORE_BRANCH_ID_TO_NAME: Array<{ id: string; name: MasterBranchCategory }> = [
+  { id: 'face-injectables', name: 'Face & Injectables' },
+  { id: 'body-sculpting', name: 'Body Sculpting' },
+  { id: 'advanced-facials', name: 'Advanced Facials' },
+  { id: 'hair-beauty', name: 'Hair & Beauty' },
+  { id: 'iv-drips-wellness', name: 'IV Drips & Wellness' },
+];
+
+export function buildTaxonomyFromMasterServices(
+  services: SpecialistArea[],
+  existingTaxonomy?: TreatmentTaxonomyGroup[]
+): TreatmentTaxonomyGroup[] {
+  const coreIds = new Set(CORE_BRANCH_ID_TO_NAME.map((b) => b.id));
+  const existingById = new Map((existingTaxonomy || []).map((b) => [b.id, b]));
+
+  // Start with the 5 core branches (preserving any custom renamed display title if present)
+  const groups: TreatmentTaxonomyGroup[] = CORE_BRANCH_ID_TO_NAME.map((core) => {
+    const existing = existingById.get(core.id);
+    return {
+      id: core.id,
+      name: existing?.name || core.name,
+      subGroups: [],
+    };
+  });
+
+  // Append any custom parent branches created by the user in TreatmentPricingEditor
+  if (Array.isArray(existingTaxonomy)) {
+    for (const customBranch of existingTaxonomy) {
+      if (customBranch && customBranch.id && !coreIds.has(customBranch.id)) {
+        groups.push({
+          id: customBranch.id,
+          name: customBranch.name,
+          subGroups: (customBranch.subGroups || []).filter(
+            (s) => s && s.id && !LEGACY_BROCHURE_SUBGROUP_IDS.has(s.id)
+          ),
+        });
+      }
+    }
+  }
+
+  // Populate subGroups directly from Services & Branches (getMasterServices)
+  for (const service of services) {
+    const rawBranch = service.pricingCategory || service.category || '';
+    // Match custom branch first if applicable, otherwise normalize to core branch
+    let targetGroup = groups.find(
+      (g) => g.name.toLowerCase() === rawBranch.toLowerCase() || g.id === rawBranch.toLowerCase()
+    );
+    if (!targetGroup) {
+      const normalizedBranchName = normalizeMasterBranch(rawBranch, service.title);
+      const coreMatch = CORE_BRANCH_ID_TO_NAME.find((c) => c.name === normalizedBranchName);
+      targetGroup = groups.find((g) => g.id === coreMatch?.id || g.name === normalizedBranchName) || groups[0];
+    }
+
+    if (targetGroup && !targetGroup.subGroups.some((s) => s.id === service.id)) {
+      targetGroup.subGroups.push({
+        id: service.id,
+        name: service.title,
+      });
+    }
+  }
+
+  return groups;
+}
+
+export function getTreatmentTaxonomy(): TreatmentTaxonomyGroup[] {
+  initializeAdminStore();
+  const masterServices = getMasterServices();
+  const raw = getStorageItem<TreatmentTaxonomyGroup[] | null>(
+    TREATMENT_TAXONOMY_KEY,
+    getFileDefault<TreatmentTaxonomyGroup[] | null>(TREATMENT_TAXONOMY_KEY, null)
+  );
+
+  // Check if stored taxonomy contains any of the old hardcoded brochure subGroup IDs
+  const hasLegacySubGroups =
+    Array.isArray(raw) &&
+    raw.some((g) => (g.subGroups || []).some((s) => LEGACY_BROCHURE_SUBGROUP_IDS.has(s.id)));
+
+  const synced = buildTaxonomyFromMasterServices(
+    masterServices,
+    hasLegacySubGroups ? undefined : raw || undefined
+  );
+
+  // If localStorage had stale legacy brochure sub-groups, overwrite it immediately with the synced Services & Branches taxonomy
+  if (hasLegacySubGroups && typeof window !== 'undefined') {
+    setStorageItem(TREATMENT_TAXONOMY_KEY, synced);
+  }
+
+  return synced.length > 0 ? synced : DEFAULT_TREATMENT_TAXONOMY;
+}
+
+export function updateTreatmentTaxonomy(
+  taxonomy: TreatmentTaxonomyGroup[]
+): TreatmentTaxonomyGroup[] {
+  if (typeof window !== 'undefined') {
+    setStorageItem(TREATMENT_TAXONOMY_KEY, taxonomy);
+    window.dispatchEvent(
+      new CustomEvent('treatment_taxonomy_updated', { detail: taxonomy })
+    );
+  }
+
+  // Bidirectionally sync sub-groups back into Services & Branches (getMasterServices)
+  if (!_isSyncingTaxonomyAndServices) {
+    try {
+      _isSyncingTaxonomyAndServices = true;
+      const currentServices = getMasterServices();
+      const existingById = new Map(currentServices.map((s) => [s.id, s]));
+      const nextServices: SpecialistArea[] = [];
+      let index = 0;
+
+      for (const branch of taxonomy) {
+        const branchCategory = normalizeMasterBranch(branch.name);
+        for (const sub of branch.subGroups || []) {
+          if (!sub || !sub.id || LEGACY_BROCHURE_SUBGROUP_IDS.has(sub.id)) continue;
+          index += 1;
+          const existing = existingById.get(sub.id);
+          if (existing) {
+            nextServices.push(
+              normalizeSpecialistServiceItem(
+                {
+                  ...existing,
+                  title: sub.name,
+                  pricingCategory: branchCategory,
+                  category: branch.name,
+                },
+                index - 1
+              )
+            );
+          } else {
+            nextServices.push(
+              normalizeSpecialistServiceItem(
+                {
+                  id: sub.id,
+                  number: String(index).padStart(2, '0'),
+                  title: sub.name,
+                  description: `Bespoke ${sub.name} treatment tailored for natural, clinically proven results.`,
+                  image: '/assets/images/treatments/specialist-profhilo.jpg',
+                  pricingCategory: branchCategory,
+                  category: branch.name,
+                  transformationCategory: inferTransformationCategoryFromBranch(branchCategory, sub.name),
+                  price: 'From £150',
+                  duration: '45–60 Mins',
+                  icon: 'Sparkles',
+                },
+                index - 1
+              )
+            );
+          }
+        }
+      }
+
+      if (nextServices.length > 0) {
+        saveMasterServices(nextServices);
+      }
+    } catch (err) {
+      console.warn('Could not sync treatment taxonomy changes to master services:', err);
+    } finally {
+      _isSyncingTaxonomyAndServices = false;
+    }
+  }
+
+  return taxonomy;
+}
+
+export async function saveTreatmentTaxonomy(
+  taxonomy: TreatmentTaxonomyGroup[]
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  // Update local storage, sync Services & Branches, and dispatch global event immediately
+  updateTreatmentTaxonomy(taxonomy);
+
+  try {
+    const res = await fetch('/api/admin/treatment-taxonomy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taxonomy })
+    });
+    const result = await res.json();
+    return result;
+  } catch (err) {
+    console.error('Failed to persist treatment taxonomy to disk:', err);
+    return { success: false, error: String(err) };
+  }
+}
+
+export function resetTreatmentTaxonomy(): TreatmentTaxonomyGroup[] {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(TREATMENT_TAXONOMY_KEY);
+  }
+  const resetServices = resetMasterServicesToDefaults();
+  const defaultTax = buildTaxonomyFromMasterServices(resetServices);
+  if (typeof window !== 'undefined') {
+    setStorageItem(TREATMENT_TAXONOMY_KEY, defaultTax);
+    window.dispatchEvent(
+      new CustomEvent('treatment_taxonomy_updated', { detail: defaultTax })
+    );
+  }
+  fetch('/api/admin/treatment-taxonomy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ taxonomy: defaultTax })
+  }).catch((err) => {
+    console.warn('Could not sync reset treatment taxonomy to server:', err);
+  });
+  return defaultTax;
+}
+
+export async function fetchRemoteTreatmentTaxonomy(): Promise<TreatmentTaxonomyGroup[] | null> {
+  try {
+    const res = await fetch('/api/admin/treatment-taxonomy');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.taxonomy)) {
+        const hasLegacy = json.taxonomy.some((g: any) =>
+          (g.subGroups || []).some((s: any) => LEGACY_BROCHURE_SUBGROUP_IDS.has(s.id))
+        );
+        if (!hasLegacy) {
+          setStorageItem(TREATMENT_TAXONOMY_KEY, json.taxonomy);
+          const merged = getTreatmentTaxonomy();
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('treatment_taxonomy_updated', { detail: merged }));
+          }
+          return merged;
+        }
+      }
+    }
+    return getTreatmentTaxonomy();
+  } catch (err) {
+    console.warn('Could not fetch remote treatment taxonomy:', err);
+    return null;
+  }
+}
+
 
 
 

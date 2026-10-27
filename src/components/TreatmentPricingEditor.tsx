@@ -6,13 +6,22 @@ import {
   saveTreatmentPricingData, 
   resetTreatmentPricingDataToDefault,
   uploadAssetFile,
-  fetchRemoteTreatmentPricingData
+  fetchRemoteTreatmentPricingData,
+  getTreatmentTaxonomy,
+  saveTreatmentTaxonomy,
+  resetTreatmentTaxonomy,
+  fetchRemoteTreatmentTaxonomy
 } from '../lib/adminStore';
 import { 
   TreatmentPricingItem, 
   PricingPackage, 
   TreatmentCategory, 
-  PRICING_CATEGORIES 
+  PRICING_CATEGORIES,
+  TreatmentTaxonomyGroup,
+  TreatmentSubGroup,
+  DEFAULT_TREATMENT_TAXONOMY,
+  LEGACY_BROCHURE_SUBGROUP_IDS,
+  inferTreatmentSubGroup
 } from '../data/treatmentPricing';
 import { getTreatmentImagePath, setTreatmentImageVersion, convertImageFileToWebP } from '../utils/treatmentImageHelper';
 import { 
@@ -38,7 +47,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
-  SlidersHorizontal
+  SlidersHorizontal,
+  FolderPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -55,10 +65,35 @@ const PRESET_CLINIC_PHOTOS = [
 ];
 
 export default function TreatmentPricingEditor() {
-  // Master pricing data from persistent store
-  const [treatments, setTreatments] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
+  // Helper to ensure every treatment's subGroupId and subCategory match Services & Branches
+  const normalizeTreatmentsWithTaxonomy = (list: TreatmentPricingItem[]): TreatmentPricingItem[] => {
+    return list.map((t) => {
+      const hasLegacySub = Boolean(t.subGroupId && LEGACY_BROCHURE_SUBGROUP_IDS.has(t.subGroupId));
+      if (!t.subCategory || !t.subGroupId || hasLegacySub) {
+        const inferred = inferTreatmentSubGroup(t);
+        return {
+          ...t,
+          category: (inferred.parentCategory || t.category) as TreatmentCategory,
+          subCategory: hasLegacySub ? inferred.subCategory : (t.subCategory || inferred.subCategory),
+          subGroupId: hasLegacySub ? inferred.subGroupId : (t.subGroupId || inferred.subGroupId),
+        };
+      }
+      return t;
+    });
+  };
+
+  // Master pricing data from persistent store (with Services & Branches sub-groups populated)
+  const [treatments, setTreatments] = useState<TreatmentPricingItem[]>(() =>
+    normalizeTreatmentsWithTaxonomy(getTreatmentPricingData())
+  );
+
+  // Master taxonomy branches & sub-groups (synced 100% with Services & Branches)
+  const [taxonomy, setTaxonomy] = useState<TreatmentTaxonomyGroup[]>(() => getTreatmentTaxonomy());
+
+  // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
+  const [selectedParentId, setSelectedParentId] = useState<string>('all');
+  const [selectedSubGroupId, setSelectedSubGroupId] = useState<string>('all');
   const [sortOption, setSortOption] = useState<'default' | 'price-asc' | 'price-desc' | 'name-asc'>('default');
   
   // Save & Sync feedback state
@@ -87,17 +122,71 @@ export default function TreatmentPricingEditor() {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [benefitInputMap, setBenefitInputMap] = useState<Record<number, string>>({});
 
-  // Sync with remote server or storage updates
+  // Branch & Sub-Group Management Modals State
+  const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+
+  const [branchToRename, setBranchToRename] = useState<TreatmentTaxonomyGroup | null>(null);
+  const [renameBranchName, setRenameBranchName] = useState('');
+
+  const [branchToDelete, setBranchToDelete] = useState<TreatmentTaxonomyGroup | null>(null);
+  const [reassignBranchTargetId, setReassignBranchTargetId] = useState<string>('');
+
+  const [isAddSubGroupModalOpen, setIsAddSubGroupModalOpen] = useState(false);
+  const [parentForNewSubGroup, setParentForNewSubGroup] = useState<TreatmentTaxonomyGroup | null>(null);
+  const [newSubGroupName, setNewSubGroupName] = useState('');
+
+  const [subGroupToRename, setSubGroupToRename] = useState<{ parentBranch: TreatmentTaxonomyGroup; subGroup: TreatmentSubGroup } | null>(null);
+  const [renameSubGroupName, setRenameSubGroupName] = useState('');
+
+  const [subGroupToDelete, setSubGroupToDelete] = useState<{ parentBranch: TreatmentTaxonomyGroup; subGroup: TreatmentSubGroup } | null>(null);
+  const [reassignSubGroupTargetId, setReassignSubGroupTargetId] = useState<string>('');
+
+  // Inline Quick-Add Sub-Group inside Edit Treatment modal
+  const [isModalQuickAddOpen, setIsModalQuickAddOpen] = useState(false);
+  const [modalQuickAddName, setModalQuickAddName] = useState('');
+
+  // Sync with remote server or storage updates for treatments, taxonomy & Services & Branches
   useEffect(() => {
-    const handleUpdate = (e: any) => {
+    const handleTreatmentUpdate = (e: any) => {
       if (e.detail && Array.isArray(e.detail)) {
-        setTreatments(e.detail);
+        setTreatments(normalizeTreatmentsWithTaxonomy(e.detail));
       } else {
-        setTreatments(getTreatmentPricingData());
+        setTreatments(normalizeTreatmentsWithTaxonomy(getTreatmentPricingData()));
       }
     };
-    window.addEventListener('treatment_pricing_updated', handleUpdate);
-    return () => window.removeEventListener('treatment_pricing_updated', handleUpdate);
+    const handleTaxonomyUpdate = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setTaxonomy(e.detail);
+      } else {
+        setTaxonomy(getTreatmentTaxonomy());
+      }
+    };
+    const handleMasterServicesUpdate = () => {
+      setTaxonomy(getTreatmentTaxonomy());
+    };
+
+    window.addEventListener('treatment_pricing_updated', handleTreatmentUpdate);
+    window.addEventListener('treatment_taxonomy_updated', handleTaxonomyUpdate);
+    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+
+    // Initial background fetch from remote server
+    fetchRemoteTreatmentPricingData().then((res) => {
+      if (res && Array.isArray(res)) {
+        setTreatments(normalizeTreatmentsWithTaxonomy(res));
+      }
+    });
+    fetchRemoteTreatmentTaxonomy().then((res) => {
+      if (res && Array.isArray(res)) {
+        setTaxonomy(res);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('treatment_pricing_updated', handleTreatmentUpdate);
+      window.removeEventListener('treatment_taxonomy_updated', handleTaxonomyUpdate);
+      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+    };
   }, []);
 
   // Show floating toast
@@ -129,91 +218,67 @@ export default function TreatmentPricingEditor() {
     };
   }, []);
 
-  // Quick filter options with active count chips
-  const categoryFilters = useMemo(() => {
-    const filters = [
-      { id: 'all', label: 'All Procedures', match: () => true },
-      { 
-        id: 'anti-wrinkle', 
-        label: 'Anti-Wrinkle', 
-        match: (t: TreatmentPricingItem) => 
-          t.badge?.toLowerCase().includes('anti-wrinkle') || 
-          t.id.startsWith('botox-') || 
-          t.title.toLowerCase().includes('anti-wrinkle') || 
-          t.title.toLowerCase().includes('botox')
-      },
-      { 
-        id: 'fillers', 
-        label: 'Fillers', 
-        match: (t: TreatmentPricingItem) => 
-          t.badge?.toLowerCase().includes('filler') || 
-          t.id.startsWith('filler-') || 
-          t.title.toLowerCase().includes('filler') || 
-          t.title.toLowerCase().includes('lip')
-      },
-      { 
-        id: 'skin-boosters', 
-        label: 'Skin Boosters', 
-        match: (t: TreatmentPricingItem) => 
-          t.badge?.toLowerCase().includes('booster') || 
-          t.title.toLowerCase().includes('profhilo') || 
-          t.title.toLowerCase().includes('salmon') || 
-          t.title.toLowerCase().includes('polynucleotide') || 
-          t.title.toLowerCase().includes('booster')
-      },
-      { 
-        id: 'body-sculpting', 
-        label: 'Body', 
-        match: (t: TreatmentPricingItem) => 
-          t.category === 'Body Sculpting' || 
-          t.id.startsWith('aqualyx-') || 
-          t.id.startsWith('deso-') || 
-          t.title.toLowerCase().includes('cryo') || 
-          t.title.toLowerCase().includes('body')
-      },
-      { 
-        id: 'advanced-facials', 
-        label: 'Advanced Facials', 
-        match: (t: TreatmentPricingItem) => 
-          t.category === 'Advanced Facials' || 
-          t.title.toLowerCase().includes('facial') || 
-          t.title.toLowerCase().includes('peel') || 
-          t.title.toLowerCase().includes('microneedling')
-      },
-      { 
-        id: 'hair-beauty', 
-        label: 'Hair & Beauty', 
-        match: (t: TreatmentPricingItem) => 
-          t.category === 'Hair & Beauty' || 
-          t.title.toLowerCase().includes('lash') || 
-          t.title.toLowerCase().includes('brow') || 
-          t.title.toLowerCase().includes('spmu')
-      },
-      { 
-        id: 'iv-wellness', 
-        label: 'IV & Wellness', 
-        match: (t: TreatmentPricingItem) => 
-          t.category === 'IV Drip Lounge & Wellness' || 
-          t.id.includes('iv-') || 
-          t.title.toLowerCase().includes('drip') || 
-          t.title.toLowerCase().includes('vitamin')
-      },
-    ];
+  // Normalization helper for category matching
+  const normalizeCat = (cat?: string) => {
+    if (!cat) return '';
+    const c = cat.toLowerCase().trim();
+    if (c.includes('face') || c.includes('inject')) return 'face-injectables';
+    if (c.includes('body')) return 'body-sculpting';
+    if (c.includes('facial') || c.includes('advanced')) return 'advanced-facials';
+    if (c.includes('hair') || c.includes('beauty')) return 'hair-beauty';
+    if (c.includes('iv') || c.includes('wellness') || c.includes('drip')) return 'iv-drips-wellness';
+    return c;
+  };
 
-    return filters.map((f) => ({
-      ...f,
-      count: treatments.filter(f.match).length,
-    }));
-  }, [treatments]);
+  // Check if a treatment belongs to a parent branch
+  const matchesParentBranch = (t: TreatmentPricingItem, branch: TreatmentTaxonomyGroup) => {
+    if (!branch) return false;
+    if (t.category === branch.name) return true;
+    if (normalizeCat(t.category) === branch.id) return true;
+    if (normalizeCat(t.category) === normalizeCat(branch.name)) return true;
+    return false;
+  };
+
+  // Check if a treatment belongs to a subgroup within a parent branch
+  const matchesSubGroup = (t: TreatmentPricingItem, parentBranch: TreatmentTaxonomyGroup, subGroup: TreatmentSubGroup) => {
+    if (!matchesParentBranch(t, parentBranch)) return false;
+    const hasLegacySub = Boolean(t.subGroupId && LEGACY_BROCHURE_SUBGROUP_IDS.has(t.subGroupId));
+    if (!hasLegacySub) {
+      if (t.subGroupId === subGroup.id) return true;
+      if (t.subCategory && t.subCategory.toLowerCase() === subGroup.name.toLowerCase()) return true;
+    }
+
+    const inferred = inferTreatmentSubGroup(t);
+    if (inferred.subGroupId === subGroup.id) return true;
+    if (inferred.subCategory.toLowerCase() === subGroup.name.toLowerCase()) return true;
+
+    return false;
+  };
+
+  // Active Parent Branch object (if not 'all')
+  const selectedParentBranch = useMemo(() => {
+    if (selectedParentId === 'all') return null;
+    return taxonomy.find((b) => b.id === selectedParentId || b.name === selectedParentId) || null;
+  }, [taxonomy, selectedParentId]);
 
   // Filtered & Sorted treatments
   const filteredTreatments = useMemo(() => {
     let result = [...treatments];
 
-    // Category filter
-    const activeFilterObj = categoryFilters.find((f) => f.id === activeCategoryFilter);
-    if (activeFilterObj && activeCategoryFilter !== 'all') {
-      result = result.filter(activeFilterObj.match);
+    // Parent branch filter
+    if (selectedParentId !== 'all') {
+      const activeBranch = taxonomy.find((b) => b.id === selectedParentId || b.name === selectedParentId);
+      if (activeBranch) {
+        result = result.filter((t) => matchesParentBranch(t, activeBranch));
+
+        // Subgroup filter (within active branch)
+        if (selectedSubGroupId !== 'all') {
+          const activeSub = activeBranch.subGroups.find((s) => s.id === selectedSubGroupId || s.name === selectedSubGroupId);
+          if (activeSub) {
+            result = result.filter((t) => matchesSubGroup(t, activeBranch, activeSub));
+          }
+        }
+      }
     }
 
     // Search query
@@ -223,8 +288,9 @@ export default function TreatmentPricingEditor() {
         (t) =>
           t.title.toLowerCase().includes(q) ||
           t.category.toLowerCase().includes(q) ||
-          t.badge?.toLowerCase().includes(q) ||
-          t.description?.toLowerCase().includes(q) ||
+          (t.subCategory && t.subCategory.toLowerCase().includes(q)) ||
+          (t.badge && t.badge.toLowerCase().includes(q)) ||
+          (t.description && t.description.toLowerCase().includes(q)) ||
           t.packages.some((p) => p.name.toLowerCase().includes(q))
       );
     }
@@ -239,7 +305,20 @@ export default function TreatmentPricingEditor() {
     }
 
     return result;
-  }, [treatments, activeCategoryFilter, searchQuery, sortOption, categoryFilters]);
+  }, [treatments, taxonomy, selectedParentId, selectedSubGroupId, searchQuery, sortOption]);
+
+  // Persist Taxonomy changes
+  const persistTaxonomy = async (updatedTaxonomy: TreatmentTaxonomyGroup[], successMsg?: string) => {
+    setTaxonomy(updatedTaxonomy);
+    try {
+      const res = await saveTreatmentTaxonomy(updatedTaxonomy);
+      if (res.success && successMsg) {
+        showToast(successMsg, 'success');
+      }
+    } catch (err) {
+      if (successMsg) showToast(successMsg, 'info');
+    }
+  };
 
   // Save changes to store and disk
   const persistTreatments = async (updatedData: TreatmentPricingItem[], successMsg: string) => {
@@ -259,13 +338,287 @@ export default function TreatmentPricingEditor() {
     }
   };
 
+  // --- Branch Management Handlers ---
+  const handleAddBranchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newBranchName.trim();
+    if (!name) {
+      showToast('Please enter a branch name', 'error');
+      return;
+    }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `branch-${Date.now()}`;
+    if (taxonomy.some((b) => b.id === id || b.name.toLowerCase() === name.toLowerCase())) {
+      showToast('A branch with this name or ID already exists', 'error');
+      return;
+    }
+
+    const newGroup: TreatmentTaxonomyGroup = {
+      id,
+      name,
+      subGroups: [],
+    };
+    const updatedTaxonomy = [...taxonomy, newGroup];
+    await persistTaxonomy(updatedTaxonomy, `Created branch "${name}"`);
+    setSelectedParentId(id);
+    setSelectedSubGroupId('all');
+    setIsAddBranchModalOpen(false);
+    setNewBranchName('');
+  };
+
+  const handleRenameBranchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!branchToRename) return;
+    const newName = renameBranchName.trim();
+    if (!newName) {
+      showToast('Branch name cannot be empty', 'error');
+      return;
+    }
+    if (newName === branchToRename.name) {
+      setBranchToRename(null);
+      return;
+    }
+
+    const oldName = branchToRename.name;
+    const updatedTaxonomy = taxonomy.map((b) => (b.id === branchToRename.id ? { ...b, name: newName } : b));
+
+    // Update all treatments whose category matched this branch
+    const updatedTreatments = treatments.map((t) => {
+      if (matchesParentBranch(t, branchToRename)) {
+        return { ...t, category: newName as any };
+      }
+      return t;
+    });
+
+    await persistTaxonomy(updatedTaxonomy);
+    await persistTreatments(updatedTreatments, `Renamed "${oldName}" to "${newName}" and updated assigned treatments`);
+    if (selectedParentId === branchToRename.id || selectedParentId === branchToRename.name) {
+      setSelectedParentId(branchToRename.id);
+    }
+    setBranchToRename(null);
+  };
+
+  const executeDeleteBranch = async () => {
+    if (!branchToDelete) return;
+    const targetBranch = taxonomy.find((b) => b.id === reassignBranchTargetId);
+    const updatedTaxonomy = taxonomy.filter((b) => b.id !== branchToDelete.id);
+
+    const updatedTreatments = treatments.map((t) => {
+      if (matchesParentBranch(t, branchToDelete)) {
+        if (targetBranch) {
+          const defaultSub = targetBranch.subGroups[0];
+          return {
+            ...t,
+            category: targetBranch.name as any,
+            subCategory: defaultSub?.name,
+            subGroupId: defaultSub?.id,
+          };
+        } else {
+          return {
+            ...t,
+            category: 'Unassigned' as any,
+            subCategory: undefined,
+            subGroupId: undefined,
+          };
+        }
+      }
+      return t;
+    });
+
+    if (selectedParentId === branchToDelete.id || selectedParentId === branchToDelete.name) {
+      setSelectedParentId('all');
+      setSelectedSubGroupId('all');
+    }
+
+    await persistTaxonomy(updatedTaxonomy);
+    await persistTreatments(
+      updatedTreatments,
+      `Deleted branch "${branchToDelete.name}" and ${targetBranch ? `reassigned treatments to ${targetBranch.name}` : 'unassigned treatments'}`
+    );
+    setBranchToDelete(null);
+  };
+
+  // --- Sub-Group Management Handlers ---
+  const handleAddSubGroupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentForNewSubGroup) return;
+    const name = newSubGroupName.trim();
+    if (!name) {
+      showToast('Please enter a sub-group name', 'error');
+      return;
+    }
+    const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `sub-${Date.now()}`;
+    if (parentForNewSubGroup.subGroups.some((s) => s.id === id || s.name.toLowerCase() === name.toLowerCase())) {
+      showToast('A sub-group with this name already exists in this branch', 'error');
+      return;
+    }
+
+    const newSub: TreatmentSubGroup = { id, name };
+    const updatedTaxonomy = taxonomy.map((b) => {
+      if (b.id === parentForNewSubGroup.id) {
+        return { ...b, subGroups: [...b.subGroups, newSub] };
+      }
+      return b;
+    });
+
+    await persistTaxonomy(updatedTaxonomy, `Added sub-group "${name}" to ${parentForNewSubGroup.name}`);
+    setSelectedSubGroupId(id);
+    setIsAddSubGroupModalOpen(false);
+    setParentForNewSubGroup(null);
+    setNewSubGroupName('');
+  };
+
+  const handleRenameSubGroupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subGroupToRename) return;
+    const newName = renameSubGroupName.trim();
+    if (!newName) {
+      showToast('Sub-group name cannot be empty', 'error');
+      return;
+    }
+    const { parentBranch, subGroup } = subGroupToRename;
+    if (newName === subGroup.name) {
+      setSubGroupToRename(null);
+      return;
+    }
+
+    const updatedTaxonomy = taxonomy.map((b) => {
+      if (b.id === parentBranch.id) {
+        return {
+          ...b,
+          subGroups: b.subGroups.map((s) => (s.id === subGroup.id ? { ...s, name: newName } : s)),
+        };
+      }
+      return b;
+    });
+
+    // Automatically update subCategory field of all assigned treatments!
+    const updatedTreatments = treatments.map((t) => {
+      if (matchesSubGroup(t, parentBranch, subGroup)) {
+        return {
+          ...t,
+          subCategory: newName,
+          subGroupId: subGroup.id,
+        };
+      }
+      return t;
+    });
+
+    await persistTaxonomy(updatedTaxonomy);
+    await persistTreatments(updatedTreatments, `Renamed sub-group to "${newName}" and updated assigned treatments`);
+    if (selectedSubGroupId === subGroup.id || selectedSubGroupId === subGroup.name) {
+      setSelectedSubGroupId(subGroup.id);
+    }
+    setSubGroupToRename(null);
+  };
+
+  const executeDeleteSubGroup = async () => {
+    if (!subGroupToDelete) return;
+    const { parentBranch, subGroup } = subGroupToDelete;
+    const targetSub = parentBranch.subGroups.find((s) => s.id === reassignSubGroupTargetId);
+
+    const updatedTaxonomy = taxonomy.map((b) => {
+      if (b.id === parentBranch.id) {
+        return {
+          ...b,
+          subGroups: b.subGroups.filter((s) => s.id !== subGroup.id),
+        };
+      }
+      return b;
+    });
+
+    const updatedTreatments = treatments.map((t) => {
+      if (matchesSubGroup(t, parentBranch, subGroup)) {
+        if (targetSub) {
+          return {
+            ...t,
+            subCategory: targetSub.name,
+            subGroupId: targetSub.id,
+          };
+        } else {
+          return {
+            ...t,
+            subCategory: undefined,
+            subGroupId: undefined,
+          };
+        }
+      }
+      return t;
+    });
+
+    if (selectedSubGroupId === subGroup.id || selectedSubGroupId === subGroup.name) {
+      setSelectedSubGroupId('all');
+    }
+
+    await persistTaxonomy(updatedTaxonomy);
+    await persistTreatments(
+      updatedTreatments,
+      `Deleted sub-group "${subGroup.name}" and ${targetSub ? `moved treatments to ${targetSub.name}` : 'left treatments unassigned'}`
+    );
+    setSubGroupToDelete(null);
+  };
+
+  // Inline quick-add sub-group within Edit Treatment modal
+  const handleModalQuickAddSubGroup = async () => {
+    if (!editingTreatment || !modalQuickAddName.trim()) return;
+    const name = modalQuickAddName.trim();
+    const newId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    const activeBranch = taxonomy.find(
+      (b) => b.name === editingTreatment.category || b.id === normalizeCat(editingTreatment.category)
+    );
+
+    if (!activeBranch) {
+      showToast('Please select a valid parent branch first', 'error');
+      return;
+    }
+
+    if (activeBranch.subGroups.some((s) => s.name.toLowerCase() === name.toLowerCase())) {
+      showToast(`Sub-group "${name}" already exists in ${activeBranch.name}`, 'info');
+      setEditingTreatment({
+        ...editingTreatment,
+        subCategory: name,
+        subGroupId: newId,
+      });
+      setIsModalQuickAddOpen(false);
+      setModalQuickAddName('');
+      return;
+    }
+
+    const updatedSubGroups: TreatmentSubGroup[] = [
+      ...activeBranch.subGroups,
+      { id: newId, name }
+    ];
+
+    const updatedTaxonomy = taxonomy.map((b) =>
+      b.id === activeBranch.id ? { ...b, subGroups: updatedSubGroups } : b
+    );
+
+    await persistTaxonomy(updatedTaxonomy, `Added sub-group "${name}" under ${activeBranch.name}`);
+    
+    // Auto-select the newly created subgroup in the modal
+    setEditingTreatment({
+      ...editingTreatment,
+      subCategory: name,
+      subGroupId: newId,
+    });
+    setModalQuickAddName('');
+    setIsModalQuickAddOpen(false);
+    showToast(`Created & assigned "${name}" to this procedure`, 'success');
+  };
+
   // Open modal for new treatment
   const handleOpenNewTreatment = () => {
     const newId = `treatment-${Date.now()}`;
+    const defaultBranch = selectedParentBranch?.name || taxonomy[0]?.name || 'Face & Injectables';
+    const activeBranchObj = taxonomy.find((b) => b.name === defaultBranch || b.id === normalizeCat(defaultBranch));
+    const firstSub = activeBranchObj?.subGroups[0];
+
     const defaultTreatment: TreatmentPricingItem = {
       id: newId,
       title: '',
-      category: 'Face & Injectables',
+      category: defaultBranch as any,
+      subCategory: firstSub?.name,
+      subGroupId: firstSub?.id,
       description: 'Comprehensive clinical aesthetic procedure customized to individual skin and facial anatomy.',
       image: PRESET_CLINIC_PHOTOS[0].url,
       startingPrice: 150,
@@ -285,6 +638,8 @@ export default function TreatmentPricingEditor() {
         },
       ],
     };
+    setIsModalQuickAddOpen(false);
+    setModalQuickAddName('');
     setEditingTreatment(defaultTreatment);
     setIsNewTreatment(true);
     setIsEditModalOpen(true);
@@ -292,7 +647,15 @@ export default function TreatmentPricingEditor() {
 
   // Open modal to edit existing treatment
   const handleOpenEditTreatment = (treatment: TreatmentPricingItem) => {
-    setEditingTreatment(JSON.parse(JSON.stringify(treatment)));
+    const itemCopy: TreatmentPricingItem = JSON.parse(JSON.stringify(treatment));
+    if (!itemCopy.subCategory || !itemCopy.subGroupId) {
+      const inferred = inferTreatmentSubGroup(treatment);
+      if (!itemCopy.subCategory) itemCopy.subCategory = inferred.subCategory;
+      if (!itemCopy.subGroupId) itemCopy.subGroupId = inferred.subGroupId;
+    }
+    setIsModalQuickAddOpen(false);
+    setModalQuickAddName('');
+    setEditingTreatment(itemCopy);
     setIsNewTreatment(false);
     setIsEditModalOpen(true);
     setActiveMenuTreatmentId(null);
@@ -315,11 +678,15 @@ export default function TreatmentPricingEditor() {
 
   // Duplicate treatment
   const handleDuplicateTreatment = (treatment: TreatmentPricingItem) => {
+    const inferred = inferTreatmentSubGroup(treatment);
     const cloneId = `${treatment.id}-copy-${Date.now().toString().slice(-4)}`;
     const clonedItem: TreatmentPricingItem = {
       ...JSON.parse(JSON.stringify(treatment)),
       id: cloneId,
       title: `${treatment.title} (Copy)`,
+      category: treatment.category || 'Face & Injectables',
+      subCategory: treatment.subCategory || inferred.subCategory,
+      subGroupId: treatment.subGroupId || inferred.subGroupId,
       packages: treatment.packages.map((pkg, idx) => ({
         ...pkg,
         id: `${cloneId}-pkg-${idx + 1}`,
@@ -386,21 +753,46 @@ export default function TreatmentPricingEditor() {
       return;
     }
 
+    // Ensure subCategory and subGroupId match the active branch in taxonomy
+    const activeBranch = taxonomy.find(
+      (b) => b.name === editingTreatment.category || b.id === normalizeCat(editingTreatment.category)
+    );
+    let finalSubCategory = editingTreatment.subCategory;
+    let finalSubGroupId = editingTreatment.subGroupId;
+
+    if (activeBranch && finalSubCategory) {
+      const matched = activeBranch.subGroups.find(
+        (s) => s.name === finalSubCategory || s.id === finalSubGroupId
+      );
+      if (matched) {
+        finalSubCategory = matched.name;
+        finalSubGroupId = matched.id;
+      }
+    }
+
+    const treatmentToSave: TreatmentPricingItem = {
+      ...editingTreatment,
+      subCategory: finalSubCategory,
+      subGroupId: finalSubGroupId,
+    };
+
     let updated: TreatmentPricingItem[];
     if (isNewTreatment) {
-      updated = [editingTreatment, ...treatments];
+      updated = [treatmentToSave, ...treatments];
     } else {
       updated = treatments.map((t) =>
-        t.id === editingTreatment.id ? editingTreatment : t
+        t.id === treatmentToSave.id ? treatmentToSave : t
       );
     }
 
     persistTreatments(
       updated,
-      isNewTreatment ? `Added "${editingTreatment.title}"` : `Updated "${editingTreatment.title}"`
+      isNewTreatment ? `Added "${treatmentToSave.title}"` : `Updated "${treatmentToSave.title}"`
     );
     setIsEditModalOpen(false);
     setEditingTreatment(null);
+    setIsModalQuickAddOpen(false);
+    setModalQuickAddName('');
   };
 
   // Save packages modal
@@ -543,9 +935,13 @@ export default function TreatmentPricingEditor() {
   // Reset to default
   const handleResetToDefault = () => {
     const defaultData = resetTreatmentPricingDataToDefault();
+    const defaultTax = resetTreatmentTaxonomy();
     setTreatments(defaultData);
+    setTaxonomy(defaultTax);
+    setSelectedParentId('all');
+    setSelectedSubGroupId('all');
     setIsResetConfirmOpen(false);
-    showToast('Restored default treatment catalog from source data', 'success');
+    showToast('Restored default treatment catalog and taxonomy from source data', 'success');
   };
 
   return (
@@ -671,35 +1067,245 @@ export default function TreatmentPricingEditor() {
           </div>
         </div>
 
-        {/* Category Quick-Filter Pills with Active Count Chips */}
-        <div className="pt-2 border-t border-slate-100">
+        {/* =========================================================================
+            TWO-TIER INTERACTIVE FILTER PILL BAR
+           ========================================================================= */}
+        <div className="pt-2 border-t border-slate-100 space-y-2.5">
+          {/* ROW 1: PARENT BRANCHES BAR */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-            {categoryFilters.map((filter) => {
-              const isActive = activeCategoryFilter === filter.id;
+            {/* All Procedures pill */}
+            <button
+              onClick={() => {
+                setSelectedParentId('all');
+                setSelectedSubGroupId('all');
+              }}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                selectedParentId === 'all'
+                  ? 'bg-[#003334] text-white shadow-sm ring-1 ring-[#c5a880]/40'
+                  : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+              }`}
+            >
+              <span>All Procedures</span>
+              <span
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                  selectedParentId === 'all'
+                    ? 'bg-[#c5a880] text-[#003334]'
+                    : 'bg-white/80 text-slate-500'
+                }`}
+              >
+                {treatments.length}
+              </span>
+            </button>
+
+            {/* Each Parent Branch Pill with Live Active Count and Hover/Action Icons */}
+            {taxonomy.map((branch) => {
+              const isParentActive = selectedParentId === branch.id || selectedParentId === branch.name;
+              const count = treatments.filter((t) => matchesParentBranch(t, branch)).length;
+
               return (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveCategoryFilter(filter.id)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#003334] text-white shadow-sm'
-                      : 'bg-slate-100 hover:bg-slate-200/80 text-slate-600'
+                <div
+                  key={branch.id}
+                  className={`group relative flex items-center rounded-full transition-all ${
+                    isParentActive
+                      ? 'bg-[#003334] text-white shadow-sm ring-1 ring-[#c5a880]/50'
+                      : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
                   }`}
                 >
-                  <span>{filter.label}</span>
-                  <span
-                    className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
-                      isActive
-                        ? 'bg-[#c5a880] text-[#003334]'
-                        : 'bg-white/80 text-slate-500'
-                    }`}
+                  {/* Branch Select Button */}
+                  <button
+                    onClick={() => {
+                      if (selectedParentId !== branch.id) {
+                        setSelectedParentId(branch.id);
+                        setSelectedSubGroupId('all');
+                      }
+                    }}
+                    className="flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer"
                   >
-                    {filter.count}
-                  </span>
-                </button>
+                    <span>{branch.name}</span>
+                    <span
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                        isParentActive
+                          ? 'bg-[#c5a880] text-[#003334]'
+                          : 'bg-white/80 text-slate-500'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+
+                  {/* Hover / Action Icons: Edit & Delete */}
+                  <div className="flex items-center pr-2 pl-1 gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBranchToRename(branch);
+                        setRenameBranchName(branch.name);
+                      }}
+                      title={`Rename branch "${branch.name}"`}
+                      className={`p-1 rounded-full cursor-pointer transition-colors ${
+                        isParentActive
+                          ? 'text-slate-300 hover:text-white hover:bg-white/20'
+                          : 'text-slate-400 hover:text-slate-700 hover:bg-slate-300/60'
+                      }`}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBranchToDelete(branch);
+                        const other = taxonomy.filter((b) => b.id !== branch.id);
+                        setReassignBranchTargetId(other[0]?.id || '');
+                      }}
+                      title={`Delete branch "${branch.name}"`}
+                      className={`p-1 rounded-full cursor-pointer transition-colors ${
+                        isParentActive
+                          ? 'text-rose-300 hover:text-rose-100 hover:bg-rose-900/40'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-100'
+                      }`}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
               );
             })}
+
+            {/* + Add Branch Button */}
+            <button
+              onClick={() => {
+                setNewBranchName('');
+                setIsAddBranchModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border border-dashed border-[#003334]/40 hover:border-[#003334] text-[#003334] hover:bg-[#003334]/5 transition-all cursor-pointer shrink-0"
+              title="Add new parent service branch"
+            >
+              <Plus className="h-3.5 w-3.5 text-[#003334]" />
+              <span>Add Branch</span>
+            </button>
           </div>
+
+          {/* ROW 2: SUB-GROUPS BAR (Contextual to Selected Parent) */}
+          <AnimatePresence>
+            {selectedParentBranch && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden pt-0.5"
+              >
+                <div className="p-2.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-1 shrink-0">
+                    <span>Sub-Groups:</span>
+                  </div>
+
+                  {/* All [Parent Name] pill */}
+                  <button
+                    onClick={() => setSelectedSubGroupId('all')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      selectedSubGroupId === 'all'
+                        ? 'bg-[#003334] text-[#c5a880] shadow-xs ring-1 ring-[#c5a880]/30'
+                        : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                    }`}
+                  >
+                    <span>All {selectedParentBranch.name}</span>
+                    <span
+                      className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                        selectedSubGroupId === 'all'
+                          ? 'bg-[#c5a880] text-[#003334]'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {treatments.filter((t) => matchesParentBranch(t, selectedParentBranch)).length}
+                    </span>
+                  </button>
+
+                  {/* Each Sub-Group Pill with count badge and hover action icons */}
+                  {selectedParentBranch.subGroups.map((sub) => {
+                    const isSubActive = selectedSubGroupId === sub.id || selectedSubGroupId === sub.name;
+                    const count = treatments.filter((t) => matchesSubGroup(t, selectedParentBranch, sub)).length;
+
+                    return (
+                      <div
+                        key={sub.id}
+                        className={`group relative flex items-center rounded-full transition-all ${
+                          isSubActive
+                            ? 'bg-[#003334] text-white shadow-xs'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setSelectedSubGroupId(sub.id)}
+                          className="flex items-center gap-1.5 pl-3 pr-1 py-1 text-[11px] font-semibold whitespace-nowrap cursor-pointer"
+                        >
+                          <span>{sub.name}</span>
+                          <span
+                            className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                              isSubActive
+                                ? 'bg-[#c5a880] text-[#003334]'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+
+                        {/* Action Icons: Edit & Delete */}
+                        <div className="flex items-center pr-1.5 pl-0.5 gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSubGroupToRename({ parentBranch: selectedParentBranch, subGroup: sub });
+                              setRenameSubGroupName(sub.name);
+                            }}
+                            title={`Rename sub-group "${sub.name}"`}
+                            className={`p-1 rounded-full cursor-pointer transition-colors ${
+                              isSubActive
+                                ? 'text-slate-300 hover:text-white hover:bg-white/20'
+                                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            <Edit3 className="h-2.5 w-2.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSubGroupToDelete({ parentBranch: selectedParentBranch, subGroup: sub });
+                              const other = selectedParentBranch.subGroups.filter((s) => s.id !== sub.id);
+                              setReassignSubGroupTargetId(other[0]?.id || '');
+                            }}
+                            title={`Delete sub-group "${sub.name}"`}
+                            className={`p-1 rounded-full cursor-pointer transition-colors ${
+                              isSubActive
+                                ? 'text-rose-300 hover:text-rose-100 hover:bg-rose-900/40'
+                                : 'text-slate-400 hover:text-rose-600 hover:bg-rose-100'
+                            }`}
+                          >
+                            <Trash2 className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* + Add Sub-Group Button */}
+                  <button
+                    onClick={() => {
+                      setParentForNewSubGroup(selectedParentBranch);
+                      setNewSubGroupName('');
+                      setIsAddSubGroupModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border border-dashed border-[#c5a880] text-[#003334] hover:bg-[#c5a880]/15 transition-all cursor-pointer shrink-0"
+                    title={`Add sub-group under ${selectedParentBranch.name}`}
+                  >
+                    <Plus className="h-3 w-3 text-[#c5a880]" />
+                    <span>Add Sub-Group</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -713,12 +1319,13 @@ export default function TreatmentPricingEditor() {
           </div>
           <h3 className="font-serif font-bold text-base text-slate-700">No procedures found</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            No treatments match your search "{searchQuery}" or selected category filter.
+            No treatments match your search "{searchQuery}" or selected branch and sub-group filters.
           </p>
           <button
             onClick={() => {
               setSearchQuery('');
-              setActiveCategoryFilter('all');
+              setSelectedParentId('all');
+              setSelectedSubGroupId('all');
             }}
             className="text-xs font-bold text-[#003334] hover:underline cursor-pointer pt-2 inline-block"
           >
@@ -952,10 +1559,30 @@ export default function TreatmentPricingEditor() {
                       </div>
                     </div>
 
-                    {/* Category tag label */}
-                    <div className="text-[10px] text-slate-400 font-sans tracking-wide">
-                      {treatment.category}
-                    </div>
+                    {/* Dual Hierarchy Badge: [Face & Injectables] › [Anti-wrinkle's injection] */}
+                    {(() => {
+                      const inferred = inferTreatmentSubGroup(treatment);
+                      const hasLegacySub = Boolean(treatment.subGroupId && LEGACY_BROCHURE_SUBGROUP_IDS.has(treatment.subGroupId));
+                      const activeBranch = taxonomy.find((b) => matchesParentBranch(treatment, b));
+                      const matchedSub = activeBranch?.subGroups.find(
+                        (s) => s.id === (hasLegacySub ? inferred.subGroupId : (treatment.subGroupId || inferred.subGroupId))
+                      );
+                      const displayBranch = activeBranch?.name || treatment.category || 'Face & Injectables';
+                      const displaySub =
+                        matchedSub?.name ||
+                        (hasLegacySub ? inferred.subCategory : (treatment.subCategory || inferred.subCategory));
+                      return (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold text-[#003334] bg-[#003334]/8 border border-[#003334]/15 px-2 py-0.5 rounded-md">
+                            {displayBranch}
+                          </span>
+                          <span className="text-slate-300 text-xs font-bold">›</span>
+                          <span className="text-[10px] font-semibold text-[#8b6938] bg-[#c5a880]/15 border border-[#c5a880]/30 px-2 py-0.5 rounded-md">
+                            {displaySub}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Starting Price Chip & Package Count Badge */}
                     <div className="flex items-center justify-between gap-2 pt-1">
@@ -1047,35 +1674,135 @@ export default function TreatmentPricingEditor() {
                   />
                 </div>
 
-                {/* Category & Badge */}
+                {/* Parent Branch & Sub-Group Selection with Cascading & Inline Quick-Add */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                      Category
+                      Parent Branch
                     </label>
                     <select
                       value={editingTreatment.category}
-                      onChange={(e) => setEditingTreatment({ ...editingTreatment, category: e.target.value as TreatmentCategory })}
+                      onChange={(e) => {
+                        const newCat = e.target.value as TreatmentCategory;
+                        const matchingBranch = taxonomy.find(
+                          (b) => b.name === newCat || b.id === normalizeCat(newCat)
+                        );
+                        const firstSub = matchingBranch?.subGroups[0];
+                        setEditingTreatment({
+                          ...editingTreatment,
+                          category: newCat,
+                          subCategory: firstSub?.name || '',
+                          subGroupId: firstSub?.id || '',
+                        });
+                        setIsModalQuickAddOpen(false);
+                      }}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-medium text-slate-800"
                     >
-                      {PRICING_CATEGORIES.filter((c) => c !== 'All Procedures').map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                      {taxonomy.map((branch) => (
+                        <option key={branch.id} value={branch.name}>
+                          {branch.name}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
-                      Tag / Badge Label
-                    </label>
-                    <input
-                      type="text"
-                      value={editingTreatment.badge || ''}
-                      onChange={(e) => setEditingTreatment({ ...editingTreatment, badge: e.target.value })}
-                      placeholder="E.g., Anti-Wrinkle, Dermal Fillers"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-medium text-slate-800"
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                        Specialist Sub-Group
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsModalQuickAddOpen(!isModalQuickAddOpen);
+                          setModalQuickAddName('');
+                        }}
+                        className="text-[10px] font-bold text-[#c5a880] hover:text-[#003334] flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>{isModalQuickAddOpen ? 'Cancel' : '+ New Sub-Group'}</span>
+                      </button>
+                    </div>
+
+                    {isModalQuickAddOpen && (
+                      <div className="flex items-center gap-1.5 p-1.5 bg-[#003334]/5 border border-[#003334]/15 rounded-xl mb-1.5 animate-in fade-in zoom-in-95">
+                        <input
+                          type="text"
+                          value={modalQuickAddName}
+                          onChange={(e) => setModalQuickAddName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleModalQuickAddSubGroup();
+                            }
+                          }}
+                          placeholder="New sub-group name..."
+                          className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#003334]"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleModalQuickAddSubGroup}
+                          className="px-2.5 py-1.5 bg-[#003334] text-[#c5a880] hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    )}
+
+                    {(() => {
+                      const activeBranchForEdit = taxonomy.find(
+                        (b) => b.name === editingTreatment.category || b.id === normalizeCat(editingTreatment.category)
+                      );
+                      const subGroups = activeBranchForEdit?.subGroups || [];
+                      return (
+                        <select
+                          value={editingTreatment.subCategory || editingTreatment.subGroupId || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '__quick_add__') {
+                              setIsModalQuickAddOpen(true);
+                              return;
+                            }
+                            const selectedSub = subGroups.find((s) => s.id === val || s.name === val);
+                            setEditingTreatment({
+                              ...editingTreatment,
+                              subCategory: selectedSub?.name || val,
+                              subGroupId: selectedSub?.id || val,
+                            });
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-medium text-slate-800"
+                        >
+                          {subGroups.length === 0 ? (
+                            <option value="">No sub-groups in this branch</option>
+                          ) : (
+                            subGroups.map((sub) => (
+                              <option key={sub.id} value={sub.name}>
+                                {sub.name}
+                              </option>
+                            ))
+                          )}
+                          <option value="__quick_add__" className="text-[#003334] font-bold">
+                            + Add New Sub-Group...
+                          </option>
+                        </select>
+                      );
+                    })()}
                   </div>
+                </div>
+
+                {/* Badge Label */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Tag / Promotional Badge (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingTreatment.badge || ''}
+                    onChange={(e) => setEditingTreatment({ ...editingTreatment, badge: e.target.value })}
+                    placeholder="E.g., Popular, Clinical Favorite, Signature"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-medium text-slate-800"
+                  />
                 </div>
 
                 {/* Starting Price, Catalog Visibility & Featured Status */}
@@ -1797,6 +2524,430 @@ export default function TreatmentPricingEditor() {
                   className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
                 >
                   Reset Defaults
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* =========================================================================
+          MODAL 6: ADD NEW PARENT BRANCH
+         ========================================================================= */}
+      <AnimatePresence>
+        {isAddBranchModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 bg-[#003334]/10 text-[#003334] rounded-xl">
+                    <FolderPlus className="h-5 w-5 text-[#c5a880]" />
+                  </span>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#003334]">
+                      Add Service Branch
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Create a new top-level parent branch for clinic treatments.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsAddBranchModalOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddBranchSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Branch Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    placeholder="e.g., Men's Aesthetics, Wellness Lounge"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-semibold text-slate-800"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddBranchModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] hover:text-white text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
+                  >
+                    Create Branch
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 7: RENAME PARENT BRANCH
+         ========================================================================= */}
+      <AnimatePresence>
+        {branchToRename && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 bg-[#003334]/10 text-[#003334] rounded-xl">
+                    <Edit3 className="h-5 w-5 text-[#c5a880]" />
+                  </span>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#003334]">
+                      Rename Service Branch
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Renaming will automatically update all {treatments.filter((t) => matchesParentBranch(t, branchToRename)).length} assigned treatments.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setBranchToRename(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRenameBranchSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Branch Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={renameBranchName}
+                    onChange={(e) => setRenameBranchName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-semibold text-slate-800"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setBranchToRename(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] hover:text-white text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
+                  >
+                    Save Rename
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 8: DELETE PARENT BRANCH WITH SAFE REASSIGNMENT
+         ========================================================================= */}
+      <AnimatePresence>
+        {branchToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-slate-900">
+                    Delete Branch: {branchToDelete.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {treatments.filter((t) => matchesParentBranch(t, branchToDelete)).length} treatments currently belong to this branch.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                  Reassign Treatments To:
+                </label>
+                <select
+                  value={reassignBranchTargetId}
+                  onChange={(e) => setReassignBranchTargetId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003334]"
+                >
+                  {taxonomy
+                    .filter((b) => b.id !== branchToDelete.id)
+                    .map((b) => (
+                      <option key={b.id} value={b.id}>
+                        Move treatments to: {b.name}
+                      </option>
+                    ))}
+                  <option value="">Leave treatments Unassigned</option>
+                </select>
+                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 leading-relaxed">
+                  Removing this branch safely relocates all procedure listings, preserving all pricing and packaging tiers.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBranchToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeDeleteBranch}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow cursor-pointer"
+                >
+                  Delete & Reassign
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 9: ADD NEW SUB-GROUP
+         ========================================================================= */}
+      <AnimatePresence>
+        {isAddSubGroupModalOpen && parentForNewSubGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 bg-[#003334]/10 text-[#003334] rounded-xl">
+                    <Plus className="h-5 w-5 text-[#c5a880]" />
+                  </span>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#003334]">
+                      Add Specialist Sub-Group
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Adding under branch: <span className="font-semibold text-slate-700">{parentForNewSubGroup.name}</span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsAddSubGroupModalOpen(false);
+                    setParentForNewSubGroup(null);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddSubGroupSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Sub-Group Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={newSubGroupName}
+                    onChange={(e) => setNewSubGroupName(e.target.value)}
+                    placeholder="e.g., Profhilo & Bioremodeling, Red Carpet Facials"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-semibold text-slate-800"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddSubGroupModalOpen(false);
+                      setParentForNewSubGroup(null);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] hover:text-white text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
+                  >
+                    Add Sub-Group
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 10: RENAME SUB-GROUP
+         ========================================================================= */}
+      <AnimatePresence>
+        {subGroupToRename && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 bg-[#003334]/10 text-[#003334] rounded-xl">
+                    <Edit3 className="h-5 w-5 text-[#c5a880]" />
+                  </span>
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#003334]">
+                      Rename Sub-Group
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Under {subGroupToRename.parentBranch.name} ({treatments.filter((t) => matchesSubGroup(t, subGroupToRename.parentBranch, subGroupToRename.subGroup)).length} treatments will be updated)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSubGroupToRename(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRenameSubGroupSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Sub-Group Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={renameSubGroupName}
+                    onChange={(e) => setRenameSubGroupName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-semibold text-slate-800"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSubGroupToRename(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] hover:text-white text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
+                  >
+                    Save Rename
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          MODAL 11: DELETE SUB-GROUP WITH CASCADE REASSIGNMENT
+         ========================================================================= */}
+      <AnimatePresence>
+        {subGroupToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-slate-900">
+                    Delete Sub-Group: {subGroupToDelete.subGroup.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {treatments.filter((t) => matchesSubGroup(t, subGroupToDelete.parentBranch, subGroupToDelete.subGroup)).length} treatments currently in this sub-group.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                  Cascade Options for Assigned Treatments:
+                </label>
+                <select
+                  value={reassignSubGroupTargetId}
+                  onChange={(e) => setReassignSubGroupTargetId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#003334]"
+                >
+                  {subGroupToDelete.parentBranch.subGroups
+                    .filter((s) => s.id !== subGroupToDelete.subGroup.id)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        Move treatments to: {s.name}
+                      </option>
+                    ))}
+                  <option value="">Leave Unassigned (Clear sub-group tag)</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSubGroupToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeDeleteSubGroup}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow cursor-pointer"
+                >
+                  Delete & Reassign
                 </button>
               </div>
             </motion.div>

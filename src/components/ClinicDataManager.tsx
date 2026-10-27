@@ -11,7 +11,14 @@ import {
   ClinicWhyChooseUsPillar, 
   ClinicAwardItem,
   ClinicConsultationDoctor,
-  ClinicConsultationConfig
+  ClinicConsultationConfig,
+  ClinicProcessStep,
+  ClinicProcessSection,
+  ClinicFacilityRoomItem,
+  ClinicFacilityGallerySection,
+  ClinicTrustBrandItem,
+  ClinicTrustBrandsSection,
+  ClinicAccreditationsSection
 } from '../data/clinicInfo';
 
 const DAY_LABELS: { day: number; short: string }[] = [
@@ -27,7 +34,20 @@ const DAY_LABELS: { day: number; short: string }[] = [
 export default function ClinicDataManager() {
   const [data, setData] = useState<ClinicData>(getClinicData());
   const [activeMenuOption, setActiveMenuOption] = useState<
-    'all' | 'brand' | 'assets' | 'contact' | 'commercial' | 'accreditations' | 'locations' | 'socials' | 'whyChooseUs' | 'awards' | 'consultation' | 'code'
+    | 'all'
+    | 'brand'
+    | 'assets'
+    | 'contact'
+    | 'commercial'
+    | 'accreditations'
+    | 'locations'
+    | 'socials'
+    | 'whyChooseUs'
+    | 'awards'
+    | 'consultation'
+    | 'process'
+    | 'trustBrands'
+    | 'code'
   >('all');
   
   const [saveStatus, setSaveStatus] = useState<{
@@ -84,7 +104,20 @@ export default function ClinicDataManager() {
 
   // Bottom Modal State (for mobile screens and quick item edit)
   const [modalType, setModalType] = useState<
-    null | 'location' | 'pillar' | 'award' | 'doctor' | 'keywords' | 'accreditations' | 'payments' | 'specialties' | 'languages' | 'interiorPhotos'
+    | null
+    | 'location'
+    | 'pillar'
+    | 'award'
+    | 'doctor'
+    | 'facilityRoom'
+    | 'processStep'
+    | 'trustBrand'
+    | 'keywords'
+    | 'accreditations'
+    | 'payments'
+    | 'specialties'
+    | 'languages'
+    | 'interiorPhotos'
   >(null);
   const [editingLocationIndex, setEditingLocationIndex] = useState<number | null>(null);
   const [locationDraft, setLocationDraft] = useState<ClinicLocation | null>(null);
@@ -94,6 +127,14 @@ export default function ClinicDataManager() {
   const [awardDraft, setAwardDraft] = useState<ClinicAwardItem | null>(null);
   const [editingDoctorIndex, setEditingDoctorIndex] = useState<number | null>(null);
   const [doctorDraft, setDoctorDraft] = useState<ClinicConsultationDoctor | null>(null);
+  const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
+  const [roomDraft, setRoomDraft] = useState<ClinicFacilityRoomItem | null>(null);
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+  const [stepDraft, setStepDraft] = useState<ClinicProcessStep | null>(null);
+  const [newStepKeywordInput, setNewStepKeywordInput] = useState('');
+  const [editingBrandIndex, setEditingBrandIndex] = useState<number | null>(null);
+  const [brandDraft, setBrandDraft] = useState<ClinicTrustBrandItem | null>(null);
+  const [seoInputDrafts, setSeoInputDrafts] = useState<Record<string, string>>({});
   const [newDoctorTimeSlot, setNewDoctorTimeSlot] = useState('');
   const [newDefaultTimeSlot, setNewDefaultTimeSlot] = useState('');
   const [newBestTimeLabel, setNewBestTimeLabel] = useState('');
@@ -184,6 +225,95 @@ export default function ClinicDataManager() {
         consultationConfig: nextConfig
       };
     });
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  // Facility Gallery Section helper
+  const getSafeFacilityGallery = (source?: ClinicFacilityGallerySection, fallbackPhotos?: string[]): ClinicFacilityGallerySection => {
+    const defaultRooms: ClinicFacilityRoomItem[] =
+      Array.isArray(source?.rooms) && source.rooms.length > 0
+        ? source.rooms
+        : (fallbackPhotos || []).map((img, i) => ({
+            id: `facility-room-${i + 1}`,
+            title: `Clinical Suite ${i + 1}`,
+            tag: 'CLINIC SUITE',
+            image: img,
+            imageAlt: `Clinic Suite ${i + 1} at Age Reversal Clinics London`,
+          }));
+    return {
+      eyebrow: source?.eyebrow ?? 'Our Facility',
+      heading: source?.heading ?? 'Clinic Gallery',
+      seoKeywords: Array.isArray(source?.seoKeywords) ? source.seoKeywords : [],
+      rooms: defaultRooms,
+    };
+  };
+
+  const updateFacilityGallery = (updater: (curr: ClinicFacilityGallerySection) => ClinicFacilityGallerySection) => {
+    setData(prev => {
+      const nextGallery = updater(getSafeFacilityGallery(prev.facilityGallery, prev.interiorPhotos));
+      const syncedPhotos = nextGallery.rooms.map(r => r.image).filter(Boolean);
+      return {
+        ...prev,
+        facilityGallery: nextGallery,
+        interiorPhotos: syncedPhotos,
+      };
+    });
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  // Accreditations Section helper
+  const getSafeAccreditationsSection = (source?: ClinicAccreditationsSection): ClinicAccreditationsSection => ({
+    eyebrow: source?.eyebrow ?? 'Accreditations & Certifications',
+    heading: source?.heading ?? 'Excellence guaranteed. Trusted globally.',
+    description:
+      source?.description ??
+      'We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.',
+    seoKeywords: Array.isArray(source?.seoKeywords) ? source.seoKeywords : [],
+  });
+
+  const updateAccreditationsSection = (updater: (curr: ClinicAccreditationsSection) => ClinicAccreditationsSection) => {
+    setData(prev => ({
+      ...prev,
+      accreditationsSection: updater(getSafeAccreditationsSection(prev.accreditationsSection)),
+    }));
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  // Our Process Section helper
+  const getSafeProcessSection = (source?: ClinicProcessSection): ClinicProcessSection => ({
+    eyebrow: source?.eyebrow ?? 'Our Process',
+    heading: source?.heading ?? 'The Journey to Radiance',
+    subheading:
+      source?.subheading ??
+      'From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.',
+    seoKeywords: Array.isArray(source?.seoKeywords) ? source.seoKeywords : [],
+    steps: Array.isArray(source?.steps) ? source.steps : [],
+  });
+
+  const updateProcessSection = (updater: (curr: ClinicProcessSection) => ClinicProcessSection) => {
+    setData(prev => ({
+      ...prev,
+      processSection: updater(getSafeProcessSection(prev.processSection)),
+    }));
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  // Trust Brands Section helper
+  const getSafeTrustBrandsSection = (source?: ClinicTrustBrandsSection): ClinicTrustBrandsSection => ({
+    heading: source?.heading ?? 'Over 1,000+ Brands & Laboratories Trust Us',
+    seoKeywords: Array.isArray(source?.seoKeywords) ? source.seoKeywords : [],
+    brands: Array.isArray(source?.brands) ? source.brands : [],
+  });
+
+  const updateTrustBrandsSection = (updater: (curr: ClinicTrustBrandsSection) => ClinicTrustBrandsSection) => {
+    setData(prev => ({
+      ...prev,
+      trustBrandsSection: updater(getSafeTrustBrandsSection(prev.trustBrandsSection)),
+    }));
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
@@ -463,6 +593,199 @@ export default function ClinicDataManager() {
     });
   };
 
+  // Facility Gallery Room management
+  const openEditRoomModal = (index: number) => {
+    const gallery = getSafeFacilityGallery(data.facilityGallery, data.interiorPhotos);
+    const target = gallery.rooms[index];
+    if (!target) return;
+    setEditingRoomIndex(index);
+    setRoomDraft({ ...target });
+    setModalType('facilityRoom');
+  };
+
+  const openNewRoomModal = () => {
+    setEditingRoomIndex(null);
+    setRoomDraft({
+      id: `facility-room-${Date.now()}`,
+      title: '',
+      tag: 'CLINIC SUITE',
+      image: '',
+      imageAlt: '',
+    });
+    setModalType('facilityRoom');
+  };
+
+  const saveRoomDraft = () => {
+    if (!roomDraft || !roomDraft.title.trim()) return;
+    updateFacilityGallery(curr => {
+      const nextRooms = [...(curr.rooms || [])];
+      const normalized: ClinicFacilityRoomItem = {
+        ...roomDraft,
+        title: roomDraft.title.trim(),
+        tag: roomDraft.tag.trim() || 'CLINIC SUITE',
+        imageAlt: roomDraft.imageAlt?.trim() || `${roomDraft.title.trim()} at ${data.name || 'Age Reversal Clinics'}`,
+      };
+      if (editingRoomIndex !== null && editingRoomIndex >= 0) {
+        nextRooms[editingRoomIndex] = normalized;
+      } else {
+        nextRooms.push(normalized);
+      }
+      return {
+        ...curr,
+        rooms: nextRooms,
+      };
+    });
+    setModalType(null);
+    setRoomDraft(null);
+  };
+
+  const deleteRoom = (index: number) => {
+    const gallery = getSafeFacilityGallery(data.facilityGallery, data.interiorPhotos);
+    const item = gallery.rooms[index];
+    const itemName = item?.title || `Room #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Facility Room',
+      message: `Are you sure you want to remove "${itemName}" from the Clinic Gallery?`,
+      onConfirm: () => {
+        updateFacilityGallery(curr => ({
+          ...curr,
+          rooms: (curr.rooms || []).filter((_, idx) => idx !== index),
+        }));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  // Our Process Step management
+  const openEditStepModal = (index: number) => {
+    const target = data.processSection?.steps?.[index];
+    if (!target) return;
+    setEditingStepIndex(index);
+    setStepDraft({
+      ...target,
+      seoKeywords: [...(target.seoKeywords || [])],
+    });
+    setNewStepKeywordInput('');
+    setModalType('processStep');
+  };
+
+  const openNewStepModal = () => {
+    const nextNum = String((data.processSection?.steps?.length || 0) + 1).padStart(2, '0');
+    setEditingStepIndex(null);
+    setStepDraft({
+      id: `process-step-${Date.now()}`,
+      stepNumber: nextNum,
+      title: '',
+      image: '',
+      imageAlt: '',
+      seoKeywords: [],
+    });
+    setNewStepKeywordInput('');
+    setModalType('processStep');
+  };
+
+  const saveStepDraft = () => {
+    if (!stepDraft || !stepDraft.title.trim()) return;
+    updateProcessSection(curr => {
+      const nextSteps = [...(curr.steps || [])];
+      const normalized: ClinicProcessStep = {
+        ...stepDraft,
+        stepNumber: stepDraft.stepNumber.trim() || '01',
+        title: stepDraft.title.trim(),
+        imageAlt: stepDraft.imageAlt?.trim() || `${stepDraft.title.trim()} — ${data.name || 'Age Reversal Clinics'}`,
+      };
+      if (editingStepIndex !== null && editingStepIndex >= 0) {
+        nextSteps[editingStepIndex] = normalized;
+      } else {
+        nextSteps.push(normalized);
+      }
+      return {
+        ...curr,
+        steps: nextSteps,
+      };
+    });
+    setModalType(null);
+    setStepDraft(null);
+  };
+
+  const deleteStep = (index: number) => {
+    const item = data.processSection?.steps?.[index];
+    const itemName = item?.title || `Step #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Process Step',
+      message: `Are you sure you want to delete "${itemName}"?`,
+      onConfirm: () => {
+        updateProcessSection(curr => ({
+          ...curr,
+          steps: (curr.steps || []).filter((_, idx) => idx !== index),
+        }));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
+  // Trust Brands Partner management
+  const openEditBrandModal = (index: number) => {
+    const target = data.trustBrandsSection?.brands?.[index];
+    if (!target) return;
+    setEditingBrandIndex(index);
+    setBrandDraft({ ...target });
+    setModalType('trustBrand');
+  };
+
+  const openNewBrandModal = () => {
+    setEditingBrandIndex(null);
+    setBrandDraft({
+      id: `brand-${Date.now()}`,
+      name: '',
+      iconType: 'shield',
+      imageUrl: '',
+    });
+    setModalType('trustBrand');
+  };
+
+  const saveBrandDraft = () => {
+    if (!brandDraft || !brandDraft.name.trim()) return;
+    updateTrustBrandsSection(curr => {
+      const nextBrands = [...(curr.brands || [])];
+      const normalized: ClinicTrustBrandItem = {
+        ...brandDraft,
+        name: brandDraft.name.trim(),
+        iconType: brandDraft.iconType || 'shield',
+      };
+      if (editingBrandIndex !== null && editingBrandIndex >= 0) {
+        nextBrands[editingBrandIndex] = normalized;
+      } else {
+        nextBrands.push(normalized);
+      }
+      return {
+        ...curr,
+        brands: nextBrands,
+      };
+    });
+    setModalType(null);
+    setBrandDraft(null);
+  };
+
+  const deleteBrand = (index: number) => {
+    const item = data.trustBrandsSection?.brands?.[index];
+    const itemName = item?.name || `Brand #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Brand Partner',
+      message: `Are you sure you want to remove "${itemName}"?`,
+      onConfirm: () => {
+        updateTrustBrandsSection(curr => ({
+          ...curr,
+          brands: (curr.brands || []).filter((_, idx) => idx !== index),
+        }));
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      },
+    });
+  };
+
   // Generic Array edit modal
   const openArrayModal = (
     type: 'keywords' | 'accreditations' | 'payments' | 'specialties' | 'languages' | 'interiorPhotos'
@@ -567,6 +890,77 @@ export default function ClinicDataManager() {
     );
   };
 
+  // Compact Reusable SEO Keywords Chip Editor
+  const renderSeoKeywordsEditor = (
+    label: string,
+    keywords: string[],
+    onChange: (next: string[]) => void,
+    draftKey: string,
+    placeholder: string = 'Add SEO keyword...'
+  ) => {
+    const currentInput = seoInputDrafts[draftKey] || '';
+    const handleAdd = () => {
+      const trimmed = currentInput.trim();
+      if (!trimmed) return;
+      if (!keywords.includes(trimmed)) {
+        onChange([...keywords, trimmed]);
+      }
+      setSeoInputDrafts(prev => ({ ...prev, [draftKey]: '' }));
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <label className="text-xs font-bold uppercase text-slate-700">
+            {label} ({keywords.length})
+          </label>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <input
+              type="text"
+              value={currentInput}
+              onChange={e => setSeoInputDrafts(prev => ({ ...prev, [draftKey]: e.target.value }))}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAdd();
+                }
+              }}
+              placeholder={placeholder}
+              className="flex-1 sm:w-56 px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#003334]"
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="px-2.5 py-1 bg-[#003334] hover:bg-[#002627] text-white text-[11px] font-bold uppercase rounded-lg cursor-pointer shrink-0"
+            >
+              + Add
+            </button>
+          </div>
+        </div>
+        {keywords.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {keywords.map((kw, idx) => (
+              <span
+                key={`${kw}-${idx}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-teal-50/70 border border-teal-200 rounded-md text-xs font-medium text-[#003334]"
+              >
+                {kw}
+                <button
+                  type="button"
+                  onClick={() => onChange(keywords.filter((_, i) => i !== idx))}
+                  className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                  title="Remove keyword"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full min-h-screen bg-slate-50 text-slate-900 pb-28">
       {/* Hidden File Input for Image Uploads */}
@@ -647,7 +1041,9 @@ export default function ClinicDataManager() {
             { id: 'whyChooseUs', label: `08. Why Choose Us (${data.whyChooseUs?.pillars?.length || 0})` },
             { id: 'awards', label: `09. Awards Showcase (${data.awardsShowcase?.awards?.length || 0})` },
             { id: 'consultation', label: `10. Book Consultation (${data.consultationConfig?.doctors?.length || 0})` },
-            { id: 'code', label: '11. Raw Code Preview' }
+            { id: 'process', label: `11. Our Process (${data.processSection?.steps?.length || 0})` },
+            { id: 'trustBrands', label: `12. Trust Brands (${data.trustBrandsSection?.brands?.length || 0})` },
+            { id: 'code', label: '13. Raw Code Preview' }
           ].map(opt => (
             <button
               key={opt.id}
@@ -759,126 +1155,189 @@ export default function ClinicDataManager() {
           </section>
         )}
 
-        {/* SECTION 2: BRAND VISUAL ASSETS & LOGOS */}
-        {(activeMenuOption === 'all' || activeMenuOption === 'assets') && (
-          <section className="w-full border-b border-slate-200 py-8 px-4 sm:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
-              <div>
-                <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
-                  02 / Configuration
+        {/* SECTION 2: BRAND VISUAL ASSETS & CLINIC GALLERY */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'assets') && (() => {
+          const activeFacilityGallery = getSafeFacilityGallery(data.facilityGallery, data.interiorPhotos);
+          return (
+            <section className="w-full border-b border-slate-200 py-8 px-4 sm:px-8">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                    02 / Configuration
+                  </span>
+                  <h2 className="text-xl font-bold text-[#003334]">Brand Visual Assets & Clinic Gallery</h2>
+                </div>
+                <span className="text-xs text-slate-500 font-mono mt-1 sm:mt-0">
+                  Maps to logo, exteriorPhoto, facilityGallery &amp; interiorPhotos
                 </span>
-                <h2 className="text-xl font-bold text-[#003334]">Brand Visual Assets & Logos</h2>
-              </div>
-              <span className="text-xs text-slate-500 font-mono mt-1 sm:mt-0">
-                Maps to CLINIC_DATA.logo, exteriorPhoto, interiorPhotos
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {renderImageField(
-                'Logo Icon Asset',
-                data.logo?.icon || '',
-                (val) => updateNestedField('logo', 'icon', val),
-                'logo_icon',
-                '/assets/logo.svg or image URL'
-              )}
-
-              {renderImageField(
-                'Full Logo Asset',
-                data.logo?.full || '',
-                (val) => updateNestedField('logo', 'full', val),
-                'logo_full',
-                '/assets/logo-full.svg or image URL'
-              )}
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-slate-700">Logo Alt Description</label>
-                <input
-                  type="text"
-                  value={data.logo?.alt || ''}
-                  onChange={e => updateNestedField('logo', 'alt', e.target.value)}
-                  placeholder="Age Reversal Clinics Logo"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
-                />
               </div>
 
-              <div className="col-span-full md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {renderImageField(
-                  'Clinic Exterior Photo',
-                  data.exteriorPhoto || '',
-                  (val) => updateField('exteriorPhoto', val),
-                  'exteriorPhoto',
-                  '/assets/exterior.jpg or image URL'
+                  'Logo Icon Asset',
+                  data.logo?.icon || '',
+                  (val) => updateNestedField('logo', 'icon', val),
+                  'logo_icon',
+                  '/assets/logo.svg or image URL'
                 )}
-              </div>
 
-              <div className="col-span-full space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-xs font-bold uppercase text-slate-700 block">
-                      Interior Photo Assets ({data.interiorPhotos?.length || 0})
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
+                {renderImageField(
+                  'Full Logo Asset',
+                  data.logo?.full || '',
+                  (val) => updateNestedField('logo', 'full', val),
+                  'logo_full',
+                  '/assets/logo-full.svg or image URL'
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Logo Alt Description</label>
+                  <input
+                    type="text"
+                    value={data.logo?.alt || ''}
+                    onChange={e => updateNestedField('logo', 'alt', e.target.value)}
+                    placeholder="Age Reversal Clinics Logo"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+
+                <div className="col-span-full md:col-span-2">
+                  {renderImageField(
+                    'Clinic Exterior Photo',
+                    data.exteriorPhoto || '',
+                    (val) => updateField('exteriorPhoto', val),
+                    'exteriorPhoto',
+                    '/assets/exterior.jpg or image URL'
+                  )}
+                </div>
+
+                {/* Our Facility — Clinic Gallery Header & SEO */}
+                <div className="col-span-full pt-4 border-t border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                        Our Facility — Clinic Gallery
+                      </span>
+                      <h3 className="text-sm font-bold text-[#003334]">
+                        Facility Gallery Suites ({activeFacilityGallery.rooms.length})
+                      </h3>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => openArrayModal('interiorPhotos')}
-                      className="px-2.5 py-1.5 text-xs font-bold uppercase bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-800 cursor-pointer"
+                      onClick={openNewRoomModal}
+                      className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#003334] hover:bg-[#002627] text-white rounded-lg cursor-pointer self-start sm:self-auto"
                     >
-                      Manage Gallery
+                      + Add Gallery Suite
                     </button>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {(data.interiorPhotos || []).map((url, i) => (
-                    <div key={i} className="border border-slate-200 bg-white rounded-lg p-2 text-xs group relative hover:border-slate-300 transition-all">
-                      <img 
-                        src={url} 
-                        alt={`Interior ${i + 1}`} 
-                        className="w-full h-24 object-cover rounded bg-slate-100 mb-1.5 border border-slate-100"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.opacity = '0.4';
-                        }}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-700">Gallery Eyebrow</label>
+                      <input
+                        type="text"
+                        value={activeFacilityGallery.eyebrow || ''}
+                        onChange={e =>
+                          updateFacilityGallery(curr => ({ ...curr, eyebrow: e.target.value }))
+                        }
+                        placeholder="Our Facility"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
                       />
-                      <div className="truncate font-mono text-[11px] text-slate-700" title={url}>
-                        {url}
-                      </div>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            triggerImageUpload(
-                              (newUrl) => {
-                                const updated = [...(data.interiorPhotos || [])];
-                                updated[i] = newUrl;
-                                updateField('interiorPhotos', updated);
-                              },
-                              `interior_${i}`,
-                              url
-                            )
-                          }
-                          className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
-                        >
-                          Replace
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = (data.interiorPhotos || []).filter((_, idx) => idx !== i);
-                            updateField('interiorPhotos', updated);
-                          }}
-                          className="text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
-                        >
-                          Remove
-                        </button>
-                      </div>
                     </div>
-                  ))}
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-700">Gallery Heading</label>
+                      <input
+                        type="text"
+                        value={activeFacilityGallery.heading || ''}
+                        onChange={e =>
+                          updateFacilityGallery(curr => ({ ...curr, heading: e.target.value }))
+                        }
+                        placeholder="Clinic Gallery"
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                      />
+                    </div>
+                  </div>
+
+                  {renderSeoKeywordsEditor(
+                    'Facility Gallery SEO Keywords',
+                    activeFacilityGallery.seoKeywords || [],
+                    (next) => updateFacilityGallery(curr => ({ ...curr, seoKeywords: next })),
+                    'facility_seo'
+                  )}
+
+                  {/* Gallery Room Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                    {activeFacilityGallery.rooms.map((room, i) => (
+                      <div
+                        key={room.id || i}
+                        className="border border-slate-200 bg-white rounded-xl p-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                      >
+                        <div>
+                          <div className="relative mb-2">
+                            <img
+                              src={room.image}
+                              alt={room.imageAlt || room.title}
+                              className="w-full h-28 object-cover rounded-lg bg-slate-100 border border-slate-100"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.opacity = '0.4';
+                              }}
+                            />
+                            <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[9px] font-bold uppercase tracking-wider">
+                              {room.tag || 'SUITE'}
+                            </span>
+                          </div>
+                          <div className="font-bold text-slate-900 text-xs truncate">{room.title}</div>
+                          <div className="text-[10px] text-slate-500 truncate mt-0.5" title={room.imageAlt || room.image}>
+                            {room.imageAlt || room.image}
+                          </div>
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditRoomModal(i)}
+                              className="px-2 py-1 text-[10px] uppercase font-bold bg-slate-100 hover:bg-slate-200 text-slate-900 rounded cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                triggerImageUpload(
+                                  (newUrl) => {
+                                    updateFacilityGallery(curr => ({
+                                      ...curr,
+                                      rooms: curr.rooms.map((r, idx) =>
+                                        idx === i ? { ...r, image: newUrl } : r
+                                      ),
+                                    }));
+                                  },
+                                  `facility_room_${i}`,
+                                  room.image
+                                )
+                              }
+                              className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
+                            >
+                              Replace Img
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteRoom(i)}
+                            className="text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })()}
 
         {/* SECTION 3: DIRECT COMMUNICATION CHANNELS */}
         {(activeMenuOption === 'all' || activeMenuOption === 'contact') && (
@@ -1053,67 +1512,112 @@ export default function ClinicDataManager() {
         )}
 
         {/* SECTION 5: CLINICAL ACCREDITATIONS & REGISTRATIONS */}
-        {(activeMenuOption === 'all' || activeMenuOption === 'accreditations') && (
-          <section className="w-full border-b border-slate-200 py-8 px-4 sm:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
-              <div>
-                <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
-                  05 / Configuration
+        {(activeMenuOption === 'all' || activeMenuOption === 'accreditations') && (() => {
+          const activeAccSection = getSafeAccreditationsSection(data.accreditationsSection);
+          return (
+            <section className="w-full border-b border-slate-200 py-8 px-4 sm:px-8">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                    05 / Configuration
+                  </span>
+                  <h2 className="text-xl font-bold text-[#003334]">Clinical Accreditations &amp; Certifications</h2>
+                </div>
+                <span className="text-xs text-slate-500 font-mono mt-1 sm:mt-0">
+                  Maps to accreditationsSection, gmcRegistration, cqcStatus, accreditations
                 </span>
-                <h2 className="text-xl font-bold text-[#003334]">Clinical Accreditations & Compliance</h2>
-              </div>
-              <span className="text-xs text-slate-500 font-mono mt-1 sm:mt-0">
-                Maps to gmcRegistration, cqcStatus, accreditations
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-slate-700">GMC Registration Statement</label>
-                <input
-                  type="text"
-                  value={data.gmcRegistration || ''}
-                  onChange={e => updateField('gmcRegistration', e.target.value)}
-                  placeholder="GMC Certified Medical Specialists"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
-                />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-slate-700">CQC Status Statement</label>
-                <input
-                  type="text"
-                  value={data.cqcStatus || ''}
-                  onChange={e => updateField('cqcStatus', e.target.value)}
-                  placeholder="CQC Regulated & Compliant Private Facility"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
-                />
-              </div>
-
-              <div className="col-span-full space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold uppercase text-slate-700">
-                    Accreditations List ({data.accreditations?.length || 0})
-                  </label>
-                  <button
-                    onClick={() => openArrayModal('accreditations')}
-                    className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-200 hover:bg-slate-300 rounded text-slate-800 cursor-pointer"
-                  >
-                    Edit Accreditations
-                  </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    value={activeAccSection.eyebrow || ''}
+                    onChange={e => updateAccreditationsSection(curr => ({ ...curr, eyebrow: e.target.value }))}
+                    placeholder="Accreditations & Certifications"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  {(data.accreditations || []).map((acc, i) => (
-                    <div key={i} className="px-3 py-2 bg-white border border-slate-200 text-xs text-slate-800 font-medium rounded-lg flex items-center justify-between">
-                      <span>{acc}</span>
-                      <span className="font-mono text-slate-400">#{i + 1}</span>
-                    </div>
-                  ))}
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Heading</label>
+                  <input
+                    type="text"
+                    value={activeAccSection.heading || ''}
+                    onChange={e => updateAccreditationsSection(curr => ({ ...curr, heading: e.target.value }))}
+                    placeholder="Excellence guaranteed. Trusted globally."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+
+                <div className="col-span-full space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Description</label>
+                  <textarea
+                    rows={2}
+                    value={activeAccSection.description || ''}
+                    onChange={e => updateAccreditationsSection(curr => ({ ...curr, description: e.target.value }))}
+                    placeholder="We adhere to the highest international medical standards..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">GMC Registration Statement</label>
+                  <input
+                    type="text"
+                    value={data.gmcRegistration || ''}
+                    onChange={e => updateField('gmcRegistration', e.target.value)}
+                    placeholder="GMC Certified Medical Specialists"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">CQC Status Statement</label>
+                  <input
+                    type="text"
+                    value={data.cqcStatus || ''}
+                    onChange={e => updateField('cqcStatus', e.target.value)}
+                    placeholder="CQC Regulated & Compliant Private Facility"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+
+                <div className="col-span-full pt-1">
+                  {renderSeoKeywordsEditor(
+                    'Accreditations SEO Keywords',
+                    activeAccSection.seoKeywords || [],
+                    (next) => updateAccreditationsSection(curr => ({ ...curr, seoKeywords: next })),
+                    'accreditations_seo'
+                  )}
+                </div>
+
+                <div className="col-span-full space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase text-slate-700">
+                      Verified Accreditations Checklist ({data.accreditations?.length || 0})
+                    </label>
+                    <button
+                      onClick={() => openArrayModal('accreditations')}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-200 hover:bg-slate-300 rounded text-slate-800 cursor-pointer"
+                    >
+                      Edit Accreditations
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {(data.accreditations || []).map((acc, i) => (
+                      <div key={i} className="px-3 py-2 bg-white border border-slate-200 text-xs text-slate-800 font-medium rounded-lg flex items-center justify-between">
+                        <span>{acc}</span>
+                        <span className="font-mono text-slate-400">#{i + 1}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })()}
 
         {/* SECTION 6: CLINIC FACILITIES & LOCATIONS */}
         {(activeMenuOption === 'all' || activeMenuOption === 'locations') && (
@@ -1888,13 +2392,224 @@ export default function ClinicDataManager() {
           </section>
         )}
 
-        {/* SECTION 11: RAW TYPESCRIPT CODE PREVIEW */}
+        {/* SECTION 11: OUR PROCESS (THE JOURNEY TO RADIANCE) */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'process') && (() => {
+          const activeProcess = getSafeProcessSection(data.processSection);
+          return (
+            <section className="w-full border-b border-slate-200 py-6 sm:py-8 px-4 sm:px-8">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                    11 / Configuration
+                  </span>
+                  <h2 className="text-xl font-bold text-[#003334]">
+                    Our Process ({activeProcess.steps.length} Steps)
+                  </h2>
+                </div>
+                <button
+                  onClick={openNewStepModal}
+                  className="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#003334] hover:bg-[#002627] rounded-lg cursor-pointer"
+                >
+                  + Add Step
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Eyebrow</label>
+                  <input
+                    type="text"
+                    value={activeProcess.eyebrow || ''}
+                    onChange={e => updateProcessSection(curr => ({ ...curr, eyebrow: e.target.value }))}
+                    placeholder="Our Process"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Heading</label>
+                  <input
+                    type="text"
+                    value={activeProcess.heading || ''}
+                    onChange={e => updateProcessSection(curr => ({ ...curr, heading: e.target.value }))}
+                    placeholder="The Journey to Radiance"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Section Subheading</label>
+                  <input
+                    type="text"
+                    value={activeProcess.subheading || ''}
+                    onChange={e => updateProcessSection(curr => ({ ...curr, subheading: e.target.value }))}
+                    placeholder="From initial diagnostic skin mapping..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-6">
+                {renderSeoKeywordsEditor(
+                  'Our Process SEO Keywords',
+                  activeProcess.seoKeywords || [],
+                  (next) => updateProcessSection(curr => ({ ...curr, seoKeywords: next })),
+                  'process_seo'
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {activeProcess.steps.map((step, idx) => (
+                  <div
+                    key={step.id || idx}
+                    className="border border-slate-200 bg-white rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-start gap-3">
+                      {step.image && (
+                        <img
+                          src={step.image}
+                          alt={step.imageAlt || step.title}
+                          className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase">
+                          Step {step.stepNumber || String(idx + 1).padStart(2, '0')}
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                          {step.title || 'Untitled Step'}
+                        </h3>
+                        {step.imageAlt && (
+                          <div className="text-[10px] text-slate-500 truncate mt-0.5" title={step.imageAlt}>
+                            Alt: {step.imageAlt}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {(step.seoKeywords || []).length} SEO tags
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => openEditStepModal(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteStep(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* SECTION 12: TRUST BRANDS & LABORATORIES */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'trustBrands') && (() => {
+          const activeTrustBrands = getSafeTrustBrandsSection(data.trustBrandsSection);
+          return (
+            <section className="w-full border-b border-slate-200 py-6 sm:py-8 px-4 sm:px-8">
+              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+                <div>
+                  <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                    12 / Configuration
+                  </span>
+                  <h2 className="text-xl font-bold text-[#003334]">
+                    Trust Brands ({activeTrustBrands.brands.length} Partners)
+                  </h2>
+                </div>
+                <button
+                  onClick={openNewBrandModal}
+                  className="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#003334] hover:bg-[#002627] rounded-lg cursor-pointer"
+                >
+                  + Add Brand Partner
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-slate-700">Banner Heading</label>
+                  <input
+                    type="text"
+                    value={activeTrustBrands.heading || ''}
+                    onChange={e => updateTrustBrandsSection(curr => ({ ...curr, heading: e.target.value }))}
+                    placeholder="Over 1,000+ Brands & Laboratories Trust Us"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                </div>
+                <div>
+                  {renderSeoKeywordsEditor(
+                    'Trust Brands SEO Keywords',
+                    activeTrustBrands.seoKeywords || [],
+                    (next) => updateTrustBrandsSection(curr => ({ ...curr, seoKeywords: next })),
+                    'trust_brands_seo'
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {activeTrustBrands.brands.map((brand, idx) => (
+                  <div
+                    key={brand.id || idx}
+                    className="border border-slate-200 bg-white rounded-xl p-3 flex flex-col justify-between gap-2.5 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {brand.imageUrl ? (
+                        <img
+                          src={brand.imageUrl}
+                          alt={brand.name}
+                          className="h-10 w-10 object-contain rounded border border-slate-200 bg-slate-50 p-1 shrink-0"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-mono font-bold uppercase text-[#003334] shrink-0">
+                          {brand.iconType || 'icon'}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
+                          {brand.imageUrl ? 'Logo Asset' : `Icon: ${brand.iconType}`}
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{brand.name}</h3>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => openEditBrandModal(idx)}
+                        className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteBrand(idx)}
+                        className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* SECTION 13: RAW TYPESCRIPT CODE PREVIEW */}
         {(activeMenuOption === 'all' || activeMenuOption === 'code') && (
           <section className="w-full py-8 px-4 sm:px-8">
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4 pb-2 border-b border-slate-200">
               <div>
                 <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
-                  11 / Source Code
+                  13 / Source Code
                 </span>
                 <h2 className="text-xl font-bold text-[#003334]">Direct File TypeScript Preview</h2>
               </div>
@@ -1941,6 +2656,12 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? 'Awards Showcase Editor'
                     : modalType === 'doctor'
                     ? 'Book Consultation Specialist Editor'
+                    : modalType === 'facilityRoom'
+                    ? 'Clinic Gallery Suite Editor'
+                    : modalType === 'processStep'
+                    ? 'Our Process Step Editor'
+                    : modalType === 'trustBrand'
+                    ? 'Trust Brand Partner Editor'
                     : 'Item Array Editor'}
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-[#003334]">
@@ -1952,6 +2673,12 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? (editingAwardIndex !== null ? 'Edit Award' : 'Add Award')
                     : modalType === 'doctor'
                     ? (editingDoctorIndex !== null ? 'Edit Preferred Specialist' : 'Add Preferred Specialist')
+                    : modalType === 'facilityRoom'
+                    ? (editingRoomIndex !== null ? 'Edit Gallery Suite' : 'Add Gallery Suite')
+                    : modalType === 'processStep'
+                    ? (editingStepIndex !== null ? 'Edit Process Step' : 'Add Process Step')
+                    : modalType === 'trustBrand'
+                    ? (editingBrandIndex !== null ? 'Edit Brand Partner' : 'Add Brand Partner')
                     : modalType === 'keywords' ? 'Edit Brand Keywords'
                     : modalType === 'accreditations' ? 'Edit Accreditations'
                     : modalType === 'payments' ? 'Edit Payment Methods'
@@ -2534,8 +3261,332 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 </div>
               )}
 
+              {/* EDIT FACILITY GALLERY ROOM FORM */}
+              {modalType === 'facilityRoom' && roomDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Room / Suite Title</label>
+                      <input
+                        type="text"
+                        value={roomDraft.title}
+                        onChange={e => setRoomDraft({ ...roomDraft, title: e.target.value })}
+                        placeholder="e.g. Executive Recovery Lounge"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Category Tag</label>
+                      <input
+                        type="text"
+                        value={roomDraft.tag}
+                        onChange={e => setRoomDraft({ ...roomDraft, tag: e.target.value })}
+                        placeholder="e.g. VIP SUITE"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">SEO Image Alt Text</label>
+                    <input
+                      type="text"
+                      value={roomDraft.imageAlt || ''}
+                      onChange={e => setRoomDraft({ ...roomDraft, imageAlt: e.target.value })}
+                      placeholder="e.g. Executive Recovery Lounge at Age Reversal Clinics Harley Street"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Suite Image Asset</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerImageUpload(
+                            (newUrl) => setRoomDraft({ ...roomDraft, image: newUrl }),
+                            'facility_room_modal',
+                            roomDraft.image
+                          )
+                        }
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {roomDraft.image ? 'Replace Image File' : '+ Add Image File'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={roomDraft.image || ''}
+                        onChange={e => setRoomDraft({ ...roomDraft, image: e.target.value })}
+                        placeholder="/assets/suite.jpg or image URL"
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {roomDraft.image && (
+                        <button
+                          type="button"
+                          onClick={() => setRoomDraft({ ...roomDraft, image: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {roomDraft.image && (
+                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
+                        <img
+                          src={roomDraft.image}
+                          alt={roomDraft.imageAlt || 'Suite Preview'}
+                          className="h-12 w-12 object-cover rounded border border-slate-300"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="font-mono text-slate-600 text-[11px] truncate">{roomDraft.image}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* EDIT PROCESS STEP FORM */}
+              {modalType === 'processStep' && stepDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Step Number</label>
+                      <input
+                        type="text"
+                        value={stepDraft.stepNumber}
+                        onChange={e => setStepDraft({ ...stepDraft, stepNumber: e.target.value })}
+                        placeholder="01"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 font-mono"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Step Title</label>
+                      <input
+                        type="text"
+                        value={stepDraft.title}
+                        onChange={e => setStepDraft({ ...stepDraft, title: e.target.value })}
+                        placeholder="e.g. Comprehensive Consultation & Assessment"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">SEO Image Alt Text</label>
+                    <input
+                      type="text"
+                      value={stepDraft.imageAlt || ''}
+                      onChange={e => setStepDraft({ ...stepDraft, imageAlt: e.target.value })}
+                      placeholder="e.g. Comprehensive Consultation & Assessment at Age Reversal Clinics London"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Step Image Asset</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerImageUpload(
+                            (newUrl) => setStepDraft({ ...stepDraft, image: newUrl }),
+                            'process_step_modal',
+                            stepDraft.image
+                          )
+                        }
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {stepDraft.image ? 'Replace Image File' : '+ Add Image File'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={stepDraft.image || ''}
+                        onChange={e => setStepDraft({ ...stepDraft, image: e.target.value })}
+                        placeholder="/assets/step.jpg or image URL"
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {stepDraft.image && (
+                        <button
+                          type="button"
+                          onClick={() => setStepDraft({ ...stepDraft, image: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {stepDraft.image && (
+                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
+                        <img
+                          src={stepDraft.image}
+                          alt={stepDraft.imageAlt || 'Step Preview'}
+                          className="h-12 w-12 object-cover rounded border border-slate-300"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="font-mono text-slate-600 text-[11px] truncate">{stepDraft.image}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step SEO Keywords */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase text-slate-700">
+                      Step SEO Keywords ({(stepDraft.seoKeywords || []).length})
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newStepKeywordInput}
+                        onChange={e => setNewStepKeywordInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && newStepKeywordInput.trim()) {
+                            e.preventDefault();
+                            const kw = newStepKeywordInput.trim();
+                            setStepDraft({
+                              ...stepDraft,
+                              seoKeywords: Array.from(new Set([...(stepDraft.seoKeywords || []), kw])),
+                            });
+                            setNewStepKeywordInput('');
+                          }
+                        }}
+                        placeholder="e.g. skin consultation london"
+                        className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const kw = newStepKeywordInput.trim();
+                          if (!kw) return;
+                          setStepDraft({
+                            ...stepDraft,
+                            seoKeywords: Array.from(new Set([...(stepDraft.seoKeywords || []), kw])),
+                          });
+                          setNewStepKeywordInput('');
+                        }}
+                        className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {(stepDraft.seoKeywords || []).map((kw, kIdx) => (
+                        <span
+                          key={`${kw}-${kIdx}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-teal-50/70 border border-teal-200 rounded-md text-xs font-medium text-[#003334]"
+                        >
+                          {kw}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setStepDraft({
+                                ...stepDraft,
+                                seoKeywords: (stepDraft.seoKeywords || []).filter((_, i) => i !== kIdx),
+                              })
+                            }
+                            className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* EDIT TRUST BRAND PARTNER FORM */}
+              {modalType === 'trustBrand' && brandDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Brand / Laboratory Name</label>
+                      <input
+                        type="text"
+                        value={brandDraft.name}
+                        onChange={e => setBrandDraft({ ...brandDraft, name: e.target.value })}
+                        placeholder="e.g. Lumina Bio-Labs"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Vector Icon Style</label>
+                      <select
+                        value={brandDraft.iconType || 'shield'}
+                        onChange={e => setBrandDraft({ ...brandDraft, iconType: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white"
+                      >
+                        <option value="circle">Circle (Orbital)</option>
+                        <option value="layers">Layers (Stacked)</option>
+                        <option value="pill">Pill (Capsule)</option>
+                        <option value="shield">Shield (Verified)</option>
+                        <option value="instagram">Hexagon / Aperture</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Custom Brand Logo (Optional)</label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerImageUpload(
+                            (newUrl) => setBrandDraft({ ...brandDraft, imageUrl: newUrl }),
+                            'trust_brand_modal',
+                            brandDraft.imageUrl
+                          )
+                        }
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {brandDraft.imageUrl ? 'Replace Logo File' : '+ Upload Logo'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={brandDraft.imageUrl || ''}
+                        onChange={e => setBrandDraft({ ...brandDraft, imageUrl: e.target.value })}
+                        placeholder="/assets/brand-logo.svg or leave empty to use Vector Icon"
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {brandDraft.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setBrandDraft({ ...brandDraft, imageUrl: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {brandDraft.imageUrl && (
+                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
+                        <img
+                          src={brandDraft.imageUrl}
+                          alt={brandDraft.name}
+                          className="h-10 w-10 object-contain rounded border border-slate-300 bg-white p-1"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="font-mono text-slate-600 text-[11px] truncate">{brandDraft.imageUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* EDIT ARRAY ITEMS */}
-              {modalType !== 'location' && modalType !== 'pillar' && modalType !== 'award' && modalType !== 'doctor' && (
+              {modalType !== 'location' &&
+                modalType !== 'pillar' &&
+                modalType !== 'award' &&
+                modalType !== 'doctor' &&
+                modalType !== 'facilityRoom' &&
+                modalType !== 'processStep' &&
+                modalType !== 'trustBrand' && (
                 <div className="space-y-4">
                   {modalType === 'interiorPhotos' && (
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
@@ -2642,6 +3693,12 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? saveAwardDraft
                     : modalType === 'doctor'
                     ? saveDoctorDraft
+                    : modalType === 'facilityRoom'
+                    ? saveRoomDraft
+                    : modalType === 'processStep'
+                    ? saveStepDraft
+                    : modalType === 'trustBrand'
+                    ? saveBrandDraft
                     : saveArrayDraft
                 }
                 className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#003334] hover:bg-[#002627] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"

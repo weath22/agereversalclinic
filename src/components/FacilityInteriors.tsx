@@ -22,14 +22,33 @@ export default function FacilityInteriors() {
     };
 
     window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    window.addEventListener('facility_interiors_updated', handleClinicDataChanged);
     window.addEventListener('storage', handleClinicDataChanged);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+      window.removeEventListener('facility_interiors_updated', handleClinicDataChanged);
       window.removeEventListener('storage', handleClinicDataChanged);
     };
   }, []);
 
+  const galleryEyebrow = clinicData.facilityGallery?.eyebrow || 'Our Facility';
+  const galleryHeading = clinicData.facilityGallery?.heading || 'Clinic Gallery';
+  const galleryKeywords = Array.isArray(clinicData.facilityGallery?.seoKeywords)
+    ? clinicData.facilityGallery.seoKeywords
+    : [];
+
   const facilityItems: FacilityRoom[] = useMemo(() => {
+    const configuredRooms = clinicData.facilityGallery?.rooms;
+    if (Array.isArray(configuredRooms) && configuredRooms.length > 0) {
+      return configuredRooms.map((room, idx) => ({
+        id: room.id || `facility-room-${idx + 1}`,
+        title: room.title || `Clinic Suite ${idx + 1}`,
+        tag: room.tag || 'CLINIC SUITE',
+        image: room.image,
+        imageAlt: room.imageAlt || `${room.title} at ${clinicData.name || 'Age Reversal Clinics'}`,
+      }));
+    }
+
     const interiorPhotos = Array.isArray(clinicData.interiorPhotos)
       ? clinicData.interiorPhotos.map((u) => u?.trim()).filter(Boolean)
       : [];
@@ -82,20 +101,25 @@ export default function FacilityInteriors() {
   return (
     <section 
       id="facility" 
+      aria-label={`${galleryEyebrow} - ${galleryHeading}`}
+      data-seo-keywords={galleryKeywords.join(', ')}
       className="py-16 md:py-24 relative overflow-hidden border-t border-silver-200 bg-cover bg-center bg-no-repeat bg-[url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=1920')]"
     >
       {/* Luxurious overlay to keep text and gallery items beautifully legible while letting London's classic architecture shine through clearly */}
       <div className="absolute inset-0 bg-white/45" />
       
       <div className="container mx-auto px-4 md:px-8 relative z-10">
+        {galleryKeywords.length > 0 && (
+          <span className="sr-only">{galleryKeywords.join(', ')}</span>
+        )}
         
         {/* Header Section */}
         <div className="text-center mb-12 md:mb-16 max-w-2xl mx-auto">
           <span className="text-xs font-bold text-[#003334] uppercase tracking-[0.25em] block mb-3">
-            Our Facility
+            {galleryEyebrow}
           </span>
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-silver-900 mb-4">
-            Clinic Gallery
+            {galleryHeading}
           </h2>
           <div className="w-16 h-0.5 bg-rose-gold mx-auto" />
         </div>
@@ -115,7 +139,7 @@ export default function FacilityInteriors() {
               {/* Image Box */}
               <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-silver-100 border border-silver-200/50 relative">
                 <img 
-                  alt={facility.title} 
+                  alt={facility.imageAlt || facility.title} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   src={facility.image}
                 />
@@ -180,7 +204,7 @@ export default function FacilityInteriors() {
               >
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 max-h-[75vh] flex items-center justify-center">
                   <img 
-                    alt={facilityItems[activeLightboxIndex].title}
+                    alt={facilityItems[activeLightboxIndex].imageAlt || facilityItems[activeLightboxIndex].title}
                     className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
                     src={facilityItems[activeLightboxIndex].image}
                   />

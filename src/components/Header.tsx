@@ -1,9 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Menu, X, Calendar, ChevronDown, ChevronRight, ChevronLeft, Gift, ThumbsUp, BookOpen, HelpCircle, Phone, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { HeaderConfig } from '../types';
+import { HeaderConfig, MasterBranchCategory, SpecialistArea } from '../types';
 import { CLINIC_INFO, CLINIC_DATA, ClinicData } from '../data/clinicInfo';
-import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
+import {
+  getClinicData,
+  fetchRemoteClinicData,
+  getMasterServices,
+  normalizeMasterBranch,
+} from '../lib/adminStore';
 import { useCart } from '../context/CartContext';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
@@ -11,7 +16,7 @@ interface HeaderProps {
   onBookClick: (serviceName?: string) => void;
   activeSection: string;
   setActiveSection: (sec: string) => void;
-  onTreatmentClick?: (treatmentName: string) => void;
+  onTreatmentClick?: (treatmentName: string, branchCategory?: string) => void;
   headerConfig?: HeaderConfig;
   onAboutClick?: () => void;
   onShopClick?: (rangeFilter?: string) => void;
@@ -30,6 +35,7 @@ interface NavItem {
   desktopName?: string;
   mobileName?: string;
   id: string;
+  branchCategory?: MasterBranchCategory;
   href?: string;
   isMega?: boolean;
   hideOnDesktop?: boolean;
@@ -58,6 +64,7 @@ export default function Header({
   const [isVisible, setIsVisible] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const lastScrollY = useRef(0);
 
   useEffect(() => {
@@ -71,11 +78,19 @@ export default function Header({
       setClinicData(customEvt.detail || getClinicData());
     };
 
+    const handleMasterServicesUpdate = () => {
+      setMasterServices(getMasterServices());
+    };
+
     window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
     window.addEventListener('storage', handleClinicDataChanged);
+    window.addEventListener('storage', handleMasterServicesUpdate);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
       window.removeEventListener('storage', handleClinicDataChanged);
+      window.removeEventListener('storage', handleMasterServicesUpdate);
     };
   }, []);
 
@@ -108,7 +123,7 @@ export default function Header({
     };
   }, [hoveredItem, isMobileMenuOpen]);
 
-  const navItems: NavItem[] = [
+  const baseNavItems: NavItem[] = [
     {
       name: 'Our Clinic',
       id: 'home',
@@ -119,6 +134,7 @@ export default function Header({
       desktopName: 'Face & Injectables',
       mobileName: 'Face & Injectables',
       id: 'face-injectables',
+      branchCategory: 'Face & Injectables',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
@@ -170,6 +186,7 @@ export default function Header({
       desktopName: 'Body',
       mobileName: 'Body Sculpting',
       id: 'body-sculpting',
+      branchCategory: 'Body Sculpting',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
@@ -211,7 +228,7 @@ export default function Header({
       desktopName: 'Advanced Facials',
       mobileName: 'Advanced Facials',
       id: 'advanced-facials',
-      hideOnDesktop: true,
+      branchCategory: 'Advanced Facials',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
@@ -249,6 +266,7 @@ export default function Header({
       desktopName: 'Beauty & Hair',
       mobileName: 'Hair & Beauty',
       id: 'hair-beauty',
+      branchCategory: 'Hair & Beauty',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
@@ -288,10 +306,10 @@ export default function Header({
     },
     {
       name: 'IV Drip Lounge & Wellness',
-      desktopName: 'IV Drip Lounge',
+      desktopName: 'IV Drips',
       mobileName: 'IV Drips & Wellness',
       id: 'iv-wellness',
-      hideOnDesktop: true,
+      branchCategory: 'IV Drips & Wellness',
       isMega: true,
       imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=400&q=80',
       megaColumns: [
@@ -359,6 +377,77 @@ export default function Header({
     }
   ];
 
+  const navItems: NavItem[] = useMemo(() => {
+    const doesStaticItemMatchService = (staticItem: string, serviceTitle: string): boolean => {
+      const cleanStatic = staticItem.replace(/\([^)]*\)/g, '').toLowerCase().trim();
+      const cleanService = serviceTitle.toLowerCase().trim();
+      if (!cleanStatic || !cleanService) return false;
+      if (cleanStatic === cleanService || cleanStatic.includes(cleanService) || cleanService.includes(cleanStatic)) {
+        return true;
+      }
+      const keyPhrases = [
+        'salmon sperm',
+        'profhilo',
+        'morpheus8',
+        'emface',
+        'endolift',
+        'aqualyx',
+        'desoface',
+        'desobody',
+        'fat freezing',
+        'emsculpt',
+        'slimming pen',
+        'buttock lift',
+        'tattoo removal',
+        'electrolysis',
+      ];
+      return keyPhrases.some(
+        (phrase) => cleanStatic.includes(phrase) && cleanService.includes(phrase)
+      );
+    };
+
+    return baseNavItems.map((item) => {
+      if (!item.isMega || !item.branchCategory) return item;
+      const targetBranch = item.branchCategory;
+
+      // Services currently assigned to this branch
+      const branchServices = masterServices.filter(
+        (s) => normalizeMasterBranch(s.pricingCategory || s.category, s.title) === targetBranch
+      );
+
+      // Services currently assigned to a DIFFERENT branch
+      const otherBranchServices = masterServices.filter(
+        (s) => normalizeMasterBranch(s.pricingCategory || s.category, s.title) !== targetBranch
+      );
+
+      // Filter out any static sub-items that correspond to a service moved to another branch
+      const filteredStaticColumns: MegaColumn[] = (item.megaColumns || [])
+        .map((col) => ({
+          ...col,
+          items: col.items.filter(
+            (subItem) =>
+              !otherBranchServices.some((otherService) =>
+                doesStaticItemMatchService(subItem, otherService.title)
+              )
+          ),
+        }))
+        .filter((col) => col.items.length > 0);
+
+      const specialistColumn: MegaColumn = {
+        title: 'SPECIALIST SERVICES',
+        items: branchServices.map((s) => s.title),
+      };
+
+      return {
+        ...item,
+        megaColumns:
+          specialistColumn.items.length > 0
+            ? [specialistColumn, ...filteredStaticColumns]
+            : filteredStaticColumns,
+      };
+    });
+  }, [masterServices]);
+
   const handleNavClick = (id: string) => {
     setActiveSection(id);
     setIsMobileMenuOpen(false);
@@ -368,13 +457,24 @@ export default function Header({
     }
   };
 
-  const handleProcedureClick = (procName: string) => {
+  const handleProcedureClick = (procName: string, branchCategory?: string) => {
     setHoveredItem(null);
     setIsMobileMenuOpen(false);
+    const cleanProcName = procName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    const matchedMaster = masterServices.find(
+      (s) =>
+        s.title.toLowerCase() === procName.toLowerCase() ||
+        s.title.toLowerCase() === cleanProcName.toLowerCase()
+    );
+    const resolvedBranch = matchedMaster
+      ? normalizeMasterBranch(matchedMaster.pricingCategory || matchedMaster.category, matchedMaster.title)
+      : branchCategory;
+    const resolvedTitle = matchedMaster ? matchedMaster.title : procName;
+
     if (onTreatmentClick) {
-      onTreatmentClick(procName);
+      onTreatmentClick(resolvedTitle, resolvedBranch);
     } else {
-      onBookClick(procName);
+      onBookClick(resolvedTitle);
     }
   };
 
@@ -402,6 +502,9 @@ export default function Header({
 
   // Find currently active mega menu item
   const activeMegaItem = navItems.find(item => item.isMega && hoveredItem === item.id);
+  const resolvedMobileSubmenu = activeMobileSubmenu
+    ? navItems.find((i) => i.id === activeMobileSubmenu.id) || activeMobileSubmenu
+    : null;
 
   return (
     <header className={`sticky top-0 left-0 right-0 w-full self-start z-50 transition-transform duration-300 ease-in-out ${
@@ -649,7 +752,7 @@ export default function Header({
                           {col.items.map((subItem) => (
                             <button
                               key={subItem}
-                              onClick={() => handleProcedureClick(subItem)}
+                              onClick={() => handleProcedureClick(subItem, activeMegaItem.branchCategory)}
                               className="text-left text-[11px] xl:text-xs text-luxury-subtext hover:text-luxury-gold hover:translate-x-0.5 transition-all py-1 cursor-pointer truncate"
                               title={subItem}
                             >
@@ -978,7 +1081,7 @@ export default function Header({
                   ) : (
                     /* Slide 2: Subcategory / Drill-Down Menu View */
                     <motion.div
-                      key={`submenu-${activeMobileSubmenu.id}`}
+                      key={`submenu-${resolvedMobileSubmenu?.id}`}
                       initial={{ x: 40, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       exit={{ x: 40, opacity: 0 }}
@@ -1002,13 +1105,13 @@ export default function Header({
                         {/* Title and Subcategory List */}
                         <div className="space-y-4 px-8">
                           <h4 className="text-left font-serif text-[26px] text-white tracking-wide">
-                            {activeMobileSubmenu.mobileName || activeMobileSubmenu.name}
+                            {resolvedMobileSubmenu?.mobileName || resolvedMobileSubmenu?.name}
                           </h4>
 
                           <div className="text-white space-y-4">
                             {/* If Mega Columns (e.g. Face, Body, Buttocks) */}
-                            {activeMobileSubmenu.isMega && activeMobileSubmenu.megaColumns ? (
-                              activeMobileSubmenu.megaColumns.map((col) => (
+                            {resolvedMobileSubmenu?.isMega && resolvedMobileSubmenu?.megaColumns ? (
+                              resolvedMobileSubmenu.megaColumns.map((col) => (
                                 <div key={col.title} className="space-y-1.5 pt-2 first:pt-0">
                                   <span className="text-[11px] font-bold uppercase tracking-widest text-silver-400 block pb-1 border-b border-white/10">
                                     {col.title}
@@ -1020,7 +1123,7 @@ export default function Header({
                                         type="button"
                                         onClick={() => {
                                           setActiveMobileSubmenu(null);
-                                          handleProcedureClick(subItem);
+                                          handleProcedureClick(subItem, resolvedMobileSubmenu.branchCategory);
                                         }}
                                         className="flex w-full items-center justify-between px-0 py-2 text-left text-lg font-normal text-silver-300 hover:text-white transition-colors cursor-pointer"
                                       >
@@ -1034,7 +1137,7 @@ export default function Header({
                             ) : (
                               /* If procedure list (e.g. Pricing, Shop, More) */
                               <div className="flex flex-col space-y-2">
-                                {activeMobileSubmenu.procedures?.map((proc) => (
+                                {resolvedMobileSubmenu?.procedures?.map((proc) => (
                                   <button
                                     key={proc.name}
                                     type="button"

@@ -1,32 +1,83 @@
-# Treatment Protocol Image Icons & Clinical Admin Studio
+# Implementation Plan: Manageable Two-Tier Hierarchy (Parent Branches & Sub-Groups) for Treatment Pricing & Media
 
-A specialized administrative management suite enabling clinic staff to manage, customize, and enrich treatment protocol steps with image icons (curated aesthetic vectors, custom image uploads, and external URLs), comprehensive clinical details, desktop inspection modals, and mobile bottom sheet drawers.
+Build a full CRUD hierarchy management system inside **Treatment Pricing & Media (`TreatmentPricingEditor.tsx`)**, replacing hardcoded keyword matchers with a dynamic, two-tier filter pill interface where parent branches and sub-groups can be added, renamed, and deleted directly from the UI, with complete persistence into `src/data/treatmentPricing.ts` and `src/data/siteCustomizations.json`.
 
-## Current Implementation Status: Complete & Verified
+---
 
-### Completed Tasks
-1. **Task 1: Protocol Data Structure & Persistent Store**
-   - Defined `ProtocolStepItem`, `TreatmentProtocolGroup`, and `ClinicalProtocolsConfig` in `src/types.ts`.
-   - Added persistent store methods in `src/lib/adminStore.ts` with auto-sync to disk (`/api/admin/save-to-files`).
-   - Populated initial clinical protocols config in `src/data/siteCustomizations.json` covering all 9 treatment groups mapped to user-provided assets.
+## User Review Required
 
-2. **Task 2: Responsive Modal & Mobile Bottom Drawer Component (`ClinicalProtocolModal.tsx`)**
-   - **Desktop**: Centered, elevated glass dialogue with backdrop blur and instant image preview.
-   - **Mobile**: Touch-friendly bottom sheet drawer with drag handle and accessible touch targets ($\ge 44\text{px}$).
-   - **Multi-Source Image Selector**:
-     - *Curated Presets*: Grid of aesthetic clinical icons and uploaded assets (`Face Wash`, `Disk`, `Sheet Face Mask`, etc.).
-     - *Upload / Drag & Drop*: Direct image file upload with WebP handling and instant local preview fallback.
-     - *External Image URL*: Clean input field with live verification.
-   - **Streamlined Details Form**: Step title, character-counted concise description (max 180 chars), phase tag, duration, and focus tissue layer.
+> [!IMPORTANT]
+> - **Cascade Safety on Delete**: When deleting a Parent Branch or Sub-Group that contains active treatments, a safe reassignment dialog will prompt you to select a new destination group so no treatments are ever lost or orphaned.
+> - **Sync with Master Branches**: The 5 default parent branches match the existing **Services & Branches** taxonomy (`Face & Injectables`, `Body Sculpting`, `Advanced Facials`, `Hair & Beauty`, `IV Drips & Wellness`), and you will have the freedom to add more parent branches or edit existing ones.
 
-3. **Task 3: Admin Studio Tab (`ClinicalProtocolsEditor.tsx`)**
-   - Created full-featured editor in Admin Dashboard (`Clinical Protocols (Icons & Steps)` tab).
-   - Horizontal treatment selector across all 9 treatments.
-   - Step management: reorder (Move Up/Down), edit, delete, add new step.
-   - Live Patient Journey Preview toggle to inspect the exact look before saving.
-   - Reset to clinical defaults functionality.
+---
 
-4. **Task 4: Customer-Facing Timeline Synchronization (`HowItWorksTimeline.tsx`)**
-   - Updated "The Clinical Protocol" component to dynamically query `getClinicalProtocolByTreatmentId(treatmentId)`.
-   - Graceful rendering of real image icons (with responsive luxury sizing and subtle shadows) alongside SVG presets.
-   - Instant real-time updates via `clinical_protocols_updated` and `storage` event listeners.
+## Proposed Changes
+
+### 1. Data Schema & Persistence Store (`src/data/treatmentPricing.ts`, `src/lib/adminStore.ts`, `server.ts`) - [COMPLETED]
+- Defined `TreatmentSubGroup` and `TreatmentTaxonomyGroup` interfaces.
+- Seeded default taxonomy with all 5 clinic branches and structured sub-groups.
+- Added `subCategory` and `subGroupId` to treatment items and summaries, with `inferTreatmentSubGroup` helper.
+- Added store methods: `getTreatmentTaxonomy`, `saveTreatmentTaxonomy`, `resetTreatmentTaxonomy`, `fetchRemoteTreatmentTaxonomy`.
+- Updated `server.ts` with `/api/admin/treatment-taxonomy` (GET/POST) and disk persistence into `siteCustomizations.json` and `treatmentPricing.ts`.
+
+---
+
+### 2. Two-Tier Interactive Filter Pill Bar in `TreatmentPricingEditor.tsx` - [COMPLETED]
+- **Row 1: Parent Branches Bar**:
+  - `All Procedures` pill with live total count.
+  - Interactive Parent Branch pills with live procedure count badges.
+  - Hover / Action Icons on each parent pill: ✏️ Edit (Pencil) to rename branch, 🗑️ Delete (Trash) with safe treatment re-assignment.
+  - `+ Add Branch` button opening clean mini-modal to enter a new parent branch.
+- **Row 2: Sub-Groups Bar (Contextual to Selected Parent)**:
+  - Expands smoothly with `AnimatePresence` whenever a parent branch is selected.
+  - Renders `All [Parent Name]` pill with parent count, plus each Sub-Group pill with live count.
+  - Hover / Action Icons on each sub-group pill: ✏️ Edit (Pencil) to rename sub-group (auto-updates assigned treatments' `subCategory`), 🗑️ Delete (Trash) with cascade migration options.
+  - `+ Add Sub-Group` button opening clean mini-modal to add sub-groups under the active parent branch.
+
+---
+
+### 3. Treatment Card & Modal Sub-Group Assignment (`TreatmentPricingEditor.tsx`) - [COMPLETED]
+- **Card Display**:
+  - Clean dual hierarchy badges displayed on every procedure card: `[Face & Injectables]` (clinic teal badge) `›` `[Anti-Wrinkle Injections (Botox)]` (warm gold badge), with intelligent fallback to `inferTreatmentSubGroup()` for legacy procedures.
+- **Add / Edit Treatment Modal**:
+  - Cascading dropdowns: Parent Branch dynamically lists all branches from `taxonomy`. When changed, automatically updates the child sub-groups.
+  - Sub-Group dropdown dynamically filters to sub-groups belonging to the selected parent branch.
+  - Inline `+ New Sub-Group` quick-add button & input right inside the modal (also accessible as "+ Add New Sub-Group..." in the select dropdown) so administrators can create and assign a new sub-group on the fly without leaving the modal.
+- **Batch / Inline Updates & Preservation**:
+  - When treatments are saved (`handleSaveTreatmentModal`), both `category`, `subCategory`, and `subGroupId` are validated, synced with taxonomy, and persisted to local/remote stores.
+  - When treatments are duplicated (`handleDuplicateTreatment`), parent branch, sub-group title, and sub-group ID are explicitly preserved and indexed.
+- **Safe Reassignment Modals**:
+  - Modal 6: Add Parent Branch
+  - Modal 7: Rename Parent Branch (cascades to treatments)
+  - Modal 8: Delete Parent Branch (safe migration to another branch or unassigned)
+  - Modal 9: Add Sub-Group
+  - Modal 10: Rename Sub-Group (cascades to treatments)
+  - Modal 11: Delete Sub-Group (safe migration to another sub-group or unassigned)
+
+---
+
+### 4. Integration & Public View Harmony (`PricingPageView.tsx`, `Header.tsx`)
+
+- Update `PricingPageView.tsx` so the public pricing page filter tabs read directly from the dynamic taxonomy instead of hardcoded prefix checks.
+- Ensure all events (`treatment_pricing_updated`, `treatment_taxonomy_updated`) propagate immediately across components without requiring full page refresh.
+
+---
+
+## Verification Plan
+
+### Automated Build Verification:
+- Run `compile_applet` to verify zero TypeScript errors and successful production bundling.
+
+### Manual / Browser Verification:
+1. **Parent Branch CRUD**:
+   - Add a new test parent branch (e.g. `Wellness Concierge`) and verify it appears in Row 1.
+   - Rename a parent branch and verify all child treatments reflect the new branch name.
+2. **Sub-Group CRUD**:
+   - Select `Face & Injectables`, click `+ Add Sub-group` (e.g. `Bio-Regenerative Exosomes`).
+   - Rename an existing sub-group (e.g. `Anti-Wrinkle` to `Neuromodulators & Botox`) and confirm all 12+ treatments update their badges and counts.
+   - Delete a sub-group and verify the safe re-assignment modal cleanly migrates treatments.
+3. **Card Assignment**:
+   - Open a treatment edit modal, change its sub-group, save, and confirm the card filter count updates immediately.
+4. **Persistence Test**:
+   - Refresh the page and verify that the customized parent branches and sub-groups persist cleanly from disk.

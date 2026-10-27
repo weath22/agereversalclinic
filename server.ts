@@ -6,6 +6,7 @@ import {
   TREATMENT_PRICING_DATA,
   filterAndSortTreatmentCards,
   TreatmentSortOption,
+  DEFAULT_TREATMENT_TAXONOMY,
 } from './src/data/treatmentPricing.ts';
 import { CLINIC_DATA } from './src/data/clinicInfo.ts';
 
@@ -49,6 +50,7 @@ const customizationsPath = path.resolve(__dirname, 'src/data/siteCustomizations.
 const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
 const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
 const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
+const specialistTreatmentsPath = path.resolve(__dirname, 'src/data/specialistTreatments.ts');
 
 // ============================================================================
 // TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
@@ -64,8 +66,8 @@ try {
   ];
 
   // Read active configuration files so the duplicate-extension cleaner never deletes
-  // any file actively referenced in clinicInfo.ts or siteCustomizations.json
-  const activeReferenceContent = [clinicInfoPath, customizationsPath]
+  // any file actively referenced in clinicInfo.ts, specialistTreatments.ts, or siteCustomizations.json
+  const activeReferenceContent = [clinicInfoPath, specialistTreatmentsPath, customizationsPath]
     .map((filePath) => {
       try {
         return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
@@ -230,6 +232,82 @@ function syncTransformationsDataTs(galleryConfig: any): void {
   }
 }
 
+const TRANSFORMATION_SLUG_TO_DISPLAY: Record<string, string> = {
+  'anti-aging': 'Regenerative Biotech',
+  'acne-scarring': 'Skin Texture & Scars',
+  'facial-harmony': 'Facial Rejuvenation',
+  'clinical-hair': 'Hair Density',
+  'body-sculpting': 'Lifting & Contouring',
+  'advanced-facials': 'Skin Texture & Scars',
+};
+
+function syncSpecialistTreatmentsTs(services: any[]): void {
+  if (!Array.isArray(services) || services.length === 0 || !fs.existsSync(specialistTreatmentsPath)) {
+    return;
+  }
+  try {
+    const existingContent = fs.readFileSync(specialistTreatmentsPath, 'utf-8');
+    const startMarker = 'const RAW_SPECIALIST_TREATMENTS: SpecialistTreatment[] =';
+    const endMarker = 'export function enrichSpecialistTreatment';
+    const startIdx = existingContent.indexOf(startMarker);
+    const endIdx = existingContent.indexOf(endMarker);
+
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const cleanedItems = services.map((s: any) => {
+        const pricingCat = s.pricingCategory || s.category || 'Face & Injectables';
+        const rawTransCat = s.transformationCategory || 'Facial Rejuvenation';
+        const transformationCategory = TRANSFORMATION_SLUG_TO_DISPLAY[rawTransCat] || rawTransCat;
+        return {
+          id: s.id,
+          title: s.title,
+          category: pricingCat,
+          pricingCategory: pricingCat,
+          transformationCategory,
+          description: s.description || '',
+          image: s.image || '',
+          badge: s.badge || pricingCat,
+          duration: s.duration || '45 mins',
+          ...(s.coverMedia ? { coverMedia: s.coverMedia } : {}),
+          ...(Array.isArray(s.seoKeywords) && s.seoKeywords.length > 0 ? { seoKeywords: s.seoKeywords } : {}),
+        };
+      });
+
+      const updatedTs =
+        existingContent.slice(0, startIdx) +
+        `${startMarker} ${JSON.stringify(cleanedItems, null, 2)};\n\n` +
+        existingContent.slice(endIdx);
+      fs.writeFileSync(specialistTreatmentsPath, updatedTs, 'utf-8');
+      console.log(`[Admin] Synced ${cleanedItems.length} specialist services (and images) to ${specialistTreatmentsPath}`);
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not sync specialistTreatments.ts:', err);
+  }
+}
+
+function syncTreatmentTaxonomyTs(taxonomy: any[]): void {
+  if (!Array.isArray(taxonomy) || taxonomy.length === 0 || !fs.existsSync(treatmentPricingPath)) {
+    return;
+  }
+  try {
+    const existingContent = fs.readFileSync(treatmentPricingPath, 'utf-8');
+    const startMarker = 'export const DEFAULT_TREATMENT_TAXONOMY: TreatmentTaxonomyGroup[] =';
+    const endMarker = 'export function inferTreatmentSubGroup';
+    const startIdx = existingContent.indexOf(startMarker);
+    const endIdx = existingContent.indexOf(endMarker);
+
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const updatedTs =
+        existingContent.slice(0, startIdx) +
+        `${startMarker} ${JSON.stringify(taxonomy, null, 2)};\n\n` +
+        existingContent.slice(endIdx);
+      fs.writeFileSync(treatmentPricingPath, updatedTs, 'utf-8');
+      console.log(`[Admin] Synced treatment taxonomy (${taxonomy.length} groups) to ${treatmentPricingPath}`);
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not sync treatment taxonomy to treatmentPricing.ts:', err);
+  }
+}
+
 function generateTreatmentPricingTs(items: any[]): string {
   // Preserve all interfaces, projection helpers, and sub-option definitions in src/data/treatmentPricing.ts
   if (fs.existsSync(treatmentPricingPath)) {
@@ -379,6 +457,58 @@ export interface ClinicConsultationConfig {
   stayInTouchChannels: ClinicStayInTouchChannel[];
 }
 
+export interface ClinicProcessStep {
+  id: string;
+  stepNumber: string;
+  title: string;
+  image: string;
+  imageAlt?: string;
+  seoKeywords?: string[];
+}
+
+export interface ClinicProcessSection {
+  eyebrow?: string;
+  heading: string;
+  subheading?: string;
+  seoKeywords?: string[];
+  steps: ClinicProcessStep[];
+}
+
+export interface ClinicFacilityRoomItem {
+  id: string;
+  title: string;
+  tag: string;
+  image: string;
+  imageAlt?: string;
+}
+
+export interface ClinicFacilityGallerySection {
+  eyebrow?: string;
+  heading: string;
+  seoKeywords?: string[];
+  rooms: ClinicFacilityRoomItem[];
+}
+
+export interface ClinicTrustBrandItem {
+  id: string;
+  name: string;
+  iconType: string;
+  imageUrl?: string;
+}
+
+export interface ClinicTrustBrandsSection {
+  heading: string;
+  seoKeywords?: string[];
+  brands: ClinicTrustBrandItem[];
+}
+
+export interface ClinicAccreditationsSection {
+  eyebrow?: string;
+  heading: string;
+  description?: string;
+  seoKeywords?: string[];
+}
+
 export interface ClinicData {
   name: string;
   tagline: string;
@@ -425,6 +555,10 @@ export interface ClinicData {
   whyChooseUs?: ClinicWhyChooseUsSection;
   awardsShowcase?: ClinicAwardsSection;
   consultationConfig?: ClinicConsultationConfig;
+  processSection?: ClinicProcessSection;
+  facilityGallery?: ClinicFacilityGallerySection;
+  trustBrandsSection?: ClinicTrustBrandsSection;
+  accreditationsSection?: ClinicAccreditationsSection;
 }
 
 export const CLINIC_DATA: ClinicData = ${JSON.stringify(data, null, 2)};
@@ -497,6 +631,22 @@ const getMergedClinicData = () => {
     consultationConfig: {
       ...(CLINIC_DATA.consultationConfig || {}),
       ...(diskTsClinicData?.consultationConfig || {}),
+    },
+    processSection: {
+      ...(CLINIC_DATA.processSection || {}),
+      ...(diskTsClinicData?.processSection || {}),
+    },
+    facilityGallery: {
+      ...(CLINIC_DATA.facilityGallery || {}),
+      ...(diskTsClinicData?.facilityGallery || {}),
+    },
+    trustBrandsSection: {
+      ...(CLINIC_DATA.trustBrandsSection || {}),
+      ...(diskTsClinicData?.trustBrandsSection || {}),
+    },
+    accreditationsSection: {
+      ...(CLINIC_DATA.accreditationsSection || {}),
+      ...(diskTsClinicData?.accreditationsSection || {}),
     },
   };
 
@@ -576,6 +726,55 @@ const getMergedClinicData = () => {
                   : baseClinicData.consultationConfig?.stayInTouchChannels || [],
               }
             : baseClinicData.consultationConfig,
+        processSection:
+          customClinicData.processSection && typeof customClinicData.processSection === 'object'
+            ? {
+                ...(baseClinicData.processSection || {}),
+                ...customClinicData.processSection,
+                seoKeywords: Array.isArray(customClinicData.processSection.seoKeywords)
+                  ? customClinicData.processSection.seoKeywords
+                  : baseClinicData.processSection?.seoKeywords || [],
+                steps: Array.isArray(customClinicData.processSection.steps)
+                  ? customClinicData.processSection.steps
+                  : baseClinicData.processSection?.steps || [],
+              }
+            : baseClinicData.processSection,
+        facilityGallery:
+          customClinicData.facilityGallery && typeof customClinicData.facilityGallery === 'object'
+            ? {
+                ...(baseClinicData.facilityGallery || {}),
+                ...customClinicData.facilityGallery,
+                seoKeywords: Array.isArray(customClinicData.facilityGallery.seoKeywords)
+                  ? customClinicData.facilityGallery.seoKeywords
+                  : baseClinicData.facilityGallery?.seoKeywords || [],
+                rooms: Array.isArray(customClinicData.facilityGallery.rooms)
+                  ? customClinicData.facilityGallery.rooms
+                  : baseClinicData.facilityGallery?.rooms || [],
+              }
+            : baseClinicData.facilityGallery,
+        trustBrandsSection:
+          customClinicData.trustBrandsSection && typeof customClinicData.trustBrandsSection === 'object'
+            ? {
+                ...(baseClinicData.trustBrandsSection || {}),
+                ...customClinicData.trustBrandsSection,
+                seoKeywords: Array.isArray(customClinicData.trustBrandsSection.seoKeywords)
+                  ? customClinicData.trustBrandsSection.seoKeywords
+                  : baseClinicData.trustBrandsSection?.seoKeywords || [],
+                brands: Array.isArray(customClinicData.trustBrandsSection.brands)
+                  ? customClinicData.trustBrandsSection.brands
+                  : baseClinicData.trustBrandsSection?.brands || [],
+              }
+            : baseClinicData.trustBrandsSection,
+        accreditationsSection:
+          customClinicData.accreditationsSection && typeof customClinicData.accreditationsSection === 'object'
+            ? {
+                ...(baseClinicData.accreditationsSection || {}),
+                ...customClinicData.accreditationsSection,
+                seoKeywords: Array.isArray(customClinicData.accreditationsSection.seoKeywords)
+                  ? customClinicData.accreditationsSection.seoKeywords
+                  : baseClinicData.accreditationsSection?.seoKeywords || [],
+              }
+            : baseClinicData.accreditationsSection,
       }
     : baseClinicData;
 
@@ -631,6 +830,27 @@ const collectClinicDataAssetUrls = (clinicData: any): string[] => {
     for (const award of clinicData.awardsShowcase.awards) {
       if (!award || typeof award !== 'object') continue;
       pushIfString(award.imageUrl);
+    }
+  }
+
+  if (Array.isArray(clinicData.processSection?.steps)) {
+    for (const step of clinicData.processSection.steps) {
+      if (!step || typeof step !== 'object') continue;
+      pushIfString(step.image);
+    }
+  }
+
+  if (Array.isArray(clinicData.facilityGallery?.rooms)) {
+    for (const room of clinicData.facilityGallery.rooms) {
+      if (!room || typeof room !== 'object') continue;
+      pushIfString(room.image);
+    }
+  }
+
+  if (Array.isArray(clinicData.trustBrandsSection?.brands)) {
+    for (const brand of clinicData.trustBrandsSection.brands) {
+      if (!brand || typeof brand !== 'object') continue;
+      pushIfString(brand.imageUrl);
     }
   }
 
@@ -853,6 +1073,57 @@ const handleSaveClinicData = (req: any, res: any) => {
       };
     }
 
+    if (clinicData.processSection && typeof clinicData.processSection === 'object') {
+      existing.homepage_process_config = {
+        eyebrow: clinicData.processSection.eyebrow || "Our Process",
+        heading: clinicData.processSection.heading || "The Journey to Radiance",
+        subheading:
+          clinicData.processSection.subheading ||
+          "From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.",
+        seoKeywords: Array.isArray(clinicData.processSection.seoKeywords)
+          ? clinicData.processSection.seoKeywords
+          : [],
+        steps: Array.isArray(clinicData.processSection.steps) ? clinicData.processSection.steps : [],
+      };
+    }
+
+    if (clinicData.facilityGallery && typeof clinicData.facilityGallery === 'object') {
+      existing.homepage_facility_interiors_config = {
+        eyebrow: clinicData.facilityGallery.eyebrow || "Our Facility",
+        heading: clinicData.facilityGallery.heading || "Clinic Gallery",
+        seoKeywords: Array.isArray(clinicData.facilityGallery.seoKeywords)
+          ? clinicData.facilityGallery.seoKeywords
+          : [],
+        rooms: Array.isArray(clinicData.facilityGallery.rooms) ? clinicData.facilityGallery.rooms : [],
+      };
+    }
+
+    if (clinicData.trustBrandsSection && typeof clinicData.trustBrandsSection === 'object') {
+      existing.homepage_trust_brands_config = {
+        heading: clinicData.trustBrandsSection.heading || "Over 1,000+ Brands & Laboratories Trust Us",
+        seoKeywords: Array.isArray(clinicData.trustBrandsSection.seoKeywords)
+          ? clinicData.trustBrandsSection.seoKeywords
+          : [],
+        brands: Array.isArray(clinicData.trustBrandsSection.brands)
+          ? clinicData.trustBrandsSection.brands
+          : [],
+      };
+    }
+
+    if (clinicData.accreditationsSection && typeof clinicData.accreditationsSection === 'object') {
+      existing.homepage_accreditations_config = {
+        eyebrow: clinicData.accreditationsSection.eyebrow || "Accreditations & Certifications",
+        heading: clinicData.accreditationsSection.heading || "Excellence guaranteed. Trusted globally.",
+        description:
+          clinicData.accreditationsSection.description ||
+          "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
+        seoKeywords: Array.isArray(clinicData.accreditationsSection.seoKeywords)
+          ? clinicData.accreditationsSection.seoKeywords
+          : [],
+        items: Array.isArray(clinicData.accreditations) ? clinicData.accreditations : [],
+      };
+    }
+
     existing.lastSynced = new Date().toISOString();
     fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
 
@@ -1071,6 +1342,71 @@ app.get('/api/admin/treatment-pricing/:id', (req, res) => {
   }
 });
 
+// GET /api/admin/treatment-taxonomy
+app.get('/api/admin/treatment-taxonomy', (_req, res) => {
+  try {
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+        if (
+          customizations.treatment_taxonomy_data &&
+          Array.isArray(customizations.treatment_taxonomy_data) &&
+          customizations.treatment_taxonomy_data.length > 0
+        ) {
+          return res.json({ success: true, taxonomy: customizations.treatment_taxonomy_data });
+        }
+      } catch {
+        // fall through to default taxonomy
+      }
+    }
+    return res.json({ success: true, taxonomy: DEFAULT_TREATMENT_TAXONOMY });
+  } catch (error) {
+    console.error('Error fetching treatment taxonomy:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// POST /api/admin/treatment-taxonomy
+app.post('/api/admin/treatment-taxonomy', (req, res) => {
+  try {
+    const { taxonomy, treatment_taxonomy_data, data } = req.body;
+    const payload = taxonomy || treatment_taxonomy_data || data || req.body;
+    if (!payload || !Array.isArray(payload)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid treatment taxonomy data. Must be an array of taxonomy groups.',
+      });
+    }
+
+    // 1. Bake directly to src/data/treatmentPricing.ts so it persists across builds
+    syncTreatmentTaxonomyTs(payload);
+
+    // 2. Persist to siteCustomizations.json
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    existing.treatment_taxonomy_data = payload;
+    existing.lastSynced = new Date().toISOString();
+    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+
+    return res.json({
+      success: true,
+      message: 'Treatment taxonomy successfully saved to treatmentPricing.ts and siteCustomizations.json',
+      taxonomy: payload,
+      updatedAt: existing.lastSynced,
+    });
+  } catch (error) {
+    console.error('Error saving treatment taxonomy:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
 // API: Get current persisted file config
 app.get('/api/admin/config', (_req, res) => {
   try {
@@ -1119,6 +1455,23 @@ app.post('/api/admin/save-to-files', (req, res) => {
     // If homepage_gallery_config_v6 is part of this save, also sync into src/data/transformationsData.ts
     if (existing.homepage_gallery_config_v6 && typeof existing.homepage_gallery_config_v6 === 'object') {
       syncTransformationsDataTs(existing.homepage_gallery_config_v6);
+    }
+
+    // If master_services_config_v1 or homepage_specialist_areas_config_v4 is part of this save,
+    // also bake directly into src/data/specialistTreatments.ts so service images, names & branches persist after build/deploy
+    if (Array.isArray(existing.master_services_config_v1) && existing.master_services_config_v1.length > 0) {
+      syncSpecialistTreatmentsTs(existing.master_services_config_v1);
+    } else if (
+      existing.homepage_specialist_areas_config_v4 &&
+      Array.isArray(existing.homepage_specialist_areas_config_v4.areas) &&
+      existing.homepage_specialist_areas_config_v4.areas.length > 0
+    ) {
+      syncSpecialistTreatmentsTs(existing.homepage_specialist_areas_config_v4.areas);
+    }
+
+    // If treatment_taxonomy_data is part of this save, bake into src/data/treatmentPricing.ts
+    if (Array.isArray(existing.treatment_taxonomy_data) && existing.treatment_taxonomy_data.length > 0) {
+      syncTreatmentTaxonomyTs(existing.treatment_taxonomy_data);
     }
 
     existing.lastSynced = new Date().toISOString();

@@ -9,6 +9,11 @@ export interface Service {
 export interface TreatmentType {
   id: string;
   name: string;
+  stepNumber?: string;
+  description?: string;
+  tag?: string;
+  image?: string;
+  duration?: string;
 }
 
 export interface ProcessStep {
@@ -16,6 +21,8 @@ export interface ProcessStep {
   stepNumber: string;
   title: string;
   image: string;
+  imageAlt?: string;
+  seoKeywords?: string[];
 }
 
 export interface FacilityRoom {
@@ -23,6 +30,7 @@ export interface FacilityRoom {
   title: string;
   tag: string;
   image: string;
+  imageAlt?: string;
 }
 
 export interface GalleryItem {
@@ -74,7 +82,8 @@ export interface TeamMember {
 export interface BrandPartner {
   id: string;
   name: string;
-  iconType: 'circle' | 'layers' | 'pill' | 'shield' | 'instagram';
+  iconType: 'circle' | 'layers' | 'pill' | 'shield' | 'instagram' | string;
+  imageUrl?: string;
 }
 
 export interface Article {
@@ -200,11 +209,47 @@ export interface ClinicalGuidanceMediaConfig {
   postCareVisual?: TreatmentMediaItem;
 }
 
+export type MasterBranchCategory =
+  | 'Face & Injectables'
+  | 'Body Sculpting'
+  | 'Advanced Facials'
+  | 'Hair & Beauty'
+  | 'IV Drips & Wellness';
+
+export const MASTER_BRANCH_CATEGORIES: MasterBranchCategory[] = [
+  'Face & Injectables',
+  'Body Sculpting',
+  'Advanced Facials',
+  'Hair & Beauty',
+  'IV Drips & Wellness',
+];
+
+export type TransformationCategorySlug =
+  | 'anti-aging'
+  | 'acne-scarring'
+  | 'facial-harmony'
+  | 'clinical-hair'
+  | 'body-sculpting'
+  | 'advanced-facials'
+  | 'Regenerative Biotech'
+  | 'Skin Texture & Scars'
+  | 'Facial Rejuvenation'
+  | 'Hair Density'
+  | 'Lifting & Contouring'
+  | string;
+
 export interface SpecialistArea {
   id: string;
+  number?: string;
   title: string;
   description: string;
   image: string;
+  pricingCategory?: MasterBranchCategory | string;
+  transformationCategory?: TransformationCategorySlug;
+  category?: string;
+  duration?: string;
+  price?: string;
+  icon?: string;
   coverMedia?: TreatmentMediaItem;
   seoKeywords?: string[];
 }
@@ -218,6 +263,10 @@ export interface SpecialistAreasConfig {
 export interface Treatment {
   id: string;
   name: string;
+  stepNumber?: string;
+  description?: string;
+  tag?: string;
+  image?: string;
   price?: string;
   duration?: string;
 }
@@ -231,6 +280,31 @@ export interface TreatmentsConfig {
 
 // BEFORE & AFTER GALLERY CONFIGS
 export type ExistingTreatmentGroupId =
+  | 'lash-eyebrow'
+  | 'body-waxing'
+  | 'ladies-girls-cut-collors-treatments'
+  | 'men-and-kids'
+  | 'men-kids-services'
+  | 'facial-skin-care'
+  | 'aqualyx-course-3'
+  | 'deso-face-and-body-course-of-1'
+  | 'deso-face-and-body-course-of-3'
+  | 'slimming-pen'
+  | 'platelet-rich-plasma-prp'
+  | 'co2-laser-from'
+  | 'endolift-fiber-lift'
+  | 'salmon-sperm-injection'
+  | 'semi-permanent-makeup'
+  | 'tattoo-removal'
+  | 'morpheus8-treatment'
+  | 'emface-skin-tightening-and-lifting'
+  | 'emscuplt-body-sculpt-and-tightening'
+  | 'body-slimming-fat-loss-cellulite-reduction'
+  | 'anti-wrinkles-injection'
+  | 'iv-drip-lounge-course-of-1'
+  | 'dermal-fillers-1ml'
+  | 'profhilo-2ml'
+  // Legacy IDs kept for backward compatibility
   | 'anti-aging'
   | 'acne-scarring'
   | 'facial-harmony'
@@ -362,14 +436,18 @@ export interface TeamLeadershipConfig {
 }
 
 export interface ProcessConfig {
+  eyebrow?: string;
   heading: string;
   description: string;
+  seoKeywords?: string[];
   steps: ProcessStep[];
 }
 
 export interface FacilityInteriorsConfig {
+  eyebrow?: string;
   heading: string;
   description: string;
+  seoKeywords?: string[];
   rooms: FacilityRoom[];
 }
 
@@ -394,9 +472,12 @@ export interface TrustBrand {
   id: string;
   name: string;
   iconType: string;
+  imageUrl?: string;
 }
 
 export interface TrustBrandsConfig {
+  heading?: string;
+  seoKeywords?: string[];
   brands: TrustBrand[];
 }
 
@@ -406,6 +487,11 @@ export interface Accreditation {
 }
 
 export interface AccreditationsConfig {
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  seoKeywords?: string[];
+  items?: string[];
   accreditations: Accreditation[];
 }
 

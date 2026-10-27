@@ -125,7 +125,12 @@ export default function ClinicalSEOHead({
     const mergedKeywords = Array.from(new Set([
       ...(customKeywords || []),
       ...(treatmentData?.seoKeywords || []),
-      ...(clinicData.brandKeywords || [])
+      ...(clinicData.brandKeywords || []),
+      ...(clinicData.processSection?.seoKeywords || []),
+      ...(clinicData.processSection?.steps?.flatMap((s) => s.seoKeywords || []) || []),
+      ...(clinicData.facilityGallery?.seoKeywords || []),
+      ...(clinicData.trustBrandsSection?.seoKeywords || []),
+      ...(clinicData.accreditationsSection?.seoKeywords || []),
     ]));
     setMetaTag('name', 'keywords', mergedKeywords.join(', '));
     setMetaTag('name', 'author', clinicData.name);

@@ -1,15 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { getAccreditationsConfig } from '../lib/adminStore';
-import { useState, useEffect } from 'react';
+import { getAccreditationsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
+import { ClinicData } from '../data/clinicInfo';
 
 export default function Accreditations() {
-  const [config, setConfig] = useState(getAccreditationsConfig());
+  const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
 
   useEffect(() => {
-    setConfig(getAccreditationsConfig());
+    setClinicData(getClinicData());
+    fetchRemoteClinicData().then((remote) => {
+      if (remote) setClinicData(remote);
+    });
+
+    const handleUpdate = () => {
+      setClinicData(getClinicData());
+    };
+
+    window.addEventListener('clinic_data_changed', handleUpdate);
+    window.addEventListener('accreditations_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleUpdate);
+      window.removeEventListener('accreditations_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, []);
+
+  const fallbackConfig = getAccreditationsConfig();
+  const accSection = clinicData.accreditationsSection;
+  const eyebrow =
+    accSection?.eyebrow ||
+    fallbackConfig.eyebrow ||
+    'Accreditations & Certifications';
+  const heading =
+    accSection?.heading ||
+    fallbackConfig.heading ||
+    'Excellence guaranteed. Trusted globally.';
+  const description =
+    accSection?.description ||
+    fallbackConfig.description ||
+    'Age Reversal Clinic adheres strictly to the highest medical, surgical, and cosmetic safety protocols. Our prestige is backed by leading medical boards, safety associations, and beauty standard committees in the UK and internationally.';
+  const seoKeywords = Array.isArray(accSection?.seoKeywords)
+    ? accSection.seoKeywords
+    : fallbackConfig.seoKeywords || [];
+  const checklistItems =
+    Array.isArray(clinicData.accreditations) && clinicData.accreditations.length > 0
+      ? clinicData.accreditations.map((text, idx) => ({ id: `acc-${idx + 1}`, text }))
+      : fallbackConfig.accreditations || [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -235,12 +273,19 @@ export default function Accreditations() {
   ];
 
   return (
-    <section className="py-20 bg-[#124c6a] border-t border-sky-950 overflow-hidden relative">
+    <section
+      aria-label={`${eyebrow} - ${heading}`}
+      data-seo-keywords={seoKeywords.join(', ')}
+      className="py-20 bg-[#124c6a] border-t border-sky-950 overflow-hidden relative"
+    >
       {/* Subtle background glow effect across the whole section */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-[#33B4AA]/10 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
+        {seoKeywords.length > 0 && (
+          <span className="sr-only">{seoKeywords.join(', ')}</span>
+        )}
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
           
           {/* Left Column: Pure CSS masonry with direct flat cards to prevent any disappearing or isolated elements */}
@@ -274,27 +319,27 @@ export default function Accreditations() {
           {/* Right Column: Heading, Description, and Details */}
           <div className="w-full lg:w-[42%] order-1 lg:order-2">
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-[0.25em] block mb-3">
-              Accreditations &amp; Certifications
+              {eyebrow}
             </span>
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-6 leading-tight">
-              Excellence guaranteed. Trusted globally.
+              {heading}
             </h3>
             <div className="w-16 h-0.5 bg-rose-gold mb-6" />
             <p className="text-base text-neutral-300 leading-relaxed mb-8">
-              Age Reversal Clinic adheres strictly to the highest medical, surgical, and cosmetic safety protocols. Our prestige is backed by leading medical boards, safety associations, and beauty standard committees in the UK and internationally.
+              {description}
             </p>
 
             {/* List of Accreditations */}
-                        <div className="space-y-4">
-              {config.accreditations.map(acc => (
-              <div key={acc.id} className="flex items-start gap-3">
-                <div className="mt-1 w-5 h-5 rounded-full bg-emerald-950/45 border border-emerald-800/30 flex items-center justify-center text-emerald-400 shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="space-y-4">
+              {checklistItems.map(acc => (
+                <div key={acc.id} className="flex items-start gap-3">
+                  <div className="mt-1 w-5 h-5 rounded-full bg-emerald-950/45 border border-emerald-800/30 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-neutral-100 uppercase tracking-wider">{acc.text}</h4>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-neutral-100 uppercase tracking-wider">{acc.text}</h4>
-                </div>
-              </div>
               ))}
             </div>
           </div>

@@ -89,12 +89,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!isAdminOpen) {
+    const syncConfigs = () => {
       setHeaderConfig(getHeaderConfig());
       setHeroConfig(getHeroConfig());
       setSpecialistAreasConfig(getSpecialistAreasConfig());
       setTreatmentsConfig(getTreatmentsConfig());
+    };
+    if (!isAdminOpen) {
+      syncConfigs();
     }
+    window.addEventListener('master_services_updated', syncConfigs);
+    window.addEventListener('storage', syncConfigs);
+    return () => {
+      window.removeEventListener('master_services_updated', syncConfigs);
+      window.removeEventListener('storage', syncConfigs);
+    };
   }, [isAdminOpen]);
 
   const handleToggleAdmin = (open: boolean) => {

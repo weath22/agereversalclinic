@@ -1,9 +1,15 @@
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMediaDefaults } from './treatments/treatmentData';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
-import { getTreatmentDetailsConfig, loadSiteCustomizations } from '../lib/adminStore';
+import {
+  getTreatmentDetailsConfig,
+  loadSiteCustomizations,
+  getMasterServices,
+  normalizeMasterBranch,
+} from '../lib/adminStore';
+import { SpecialistArea } from '../types';
 import BeforeAfterComparisonSlider from './BeforeAfterComparisonSlider';
 import SkinLayerTargets from './SkinLayerTargets';
 import PrePostCareGuidelines from './PrePostCareGuidelines';
@@ -25,58 +31,106 @@ interface ServicePageViewProps {
 }
 
 export default function ServicePageView({ treatmentName, onClose, onBook }: ServicePageViewProps) {
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
+
   // Scroll to top and hydrate deferred customizations on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     loadSiteCustomizations().catch(() => {});
   }, [treatmentName]);
 
-  // Resolve matching treatment metadata dynamically using key lookup
+  useEffect(() => {
+    const handleMasterUpdate = () => {
+      setMasterServices(getMasterServices());
+    };
+    window.addEventListener('master_services_updated', handleMasterUpdate);
+    window.addEventListener('storage', handleMasterUpdate);
+    return () => {
+      window.removeEventListener('master_services_updated', handleMasterUpdate);
+      window.removeEventListener('storage', handleMasterUpdate);
+    };
+  }, []);
+
+  // Resolve matching treatment metadata dynamically using key lookup + live master service branch
   const getTreatmentData = () => {
     const lowerName = treatmentName.toLowerCase().trim();
     const config = getTreatmentDetailsConfig();
     const db = config || TREATMENT_DETAILS_DB;
 
+    const matchedMaster = masterServices.find(
+      (s) => s.id.toLowerCase() === lowerName || s.title.toLowerCase() === lowerName
+    );
+
     // 1. Search CLINICAL_AREAS_DB for a matching treatment name to get its exact ID key
-    let matchedId: string | null = null;
-    for (const area of CLINICAL_AREAS_DB) {
-      for (const cat of area.categories) {
-        const item = cat.items.find(i => i.name.toLowerCase() === lowerName || i.id.toLowerCase() === lowerName);
-        if (item) {
-          matchedId = item.id;
-          break;
+    let matchedId: string | null = matchedMaster?.id || null;
+    if (!matchedId) {
+      for (const area of CLINICAL_AREAS_DB) {
+        for (const cat of area.categories) {
+          const item = cat.items.find(
+            (i) => i.name.toLowerCase() === lowerName || i.id.toLowerCase() === lowerName
+          );
+          if (item) {
+            matchedId = item.id;
+            break;
+          }
         }
+        if (matchedId) break;
       }
-      if (matchedId) break;
     }
 
-    // 2. If we found a core ID key and it exists in our customized database config, return it!
+    let baseDetails: any = null;
+
+    // 2. If we found a core ID key and it exists in our customized database config
     if (matchedId && db[matchedId]) {
-      return db[matchedId];
+      baseDetails = db[matchedId];
+    } else if (db[lowerName]) {
+      baseDetails = db[lowerName];
+    } else {
+      const slugKey = lowerName.replace(/[^a-z0-9]/g, '');
+      if (db[slugKey]) {
+        baseDetails = db[slugKey];
+      } else if (lowerName.includes('exosome')) {
+        baseDetails = db.exosome || TREATMENT_DETAILS_DB.exosome;
+      } else if (lowerName.includes('profhilo')) {
+        baseDetails = db.profhilo || TREATMENT_DETAILS_DB.profhilo;
+      } else if (lowerName.includes('morpheus') || lowerName.includes('morpheus8')) {
+        baseDetails = db.morpheus8 || TREATMENT_DETAILS_DB.morpheus8;
+      } else if (lowerName.includes('ultherapy')) {
+        baseDetails = db.ultherapy || TREATMENT_DETAILS_DB.ultherapy;
+      } else if (lowerName.includes('polynucleotide') || lowerName.includes('salmon sperm')) {
+        baseDetails = db.polynucleotide || TREATMENT_DETAILS_DB.polynucleotide;
+      } else if (lowerName.includes('lip') || lowerName.includes('lips')) {
+        baseDetails = db.lip || TREATMENT_DETAILS_DB.lip;
+      } else if (lowerName.includes('buttock') || lowerName.includes('bbl') || lowerName.includes('butt')) {
+        baseDetails = db.buttock || TREATMENT_DETAILS_DB.buttock;
+      } else if (lowerName.includes('bleph') || lowerName.includes('eyelid') || lowerName.includes('blepharoplasty')) {
+        baseDetails = db.blepharoplasty || TREATMENT_DETAILS_DB.blepharoplasty;
+      } else if (lowerName.includes('aqualyx') || lowerName.includes('fat dissolve')) {
+        baseDetails = db.aqualyx || TREATMENT_DETAILS_DB.aqualyx;
+      } else {
+        baseDetails = DEFAULT_TREATMENT_DETAILS(matchedMaster?.title || treatmentName);
+      }
     }
 
-    // 3. Check for direct key match
-    if (db[lowerName]) {
-      return db[lowerName];
-    }
-    const slugKey = lowerName.replace(/[^a-z0-9]/g, '');
-    if (db[slugKey]) {
-      return db[slugKey];
+    if (matchedMaster) {
+      const liveBranch = normalizeMasterBranch(
+        matchedMaster.pricingCategory || matchedMaster.category,
+        matchedMaster.title
+      );
+      return {
+        ...baseDetails,
+        id: matchedMaster.id || baseDetails.id,
+        title: matchedMaster.title || baseDetails.title,
+        category: liveBranch,
+        pricingCategory: liveBranch,
+        description: matchedMaster.description || baseDetails.description,
+        imageUrl: matchedMaster.image || baseDetails.imageUrl,
+        price: matchedMaster.price || baseDetails.price,
+        procedureTime: matchedMaster.duration || baseDetails.procedureTime,
+      };
     }
 
-    // 4. Fallback to original hardcoded name substring matches
-    if (lowerName.includes('exosome')) return db.exosome || TREATMENT_DETAILS_DB.exosome;
-    if (lowerName.includes('profhilo')) return db.profhilo || TREATMENT_DETAILS_DB.profhilo;
-    if (lowerName.includes('morpheus') || lowerName.includes('morpheus8')) return db.morpheus8 || TREATMENT_DETAILS_DB.morpheus8;
-    if (lowerName.includes('ultherapy')) return db.ultherapy || TREATMENT_DETAILS_DB.ultherapy;
-    if (lowerName.includes('polynucleotide')) return db.polynucleotide || TREATMENT_DETAILS_DB.polynucleotide;
-    if (lowerName.includes('lip') || lowerName.includes('lips')) return db.lip || TREATMENT_DETAILS_DB.lip;
-    if (lowerName.includes('buttock') || lowerName.includes('bbl') || lowerName.includes('butt')) return db.buttock || TREATMENT_DETAILS_DB.buttock;
-    if (lowerName.includes('bleph') || lowerName.includes('eyelid') || lowerName.includes('blepharoplasty')) return db.blepharoplasty || TREATMENT_DETAILS_DB.blepharoplasty;
-    if (lowerName.includes('aqualyx') || lowerName.includes('fat dissolve')) return db.aqualyx || TREATMENT_DETAILS_DB.aqualyx;
-
-    // Fall back to custom bespoke template if no exact match is found
-    return DEFAULT_TREATMENT_DETAILS(treatmentName);
+    return baseDetails;
   };
 
   const rawData = getTreatmentData();

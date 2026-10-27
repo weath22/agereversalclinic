@@ -1,14 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SpecialistAreasConfig } from '../types';
+import { SpecialistAreasConfig, SpecialistArea } from '../types';
 import Pagination from './Pagination';
 import { ALL_SPECIALIST_TREATMENTS, SpecialistTreatment } from '../data/specialistTreatments';
-import { getTreatmentDetailsConfig } from '../lib/adminStore';
+import {
+  getTreatmentDetailsConfig,
+  getMasterServices,
+  getSpecialistAreasConfig,
+  normalizeMasterBranch,
+  inferTransformationCategoryFromBranch,
+} from '../lib/adminStore';
 
 interface SpecialistAreasProps {
   onBookClick: (serviceName?: string) => void;
-  onTreatmentClick?: (treatmentName: string) => void;
+  onTreatmentClick?: (treatmentName: string, branchCategory?: string) => void;
   onExploreAllClick?: () => void;
   specialistAreasConfig?: SpecialistAreasConfig;
 }
@@ -20,39 +26,93 @@ export default function SpecialistAreas({
   specialistAreasConfig
 }: SpecialistAreasProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
+  const [liveAreasConfig, setLiveAreasConfig] = useState<SpecialistAreasConfig | undefined>(
+    () => specialistAreasConfig || getSpecialistAreasConfig()
+  );
+
+  useEffect(() => {
+    if (specialistAreasConfig) {
+      setLiveAreasConfig(specialistAreasConfig);
+    }
+  }, [specialistAreasConfig]);
+
+  useEffect(() => {
+    const handleMasterServicesUpdate = () => {
+      setMasterServices(getMasterServices());
+      setLiveAreasConfig(getSpecialistAreasConfig());
+    };
+    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+    window.addEventListener('storage', handleMasterServicesUpdate);
+    return () => {
+      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+      window.removeEventListener('storage', handleMasterServicesUpdate);
+    };
+  }, []);
 
   // Dynamic treatment database customization store (Task 6.6)
   const customDb = getTreatmentDetailsConfig();
 
-  // Use configured areas if customized with multiple pages, otherwise use full comprehensive clinical treatments
+  // Derive specialist area cards from live masterServices + config
   const treatmentsList: SpecialistTreatment[] = useMemo(() => {
-    const baseList = specialistAreasConfig?.areas && specialistAreasConfig.areas.length > 4
-      ? specialistAreasConfig.areas.map(a => ({
-          id: a.id,
-          title: a.title,
-          category: 'Specialist Care',
-          description: a.description,
-          image: a.image
-        }))
-      : ALL_SPECIALIST_TREATMENTS;
+    const sourceServices =
+      masterServices && masterServices.length > 0 ? masterServices : ALL_SPECIALIST_TREATMENTS;
+
+    const baseList: SpecialistTreatment[] = sourceServices.map((service) => {
+      const staticMatch = ALL_SPECIALIST_TREATMENTS.find(
+        (m) =>
+          m.id.toLowerCase() === service.id.toLowerCase() ||
+          m.title.toLowerCase() === service.title.toLowerCase()
+      );
+      const areaMatch = liveAreasConfig?.areas?.find(
+        (a) =>
+          a.id.toLowerCase() === service.id.toLowerCase() ||
+          a.title.toLowerCase() === service.title.toLowerCase()
+      );
+      const branch = normalizeMasterBranch(
+        service.pricingCategory || service.category || staticMatch?.pricingCategory,
+        service.title
+      );
+      const transformationCategory =
+        service.transformationCategory ||
+        inferTransformationCategoryFromBranch(branch, service.title);
+
+      return {
+        id: service.id,
+        title: service.title,
+        category: branch,
+        pricingCategory: branch,
+        transformationCategory,
+        description:
+          service.description || areaMatch?.description || staticMatch?.description || '',
+        image: service.image || areaMatch?.image || staticMatch?.image || '',
+        badge: staticMatch?.badge,
+        duration: service.duration || staticMatch?.duration,
+        coverMedia: service.coverMedia || areaMatch?.coverMedia || staticMatch?.coverMedia,
+        seoKeywords: service.seoKeywords || areaMatch?.seoKeywords || staticMatch?.seoKeywords,
+      };
+    });
 
     if (!customDb) return baseList;
 
-    return baseList.map(t => {
-      const match = customDb[t.id] || Object.values(customDb).find((d: any) => 
-        (d.id && d.id.toLowerCase() === t.id.toLowerCase()) || 
-        (d.title && d.title.toLowerCase() === t.title.toLowerCase())
-      );
+    return baseList.map((t) => {
+      const match =
+        customDb[t.id] ||
+        Object.values(customDb).find(
+          (d: any) =>
+            (d.id && d.id.toLowerCase() === t.id.toLowerCase()) ||
+            (d.title && d.title.toLowerCase() === t.title.toLowerCase())
+        );
       if (match && match.coverMedia?.url) {
         return {
           ...t,
           image: match.coverMedia.url,
-          coverMedia: match.coverMedia
+          coverMedia: match.coverMedia,
         };
       }
       return t;
     });
-  }, [specialistAreasConfig, customDb]);
+  }, [masterServices, liveAreasConfig, customDb]);
 
   const itemsPerPage = 4;
   const totalPages = Math.ceil(treatmentsList.length / itemsPerPage) || 1;
@@ -119,7 +179,9 @@ export default function SpecialistAreas({
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.35, delay: idx * 0.05, ease: 'easeOut' }}
                   onClick={() =>
-                    onTreatmentClick ? onTreatmentClick(treatment.title) : onBookClick(treatment.title)
+                    onTreatmentClick
+                      ? onTreatmentClick(treatment.title, treatment.pricingCategory)
+                      : onBookClick(treatment.title)
                   }
                   className="group bg-white/95 backdrop-blur-md overflow-hidden border border-white/30 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_10px_35px_-5px_rgba(0,0,0,0.25)] hover:shadow-2xl hover:-translate-y-1 rounded-xl"
                 >

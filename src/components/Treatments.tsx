@@ -1,48 +1,103 @@
+import { useState, useEffect, useMemo } from 'react';
 import { TREATMENTS, TREATMENT_IMAGES } from '../data';
+import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
 import { motion } from 'motion/react';
-import { Calendar } from 'lucide-react';
-import { TreatmentsConfig } from '../types';
+import { Calendar, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { TreatmentsConfig, SpecialistArea } from '../types';
 import { getTreatmentImagePath } from '../utils/treatmentImageHelper';
+import { getMasterServices, getTreatmentsConfig, normalizeMasterBranch } from '../lib/adminStore';
 
 interface TreatmentsProps {
   onBookClick: () => void;
-  onTreatmentClick?: (treatmentName: string) => void;
+  onTreatmentClick?: (treatmentName: string, branchCategory?: string) => void;
   treatmentsConfig?: TreatmentsConfig;
 }
 
-// Default comprehensive clinical treatment list for aesthetic harmony
-const CLINICAL_TREATMENT_ITEMS = [
-  { id: '1', name: 'Facial Injectables & Volume Contouring' },
-  { id: '2', name: 'Morpheus8 RF & Deep Skin Tightening' },
-  { id: '3', name: 'Ultherapy Non-Surgical SMAS Lift' },
-  { id: '4', name: 'Precision Lip & Facial Dermal Fillers' },
-  { id: '5', name: 'Polynucleotide & Exosome Cellular Therapy' },
-  { id: '6', name: 'Fractional CO2 Laser & Skin Resurfacing' },
-  { id: '7', name: 'Minor Surgery & Scars' }
-];
+const ITEMS_PER_PAGE = 6;
 
 export default function Treatments({ onBookClick, onTreatmentClick, treatmentsConfig }: TreatmentsProps) {
-  // Motion settings for list stagger
-  const listContainerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.08 }
-    }
-  };
+  const [currentPage, setCurrentPage] = useState(0);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
+  const [liveTreatmentsConfig, setLiveTreatmentsConfig] = useState<TreatmentsConfig | undefined>(
+    () => treatmentsConfig || getTreatmentsConfig()
+  );
 
-  const listItemVariants = {
-    hidden: { opacity: 0, x: -15 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { type: 'spring' as const, stiffness: 100 }
+  useEffect(() => {
+    if (treatmentsConfig) {
+      setLiveTreatmentsConfig(treatmentsConfig);
     }
-  };
+  }, [treatmentsConfig]);
 
-  const activeTreatments = treatmentsConfig?.treatments && treatmentsConfig.treatments.length >= 4
-    ? treatmentsConfig.treatments
-    : CLINICAL_TREATMENT_ITEMS;
+  useEffect(() => {
+    const handleMasterServicesUpdate = () => {
+      setMasterServices(getMasterServices());
+      setLiveTreatmentsConfig(getTreatmentsConfig());
+    };
+    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+    window.addEventListener('storage', handleMasterServicesUpdate);
+    return () => {
+      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+      window.removeEventListener('storage', handleMasterServicesUpdate);
+    };
+  }, []);
+
+  // Merge configured treatments with live master services metadata (01 through N)
+  const activeTreatments = useMemo(() => {
+    const sourceMaster =
+      masterServices && masterServices.length > 0 ? masterServices : ALL_SPECIALIST_TREATMENTS;
+
+    const rawTreatments =
+      liveTreatmentsConfig?.treatments && liveTreatmentsConfig.treatments.length > 0
+        ? liveTreatmentsConfig.treatments
+        : TREATMENTS;
+
+    // Prefer masterServices order and count so added/deleted/renamed services are immediately reflected
+    return sourceMaster.map((masterItem, idx) => {
+      const cfgMatch = rawTreatments.find(
+        (t) =>
+          t.id === masterItem.id ||
+          (t.name || '').toLowerCase() === masterItem.title.toLowerCase()
+      );
+      const staticMatch = ALL_SPECIALIST_TREATMENTS.find((s) => s.id === masterItem.id);
+      const fallbackImg = TREATMENT_IMAGES[idx % TREATMENT_IMAGES.length];
+      const branch = normalizeMasterBranch(
+        masterItem.pricingCategory || masterItem.category || cfgMatch?.tag,
+        masterItem.title
+      );
+
+      return {
+        id: masterItem.id,
+        name: masterItem.title,
+        stepNumber: String(idx + 1).padStart(2, '0'),
+        description:
+          masterItem.description ||
+          cfgMatch?.description ||
+          staticMatch?.description ||
+          'Bespoke clinical protocol tailored by our aesthetic specialists for natural, lasting results.',
+        tag: branch,
+        image: masterItem.image || cfgMatch?.image || staticMatch?.image || fallbackImg,
+        duration: masterItem.duration || cfgMatch?.duration || staticMatch?.duration || '45 - 60 Mins',
+      };
+    });
+  }, [masterServices, liveTreatmentsConfig]);
+
+  const totalPages = Math.max(1, Math.ceil(activeTreatments.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages - 1);
+  const visibleTreatments = activeTreatments.slice(
+    safePage * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  // Bento grid layout classes for the 6 cards on each page
+  const gridSpanClasses = [
+    'md:col-span-7 aspect-[4/3]',
+    'md:col-span-5 aspect-square md:aspect-auto',
+    'md:col-span-5 aspect-[4/3] md:aspect-square',
+    'md:col-span-7 aspect-[16/9] md:aspect-auto',
+    'md:col-span-6 aspect-square',
+    'md:col-span-6 aspect-square'
+  ];
 
   return (
     <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200 isolate">
@@ -58,10 +113,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
       />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-20">
+        <div className="flex flex-col lg:flex-row items-start gap-8 sm:gap-12 lg:gap-16">
           
-          {/* Left Column: Text & Editorial Content (Properly scaled for mobile screens) */}
-          <div className="w-full lg:w-5/12 lg:max-w-[420px] relative">
+          {/* Left Column: Text, Accordion List (01 through 24) & Controls */}
+          <div className="w-full lg:w-5/12 lg:max-w-[460px] relative">
             <div className="relative mb-4 sm:mb-6">
               <span className="absolute -top-5 sm:-top-7 md:-top-9 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-black/15 select-none uppercase tracking-wider pointer-events-none">
                 {treatmentsConfig?.editorialHeading || "rejuvenation"}
@@ -73,32 +128,113 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
             
             <div className="w-12 h-[1.5px] bg-slate-950 mb-4 sm:mb-6" />
 
-            <p className="text-slate-950 font-sans font-normal mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
+            <p className="text-slate-950 font-sans font-normal mb-6 leading-relaxed text-sm sm:text-base">
               {treatmentsConfig?.description || "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual."}
             </p>
 
-            {/* Treatment list with full text visibility on mobile screens */}
-            <motion.ul 
-              variants={listContainerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '-50px' }}
-              className="space-y-3 sm:space-y-3.5 mb-6 sm:mb-8"
-            >
-              {activeTreatments.map((treatment) => (
-                <motion.li 
-                  key={treatment.id}
-                  variants={listItemVariants}
-                  onClick={() => onTreatmentClick?.(treatment.name)}
-                  className="flex items-center space-x-3 group cursor-pointer"
-                >
-                  <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full border-2 border-slate-950 group-hover:bg-slate-950 group-hover:scale-125 transition-all duration-300 shrink-0" />
-                  <span className="text-slate-950 font-sans font-medium group-hover:text-black transition-colors duration-300 text-sm sm:text-base leading-snug">
-                    {treatment.name}
-                  </span>
-                </motion.li>
-              ))}
-            </motion.ul>
+            {/* Treatment Accordion List (01 through 24) */}
+            <div className="divide-y divide-slate-950/15 border-y border-slate-950/20 mb-6">
+              {visibleTreatments.map((treatment) => {
+                const isExpanded = expandedId === treatment.id;
+                return (
+                  <div key={treatment.id} className="py-3 transition-colors">
+                    <div className="flex items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : treatment.id)
+                        }
+                        className="flex items-center space-x-3 text-left group flex-1 cursor-pointer"
+                      >
+                        <span className="font-mono text-xs font-semibold text-slate-950/60 group-hover:text-slate-950 transition-colors w-6 shrink-0">
+                          {treatment.stepNumber}
+                        </span>
+                        <span className="text-slate-950 font-sans font-medium group-hover:text-black transition-colors duration-200 text-sm sm:text-base leading-snug">
+                          {treatment.name}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onTreatmentClick?.(treatment.name, treatment.tag)}
+                        title={`Explore ${treatment.name}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-sans font-semibold uppercase tracking-wider text-slate-950/75 hover:text-slate-950 px-2 py-1 rounded-md hover:bg-white/30 transition-colors cursor-pointer shrink-0"
+                      >
+                        <span>View</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-2.5 pl-9 pr-2 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-sans uppercase tracking-[0.14em] font-semibold px-2 py-0.5 rounded bg-slate-950/10 text-slate-900">
+                            {treatment.tag}
+                          </span>
+                          {treatment.duration && (
+                            <span className="text-[11px] font-sans text-slate-900/75">
+                              {treatment.duration}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-900/90 leading-relaxed">
+                          {treatment.description}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => onTreatmentClick?.(treatment.name, treatment.tag)}
+                          className="text-xs font-sans font-semibold underline underline-offset-4 text-slate-950 hover:text-black cursor-pointer"
+                        >
+                          Explore protocol &amp; pricing
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination controls for 01 - 24 services */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <span className="text-xs font-sans font-medium text-slate-950/80">
+                  Showing {String(safePage * ITEMS_PER_PAGE + 1).padStart(2, '0')}–
+                  {String(Math.min((safePage + 1) * ITEMS_PER_PAGE, activeTreatments.length)).padStart(2, '0')} of{' '}
+                  {String(activeTreatments.length).padStart(2, '0')} services
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => (p > 0 ? p - 1 : totalPages - 1))}
+                    aria-label="Previous services page"
+                    className="p-2 rounded-full border border-slate-950/30 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {Array.from({ length: totalPages }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCurrentPage(idx)}
+                      className={`w-7 h-7 rounded-full text-xs font-sans font-semibold transition-colors cursor-pointer ${
+                        safePage === idx
+                          ? 'bg-slate-950 text-white'
+                          : 'text-slate-950 hover:bg-slate-950/10'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((p) => (p < totalPages - 1 ? p + 1 : 0))}
+                    aria-label="Next services page"
+                    className="p-2 rounded-full border border-slate-950/30 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={onBookClick}
@@ -109,158 +245,52 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
             </button>
           </div>
 
-          {/* Right Column: Orderly, aligned straight-line grid (no staggered overlaps) */}
+          {/* Right Column: Orderly, aligned straight-line grid synced with visible 24 services */}
           <div className="w-full lg:w-7/12 relative">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 relative w-full">
-              {/* Image 1 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[4/3] bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Radiance Protocol" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('radiance-protocol', TREATMENT_IMAGES[0])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[0];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">DERMAL CARE</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Radiance Protocol</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Radiance Protocol
-                </div>
-              </motion.div>
-
-              {/* Image 2 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-square md:aspect-auto bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Volume Definition" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('volume-definition', TREATMENT_IMAGES[1])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[1];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">FACIAL SCULPTING</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Volume Definition</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Precision Sculpting
-                </div>
-              </motion.div>
-
-              {/* Image 3 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-5 group relative overflow-hidden aspect-[4/3] md:aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Symmetry Mastered" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('symmetry-mastered', TREATMENT_IMAGES[2])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[2];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BROW ARCHITECTURE</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Symmetry Mastered</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Brow Restoration
-                </div>
-              </motion.div>
-
-              {/* Image 4 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-7 group relative overflow-hidden aspect-[16/9] md:aspect-auto bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Anatomical Precision" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('anatomical-precision', TREATMENT_IMAGES[3])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[3];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">BODY CONTOURING</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Anatomical Precision</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Contour Refining
-                </div>
-              </motion.div>
-
-              {/* Image 5 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Lash Extension Art" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('lash-extension-art', TREATMENT_IMAGES[4])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[4];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">OCULAR BEAUTY</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Lash Extension Art</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Lash Enhancement
-                </div>
-              </motion.div>
-
-              {/* Image 6 */}
-              <motion.div 
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="md:col-span-6 group relative overflow-hidden aspect-square bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all"
-              >
-                <img 
-                  alt="Advanced Portrait" 
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                  src={getTreatmentImagePath('advanced-portrait', TREATMENT_IMAGES[5])}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = TREATMENT_IMAGES[5];
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                  <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-2 font-bold">CLINICAL FACIAL</span>
-                  <h3 className="font-serif text-xl md:text-2xl font-light text-white">Advanced Aesthetics</h3>
-                </div>
-                <div className="absolute bottom-6 left-6 font-sans text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:opacity-0 transition-opacity font-semibold">
-                  Portrait Art
-                </div>
-              </motion.div>
+              {visibleTreatments.map((treatment, idx) => {
+                const spanClass = gridSpanClasses[idx % gridSpanClasses.length];
+                const fallbackImage = TREATMENT_IMAGES[idx % TREATMENT_IMAGES.length];
+                return (
+                  <motion.div
+                    key={treatment.id}
+                    whileHover={{ scale: 1.01, y: -2 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    onClick={() => onTreatmentClick?.(treatment.name, treatment.tag)}
+                    className={`${spanClass} group relative overflow-hidden bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all`}
+                  >
+                    <img
+                      alt={treatment.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      src={getTreatmentImagePath(treatment.id, treatment.image || fallbackImage)}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = fallbackImage;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
+                      <span className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-1.5 font-bold">
+                        {treatment.stepNumber} • {treatment.tag}
+                      </span>
+                      <h3 className="font-serif text-xl md:text-2xl font-light text-white mb-1">
+                        {treatment.name}
+                      </h3>
+                      <p className="font-sans text-xs text-white/80 line-clamp-2">
+                        {treatment.description}
+                      </p>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-5 group-hover:opacity-0 transition-opacity">
+                      <span className="block font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200/95 font-semibold mb-0.5">
+                        {treatment.stepNumber} • {treatment.tag}
+                      </span>
+                      <span className="block font-serif text-base md:text-lg text-white font-light truncate">
+                        {treatment.name}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </div>
