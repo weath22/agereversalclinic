@@ -1,11 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FACILITIES } from '../data';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, X, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { FacilityRoom } from '../types';
+import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
+import { ClinicData } from '../data/clinicInfo';
 
 export default function FacilityInteriors() {
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
+  const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
+
+  useEffect(() => {
+    setClinicData(getClinicData());
+    fetchRemoteClinicData().then((remote) => {
+      if (remote) setClinicData(remote);
+    });
+
+    const handleClinicDataChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<ClinicData>;
+      setClinicData(customEvt.detail || getClinicData());
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    window.addEventListener('storage', handleClinicDataChanged);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+      window.removeEventListener('storage', handleClinicDataChanged);
+    };
+  }, []);
+
+  const facilityItems: FacilityRoom[] = useMemo(() => {
+    const interiorPhotos = Array.isArray(clinicData.interiorPhotos)
+      ? clinicData.interiorPhotos.map((u) => u?.trim()).filter(Boolean)
+      : [];
+    const exteriorPhoto = clinicData.exteriorPhoto?.trim() || '';
+
+    const merged: FacilityRoom[] = FACILITIES.map((item, idx) => {
+      const customInteriorImg = interiorPhotos[idx];
+      if (customInteriorImg) {
+        return { ...item, image: customInteriorImg };
+      }
+      if (idx === FACILITIES.length - 1 && exteriorPhoto) {
+        return { ...item, image: exteriorPhoto };
+      }
+      return item;
+    });
+
+    // If additional interiorPhotos were added beyond FACILITIES.length, include them in the gallery
+    if (interiorPhotos.length > FACILITIES.length) {
+      for (let i = FACILITIES.length; i < interiorPhotos.length; i++) {
+        merged.push({
+          id: `facility-interior-${i + 1}`,
+          title: `${clinicData.name || 'Clinic'} Suite ${i + 1}`,
+          tag: 'CLINIC INTERIOR',
+          image: interiorPhotos[i],
+        });
+      }
+    }
+
+    return merged;
+  }, [clinicData]);
 
   const openLightbox = (index: number) => {
     setActiveLightboxIndex(index);
@@ -16,20 +70,19 @@ export default function FacilityInteriors() {
   };
 
   const showNext = () => {
-    if (activeLightboxIndex === null) return;
-    setActiveLightboxIndex((activeLightboxIndex + 1) % FACILITIES.length);
+    if (activeLightboxIndex === null || facilityItems.length === 0) return;
+    setActiveLightboxIndex((activeLightboxIndex + 1) % facilityItems.length);
   };
 
   const showPrev = () => {
-    if (activeLightboxIndex === null) return;
-    setActiveLightboxIndex((activeLightboxIndex - 1 + FACILITIES.length) % FACILITIES.length);
+    if (activeLightboxIndex === null || facilityItems.length === 0) return;
+    setActiveLightboxIndex((activeLightboxIndex - 1 + facilityItems.length) % facilityItems.length);
   };
 
   return (
     <section 
       id="facility" 
-      className="py-16 md:py-24 relative overflow-hidden border-t border-silver-200 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=1920')` }}
+      className="py-16 md:py-24 relative overflow-hidden border-t border-silver-200 bg-cover bg-center bg-no-repeat bg-[url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=1920')]"
     >
       {/* Luxurious overlay to keep text and gallery items beautifully legible while letting London's classic architecture shine through clearly */}
       <div className="absolute inset-0 bg-white/45" />
@@ -49,7 +102,7 @@ export default function FacilityInteriors() {
 
         {/* Gallery Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {FACILITIES.map((facility, index) => (
+          {facilityItems.map((facility, index) => (
             <motion.div 
               key={facility.id}
               initial={{ opacity: 0, y: 20 }}
@@ -95,7 +148,7 @@ export default function FacilityInteriors() {
 
         {/* Interactive Lightbox Overlay */}
         <AnimatePresence>
-          {activeLightboxIndex !== null && (
+          {activeLightboxIndex !== null && facilityItems[activeLightboxIndex] && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
               
               {/* Close Button */}
@@ -127,22 +180,22 @@ export default function FacilityInteriors() {
               >
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 max-h-[75vh] flex items-center justify-center">
                   <img 
-                    alt={FACILITIES[activeLightboxIndex].title}
+                    alt={facilityItems[activeLightboxIndex].title}
                     className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
-                    src={FACILITIES[activeLightboxIndex].image}
+                    src={facilityItems[activeLightboxIndex].image}
                   />
                 </div>
                 
                 {/* Meta details below image */}
                 <div className="text-center mt-6 text-white">
                   <span className="text-xs uppercase tracking-[0.2em] text-rose-gold font-bold block mb-1">
-                    {FACILITIES[activeLightboxIndex].tag}
+                    {facilityItems[activeLightboxIndex].tag}
                   </span>
                   <h4 className="text-2xl font-serif font-bold">
-                    {FACILITIES[activeLightboxIndex].title}
+                    {facilityItems[activeLightboxIndex].title}
                   </h4>
                   <p className="text-xs text-silver-400 mt-2">
-                    {activeLightboxIndex + 1} / {FACILITIES.length}
+                    {activeLightboxIndex + 1} / {facilityItems.length}
                   </p>
                 </div>
               </motion.div>

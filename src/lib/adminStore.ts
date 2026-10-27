@@ -29,7 +29,7 @@ import {
   TreatmentProtocolGroup,
   ClinicalProtocolsConfig
 } from '../types';
-import { CLINIC_DATA, ClinicData, ClinicLocation } from '../data/clinicInfo';
+import { CLINIC_DATA, ClinicData, ClinicLocation, ClinicConsultationConfig } from '../data/clinicInfo';
 import { 
   TreatmentPricingItem, 
   TreatmentPricingCardSummary,
@@ -88,6 +88,7 @@ const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v6';
 const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v3';
 const AWARDS_CONFIG_KEY = 'homepage_awards_config';
 const LOCATIONS_CONFIG_KEY = 'homepage_locations_config';
+const CONSULTATION_CONFIG_KEY = 'homepage_consultation_config';
 const TEAM_LEADERSHIP_CONFIG_KEY = 'homepage_team_leadership_config';
 const PROCESS_CONFIG_KEY = 'homepage_process_config';
 const FACILITY_INTERIORS_CONFIG_KEY = 'homepage_facility_interiors_config';
@@ -419,9 +420,13 @@ export function syncConfigToFile(key: string, data: any): void {
 }
 
 /**
- * Upload an image or media asset directly to public/uploads/ on disk
+ * Upload an image or media asset directly to public/assets/ and src/assets/images/ on disk
+ * and optionally delete a displaced previousUrl file
  */
-export async function uploadAssetFile(file: File): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function uploadAssetFile(
+  file: File,
+  previousUrl?: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -432,7 +437,8 @@ export async function uploadAssetFile(file: File): Promise<{ success: boolean; u
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             fileName: file.name,
-            dataUrl
+            dataUrl,
+            previousUrl: previousUrl?.trim() || undefined
           })
         });
         const data = await res.json();
@@ -667,7 +673,7 @@ export async function syncAllConfigsToFiles(): Promise<{ success: boolean; messa
 
 // Default configs
 const DEFAULT_HEADER_CONFIG: HeaderConfig = {
-  logoUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
+  logoUrl: CLINIC_DATA.logo?.icon || CLINIC_DATA.logo?.full || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
   primaryName: "Age Reversal",
   secondaryName: "Clinic"
 };
@@ -2555,21 +2561,46 @@ export async function uploadBeforeAfterWebpImage(params: {
 
 export function getWhyChooseUsConfig(): WhyChooseUsConfig {
   initializeAdminStore();
+  const clinicWhy = getClinicData()?.whyChooseUs;
+  if (clinicWhy && Array.isArray(clinicWhy.pillars) && clinicWhy.pillars.length > 0) {
+    return {
+      heading: clinicWhy.heading || DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
+      subheading: clinicWhy.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+      description: clinicWhy.subheading || clinicWhy.description || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+      pillars: clinicWhy.pillars,
+    };
+  }
   return getStorageItem<WhyChooseUsConfig>(WHY_CHOOSE_US_CONFIG_KEY, getFileDefault(WHY_CHOOSE_US_CONFIG_KEY, DEFAULT_WHY_CHOOSE_US_CONFIG));
 }
 
 export function saveWhyChooseUsConfig(config: WhyChooseUsConfig): WhyChooseUsConfig {
   setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, config);
+  syncConfigToFile(WHY_CHOOSE_US_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('why_choose_us_updated', { detail: config }));
+  }
   return config;
 }
 
 export function getAwardsConfig(): AwardsConfig {
   initializeAdminStore();
+  const clinicAwards = getClinicData()?.awardsShowcase;
+  if (clinicAwards && Array.isArray(clinicAwards.awards) && clinicAwards.awards.length > 0) {
+    return {
+      heading: clinicAwards.heading || DEFAULT_AWARDS_CONFIG.heading,
+      subheading: clinicAwards.subheading || DEFAULT_AWARDS_CONFIG.subheading,
+      awards: clinicAwards.awards,
+    };
+  }
   return getStorageItem<AwardsConfig>(AWARDS_CONFIG_KEY, getFileDefault(AWARDS_CONFIG_KEY, DEFAULT_AWARDS_CONFIG));
 }
 
 export function saveAwardsConfig(config: AwardsConfig): AwardsConfig {
   setStorageItem(AWARDS_CONFIG_KEY, config);
+  syncConfigToFile(AWARDS_CONFIG_KEY, config);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('awards_config_updated', { detail: config }));
+  }
   return config;
 }
 
@@ -2880,6 +2911,92 @@ let _hasHydratedClinicDataFromServer = false;
 
 function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): ClinicData {
   const fileDefault = getFileDefault<Partial<ClinicData> | null>('clinic_info_data', null);
+  const fileWhyChooseUs = getFileDefault<WhyChooseUsConfig | null>(WHY_CHOOSE_US_CONFIG_KEY, null);
+  const fileAwards = getFileDefault<AwardsConfig | null>(AWARDS_CONFIG_KEY, null);
+  const fileConsultation = getFileDefault<ClinicConsultationConfig | null>(CONSULTATION_CONFIG_KEY, null);
+
+  const defaultWhyChooseUs = CLINIC_DATA.whyChooseUs || {
+    heading: DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
+    subheading: DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+    pillars: DEFAULT_WHY_CHOOSE_US_CONFIG.pillars,
+  };
+
+  const defaultAwardsShowcase = CLINIC_DATA.awardsShowcase || {
+    heading: DEFAULT_AWARDS_CONFIG.heading,
+    subheading: DEFAULT_AWARDS_CONFIG.subheading,
+    awards: DEFAULT_AWARDS_CONFIG.awards,
+  };
+
+  const defaultConsultationConfig: ClinicConsultationConfig = CLINIC_DATA.consultationConfig || {
+    heading: 'Book a Preferred Consultation',
+    subheading: 'Schedule your bespoke clinical assessment with our aesthetic specialists.',
+    specialistLabel: 'Preferred Specialist',
+    doctors: [
+      {
+        id: 'dr-smith',
+        name: 'Dr. Alistair Smith (Lead Aesthetic Specialist)',
+        specialty: 'Lead Aesthetic Specialist',
+        locationIds: ['location-1791722960928', 'location-1791728808656'],
+        availableDays: [1, 2, 3, 4, 5, 6],
+        timeSlots: ['09:30', '11:00', '13:30', '15:00', '16:30'],
+      },
+      {
+        id: 'dr-jones',
+        name: 'Dr. Sarah Jones (Aesthetic Physician)',
+        specialty: 'Aesthetic Physician',
+        locationIds: ['location-1791722960928'],
+        availableDays: [1, 2, 4, 5],
+        timeSlots: ['10:00', '11:30', '14:00', '16:00'],
+      },
+      {
+        id: 'dr-jaipur',
+        name: 'Dr. Vikram Jaipur (Regenerative & Laser Specialist)',
+        specialty: 'Regenerative & Laser Specialist',
+        locationIds: ['location-1791728808656'],
+        availableDays: [2, 3, 5, 6],
+        timeSlots: ['09:30', '12:00', '14:30', '17:00'],
+      },
+    ],
+    defaultTimeSlots: ['09:30', '11:00', '12:30', '14:00', '15:30', '17:00'],
+    bestTimeOptions: [
+      { value: 'morning', label: 'Morning (9am - 12pm)' },
+      { value: 'afternoon', label: 'Afternoon (12pm - 4pm)' },
+      { value: 'evening', label: 'Evening (4pm - 7pm)' },
+    ],
+    hearAboutUsOptions: [
+      { value: 'google', label: 'Google Search' },
+      { value: 'social', label: 'Social Media (Instagram / Facebook / TikTok)' },
+      { value: 'referral', label: 'Friend / Family Referral' },
+      { value: 'other', label: 'Other' },
+    ],
+    stayInTouchChannels: [
+      { id: 'email', label: 'Email', enabled: true },
+      { id: 'phone', label: 'Phone', enabled: true },
+      { id: 'telephone', label: 'Tel Phone', enabled: true },
+      { id: 'post', label: 'Post Mail', enabled: true },
+      { id: 'whatsapp', label: 'WhatsApp', enabled: false },
+      { id: 'sms', label: 'SMS', enabled: false },
+    ],
+  };
+
+  const resolvedFileWhyChooseUs = fileDefault?.whyChooseUs || (fileWhyChooseUs ? {
+    heading: fileWhyChooseUs.heading || defaultWhyChooseUs.heading,
+    subheading: fileWhyChooseUs.subheading || fileWhyChooseUs.description || defaultWhyChooseUs.subheading,
+    pillars: Array.isArray(fileWhyChooseUs.pillars) && fileWhyChooseUs.pillars.length > 0
+      ? fileWhyChooseUs.pillars
+      : defaultWhyChooseUs.pillars,
+  } : null);
+
+  const resolvedFileAwards = fileDefault?.awardsShowcase || (fileAwards ? {
+    heading: fileAwards.heading || defaultAwardsShowcase.heading,
+    subheading: fileAwards.subheading || defaultAwardsShowcase.subheading,
+    awards: Array.isArray(fileAwards.awards) && fileAwards.awards.length > 0
+      ? fileAwards.awards
+      : defaultAwardsShowcase.awards,
+  } : null);
+
+  const resolvedFileConsultation = fileDefault?.consultationConfig || fileConsultation;
+
   const base: ClinicData = {
     ...CLINIC_DATA,
     ...(fileDefault || {}),
@@ -2901,6 +3018,47 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       Array.isArray(fileDefault?.locations) && fileDefault.locations.length > 0
         ? fileDefault.locations
         : CLINIC_DATA.locations,
+    whyChooseUs: {
+      heading: resolvedFileWhyChooseUs?.heading || defaultWhyChooseUs.heading,
+      subheading: resolvedFileWhyChooseUs?.subheading || defaultWhyChooseUs.subheading,
+      pillars:
+        Array.isArray(resolvedFileWhyChooseUs?.pillars) && resolvedFileWhyChooseUs.pillars.length > 0
+          ? resolvedFileWhyChooseUs.pillars
+          : defaultWhyChooseUs.pillars,
+    },
+    awardsShowcase: {
+      heading: resolvedFileAwards?.heading || defaultAwardsShowcase.heading,
+      subheading: resolvedFileAwards?.subheading || defaultAwardsShowcase.subheading,
+      awards:
+        Array.isArray(resolvedFileAwards?.awards) && resolvedFileAwards.awards.length > 0
+          ? resolvedFileAwards.awards
+          : defaultAwardsShowcase.awards,
+    },
+    consultationConfig: {
+      heading: resolvedFileConsultation?.heading || defaultConsultationConfig.heading,
+      subheading: resolvedFileConsultation?.subheading || defaultConsultationConfig.subheading,
+      specialistLabel: resolvedFileConsultation?.specialistLabel || defaultConsultationConfig.specialistLabel || 'Preferred Specialist',
+      doctors:
+        Array.isArray(resolvedFileConsultation?.doctors) && resolvedFileConsultation.doctors.length > 0
+          ? resolvedFileConsultation.doctors
+          : defaultConsultationConfig.doctors,
+      defaultTimeSlots:
+        Array.isArray(resolvedFileConsultation?.defaultTimeSlots) && resolvedFileConsultation.defaultTimeSlots.length > 0
+          ? resolvedFileConsultation.defaultTimeSlots
+          : defaultConsultationConfig.defaultTimeSlots,
+      bestTimeOptions:
+        Array.isArray(resolvedFileConsultation?.bestTimeOptions) && resolvedFileConsultation.bestTimeOptions.length > 0
+          ? resolvedFileConsultation.bestTimeOptions
+          : defaultConsultationConfig.bestTimeOptions,
+      hearAboutUsOptions:
+        Array.isArray(resolvedFileConsultation?.hearAboutUsOptions) && resolvedFileConsultation.hearAboutUsOptions.length > 0
+          ? resolvedFileConsultation.hearAboutUsOptions
+          : defaultConsultationConfig.hearAboutUsOptions,
+      stayInTouchChannels:
+        Array.isArray(resolvedFileConsultation?.stayInTouchChannels) && resolvedFileConsultation.stayInTouchChannels.length > 0
+          ? resolvedFileConsultation.stayInTouchChannels
+          : defaultConsultationConfig.stayInTouchChannels,
+    },
   };
 
   if (!candidate || typeof candidate !== 'object') {
@@ -2929,6 +3087,57 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       Array.isArray(candidate.locations) && candidate.locations.length > 0
         ? candidate.locations
         : base.locations,
+    whyChooseUs: {
+      heading: candidate.whyChooseUs?.heading || base.whyChooseUs?.heading || defaultWhyChooseUs.heading,
+      subheading: candidate.whyChooseUs?.subheading || base.whyChooseUs?.subheading || defaultWhyChooseUs.subheading,
+      pillars:
+        Array.isArray(candidate.whyChooseUs?.pillars) && candidate.whyChooseUs.pillars.length > 0
+          ? candidate.whyChooseUs.pillars
+          : (base.whyChooseUs?.pillars || defaultWhyChooseUs.pillars),
+    },
+    awardsShowcase: {
+      heading: candidate.awardsShowcase?.heading || base.awardsShowcase?.heading || defaultAwardsShowcase.heading,
+      subheading: candidate.awardsShowcase?.subheading || base.awardsShowcase?.subheading || defaultAwardsShowcase.subheading,
+      awards:
+        Array.isArray(candidate.awardsShowcase?.awards) && candidate.awardsShowcase.awards.length > 0
+          ? candidate.awardsShowcase.awards
+          : (base.awardsShowcase?.awards || defaultAwardsShowcase.awards),
+    },
+    consultationConfig: {
+      heading:
+        candidate.consultationConfig?.heading ||
+        base.consultationConfig?.heading ||
+        defaultConsultationConfig.heading,
+      subheading:
+        candidate.consultationConfig?.subheading ||
+        base.consultationConfig?.subheading ||
+        defaultConsultationConfig.subheading,
+      specialistLabel:
+        candidate.consultationConfig?.specialistLabel ||
+        base.consultationConfig?.specialistLabel ||
+        defaultConsultationConfig.specialistLabel ||
+        'Preferred Specialist',
+      doctors:
+        Array.isArray(candidate.consultationConfig?.doctors)
+          ? candidate.consultationConfig.doctors
+          : (base.consultationConfig?.doctors || defaultConsultationConfig.doctors),
+      defaultTimeSlots:
+        Array.isArray(candidate.consultationConfig?.defaultTimeSlots) && candidate.consultationConfig.defaultTimeSlots.length > 0
+          ? candidate.consultationConfig.defaultTimeSlots
+          : (base.consultationConfig?.defaultTimeSlots || defaultConsultationConfig.defaultTimeSlots),
+      bestTimeOptions:
+        Array.isArray(candidate.consultationConfig?.bestTimeOptions) && candidate.consultationConfig.bestTimeOptions.length > 0
+          ? candidate.consultationConfig.bestTimeOptions
+          : (base.consultationConfig?.bestTimeOptions || defaultConsultationConfig.bestTimeOptions),
+      hearAboutUsOptions:
+        Array.isArray(candidate.consultationConfig?.hearAboutUsOptions) && candidate.consultationConfig.hearAboutUsOptions.length > 0
+          ? candidate.consultationConfig.hearAboutUsOptions
+          : (base.consultationConfig?.hearAboutUsOptions || defaultConsultationConfig.hearAboutUsOptions),
+      stayInTouchChannels:
+        Array.isArray(candidate.consultationConfig?.stayInTouchChannels) && candidate.consultationConfig.stayInTouchChannels.length > 0
+          ? candidate.consultationConfig.stayInTouchChannels
+          : (base.consultationConfig?.stayInTouchChannels || defaultConsultationConfig.stayInTouchChannels),
+    },
   };
 }
 
@@ -2953,7 +3162,20 @@ export function getClinicDataConfig(): ClinicData {
 export function updateClinicData(data: ClinicData): ClinicData {
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(CLINIC_INFO_DATA_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
+
+    // Automatically synchronize header config when logo.icon or logo.full changes
+    const resolvedHeaderLogo = data.logo?.icon || data.logo?.full;
+    if (resolvedHeaderLogo) {
+      const currentHeaderConfig = getHeaderConfig();
+      if (currentHeaderConfig.logoUrl !== resolvedHeaderLogo) {
+        const updatedHeaderConfig: HeaderConfig = {
+          ...currentHeaderConfig,
+          logoUrl: resolvedHeaderLogo,
+        };
+        setStorageItem(HEADER_CONFIG_KEY, updatedHeaderConfig);
+        window.dispatchEvent(new CustomEvent('header_config_changed', { detail: updatedHeaderConfig }));
+      }
+    }
 
     // Automatically synchronize locations config so location and consultation components update in lockstep
     if (Array.isArray(data.locations) && data.locations.length > 0) {
@@ -2981,6 +3203,37 @@ export function updateClinicData(data: ClinicData): ClinicData {
       setStorageItem(LOCATIONS_CONFIG_KEY, updatedLocConfig);
       window.dispatchEvent(new CustomEvent('locations_config_changed', { detail: updatedLocConfig }));
     }
+
+    // Automatically synchronize homepage_why_choose_us_config_v3 and dispatch why_choose_us_updated
+    if (data.whyChooseUs && Array.isArray(data.whyChooseUs.pillars)) {
+      const updatedWhyChooseUs: WhyChooseUsConfig = {
+        heading: data.whyChooseUs.heading || DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
+        subheading: data.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+        description: data.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+        pillars: data.whyChooseUs.pillars,
+      };
+      setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, updatedWhyChooseUs);
+      window.dispatchEvent(new CustomEvent('why_choose_us_updated', { detail: updatedWhyChooseUs }));
+    }
+
+    // Automatically synchronize homepage_awards_config and dispatch awards_config_updated
+    if (data.awardsShowcase && Array.isArray(data.awardsShowcase.awards)) {
+      const updatedAwards: AwardsConfig = {
+        heading: data.awardsShowcase.heading || DEFAULT_AWARDS_CONFIG.heading,
+        subheading: data.awardsShowcase.subheading || DEFAULT_AWARDS_CONFIG.subheading,
+        awards: data.awardsShowcase.awards,
+      };
+      setStorageItem(AWARDS_CONFIG_KEY, updatedAwards);
+      window.dispatchEvent(new CustomEvent('awards_config_updated', { detail: updatedAwards }));
+    }
+
+    // Automatically synchronize homepage_consultation_config and dispatch consultation_config_updated
+    if (data.consultationConfig && typeof data.consultationConfig === 'object') {
+      setStorageItem(CONSULTATION_CONFIG_KEY, data.consultationConfig);
+      window.dispatchEvent(new CustomEvent('consultation_config_updated', { detail: data.consultationConfig }));
+    }
+
+    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
   }
   return data;
 }
@@ -3009,7 +3262,7 @@ export async function saveClinicDataConfig(data: ClinicData): Promise<{ success:
 export function resetClinicDataToDefault(): ClinicData {
   if (typeof window !== 'undefined') {
     window.localStorage.removeItem(CLINIC_INFO_DATA_KEY);
-    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: CLINIC_DATA }));
+    updateClinicData(CLINIC_DATA);
   }
   return CLINIC_DATA;
 }

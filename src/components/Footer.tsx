@@ -12,17 +12,35 @@ import {
   CheckCircle2,
   ChevronUp,
 } from "lucide-react";
-import { getFooterConfig } from "../lib/adminStore";
-import { CLINIC_INFO } from "../data/clinicInfo";
+import { getFooterConfig, getClinicData, fetchRemoteClinicData } from "../lib/adminStore";
+import { ClinicData } from "../data/clinicInfo";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function Footer() {
   const [config, setConfig] = useState(getFooterConfig());
+  const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
   const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false);
 
   useEffect(() => {
     setConfig(getFooterConfig());
+    setClinicData(getClinicData());
+    fetchRemoteClinicData().then((remote) => {
+      if (remote) setClinicData(remote);
+    });
+
+    const handleClinicDataChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<ClinicData>;
+      setClinicData(customEvt.detail || getClinicData());
+      setConfig(getFooterConfig());
+    };
+
+    window.addEventListener("clinic_data_changed", handleClinicDataChanged);
+    window.addEventListener("storage", handleClinicDataChanged);
+    return () => {
+      window.removeEventListener("clinic_data_changed", handleClinicDataChanged);
+      window.removeEventListener("storage", handleClinicDataChanged);
+    };
   }, []);
 
   const scrollToTop = () => {
@@ -46,6 +64,12 @@ export default function Footer() {
     (link) => link.name.toLowerCase() !== "home" && link.href !== "#home"
   );
 
+  const primaryLoc = clinicData.locations?.[0];
+  const footerLogoSrc =
+    clinicData.logo?.full ||
+    clinicData.logo?.icon ||
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuDjxq3WzjVonyYRXNXzK5c475rxgNujUJ0Cm9YnyMOaDn-cHHquCFSlgH51zEgGkVPBsUpIyK718k700FLjwoLlBP3LkU7j_c00e92k6nFndooqDaIr1Pr2xUHXnRpgbPjpIbQSLFhkE5dED9HuHvYEKB-plLBBj9pajUERxdBPCkT2TBLr8H_-ge7BRzNzPL6t4Pt06Rq9QLBy1bWAA1Dp6eDlqqEEPLDmxHYzNuCzpZVkp_JYmjp4xLxt5i0S4ge7kG8fwjWUL80z";
+
   return (
     <footer className="bg-gradient-to-b from-[#0e0e12] via-[#0a0a0d] to-[#070709] py-16 md:py-24 border-t border-[#D8C2A3]/30 text-white relative overflow-hidden">
       {/* Top subtle champagne gold ambient illumination */}
@@ -62,9 +86,9 @@ export default function Footer() {
               <span>Headquarters</span>
             </h4>
             <p className="text-[11px] sm:text-xs font-sans font-light tracking-[0.1em] uppercase leading-relaxed text-white/80">
-              {CLINIC_INFO.locations?.[0]?.name || "LONDON COSMETIC CLINIC KNIGHTSBRIDGE"},
+              {primaryLoc?.name || "LONDON COSMETIC CLINIC KNIGHTSBRIDGE"},
               <br />
-              {CLINIC_INFO.locations?.[0]?.address || "2ND FLOOR, 4 HARLEY STREET"}, {CLINIC_INFO.locations?.[0]?.city || "LONDON"}, {CLINIC_INFO.locations?.[0]?.postalCode || "W1G 9PB"}
+              {primaryLoc?.address || "2ND FLOOR, 4 HARLEY STREET"}, {primaryLoc?.city || "LONDON"}, {primaryLoc?.postalCode || "W1G 9PB"}
             </p>
             <div className="mt-5 text-[11px] text-white/40 font-light">
               In partnership with Jaipur Medical Chambers
@@ -75,9 +99,9 @@ export default function Footer() {
           <div className="flex flex-col items-center">
             <div className="mb-6 text-center">
               <img
-                alt={`${CLINIC_INFO.clinicName} Emblem`}
+                alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || `${clinicData.name} Emblem`}
                 className="h-16 w-auto mb-4 mx-auto transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjxq3WzjVonyYRXNXzK5c475rxgNujUJ0Cm9YnyMOaDn-cHHquCFSlgH51zEgGkVPBsUpIyK718k700FLjwoLlBP3LkU7j_c00e92k6nFndooqDaIr1Pr2xUHXnRpgbPjpIbQSLFhkE5dED9HuHvYEKB-plLBBj9pajUERxdBPCkT2TBLr8H_-ge7BRzNzPL6t4Pt06Rq9QLBy1bWAA1Dp6eDlqqEEPLDmxHYzNuCzpZVkp_JYmjp4xLxt5i0S4ge7kG8fwjWUL80z"
+                src={footerLogoSrc}
               />
               <div className="flex flex-col items-center">
                 <span className="text-[10px] tracking-[0.3em] uppercase font-sans font-medium text-[#D8C2A3]">
@@ -96,28 +120,28 @@ export default function Footer() {
               </span>
               <div className="flex space-x-4">
                 <a
-                  href={CLINIC_INFO.socialLinks?.instagram || "#"}
+                  href={clinicData.socials?.instagram || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Instagram"
                 >
                   <Instagram className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href={CLINIC_INFO.socialLinks?.facebook || "#"}
+                  href={clinicData.socials?.facebook || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Facebook"
                 >
                   <Facebook className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href={CLINIC_INFO.socialLinks?.twitter || "#"}
+                  href={clinicData.socials?.twitter || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Twitter"
                 >
                   <Twitter className="w-4 h-4 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 </a>
                 <a
-                  href={CLINIC_INFO.socialLinks?.youtube || "#"}
+                  href={clinicData.socials?.youtube || "#"}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:border-[#D8C2A3] hover:bg-[#D8C2A3] hover:text-black text-white/80 flex items-center justify-center transition-all duration-300 group"
                   aria-label="Youtube"
                 >
@@ -134,21 +158,21 @@ export default function Footer() {
               <span>Contact Desk</span>
             </h4>
             <a
-              href={`tel:${(config?.phone || CLINIC_INFO.primaryPhone).replace(/[^0-9+]/g, '')}`}
+              href={`tel:${(clinicData.phone || config?.phone || "").replace(/[^0-9+]/g, '')}`}
               className="text-lg md:text-xl font-sans font-light text-white hover:text-[#D8C2A3] mb-2 tracking-wide transition-colors"
             >
-              {config?.phone || CLINIC_INFO.primaryPhone}
+              {clinicData.phone || config?.phone}
             </a>
             <p className="text-[11px] font-sans font-light tracking-[0.1em] uppercase text-white/70 flex items-center gap-2">
               <Clock className="h-3.5 w-3.5 text-[#D8C2A3]" strokeWidth={1.5} />
-              <span>{config?.hours || CLINIC_INFO.openingHoursSummary.weekdays}</span>
+              <span>{clinicData.openingHours?.split('|')?.[0]?.trim() || config?.hours}</span>
             </p>
             <a
-              href={`mailto:${config?.email || CLINIC_INFO.primaryEmail}`}
+              href={`mailto:${clinicData.email || config?.email}`}
               className="text-xs font-sans font-light text-white/70 hover:text-[#D8C2A3] mt-4 flex items-center gap-2 transition-colors"
             >
               <Mail className="h-3.5 w-3.5 text-[#D8C2A3]" strokeWidth={1.5} />
-              <span>{config?.email || CLINIC_INFO.primaryEmail}</span>
+              <span>{clinicData.email || config?.email}</span>
             </a>
           </div>
         </div>

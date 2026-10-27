@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getAwardsConfig } from '../lib/adminStore';
+import { getAwardsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { AwardsConfig } from '../types';
 
 import { CLINIC_AWARDS_MEDIA } from '../data/clinicImages';
@@ -26,12 +26,41 @@ const FALLBACK_LIST = [
 ];
 
 export default function AwardsShowcase() {
-  const [config, setConfig] = useState<AwardsConfig | null>(null);
+  const [config, setConfig] = useState<AwardsConfig | null>(() => getAwardsConfig());
   const [isInView, setIsInView] = useState<boolean>(true);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    setConfig(getAwardsConfig());
+    const syncFromStore = () => {
+      const clinicAwards = getClinicData()?.awardsShowcase;
+      if (clinicAwards && Array.isArray(clinicAwards.awards) && clinicAwards.awards.length > 0) {
+        setConfig({
+          heading: clinicAwards.heading,
+          subheading: clinicAwards.subheading,
+          awards: clinicAwards.awards,
+        });
+      } else {
+        setConfig(getAwardsConfig());
+      }
+    };
+
+    syncFromStore();
+    fetchRemoteClinicData().then((remote) => {
+      if (remote?.awardsShowcase && Array.isArray(remote.awardsShowcase.awards) && remote.awardsShowcase.awards.length > 0) {
+        setConfig({
+          heading: remote.awardsShowcase.heading,
+          subheading: remote.awardsShowcase.subheading,
+          awards: remote.awardsShowcase.awards,
+        });
+      }
+    });
+
+    window.addEventListener('clinic_data_changed', syncFromStore);
+    window.addEventListener('awards_config_updated', syncFromStore);
+    return () => {
+      window.removeEventListener('clinic_data_changed', syncFromStore);
+      window.removeEventListener('awards_config_updated', syncFromStore);
+    };
   }, []);
 
   // IntersectionObserver to pause marquee when off-screen (saves GPU/CPU cycles and prevents heating)
@@ -103,7 +132,7 @@ export default function AwardsShowcase() {
       <div className="container mx-auto px-4 md:px-8 mb-10 sm:mb-14 relative z-10">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light text-luxury-text mb-3 leading-tight tracking-tight">
-            Awards & Clinical Recognition
+            {config.heading || 'Awards & Clinical Recognition'}
           </h2>
           {config.subheading && (
             <p className="font-sans text-xs sm:text-sm text-luxury-subtext max-w-lg mx-auto font-light leading-relaxed">

@@ -5,12 +5,29 @@ import {
   resetClinicDataToDefault,
   uploadAssetFile
 } from '../lib/adminStore';
-import { ClinicData, ClinicLocation } from '../data/clinicInfo';
+import { 
+  ClinicData, 
+  ClinicLocation, 
+  ClinicWhyChooseUsPillar, 
+  ClinicAwardItem,
+  ClinicConsultationDoctor,
+  ClinicConsultationConfig
+} from '../data/clinicInfo';
+
+const DAY_LABELS: { day: number; short: string }[] = [
+  { day: 1, short: 'Mon' },
+  { day: 2, short: 'Tue' },
+  { day: 3, short: 'Wed' },
+  { day: 4, short: 'Thu' },
+  { day: 5, short: 'Fri' },
+  { day: 6, short: 'Sat' },
+  { day: 0, short: 'Sun' },
+];
 
 export default function ClinicDataManager() {
   const [data, setData] = useState<ClinicData>(getClinicData());
   const [activeMenuOption, setActiveMenuOption] = useState<
-    'all' | 'brand' | 'assets' | 'contact' | 'commercial' | 'accreditations' | 'locations' | 'socials' | 'code'
+    'all' | 'brand' | 'assets' | 'contact' | 'commercial' | 'accreditations' | 'locations' | 'socials' | 'whyChooseUs' | 'awards' | 'consultation' | 'code'
   >('all');
   
   const [saveStatus, setSaveStatus] = useState<{
@@ -22,10 +39,16 @@ export default function ClinicDataManager() {
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
+  const uploadPreviousUrlRef = useRef<string | undefined>(undefined);
 
-  // Trigger file upload and callback
-  const triggerImageUpload = (callback: (url: string) => void, targetName: string) => {
+  // Trigger file upload and callback (passing previousUrl when replacing an existing image)
+  const triggerImageUpload = (
+    callback: (url: string) => void,
+    targetName: string,
+    previousUrl?: string
+  ) => {
     uploadCallbackRef.current = callback;
+    uploadPreviousUrlRef.current = previousUrl?.trim() || undefined;
     setUploadingTarget(targetName);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -37,9 +60,10 @@ export default function ClinicDataManager() {
     const file = e.target.files?.[0];
     if (!file || !uploadCallbackRef.current) return;
     
+    const prevUrl = uploadPreviousUrlRef.current;
     setSaveStatus({ state: 'saving', message: `Uploading ${file.name} to assets...` });
     try {
-      const res = await uploadAssetFile(file);
+      const res = await uploadAssetFile(file, prevUrl);
       if (res.success && res.url) {
         uploadCallbackRef.current(res.url);
         setHasUnsavedChanges(true);
@@ -54,15 +78,26 @@ export default function ClinicDataManager() {
       setSaveStatus({ state: 'error', message: `Upload error: ${String(err)}` });
     } finally {
       setUploadingTarget(null);
+      uploadPreviousUrlRef.current = undefined;
     }
   };
 
   // Bottom Modal State (for mobile screens and quick item edit)
   const [modalType, setModalType] = useState<
-    null | 'location' | 'keywords' | 'accreditations' | 'payments' | 'specialties' | 'languages' | 'interiorPhotos'
+    null | 'location' | 'pillar' | 'award' | 'doctor' | 'keywords' | 'accreditations' | 'payments' | 'specialties' | 'languages' | 'interiorPhotos'
   >(null);
   const [editingLocationIndex, setEditingLocationIndex] = useState<number | null>(null);
   const [locationDraft, setLocationDraft] = useState<ClinicLocation | null>(null);
+  const [editingPillarIndex, setEditingPillarIndex] = useState<number | null>(null);
+  const [pillarDraft, setPillarDraft] = useState<ClinicWhyChooseUsPillar | null>(null);
+  const [editingAwardIndex, setEditingAwardIndex] = useState<number | null>(null);
+  const [awardDraft, setAwardDraft] = useState<ClinicAwardItem | null>(null);
+  const [editingDoctorIndex, setEditingDoctorIndex] = useState<number | null>(null);
+  const [doctorDraft, setDoctorDraft] = useState<ClinicConsultationDoctor | null>(null);
+  const [newDoctorTimeSlot, setNewDoctorTimeSlot] = useState('');
+  const [newDefaultTimeSlot, setNewDefaultTimeSlot] = useState('');
+  const [newBestTimeLabel, setNewBestTimeLabel] = useState('');
+  const [newHearAboutLabel, setNewHearAboutLabel] = useState('');
   const [arrayDraft, setArrayDraft] = useState<string[]>([]);
   const [newArrayItem, setNewArrayItem] = useState('');
 
@@ -98,6 +133,57 @@ export default function ClinicDataManager() {
         [field]: value
       }
     }));
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  const updateWhyChooseUsHeader = (field: 'heading' | 'subheading', value: string) => {
+    setData(prev => ({
+      ...prev,
+      whyChooseUs: {
+        heading: prev.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+        subheading: prev.whyChooseUs?.subheading || '',
+        pillars: prev.whyChooseUs?.pillars || [],
+        [field]: value
+      }
+    }));
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  const updateAwardsHeader = (field: 'heading' | 'subheading', value: string) => {
+    setData(prev => ({
+      ...prev,
+      awardsShowcase: {
+        heading: prev.awardsShowcase?.heading || 'Awards & Recognition',
+        subheading: prev.awardsShowcase?.subheading || '',
+        awards: prev.awardsShowcase?.awards || [],
+        [field]: value
+      }
+    }));
+    setHasUnsavedChanges(true);
+    setSaveStatus({ state: 'idle' });
+  };
+
+  const getSafeConsultationConfig = (source?: ClinicConsultationConfig): ClinicConsultationConfig => ({
+    heading: source?.heading ?? 'Book a Preferred Consultation',
+    subheading: source?.subheading ?? 'Schedule your bespoke clinical assessment with our aesthetic specialists.',
+    specialistLabel: source?.specialistLabel ?? 'Preferred Specialist',
+    doctors: Array.isArray(source?.doctors) ? source.doctors : [],
+    defaultTimeSlots: Array.isArray(source?.defaultTimeSlots) ? source.defaultTimeSlots : ['09:30', '11:00', '14:00', '16:00'],
+    bestTimeOptions: Array.isArray(source?.bestTimeOptions) ? source.bestTimeOptions : [],
+    hearAboutUsOptions: Array.isArray(source?.hearAboutUsOptions) ? source.hearAboutUsOptions : [],
+    stayInTouchChannels: Array.isArray(source?.stayInTouchChannels) ? source.stayInTouchChannels : [],
+  });
+
+  const updateConsultationConfig = (updater: (curr: ClinicConsultationConfig) => ClinicConsultationConfig) => {
+    setData(prev => {
+      const nextConfig = updater(getSafeConsultationConfig(prev.consultationConfig));
+      return {
+        ...prev,
+        consultationConfig: nextConfig
+      };
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
@@ -184,10 +270,194 @@ export default function ClinicDataManager() {
     setConfirmDialog({
       isOpen: true,
       title: 'Delete Clinic Location',
-      message: `Are you sure you want to delete "${locName}"? Click "Delete Location" below to confirm.`,
+      message: `Are you sure you want to delete "${locName}"? Click "Confirm Delete" below to confirm.`,
       onConfirm: () => {
         const currentLocations = [...(data.locations || [])].filter((_, idx) => idx !== index);
         updateField('locations', currentLocations);
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  // Why Choose Us Pillar management
+  const openEditPillarModal = (index: number) => {
+    const target = data.whyChooseUs?.pillars?.[index];
+    if (!target) return;
+    setEditingPillarIndex(index);
+    setPillarDraft({ ...target });
+    setModalType('pillar');
+  };
+
+  const openNewPillarModal = () => {
+    setEditingPillarIndex(null);
+    setPillarDraft({
+      id: `pillar-${Date.now()}`,
+      title: '',
+      description: '',
+      iconName: 'Building',
+      badge: '',
+      imageUrl: ''
+    });
+    setModalType('pillar');
+  };
+
+  const savePillarDraft = () => {
+    if (!pillarDraft) return;
+    const currentPillars = [...(data.whyChooseUs?.pillars || [])];
+    if (editingPillarIndex !== null && editingPillarIndex >= 0) {
+      currentPillars[editingPillarIndex] = pillarDraft;
+    } else {
+      currentPillars.push(pillarDraft);
+    }
+    updateField('whyChooseUs', {
+      heading: data.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+      subheading: data.whyChooseUs?.subheading || '',
+      pillars: currentPillars
+    });
+    setModalType(null);
+    setPillarDraft(null);
+  };
+
+  const deletePillar = (index: number) => {
+    const item = data.whyChooseUs?.pillars?.[index];
+    const itemName = item?.title || `Pillar #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Pillar',
+      message: `Are you sure you want to delete "${itemName}"?`,
+      onConfirm: () => {
+        const nextPillars = (data.whyChooseUs?.pillars || []).filter((_, idx) => idx !== index);
+        updateField('whyChooseUs', {
+          heading: data.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+          subheading: data.whyChooseUs?.subheading || '',
+          pillars: nextPillars
+        });
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  // Awards Showcase management
+  const openEditAwardModal = (index: number) => {
+    const target = data.awardsShowcase?.awards?.[index];
+    if (!target) return;
+    setEditingAwardIndex(index);
+    setAwardDraft({ ...target });
+    setModalType('award');
+  };
+
+  const openNewAwardModal = () => {
+    setEditingAwardIndex(null);
+    setAwardDraft({
+      id: `aw-${Date.now()}`,
+      title: '',
+      organization: '',
+      year: new Date().getFullYear().toString(),
+      imageUrl: ''
+    });
+    setModalType('award');
+  };
+
+  const saveAwardDraft = () => {
+    if (!awardDraft) return;
+    const currentAwards = [...(data.awardsShowcase?.awards || [])];
+    if (editingAwardIndex !== null && editingAwardIndex >= 0) {
+      currentAwards[editingAwardIndex] = awardDraft;
+    } else {
+      currentAwards.push(awardDraft);
+    }
+    updateField('awardsShowcase', {
+      heading: data.awardsShowcase?.heading || 'Awards & Recognition',
+      subheading: data.awardsShowcase?.subheading || '',
+      awards: currentAwards
+    });
+    setModalType(null);
+    setAwardDraft(null);
+  };
+
+  const deleteAward = (index: number) => {
+    const item = data.awardsShowcase?.awards?.[index];
+    const itemName = item?.title || `Award #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Award',
+      message: `Are you sure you want to delete "${itemName}"?`,
+      onConfirm: () => {
+        const nextAwards = (data.awardsShowcase?.awards || []).filter((_, idx) => idx !== index);
+        updateField('awardsShowcase', {
+          heading: data.awardsShowcase?.heading || 'Awards & Recognition',
+          subheading: data.awardsShowcase?.subheading || '',
+          awards: nextAwards
+        });
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  // Book Consultation — Preferred Specialist management
+  const openEditDoctorModal = (index: number) => {
+    const target = data.consultationConfig?.doctors?.[index];
+    if (!target) return;
+    setEditingDoctorIndex(index);
+    setDoctorDraft({
+      ...target,
+      locationIds: [...(target.locationIds || [])],
+      availableDays: [...(target.availableDays || [1, 2, 3, 4, 5])],
+      timeSlots: [...(target.timeSlots || ['09:30', '11:00', '14:00', '16:00'])],
+    });
+    setNewDoctorTimeSlot('');
+    setModalType('doctor');
+  };
+
+  const openNewDoctorModal = () => {
+    setEditingDoctorIndex(null);
+    setDoctorDraft({
+      id: `dr-${Date.now()}`,
+      name: '',
+      specialty: '',
+      locationIds: [],
+      availableDays: [1, 2, 3, 4, 5],
+      timeSlots: ['09:30', '11:00', '14:00', '16:00'],
+    });
+    setNewDoctorTimeSlot('');
+    setModalType('doctor');
+  };
+
+  const saveDoctorDraft = () => {
+    if (!doctorDraft || !doctorDraft.name.trim()) return;
+    updateConsultationConfig(curr => {
+      const nextDoctors = [...(curr.doctors || [])];
+      const normalizedDraft: ClinicConsultationDoctor = {
+        ...doctorDraft,
+        name: doctorDraft.name.trim(),
+        specialty: doctorDraft.specialty?.trim() || '',
+      };
+      if (editingDoctorIndex !== null && editingDoctorIndex >= 0) {
+        nextDoctors[editingDoctorIndex] = normalizedDraft;
+      } else {
+        nextDoctors.push(normalizedDraft);
+      }
+      return {
+        ...curr,
+        doctors: nextDoctors,
+      };
+    });
+    setModalType(null);
+    setDoctorDraft(null);
+  };
+
+  const deleteDoctor = (index: number) => {
+    const item = data.consultationConfig?.doctors?.[index];
+    const itemName = item?.name || `Specialist #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Specialist',
+      message: `Are you sure you want to remove "${itemName}" from Book Consultation?`,
+      onConfirm: () => {
+        updateConsultationConfig(curr => ({
+          ...curr,
+          doctors: (curr.doctors || []).filter((_, idx) => idx !== index),
+        }));
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
@@ -249,7 +519,7 @@ export default function ClinicDataManager() {
           <label className="text-xs font-bold uppercase text-slate-700">{label}</label>
           <button
             type="button"
-            onClick={() => triggerImageUpload((newUrl) => onChange(newUrl), targetKey)}
+            onClick={() => triggerImageUpload((newUrl) => onChange(newUrl), targetKey, value)}
             disabled={uploadingTarget === targetKey}
             className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer transition-colors disabled:opacity-50"
           >
@@ -374,7 +644,10 @@ export default function ClinicDataManager() {
             { id: 'accreditations', label: '05. Accreditations' },
             { id: 'locations', label: `06. Locations (${data.locations?.length || 0})` },
             { id: 'socials', label: '07. Social & Reviews' },
-            { id: 'code', label: '08. Raw Code Preview' }
+            { id: 'whyChooseUs', label: `08. Why Choose Us (${data.whyChooseUs?.pillars?.length || 0})` },
+            { id: 'awards', label: `09. Awards Showcase (${data.awardsShowcase?.awards?.length || 0})` },
+            { id: 'consultation', label: `10. Book Consultation (${data.consultationConfig?.doctors?.length || 0})` },
+            { id: 'code', label: '11. Raw Code Preview' }
           ].map(opt => (
             <button
               key={opt.id}
@@ -570,16 +843,35 @@ export default function ClinicDataManager() {
                       <div className="truncate font-mono text-[11px] text-slate-700" title={url}>
                         {url}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated = (data.interiorPhotos || []).filter((_, idx) => idx !== i);
-                          updateField('interiorPhotos', updated);
-                        }}
-                        className="mt-1 text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
-                      >
-                        Remove
-                      </button>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            triggerImageUpload(
+                              (newUrl) => {
+                                const updated = [...(data.interiorPhotos || [])];
+                                updated[i] = newUrl;
+                                updateField('interiorPhotos', updated);
+                              },
+                              `interior_${i}`,
+                              url
+                            )
+                          }
+                          className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (data.interiorPhotos || []).filter((_, idx) => idx !== i);
+                            updateField('interiorPhotos', updated);
+                          }}
+                          className="text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -992,13 +1284,617 @@ export default function ClinicDataManager() {
           </section>
         )}
 
-        {/* SECTION 8: RAW TYPESCRIPT CODE PREVIEW */}
+        {/* SECTION 8: WHY CHOOSE US */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'whyChooseUs') && (
+          <section className="w-full border-b border-slate-200 py-6 sm:py-8 px-4 sm:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                  08 / Configuration
+                </span>
+                <h2 className="text-xl font-bold text-[#003334]">
+                  Why Choose Us ({data.whyChooseUs?.pillars?.length || 0})
+                </h2>
+              </div>
+              <button
+                onClick={openNewPillarModal}
+                className="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#003334] hover:bg-[#002627] rounded-lg cursor-pointer"
+              >
+                + Add Pillar
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Heading</label>
+                <input
+                  type="text"
+                  value={data.whyChooseUs?.heading || ''}
+                  onChange={e => updateWhyChooseUsHeader('heading', e.target.value)}
+                  placeholder="Why choose Age Reversal Clinic London?"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Subheading</label>
+                <input
+                  type="text"
+                  value={data.whyChooseUs?.subheading || ''}
+                  onChange={e => updateWhyChooseUsHeader('subheading', e.target.value)}
+                  placeholder="Experience the pinnacle of clinical aesthetics..."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {(data.whyChooseUs?.pillars || []).map((pillar, idx) => (
+                <div
+                  key={pillar.id || idx}
+                  className="border border-slate-200 bg-white rounded-xl p-3.5 flex items-start justify-between gap-3 hover:border-slate-300 transition-colors"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    {pillar.imageUrl && (
+                      <img
+                        src={pillar.imageUrl}
+                        alt={pillar.title}
+                        className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
+                        {pillar.badge || `Pillar #${idx + 1}`} &middot; {pillar.iconName || 'Building'}
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 truncate">{pillar.title || 'Untitled Pillar'}</h3>
+                      <p className="text-xs text-slate-600 line-clamp-2 mt-0.5">{pillar.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => openEditPillarModal(idx)}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deletePillar(idx)}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 9: AWARDS SHOWCASE */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'awards') && (
+          <section className="w-full border-b border-slate-200 py-6 sm:py-8 px-4 sm:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                  09 / Configuration
+                </span>
+                <h2 className="text-xl font-bold text-[#003334]">
+                  Awards Showcase ({data.awardsShowcase?.awards?.length || 0})
+                </h2>
+              </div>
+              <button
+                onClick={openNewAwardModal}
+                className="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#003334] hover:bg-[#002627] rounded-lg cursor-pointer"
+              >
+                + Add Award
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Heading</label>
+                <input
+                  type="text"
+                  value={data.awardsShowcase?.heading || ''}
+                  onChange={e => updateAwardsHeader('heading', e.target.value)}
+                  placeholder="Awards & Recognition"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Subheading</label>
+                <input
+                  type="text"
+                  value={data.awardsShowcase?.subheading || ''}
+                  onChange={e => updateAwardsHeader('subheading', e.target.value)}
+                  placeholder="Recognized nationally and globally..."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {(data.awardsShowcase?.awards || []).map((award, idx) => (
+                <div
+                  key={award.id || idx}
+                  className="border border-slate-200 bg-white rounded-xl p-3.5 flex items-center justify-between gap-3 hover:border-slate-300 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {award.imageUrl && (
+                      <img
+                        src={award.imageUrl}
+                        alt={award.title}
+                        className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
+                        {award.year || 'Year'} &middot; {award.organization || 'Organization'}
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 truncate">{award.title || 'Untitled Award'}</h3>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => openEditAwardModal(idx)}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteAward(idx)}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 10: BOOK CONSULTATION */}
+        {(activeMenuOption === 'all' || activeMenuOption === 'consultation') && (
+          <section className="w-full border-b border-slate-200 py-6 sm:py-8 px-4 sm:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-6 pb-2 border-b border-slate-200">
+              <div>
+                <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                  10 / Configuration
+                </span>
+                <h2 className="text-xl font-bold text-[#003334]">
+                  Book Consultation ({data.consultationConfig?.doctors?.length || 0} Specialists)
+                </h2>
+              </div>
+              <button
+                onClick={openNewDoctorModal}
+                className="mt-2 sm:mt-0 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[#003334] hover:bg-[#002627] rounded-lg cursor-pointer"
+              >
+                + Add Specialist
+              </button>
+            </div>
+
+            {/* Section Heading, Subheading & Preferred Specialist Label */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Heading</label>
+                <input
+                  type="text"
+                  value={data.consultationConfig?.heading || ''}
+                  onChange={e =>
+                    updateConsultationConfig(curr => ({ ...curr, heading: e.target.value }))
+                  }
+                  placeholder="Book a Preferred Consultation"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Section Subheading</label>
+                <input
+                  type="text"
+                  value={data.consultationConfig?.subheading || ''}
+                  onChange={e =>
+                    updateConsultationConfig(curr => ({ ...curr, subheading: e.target.value }))
+                  }
+                  placeholder="Schedule your bespoke clinical assessment..."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-slate-700">Specialist Field Label</label>
+                <input
+                  type="text"
+                  value={data.consultationConfig?.specialistLabel ?? 'Preferred Specialist'}
+                  onChange={e =>
+                    updateConsultationConfig(curr => ({ ...curr, specialistLabel: e.target.value }))
+                  }
+                  placeholder="Preferred Specialist"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                />
+              </div>
+            </div>
+
+            {/* 1. Preferred Specialists Cards */}
+            <div className="mb-6">
+              <div className="text-xs font-bold uppercase text-slate-700 mb-2.5">
+                {data.consultationConfig?.specialistLabel || 'Preferred Specialist'}s ({data.consultationConfig?.doctors?.length || 0})
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {(data.consultationConfig?.doctors || []).map((doc, idx) => {
+                  const assignedLocationNames =
+                    Array.isArray(doc.locationIds) && doc.locationIds.length > 0
+                      ? doc.locationIds
+                          .map(locId => {
+                            const match = (data.locations || []).find(l => l.id === locId || l.name === locId);
+                            return match ? match.name : null;
+                          })
+                          .filter(Boolean)
+                          .join(' • ') || 'All Locations'
+                      : 'All Locations';
+
+                  const dayNames = (doc.availableDays || [])
+                    .map(d => DAY_LABELS.find(dl => dl.day === d)?.short)
+                    .filter(Boolean)
+                    .join(', ');
+
+                  return (
+                    <div
+                      key={doc.id || idx}
+                      className="border border-slate-200 bg-white rounded-xl p-3.5 flex items-start justify-between gap-3 hover:border-slate-300 transition-colors"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
+                          {doc.specialty || 'Specialist'} &middot; {assignedLocationNames}
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{doc.name}</h3>
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                            {dayNames || 'Mon–Sat'}
+                          </span>
+                          {(doc.timeSlots || []).slice(0, 4).map((slot, sIdx) => (
+                            <span
+                              key={sIdx}
+                              className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-teal-50 text-[#003334] border border-teal-200"
+                            >
+                              {slot}
+                            </span>
+                          ))}
+                          {(doc.timeSlots || []).length > 4 && (
+                            <span className="text-[10px] font-mono text-slate-500">
+                              +{(doc.timeSlots || []).length - 4} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => openEditDoctorModal(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteDoctor(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. Default Clinic Time Slots & Stay in Touch Channels */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Default Time Slots */}
+              <div className="border border-slate-200 bg-white rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase text-slate-700">
+                    Default Time Slots ({data.consultationConfig?.defaultTimeSlots?.length || 0})
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-mono">Fallback / Any Specialist</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newDefaultTimeSlot}
+                    onChange={e => setNewDefaultTimeSlot(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newDefaultTimeSlot.trim()) {
+                        e.preventDefault();
+                        const slot = newDefaultTimeSlot.trim();
+                        updateConsultationConfig(curr => ({
+                          ...curr,
+                          defaultTimeSlots: Array.from(new Set([...(curr.defaultTimeSlots || []), slot])),
+                        }));
+                        setNewDefaultTimeSlot('');
+                      }
+                    }}
+                    placeholder="e.g. 10:30 or 15:00"
+                    className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const slot = newDefaultTimeSlot.trim();
+                      if (!slot) return;
+                      updateConsultationConfig(curr => ({
+                        ...curr,
+                        defaultTimeSlots: Array.from(new Set([...(curr.defaultTimeSlots || []), slot])),
+                      }));
+                      setNewDefaultTimeSlot('');
+                    }}
+                    className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {(data.consultationConfig?.defaultTimeSlots || []).map((slot, idx) => (
+                    <span
+                      key={`${slot}-${idx}`}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-mono font-semibold text-slate-800"
+                    >
+                      {slot}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConsultationConfig(curr => ({
+                            ...curr,
+                            defaultTimeSlots: (curr.defaultTimeSlots || []).filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                        title="Remove slot"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stay in Touch Channels */}
+              <div className="border border-slate-200 bg-white rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase text-slate-700">
+                    Stay in Touch Channels
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-mono">Toggle Visible Options</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {(data.consultationConfig?.stayInTouchChannels || []).map((channel, idx) => (
+                    <div
+                      key={channel.id || idx}
+                      className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border text-xs transition-colors ${
+                        channel.enabled
+                          ? 'bg-teal-50/70 border-[#003334] text-[#003334]'
+                          : 'bg-slate-50 border-slate-200 text-slate-500'
+                      }`}
+                    >
+                      <label className="flex items-center gap-2 cursor-pointer min-w-0 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={channel.enabled}
+                          onChange={e => {
+                            const checked = e.target.checked;
+                            updateConsultationConfig(curr => ({
+                              ...curr,
+                              stayInTouchChannels: (curr.stayInTouchChannels || []).map((ch, i) =>
+                                i === idx ? { ...ch, enabled: checked } : ch
+                              ),
+                            }));
+                          }}
+                          className="rounded text-[#003334] cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={channel.label}
+                          onChange={e => {
+                            const nextLabel = e.target.value;
+                            updateConsultationConfig(curr => ({
+                              ...curr,
+                              stayInTouchChannels: (curr.stayInTouchChannels || []).map((ch, i) =>
+                                i === idx ? { ...ch, label: nextLabel } : ch
+                              ),
+                            }));
+                          }}
+                          className="bg-transparent font-bold text-xs w-full focus:outline-none truncate"
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Best Time to Reach You & How Did You Hear About Us? */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Best Time to Reach You */}
+              <div className="border border-slate-200 bg-white rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase text-slate-700">
+                    Best Time to Reach You ({data.consultationConfig?.bestTimeOptions?.length || 0})
+                  </label>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newBestTimeLabel}
+                    onChange={e => setNewBestTimeLabel(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newBestTimeLabel.trim()) {
+                        e.preventDefault();
+                        const label = newBestTimeLabel.trim();
+                        const value = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `time-${Date.now()}`;
+                        updateConsultationConfig(curr => ({
+                          ...curr,
+                          bestTimeOptions: [...(curr.bestTimeOptions || []), { value, label }],
+                        }));
+                        setNewBestTimeLabel('');
+                      }
+                    }}
+                    placeholder="e.g. Weekend (10am - 4pm)"
+                    className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const label = newBestTimeLabel.trim();
+                      if (!label) return;
+                      const value = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `time-${Date.now()}`;
+                      updateConsultationConfig(curr => ({
+                        ...curr,
+                        bestTimeOptions: [...(curr.bestTimeOptions || []), { value, label }],
+                      }));
+                      setNewBestTimeLabel('');
+                    }}
+                    className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  {(data.consultationConfig?.bestTimeOptions || []).map((opt, idx) => (
+                    <div
+                      key={opt.value || idx}
+                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    >
+                      <input
+                        type="text"
+                        value={opt.label}
+                        onChange={e => {
+                          const nextLabel = e.target.value;
+                          updateConsultationConfig(curr => ({
+                            ...curr,
+                            bestTimeOptions: (curr.bestTimeOptions || []).map((item, i) =>
+                              i === idx ? { ...item, label: nextLabel } : item
+                            ),
+                          }));
+                        }}
+                        className="flex-1 bg-transparent text-xs font-medium text-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConsultationConfig(curr => ({
+                            ...curr,
+                            bestTimeOptions: (curr.bestTimeOptions || []).filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-[11px] font-bold uppercase text-rose-600 hover:text-rose-800 cursor-pointer shrink-0"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* How Did You Hear About Us? */}
+              <div className="border border-slate-200 bg-white rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase text-slate-700">
+                    How Did You Hear About Us? ({data.consultationConfig?.hearAboutUsOptions?.length || 0})
+                  </label>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newHearAboutLabel}
+                    onChange={e => setNewHearAboutLabel(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newHearAboutLabel.trim()) {
+                        e.preventDefault();
+                        const label = newHearAboutLabel.trim();
+                        const value = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `source-${Date.now()}`;
+                        updateConsultationConfig(curr => ({
+                          ...curr,
+                          hearAboutUsOptions: [...(curr.hearAboutUsOptions || []), { value, label }],
+                        }));
+                        setNewHearAboutLabel('');
+                      }
+                    }}
+                    placeholder="e.g. Press / Magazine Feature"
+                    className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-[#003334]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const label = newHearAboutLabel.trim();
+                      if (!label) return;
+                      const value = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `source-${Date.now()}`;
+                      updateConsultationConfig(curr => ({
+                        ...curr,
+                        hearAboutUsOptions: [...(curr.hearAboutUsOptions || []), { value, label }],
+                      }));
+                      setNewHearAboutLabel('');
+                    }}
+                    className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                  >
+                    + Add
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  {(data.consultationConfig?.hearAboutUsOptions || []).map((opt, idx) => (
+                    <div
+                      key={opt.value || idx}
+                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    >
+                      <input
+                        type="text"
+                        value={opt.label}
+                        onChange={e => {
+                          const nextLabel = e.target.value;
+                          updateConsultationConfig(curr => ({
+                            ...curr,
+                            hearAboutUsOptions: (curr.hearAboutUsOptions || []).map((item, i) =>
+                              i === idx ? { ...item, label: nextLabel } : item
+                            ),
+                          }));
+                        }}
+                        className="flex-1 bg-transparent text-xs font-medium text-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConsultationConfig(curr => ({
+                            ...curr,
+                            hearAboutUsOptions: (curr.hearAboutUsOptions || []).filter((_, i) => i !== idx),
+                          }))
+                        }
+                        className="text-[11px] font-bold uppercase text-rose-600 hover:text-rose-800 cursor-pointer shrink-0"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* SECTION 11: RAW TYPESCRIPT CODE PREVIEW */}
         {(activeMenuOption === 'all' || activeMenuOption === 'code') && (
           <section className="w-full py-8 px-4 sm:px-8">
             <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4 pb-2 border-b border-slate-200">
               <div>
                 <span className="text-[11px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
-                  08 / Source Code
+                  11 / Source Code
                 </span>
                 <h2 className="text-xl font-bold text-[#003334]">Direct File TypeScript Preview</h2>
               </div>
@@ -1037,11 +1933,25 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
             <div className="px-3.5 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-mono font-bold uppercase text-[#c5a880]">
-                  {modalType === 'location' ? 'Location Facility Editor' : 'Item Array Editor'}
+                  {modalType === 'location'
+                    ? 'Location Facility Editor'
+                    : modalType === 'pillar'
+                    ? 'Why Choose Us Editor'
+                    : modalType === 'award'
+                    ? 'Awards Showcase Editor'
+                    : modalType === 'doctor'
+                    ? 'Book Consultation Specialist Editor'
+                    : 'Item Array Editor'}
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-[#003334]">
                   {modalType === 'location' 
                     ? (editingLocationIndex !== null ? 'Edit Clinic Location' : 'Add New Clinic Location')
+                    : modalType === 'pillar'
+                    ? (editingPillarIndex !== null ? 'Edit Pillar' : 'Add Pillar')
+                    : modalType === 'award'
+                    ? (editingAwardIndex !== null ? 'Edit Award' : 'Add Award')
+                    : modalType === 'doctor'
+                    ? (editingDoctorIndex !== null ? 'Edit Preferred Specialist' : 'Add Preferred Specialist')
                     : modalType === 'keywords' ? 'Edit Brand Keywords'
                     : modalType === 'accreditations' ? 'Edit Accreditations'
                     : modalType === 'payments' ? 'Edit Payment Methods'
@@ -1148,7 +2058,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="button"
                         onClick={() => triggerImageUpload((newUrl) => {
                           setLocationDraft({ ...locationDraft, image: newUrl });
-                        }, 'loc_image')}
+                        }, 'loc_image', locationDraft.image)}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         + Add Image File
@@ -1185,6 +2095,78 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     )}
                   </div>
 
+                  {/* Location Gallery Images (locations[i].gallery[i]) */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">
+                        Location Gallery ({locationDraft.gallery?.length || 0})
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerImageUpload((newUrl) => {
+                            const nextGallery = [...(locationDraft.gallery || []), newUrl];
+                            setLocationDraft({ ...locationDraft, gallery: nextGallery });
+                          }, 'loc_gallery_add')
+                        }
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800 hover:bg-slate-300 rounded cursor-pointer"
+                      >
+                        + Add Gallery Image
+                      </button>
+                    </div>
+                    {Array.isArray(locationDraft.gallery) && locationDraft.gallery.length > 0 && (
+                      <div className="space-y-1.5">
+                        {locationDraft.gallery.map((gUrl, gIdx) => (
+                          <div
+                            key={gIdx}
+                            className="flex items-center justify-between gap-2 p-1.5 bg-slate-50 border border-slate-200 rounded-lg"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img
+                                src={gUrl}
+                                alt={`Gallery ${gIdx + 1}`}
+                                className="h-8 w-8 object-cover rounded border border-slate-300 shrink-0"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                              <span className="font-mono text-slate-600 text-[11px] truncate">{gUrl}</span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  triggerImageUpload(
+                                    (newUrl) => {
+                                      const nextGallery = [...(locationDraft.gallery || [])];
+                                      nextGallery[gIdx] = newUrl;
+                                      setLocationDraft({ ...locationDraft, gallery: nextGallery });
+                                    },
+                                    `loc_gallery_${gIdx}`,
+                                    gUrl
+                                  )
+                                }
+                                className="text-[10px] font-bold uppercase text-[#003334] hover:underline cursor-pointer"
+                              >
+                                Replace
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextGallery = (locationDraft.gallery || []).filter((_, idx) => idx !== gIdx);
+                                  setLocationDraft({ ...locationDraft, gallery: nextGallery });
+                                }}
+                                className="text-[10px] font-bold uppercase text-rose-600 hover:text-rose-800 cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-6 pt-2">
                     <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700">
                       <input
@@ -1208,8 +2190,352 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 </div>
               )}
 
+              {/* EDIT PILLAR FORM */}
+              {modalType === 'pillar' && pillarDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">Pillar Title</label>
+                    <input
+                      type="text"
+                      value={pillarDraft.title}
+                      onChange={e => setPillarDraft({ ...pillarDraft, title: e.target.value })}
+                      placeholder="e.g. London's Premier Aesthetic Destination"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Badge Text</label>
+                      <input
+                        type="text"
+                        value={pillarDraft.badge || ''}
+                        onChange={e => setPillarDraft({ ...pillarDraft, badge: e.target.value })}
+                        placeholder="e.g. Harley St Flagship"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Icon Name</label>
+                      <select
+                        value={pillarDraft.iconName || 'Building'}
+                        onChange={e => setPillarDraft({ ...pillarDraft, iconName: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900 bg-white"
+                      >
+                        <option value="Building">Building</option>
+                        <option value="Star">Star</option>
+                        <option value="Sparkles">Sparkles</option>
+                        <option value="Medal">Medal</option>
+                        <option value="Shield">Shield</option>
+                        <option value="Award">Award</option>
+                        <option value="CheckCircle">CheckCircle</option>
+                        <option value="Heart">Heart</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">Description</label>
+                    <textarea
+                      rows={3}
+                      value={pillarDraft.description}
+                      onChange={e => setPillarDraft({ ...pillarDraft, description: e.target.value })}
+                      placeholder="Short description of this pillar..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Pillar Image Asset</label>
+                      <button
+                        type="button"
+                        onClick={() => triggerImageUpload((newUrl) => {
+                          setPillarDraft({ ...pillarDraft, imageUrl: newUrl });
+                        }, 'pillar_image', pillarDraft.imageUrl)}
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {pillarDraft.imageUrl ? 'Replace Image File' : '+ Add Image File'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={pillarDraft.imageUrl || ''}
+                        onChange={e => setPillarDraft({ ...pillarDraft, imageUrl: e.target.value })}
+                        placeholder="/assets/pillar.jpg or image URL"
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {pillarDraft.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setPillarDraft({ ...pillarDraft, imageUrl: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {pillarDraft.imageUrl && (
+                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
+                        <img
+                          src={pillarDraft.imageUrl}
+                          alt="Pillar Preview"
+                          className="h-10 w-10 object-cover rounded border border-slate-300"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="font-mono text-slate-600 text-[11px] truncate">{pillarDraft.imageUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* EDIT AWARD FORM */}
+              {modalType === 'award' && awardDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">Award Title</label>
+                    <input
+                      type="text"
+                      value={awardDraft.title}
+                      onChange={e => setAwardDraft({ ...awardDraft, title: e.target.value })}
+                      placeholder="e.g. Dermatology Clinic of the Year"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Organization</label>
+                      <input
+                        type="text"
+                        value={awardDraft.organization}
+                        onChange={e => setAwardDraft({ ...awardDraft, organization: e.target.value })}
+                        placeholder="e.g. Aesthetic Medicine Awards"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Year</label>
+                      <input
+                        type="text"
+                        value={awardDraft.year}
+                        onChange={e => setAwardDraft({ ...awardDraft, year: e.target.value })}
+                        placeholder="2025"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Award Image Asset</label>
+                      <button
+                        type="button"
+                        onClick={() => triggerImageUpload((newUrl) => {
+                          setAwardDraft({ ...awardDraft, imageUrl: newUrl });
+                        }, 'award_image', awardDraft.imageUrl)}
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {awardDraft.imageUrl ? 'Replace Image File' : '+ Add Image File'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={awardDraft.imageUrl || ''}
+                        onChange={e => setAwardDraft({ ...awardDraft, imageUrl: e.target.value })}
+                        placeholder="/assets/award.jpg or image URL"
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {awardDraft.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setAwardDraft({ ...awardDraft, imageUrl: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {awardDraft.imageUrl && (
+                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
+                        <img
+                          src={awardDraft.imageUrl}
+                          alt="Award Preview"
+                          className="h-10 w-10 object-cover rounded border border-slate-300"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <span className="font-mono text-slate-600 text-[11px] truncate">{awardDraft.imageUrl}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* EDIT PREFERRED SPECIALIST FORM */}
+              {modalType === 'doctor' && doctorDraft && (
+                <div className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Specialist Name</label>
+                      <input
+                        type="text"
+                        value={doctorDraft.name}
+                        onChange={e => setDoctorDraft({ ...doctorDraft, name: e.target.value })}
+                        placeholder="e.g. Dr. Alistair Smith (Lead Aesthetic Specialist)"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Specialty / Title</label>
+                      <input
+                        type="text"
+                        value={doctorDraft.specialty || ''}
+                        onChange={e => setDoctorDraft({ ...doctorDraft, specialty: e.target.value })}
+                        placeholder="e.g. Lead Aesthetic Specialist"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Assigned Clinic Locations */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">Assigned Clinic Locations</label>
+                      <span className="text-[10px] text-slate-400 font-mono">Leave unchecked for All Locations</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(data.locations || []).map((loc, lIdx) => {
+                        const locKey = loc.id || loc.name;
+                        const isChecked = (doctorDraft.locationIds || []).includes(locKey);
+                        return (
+                          <label
+                            key={locKey || lIdx}
+                            className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                              isChecked
+                                ? 'bg-teal-50/70 border-[#003334] text-[#003334] font-bold'
+                                : 'bg-slate-50 border-slate-200 text-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={e => {
+                                const current = doctorDraft.locationIds || [];
+                                const next = e.target.checked
+                                  ? Array.from(new Set([...current, locKey]))
+                                  : current.filter(id => id !== locKey);
+                                setDoctorDraft({ ...doctorDraft, locationIds: next });
+                              }}
+                              className="rounded text-[#003334]"
+                            />
+                            <span className="truncate">{loc.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Available Working Days */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase text-slate-700">Available Working Days</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {DAY_LABELS.map(({ day, short }) => {
+                        const active = (doctorDraft.availableDays || []).includes(day);
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => {
+                              const current = doctorDraft.availableDays || [];
+                              const next = active
+                                ? current.filter(d => d !== day)
+                                : [...current, day].sort();
+                              setDoctorDraft({ ...doctorDraft, availableDays: next });
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer border transition-colors ${
+                              active
+                                ? 'bg-[#003334] text-white border-[#003334]'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {short}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Specialist Time Slots */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold uppercase text-slate-700">
+                      Available Time Slots ({doctorDraft.timeSlots?.length || 0})
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newDoctorTimeSlot}
+                        onChange={e => setNewDoctorTimeSlot(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && newDoctorTimeSlot.trim()) {
+                            e.preventDefault();
+                            const slot = newDoctorTimeSlot.trim();
+                            setDoctorDraft({
+                              ...doctorDraft,
+                              timeSlots: Array.from(new Set([...(doctorDraft.timeSlots || []), slot])),
+                            });
+                            setNewDoctorTimeSlot('');
+                          }
+                        }}
+                        placeholder="e.g. 09:30 or 14:00"
+                        className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const slot = newDoctorTimeSlot.trim();
+                          if (!slot) return;
+                          setDoctorDraft({
+                            ...doctorDraft,
+                            timeSlots: Array.from(new Set([...(doctorDraft.timeSlots || []), slot])),
+                          });
+                          setNewDoctorTimeSlot('');
+                        }}
+                        className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                      >
+                        + Add Slot
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {(doctorDraft.timeSlots || []).map((slot, sIdx) => (
+                        <span
+                          key={`${slot}-${sIdx}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs font-mono font-semibold text-slate-800"
+                        >
+                          {slot}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDoctorDraft({
+                                ...doctorDraft,
+                                timeSlots: (doctorDraft.timeSlots || []).filter((_, i) => i !== sIdx),
+                              })
+                            }
+                            className="text-slate-400 hover:text-rose-600 font-bold cursor-pointer"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* EDIT ARRAY ITEMS */}
-              {modalType !== 'location' && (
+              {modalType !== 'location' && modalType !== 'pillar' && modalType !== 'award' && modalType !== 'doctor' && (
                 <div className="space-y-4">
                   {modalType === 'interiorPhotos' && (
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
@@ -1262,12 +2588,33 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                             )}
                             <span className="truncate">{item}</span>
                           </div>
-                          <button
-                            onClick={() => removeArrayItem(idx)}
-                            className="text-rose-600 hover:text-rose-800 font-bold uppercase text-[11px] px-2 py-0.5 rounded cursor-pointer shrink-0"
-                          >
-                            Remove
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {modalType === 'interiorPhotos' && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  triggerImageUpload(
+                                    (newUrl) => {
+                                      setArrayDraft((prev) =>
+                                        prev.map((val, i) => (i === idx ? newUrl : val))
+                                      );
+                                    },
+                                    `modal_interior_${idx}`,
+                                    item
+                                  )
+                                }
+                                className="text-[#003334] hover:underline font-bold uppercase text-[11px] px-1.5 py-0.5 rounded cursor-pointer"
+                              >
+                                Replace
+                              </button>
+                            )}
+                            <button
+                              onClick={() => removeArrayItem(idx)}
+                              className="text-rose-600 hover:text-rose-800 font-bold uppercase text-[11px] px-2 py-0.5 rounded cursor-pointer shrink-0"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
@@ -1286,7 +2633,17 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 Cancel
               </button>
               <button
-                onClick={modalType === 'location' ? saveLocationDraft : saveArrayDraft}
+                onClick={
+                  modalType === 'location'
+                    ? saveLocationDraft
+                    : modalType === 'pillar'
+                    ? savePillarDraft
+                    : modalType === 'award'
+                    ? saveAwardDraft
+                    : modalType === 'doctor'
+                    ? saveDoctorDraft
+                    : saveArrayDraft
+                }
                 className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#003334] hover:bg-[#002627] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
               >
                 Apply Changes

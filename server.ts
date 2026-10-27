@@ -319,6 +319,66 @@ export interface ClinicLocation {
   gallery?: string[];
 }
 
+export interface ClinicWhyChooseUsPillar {
+  id: string;
+  title: string;
+  description: string;
+  iconName: string;
+  badge?: string;
+  imageUrl?: string;
+}
+
+export interface ClinicWhyChooseUsSection {
+  heading: string;
+  subheading?: string;
+  pillars: ClinicWhyChooseUsPillar[];
+}
+
+export interface ClinicAwardItem {
+  id: string;
+  title: string;
+  year: string;
+  organization: string;
+  imageUrl?: string;
+}
+
+export interface ClinicAwardsSection {
+  heading: string;
+  subheading?: string;
+  awards: ClinicAwardItem[];
+}
+
+export interface ClinicConsultationDoctor {
+  id: string;
+  name: string;
+  specialty?: string;
+  locationIds?: string[]; // Empty or matching location IDs where this specialist practices
+  availableDays?: number[]; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  timeSlots?: string[]; // e.g. ["09:30", "11:00", "14:00", "16:00"]
+}
+
+export interface ClinicConsultationOption {
+  value: string;
+  label: string;
+}
+
+export interface ClinicStayInTouchChannel {
+  id: string; // e.g. 'email' | 'phone' | 'telephone' | 'post' | 'whatsapp' | 'sms'
+  label: string;
+  enabled: boolean;
+}
+
+export interface ClinicConsultationConfig {
+  heading?: string;
+  subheading?: string;
+  specialistLabel?: string; // Default: "Preferred Specialist"
+  doctors: ClinicConsultationDoctor[];
+  defaultTimeSlots: string[];
+  bestTimeOptions: ClinicConsultationOption[];
+  hearAboutUsOptions: ClinicConsultationOption[];
+  stayInTouchChannels: ClinicStayInTouchChannel[];
+}
+
 export interface ClinicData {
   name: string;
   tagline: string;
@@ -361,6 +421,10 @@ export interface ClinicData {
   };
 
   googleReviewUrl?: string;
+
+  whyChooseUs?: ClinicWhyChooseUsSection;
+  awardsShowcase?: ClinicAwardsSection;
+  consultationConfig?: ClinicConsultationConfig;
 }
 
 export const CLINIC_DATA: ClinicData = ${JSON.stringify(data, null, 2)};
@@ -430,6 +494,10 @@ const getMergedClinicData = () => {
       ...(CLINIC_DATA.socials || {}),
       ...(diskTsClinicData?.socials || {}),
     },
+    consultationConfig: {
+      ...(CLINIC_DATA.consultationConfig || {}),
+      ...(diskTsClinicData?.consultationConfig || {}),
+    },
   };
 
   let customClinicData: Record<string, any> | null = null;
@@ -444,7 +512,7 @@ const getMergedClinicData = () => {
     }
   }
 
-  const merged = customClinicData
+      const merged = customClinicData
     ? {
         ...baseClinicData,
         ...customClinicData,
@@ -466,6 +534,48 @@ const getMergedClinicData = () => {
           Array.isArray(customClinicData.locations) && customClinicData.locations.length > 0
             ? customClinicData.locations
             : baseClinicData.locations,
+        whyChooseUs:
+          customClinicData.whyChooseUs && typeof customClinicData.whyChooseUs === 'object'
+            ? {
+                ...(baseClinicData.whyChooseUs || {}),
+                ...customClinicData.whyChooseUs,
+                pillars: Array.isArray(customClinicData.whyChooseUs.pillars)
+                  ? customClinicData.whyChooseUs.pillars
+                  : baseClinicData.whyChooseUs?.pillars || [],
+              }
+            : baseClinicData.whyChooseUs,
+        awardsShowcase:
+          customClinicData.awardsShowcase && typeof customClinicData.awardsShowcase === 'object'
+            ? {
+                ...(baseClinicData.awardsShowcase || {}),
+                ...customClinicData.awardsShowcase,
+                awards: Array.isArray(customClinicData.awardsShowcase.awards)
+                  ? customClinicData.awardsShowcase.awards
+                  : baseClinicData.awardsShowcase?.awards || [],
+              }
+            : baseClinicData.awardsShowcase,
+        consultationConfig:
+          customClinicData.consultationConfig && typeof customClinicData.consultationConfig === 'object'
+            ? {
+                ...(baseClinicData.consultationConfig || {}),
+                ...customClinicData.consultationConfig,
+                doctors: Array.isArray(customClinicData.consultationConfig.doctors)
+                  ? customClinicData.consultationConfig.doctors
+                  : baseClinicData.consultationConfig?.doctors || [],
+                defaultTimeSlots: Array.isArray(customClinicData.consultationConfig.defaultTimeSlots)
+                  ? customClinicData.consultationConfig.defaultTimeSlots
+                  : baseClinicData.consultationConfig?.defaultTimeSlots || [],
+                bestTimeOptions: Array.isArray(customClinicData.consultationConfig.bestTimeOptions)
+                  ? customClinicData.consultationConfig.bestTimeOptions
+                  : baseClinicData.consultationConfig?.bestTimeOptions || [],
+                hearAboutUsOptions: Array.isArray(customClinicData.consultationConfig.hearAboutUsOptions)
+                  ? customClinicData.consultationConfig.hearAboutUsOptions
+                  : baseClinicData.consultationConfig?.hearAboutUsOptions || [],
+                stayInTouchChannels: Array.isArray(customClinicData.consultationConfig.stayInTouchChannels)
+                  ? customClinicData.consultationConfig.stayInTouchChannels
+                  : baseClinicData.consultationConfig?.stayInTouchChannels || [],
+              }
+            : baseClinicData.consultationConfig,
       }
     : baseClinicData;
 
@@ -473,15 +583,17 @@ const getMergedClinicData = () => {
   return merged;
 };
 
-// Helper: Inspect all image paths in clinicData and ensure any /assets/... or /uploads/... file
-// exists in both public/assets/ and src/assets/images/ (plus dist/assets/ if present)
-const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
-  if (!clinicData || typeof clinicData !== 'object') return 0;
+// Helper: Collect all normalized /assets/... URLs referenced by a clinicData object
+const collectClinicDataAssetUrls = (clinicData: any): string[] => {
+  if (!clinicData || typeof clinicData !== 'object') return [];
 
   const rawUrls: string[] = [];
   const pushIfString = (val: unknown) => {
     if (typeof val === 'string' && val.trim()) {
-      rawUrls.push(val.trim());
+      const cleanPath = val.split('?')[0].split('#')[0].trim();
+      if (cleanPath.startsWith('/assets/')) {
+        rawUrls.push(cleanPath);
+      }
     }
   };
 
@@ -508,34 +620,87 @@ const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
     }
   }
 
-  const uniqueUrls = Array.from(new Set(rawUrls));
+  if (Array.isArray(clinicData.whyChooseUs?.pillars)) {
+    for (const pillar of clinicData.whyChooseUs.pillars) {
+      if (!pillar || typeof pillar !== 'object') continue;
+      pushIfString(pillar.imageUrl);
+    }
+  }
+
+  if (Array.isArray(clinicData.awardsShowcase?.awards)) {
+    for (const award of clinicData.awardsShowcase.awards) {
+      if (!award || typeof award !== 'object') continue;
+      pushIfString(award.imageUrl);
+    }
+  }
+
+  return rawUrls;
+};
+
+// Helper: Delete a replaced clinicInfo.ts asset file from both public/assets/ and src/assets/images/
+// while ensuring it is not still referenced by another active slot in clinicInfo.ts
+const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string>): boolean => {
+  if (!oldUrl || typeof oldUrl !== 'string') return false;
+
+  const cleanPath = oldUrl.split('?')[0].split('#')[0].trim();
+  if (!cleanPath.startsWith('/assets/')) return false;
+
+  // Only manage files directly under /assets/<filename> (do not touch /assets/treatments/, /assets/transformations/, or /assets/aistudio/)
+  if (path.posix.dirname(cleanPath) !== '/assets') {
+    return false;
+  }
+
+  const fileName = path.basename(cleanPath);
+  if (!fileName) return false;
+
+  // Ensure the file is not still referenced by another slot in clinicInfo.ts
+  for (const activeUrl of activeUrlsSet) {
+    const activeClean = activeUrl.split('?')[0].split('#')[0].trim();
+    if (activeClean === cleanPath || path.basename(activeClean) === fileName) {
+      return false;
+    }
+  }
+
+  let deletedAny = false;
+  for (const targetDir of [publicAssetsDir, srcAssetsDir]) {
+    try {
+      const targetFilePath = path.join(targetDir, fileName);
+      if (fs.existsSync(targetFilePath) && fs.statSync(targetFilePath).isFile()) {
+        fs.unlinkSync(targetFilePath);
+        deletedAny = true;
+        console.log(`[Admin Asset Cleanup] Deleted replaced clinic asset: ${targetFilePath}`);
+      }
+    } catch (unlinkErr) {
+      console.warn(`[Admin Asset Cleanup] Could not delete ${fileName} from ${targetDir}:`, unlinkErr);
+    }
+  }
+
+  return deletedAny;
+};
+
+// Helper: Inspect all image paths in clinicData and ensure any /assets/... file
+// exists in both public/assets/ and src/assets/images/
+const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
+  if (!clinicData || typeof clinicData !== 'object') return 0;
+
+  const uniqueUrls = Array.from(new Set(collectClinicDataAssetUrls(clinicData)));
   let repairedCount = 0;
 
-  for (const rawUrl of uniqueUrls) {
-    const cleanPath = rawUrl.split('?')[0].split('#')[0].trim();
-    if (!cleanPath.startsWith('/assets/') && !cleanPath.startsWith('/uploads/')) {
-      continue;
-    }
-
+  for (const cleanPath of uniqueUrls) {
     const fileName = path.basename(cleanPath);
     if (!fileName) continue;
 
     let requiredDirs: string[] = [];
-    let optionalDirs: string[] = [];
 
     if (cleanPath.startsWith('/assets/treatments/')) {
       requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
-      optionalDirs = fs.existsSync(distTreatmentsDir) ? [distTreatmentsDir] : [];
     } else if (cleanPath.startsWith('/assets/transformations/')) {
       requiredDirs = [publicTransformationsDir, srcTransformationsDir];
-      optionalDirs = fs.existsSync(distTransformationsDir) ? [distTransformationsDir] : [];
     } else {
-      requiredDirs = [publicAssetsDir, srcAssetsDir, uploadsDir];
-      optionalDirs = fs.existsSync(distAssetsDir) ? [distAssetsDir] : [];
+      requiredDirs = [publicAssetsDir, srcAssetsDir];
     }
 
-    const allCandidateDirs = [...requiredDirs, ...optionalDirs];
-    const existingSourcePath = allCandidateDirs
+    const existingSourcePath = requiredDirs
       .map((dir) => path.join(dir, fileName))
       .find((candidatePath) => {
         try {
@@ -550,7 +715,7 @@ const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
       continue;
     }
 
-    for (const targetDir of allCandidateDirs) {
+    for (const targetDir of requiredDirs) {
       try {
         if (!fs.existsSync(targetDir)) {
           fs.mkdirSync(targetDir, { recursive: true });
@@ -578,19 +743,8 @@ const handleSaveClinicData = (req: any, res: any) => {
       return res.status(400).json({ success: false, error: 'Invalid clinicData object. Must include at least a clinic name.' });
     }
 
-    // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
-    // across public/assets/, src/assets/images/, public/uploads/, and dist/assets/
-    const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
-    if (repairedAssetCount > 0) {
-      console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
-    }
-
-    // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
-    const tsCode = generateClinicInfoTs(clinicData);
-    fs.writeFileSync(clinicInfoPath, tsCode, 'utf-8');
-    console.log(`[Admin] Successfully wrote updated code to ${clinicInfoPath}`);
-
-    // 2. Also persist / cache to siteCustomizations.json under clinic_info_data key
+    // Collect previous clinicInfo.ts & siteCustomizations.json image URLs before overwriting
+    const previousTsData = parseClinicDataFromTsFile();
     let existing: Record<string, any> = {};
     if (fs.existsSync(customizationsPath)) {
       try {
@@ -599,6 +753,32 @@ const handleSaveClinicData = (req: any, res: any) => {
         existing = {};
       }
     }
+    const previousUrls = new Set<string>([
+      ...collectClinicDataAssetUrls(previousTsData),
+      ...collectClinicDataAssetUrls(existing.clinic_info_data),
+    ]);
+
+    // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
+    // between public/assets/ and src/assets/images/
+    const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
+    if (repairedAssetCount > 0) {
+      console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
+    }
+
+    // 0b. Delete any replaced or removed clinicInfo.ts assets from public/assets/ and src/assets/images/
+    const activeUrlsSet = new Set<string>(collectClinicDataAssetUrls(clinicData));
+    for (const oldUrl of previousUrls) {
+      if (!activeUrlsSet.has(oldUrl)) {
+        deleteReplacedClinicAssetFile(oldUrl, activeUrlsSet);
+      }
+    }
+
+    // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
+    const tsCode = generateClinicInfoTs(clinicData);
+    fs.writeFileSync(clinicInfoPath, tsCode, 'utf-8');
+    console.log(`[Admin] Successfully wrote updated code to ${clinicInfoPath}`);
+
+    // 2. Also persist / cache to siteCustomizations.json under clinic_info_data key
     existing.clinic_info_data = clinicData;
     if (Array.isArray(clinicData.locations)) {
       if (!existing.homepage_locations_config) {
@@ -626,6 +806,53 @@ const handleSaveClinicData = (req: any, res: any) => {
         };
       });
     }
+
+    if (clinicData.whyChooseUs && typeof clinicData.whyChooseUs === 'object') {
+      existing.homepage_why_choose_us_config_v3 = {
+        heading: clinicData.whyChooseUs.heading || "Why Choose Age Reversal Clinic",
+        subheading: clinicData.whyChooseUs.subheading || "",
+        description:
+          clinicData.whyChooseUs.subheading ||
+          "We combine medical excellence with state-of-the-art technology to deliver safe, natural-looking results.",
+        pillars: Array.isArray(clinicData.whyChooseUs.pillars) ? clinicData.whyChooseUs.pillars : []
+      };
+    }
+
+    if (clinicData.awardsShowcase && typeof clinicData.awardsShowcase === 'object') {
+      existing.homepage_awards_config = {
+        heading: clinicData.awardsShowcase.heading || "Awards & Clinical Recognition",
+        subheading:
+          clinicData.awardsShowcase.subheading ||
+          "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
+        awards: Array.isArray(clinicData.awardsShowcase.awards) ? clinicData.awardsShowcase.awards : []
+      };
+    }
+
+    if (clinicData.consultationConfig && typeof clinicData.consultationConfig === 'object') {
+      existing.homepage_consultation_config = {
+        heading: clinicData.consultationConfig.heading || "Book a Preferred Consultation",
+        subheading:
+          clinicData.consultationConfig.subheading ||
+          "Schedule your bespoke clinical assessment with our aesthetic specialists.",
+        specialistLabel: clinicData.consultationConfig.specialistLabel || "Preferred Specialist",
+        doctors: Array.isArray(clinicData.consultationConfig.doctors)
+          ? clinicData.consultationConfig.doctors
+          : [],
+        defaultTimeSlots: Array.isArray(clinicData.consultationConfig.defaultTimeSlots)
+          ? clinicData.consultationConfig.defaultTimeSlots
+          : [],
+        bestTimeOptions: Array.isArray(clinicData.consultationConfig.bestTimeOptions)
+          ? clinicData.consultationConfig.bestTimeOptions
+          : [],
+        hearAboutUsOptions: Array.isArray(clinicData.consultationConfig.hearAboutUsOptions)
+          ? clinicData.consultationConfig.hearAboutUsOptions
+          : [],
+        stayInTouchChannels: Array.isArray(clinicData.consultationConfig.stayInTouchChannels)
+          ? clinicData.consultationConfig.stayInTouchChannels
+          : [],
+      };
+    }
+
     existing.lastSynced = new Date().toISOString();
     fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
 
@@ -1024,49 +1251,54 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
   }
 });
 
-// API: Upload an asset directly into src/assets/images, public/assets, public/uploads, and dist/assets
+// API: Upload an asset directly into public/assets and src/assets/images
 app.post('/api/admin/upload-asset', (req, res) => {
   try {
-    const { fileName, dataUrl, base64 } = req.body;
+    const { fileName, dataUrl, base64, previousUrl } = req.body;
     if (!fileName || (!dataUrl && !base64)) {
       return res.status(400).json({ success: false, error: 'Missing fileName or image data' });
     }
 
-    const rawData = dataUrl ? dataUrl.replace(/^data:image\/\w+;base64,/, '') : base64;
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
     const buffer = Buffer.from(rawData, 'base64');
 
     // Clean file name
     const ext = path.extname(fileName) || '.png';
     const baseName = path.basename(fileName, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
     const safeName = `${Date.now()}-${baseName}${ext}`;
-    const targetPath = path.join(uploadsDir, safeName);
     const publicAssetPath = path.join(publicAssetsDir, safeName);
     const srcAssetPath = path.join(srcAssetsDir, safeName);
 
-    // Save to all target locations:
-    // 1. src/assets/images for source code persistence & repository tracking
-    // 2. public/assets & public/uploads for Vite build & direct browser URL access
-    // 3. dist/assets for live production build serving (if present)
-    fs.writeFileSync(targetPath, buffer);
+    // Save only to public/assets and src/assets/images (no duplicate copies in public/uploads)
     fs.writeFileSync(publicAssetPath, buffer);
     fs.writeFileSync(srcAssetPath, buffer);
 
-    if (fs.existsSync(distAssetsDir)) {
-      try {
-        fs.writeFileSync(path.join(distAssetsDir, safeName), buffer);
-      } catch (distErr) {
-        console.warn('[Admin] Could not write uploaded asset to distAssetsDir:', distErr);
+    const newAssetUrl = `/assets/${safeName}`;
+
+    // If replacing an existing clinicInfo.ts image, delete the displaced file from public/assets and src/assets/images
+    // unless it is still referenced by another slot in clinicInfo.ts
+    if (typeof previousUrl === 'string' && previousUrl.trim()) {
+      const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
+      if (normalizedPrev && normalizedPrev !== newAssetUrl) {
+        const currentClinicData = parseClinicDataFromTsFile();
+        const allCurrentUrls = collectClinicDataAssetUrls(currentClinicData);
+        // Remove a single occurrence of normalizedPrev (representing the slot being replaced)
+        const prevIdx = allCurrentUrls.indexOf(normalizedPrev);
+        if (prevIdx !== -1) {
+          allCurrentUrls.splice(prevIdx, 1);
+        }
+        const activeUrlsSet = new Set<string>([...allCurrentUrls, newAssetUrl]);
+        deleteReplacedClinicAssetFile(normalizedPrev, activeUrlsSet);
       }
     }
 
-    console.log(`[Admin] Saved asset to src/assets/images/${safeName}, public/assets/${safeName}, and public/uploads/${safeName}`);
+    console.log(`[Admin] Saved asset to public/assets/${safeName} and src/assets/images/${safeName}`);
 
     return res.json({
       success: true,
-      url: `/assets/${safeName}`,
-      backupUrl: `/uploads/${safeName}`,
+      url: newAssetUrl,
       fileName: safeName,
-      message: 'Asset saved to src/assets/images, public/assets, public/uploads, and dist/assets successfully!'
+      message: 'Asset saved to public/assets and src/assets/images successfully!'
     });
   } catch (error) {
     console.error('Error saving asset:', error);

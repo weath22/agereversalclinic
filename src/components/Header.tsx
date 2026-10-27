@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Calendar, ChevronDown, ChevronRight, ChevronLeft, Gift, ThumbsUp, BookOpen, HelpCircle, Phone, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HeaderConfig } from '../types';
-import { CLINIC_INFO, CLINIC_DATA } from '../data/clinicInfo';
+import { CLINIC_INFO, CLINIC_DATA, ClinicData } from '../data/clinicInfo';
+import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { useCart } from '../context/CartContext';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
@@ -56,7 +57,27 @@ export default function Header({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    setClinicData(getClinicData());
+    fetchRemoteClinicData().then((remote) => {
+      if (remote) setClinicData(remote);
+    });
+
+    const handleClinicDataChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<ClinicData>;
+      setClinicData(customEvt.detail || getClinicData());
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    window.addEventListener('storage', handleClinicDataChanged);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+      window.removeEventListener('storage', handleClinicDataChanged);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -390,13 +411,18 @@ export default function Header({
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
           <img
-            alt={`${headerConfig?.primaryName || CLINIC_DATA.name} Logo`}
+            alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || clinicData.name}
             className="h-10 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            src={headerConfig?.logoUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"}
+            src={
+              clinicData.logo?.icon ||
+              clinicData.logo?.full ||
+              headerConfig?.logoUrl ||
+              "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"
+            }
           />
           <div className="flex flex-col">
             <span className="text-lg lg:text-xl font-serif font-light tracking-tight text-luxury-text leading-none flex items-center gap-1">
-              {headerConfig?.primaryName || CLINIC_DATA.name}
+              {headerConfig?.primaryName || clinicData.name || CLINIC_DATA.name}
             </span>
             <span className="text-[9px] lg:text-[10px] font-sans font-medium text-luxury-gold tracking-[0.3em] uppercase leading-none mt-1">
               {headerConfig?.secondaryName || "London"}
@@ -936,15 +962,15 @@ export default function Header({
                             </g>
                           </svg>
                           <span className="text-[13px] font-normal text-white/50 leading-snug">
-                            {CLINIC_INFO.locations?.[1]?.address || CLINIC_INFO.locations?.[0]?.address || 'Grove Park, London Borough of Lewisham, UK'}
+                            {clinicData.locations?.[1]?.address || clinicData.locations?.[0]?.address || CLINIC_INFO.locations?.[0]?.address || 'Grove Park, London Borough of Lewisham, UK'}
                           </span>
                         </div>
 
                         {/* Contact Row */}
                         <div className="flex items-center space-x-3">
                           <Phone className="h-4.5 w-4.5 text-white/40 shrink-0" strokeWidth={1.75} />
-                          <a href={CLINIC_INFO.phoneHref || `tel:${(CLINIC_INFO.primaryPhone || '+44 20 8857 2000').replace(/\s+/g, '')}`} className="text-[13px] font-normal text-luxury-gold hover:underline leading-none">
-                            {CLINIC_INFO.primaryPhone || '+44 20 8857 2000'}
+                          <a href={`tel:${(clinicData.phone || CLINIC_INFO.primaryPhone || '+44 20 8857 2000').replace(/[^0-9+]/g, '')}`} className="text-[13px] font-normal text-luxury-gold hover:underline leading-none">
+                            {clinicData.phone || CLINIC_INFO.primaryPhone || '+44 20 8857 2000'}
                           </a>
                         </div>
                       </div>

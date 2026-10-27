@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { saveConsultation, saveInquiry, getOurLocationsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
-import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
+import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, MessageCircle, MessageSquare, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { OurLocationsConfig, LocationItemConfig } from '../types';
 import { CLINIC_DATA, ClinicData } from '../data/clinicInfo';
@@ -52,20 +52,13 @@ interface LocationsAndConsultationProps {
   onTreatmentClick?: (name: string) => void;
 }
 
-const DOCTOR_OPTIONS = [
-  { value: '', label: 'Select a specialist (Optional)' },
-  { value: 'dr-smith', label: 'Dr. Smith' },
-  { value: 'dr-jones', label: 'Dr. Jones' },
-  { value: 'dr-jaipur', label: 'Dr. Jaipur' },
-];
-
-const BEST_TIME_OPTIONS = [
+const FALLBACK_BEST_TIME_OPTIONS = [
   { value: 'morning', label: 'Morning' },
   { value: 'afternoon', label: 'Afternoon' },
   { value: 'evening', label: 'Evening' },
 ];
 
-const HEAR_ABOUT_US_OPTIONS = [
+const FALLBACK_HEAR_ABOUT_US_OPTIONS = [
   { value: 'search', label: 'Search Engine (Google)' },
   { value: 'social', label: 'Social Media' },
   { value: 'referral', label: 'Friend/Family Referral' },
@@ -341,22 +334,28 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     });
 
     const handleClinicDataChange = (e: any) => {
-      if (e.detail) {
-        setClinicData(e.detail);
-      }
+      const nextData = e?.detail || getClinicData();
+      setClinicData(nextData);
+      setLocationsConfig(getOurLocationsConfig());
     };
 
     const handleLocationsConfigChange = (e: any) => {
-      if (e.detail) {
+      if (e?.detail) {
         setLocationsConfig(e.detail);
+      } else {
+        setLocationsConfig(getOurLocationsConfig());
       }
     };
 
     window.addEventListener('clinic_data_changed', handleClinicDataChange);
+    window.addEventListener('consultation_config_updated', handleClinicDataChange);
     window.addEventListener('locations_config_changed', handleLocationsConfigChange);
+    window.addEventListener('storage', handleClinicDataChange);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChange);
+      window.removeEventListener('consultation_config_updated', handleClinicDataChange);
       window.removeEventListener('locations_config_changed', handleLocationsConfigChange);
+      window.removeEventListener('storage', handleClinicDataChange);
     };
   }, []);
 
@@ -382,9 +381,15 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       (al) => al.id === locId || al.id === `loc-${idx + 1}` || al.name.toLowerCase() === loc.name.toLowerCase()
     );
 
-    // Prioritize image uploaded directly on the clinic location (loc.image), then admin config, then fallback
-    const resolvedImageUrl = (loc.image && loc.image.trim().length > 0)
-      ? loc.image
+    // Prioritize loc.image || loc.gallery?.[0] from reactive clinicData.locations, then admin config, then fallback
+    const primaryLocAsset =
+      (loc.image && loc.image.trim().length > 0 ? loc.image.trim() : '') ||
+      (Array.isArray(loc.gallery) && loc.gallery[0] && loc.gallery[0].trim().length > 0
+        ? loc.gallery[0].trim()
+        : '');
+
+    const resolvedImageUrl = primaryLocAsset
+      ? primaryLocAsset
       : (adminLoc?.imageUrl && !adminLoc.imageUrl.includes('Interactive'))
       ? adminLoc.imageUrl
       : fallbackImg;
@@ -412,6 +417,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     doctor: '',
     preferredLocation: '',
     date: '',
+    appointmentTime: '',
     bestTime: 'morning',
     hearAboutUs: 'search',
     stayInTouch: [] as string[],
@@ -419,6 +425,132 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     agreePrivacy: false,
     agreeOffers: false
   });
+
+  // Reactive Book Consultation Configuration from clinicInfo.ts / Central Store
+  const consultationConfig = clinicData.consultationConfig || CLINIC_DATA.consultationConfig;
+  const specialistLabel = consultationConfig?.specialistLabel || 'Preferred Specialist';
+  const allDoctors = consultationConfig?.doctors || CLINIC_DATA.consultationConfig?.doctors || [];
+
+  const selectedLocationObj = activeLocations.find(
+    (loc) => loc.name === booking.preferredLocation || loc.id === booking.preferredLocation
+  );
+
+  const availableDoctors = allDoctors.filter((doc) => {
+    if (!booking.preferredLocation) return true;
+    if (!doc.locationIds || doc.locationIds.length === 0) return true;
+    return doc.locationIds.some(
+      (locId) =>
+        locId === booking.preferredLocation ||
+        (selectedLocationObj &&
+          (locId === selectedLocationObj.id ||
+            locId.toLowerCase() === selectedLocationObj.name.toLowerCase()))
+    );
+  });
+
+  const doctorOptions = [
+    { value: '', label: 'Select a specialist (Optional)', specialty: '' },
+    ...availableDoctors.map((doc) => ({
+      value: doc.id,
+      label: doc.name,
+      specialty: doc.specialty || '',
+    })),
+  ];
+
+  const selectedDoctorObj = allDoctors.find((d) => d.id === booking.doctor || d.name === booking.doctor);
+
+  const allowedDaysOfWeek: number[] =
+    selectedDoctorObj && Array.isArray(selectedDoctorObj.availableDays) && selectedDoctorObj.availableDays.length > 0
+      ? selectedDoctorObj.availableDays
+      : [1, 2, 3, 4, 5, 6];
+
+  const availableTimeSlots: string[] =
+    selectedDoctorObj && Array.isArray(selectedDoctorObj.timeSlots) && selectedDoctorObj.timeSlots.length > 0
+      ? selectedDoctorObj.timeSlots
+      : consultationConfig?.defaultTimeSlots && consultationConfig.defaultTimeSlots.length > 0
+      ? consultationConfig.defaultTimeSlots
+      : ['09:00', '10:30', '12:00', '14:00', '15:30', '17:00'];
+
+  const availabilityHint = (() => {
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    if (selectedDoctorObj) {
+      const daysText = (selectedDoctorObj.availableDays || [])
+        .map((d) => dayLabels[d])
+        .filter(Boolean)
+        .join(', ');
+      return `${selectedDoctorObj.name}${daysText ? ` (${daysText})` : ''}`;
+    }
+    if (booking.preferredLocation) {
+      return `${booking.preferredLocation} (Mon–Sat)`;
+    }
+    return undefined;
+  })();
+
+  const bestTimeOptions =
+    consultationConfig?.bestTimeOptions && consultationConfig.bestTimeOptions.length > 0
+      ? consultationConfig.bestTimeOptions
+      : FALLBACK_BEST_TIME_OPTIONS;
+
+  const hearAboutUsOptions =
+    consultationConfig?.hearAboutUsOptions && consultationConfig.hearAboutUsOptions.length > 0
+      ? consultationConfig.hearAboutUsOptions
+      : FALLBACK_HEAR_ABOUT_US_OPTIONS;
+
+  const visibleStayInTouchChannels = (
+    consultationConfig?.stayInTouchChannels ||
+    CLINIC_DATA.consultationConfig?.stayInTouchChannels ||
+    []
+  ).filter((ch) => ch.enabled);
+
+  // Keep selected doctor, date, and time slot valid when location or specialist changes
+  useEffect(() => {
+    setBooking((prev) => {
+      let nextDoctor = prev.doctor;
+      if (
+        nextDoctor &&
+        !availableDoctors.some((d) => d.id === nextDoctor || d.name === nextDoctor)
+      ) {
+        nextDoctor = '';
+      }
+
+      let nextDate = prev.date;
+      let nextTime = prev.appointmentTime;
+      if (nextDate) {
+        const parsed = new Date(nextDate + 'T00:00:00');
+        if (!isNaN(parsed.getTime()) && !allowedDaysOfWeek.includes(parsed.getDay())) {
+          nextDate = '';
+          nextTime = '';
+        }
+      }
+      if (nextTime && !availableTimeSlots.includes(nextTime)) {
+        nextTime = nextDate ? (availableTimeSlots[0] || '') : '';
+      }
+
+      const nextBestTime = bestTimeOptions.some((o) => o.value === prev.bestTime)
+        ? prev.bestTime
+        : bestTimeOptions[0]?.value || 'morning';
+      const nextHearAbout = hearAboutUsOptions.some((o) => o.value === prev.hearAboutUs)
+        ? prev.hearAboutUs
+        : hearAboutUsOptions[0]?.value || 'search';
+
+      if (
+        nextDoctor === prev.doctor &&
+        nextDate === prev.date &&
+        nextTime === prev.appointmentTime &&
+        nextBestTime === prev.bestTime &&
+        nextHearAbout === prev.hearAboutUs
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        doctor: nextDoctor,
+        date: nextDate,
+        appointmentTime: nextTime,
+        bestTime: nextBestTime,
+        hearAboutUs: nextHearAbout,
+      };
+    });
+  }, [booking.preferredLocation, booking.doctor, clinicData]);
 
   const toggleStayInTouch = (option: string) => {
     setBooking(prev => {
@@ -438,7 +570,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     if (booking.date) {
       setAvailabilityStatus('checking');
       const timer = setTimeout(() => {
-        const dateObj = new Date(booking.date);
+        const dateObj = new Date(booking.date + 'T00:00:00');
         const day = dateObj.getDay();
         // Weekend or Friday afternoons generally limited
         if (day === 0 || day === 6 || (day === 5 && booking.bestTime === 'afternoon')) {
@@ -462,7 +594,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     }));
 
     const locationNote = booking.preferredLocation ? `[Preferred Location: ${booking.preferredLocation}]` : '';
-    const fullNotes = [locationNote, booking.notes].filter(Boolean).join('\n');
+    const timeNote = booking.appointmentTime ? `[Preferred Time: ${booking.appointmentTime}]` : '';
+    const fullNotes = [locationNote, timeNote, booking.notes].filter(Boolean).join('\n');
 
     saveConsultation({
       firstName: booking.firstName,
@@ -470,11 +603,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       email: booking.email,
       phone: booking.phone,
       date: booking.date,
+      appointmentTime: booking.appointmentTime,
+      preferredLocation: booking.preferredLocation,
       bestTime: booking.bestTime,
       hearAboutUs: booking.hearAboutUs,
       notes: fullNotes,
       improvement: booking.improvement,
-      doctor: booking.doctor,
+      doctor: selectedDoctorObj ? selectedDoctorObj.name : booking.doctor,
       stayInTouch: booking.stayInTouch,
       agreePrivacy: booking.agreePrivacy,
       agreeOffers: booking.agreeOffers,
@@ -637,10 +772,10 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
           
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-serif font-light text-stone-900 mb-6 tracking-tight leading-tight">
-              Book a Preferred Consultation
+              {consultationConfig?.heading || 'Book a Preferred Consultation'}
             </h2>
             <p className="font-sans text-sm md:text-base text-stone-600 max-w-2xl mx-auto font-light leading-relaxed">
-              Take the first step towards world-class care. Fill out the form below and our team will contact you to finalize your appointment.
+              {consultationConfig?.subheading || 'Take the first step towards world-class care. Fill out the form below and our team will contact you to finalize your appointment.'}
             </p>
             <div className="w-12 h-[1px] bg-[#a88d6b] mx-auto mt-8" />
           </div>
@@ -1431,9 +1566,11 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                       </AnimatePresence>
                     </div>
 
-                    {/* Custom Dropdown: Preferred Doctor */}
+                    {/* Custom Dropdown: Preferred Specialist */}
                     <div className="space-y-2 relative">
-                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">Preferred Doctor</label>
+                      <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text">
+                        {specialistLabel}
+                      </label>
                       <button
                         type="button"
                         onClick={() => setActiveConsultMenu(activeConsultMenu === 'doctor' ? null : 'doctor')}
@@ -1442,7 +1579,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         }`}
                       >
                         <span className={`truncate ${!booking.doctor ? 'text-luxury-subtext font-normal' : ''}`}>
-                          {DOCTOR_OPTIONS.find(d => d.value === booking.doctor)?.label || 'Select a specialist'}
+                          {doctorOptions.find(d => d.value === booking.doctor)?.label || 'Select a specialist'}
                         </span>
                         <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'doctor' ? 'rotate-180 text-luxury-gold' : ''}`} />
                       </button>
@@ -1456,7 +1593,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                             transition={{ duration: 0.12 }}
                             className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
                           >
-                            {DOCTOR_OPTIONS.map((doc) => {
+                            {doctorOptions.map((doc) => {
                               const isSelected = booking.doctor === doc.value;
                               return (
                                 <button
@@ -1472,7 +1609,12 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                       : 'text-luxury-subtext hover:bg-luxury-secondary/40 hover:text-luxury-text font-medium'
                                   }`}
                                 >
-                                  <span className="truncate">{doc.label}</span>
+                                  <div className="truncate text-left">
+                                    <span className="block truncate">{doc.label}</span>
+                                    {doc.specialty && (
+                                      <span className="block text-[11px] text-slate-400 font-normal truncate">{doc.specialty}</span>
+                                    )}
+                                  </div>
                                   {isSelected && <Check className="h-4 w-4 text-luxury-gold shrink-0 ml-2" />}
                                 </button>
                               );
@@ -1484,9 +1626,23 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
                     <AppointmentDatePicker
                       value={booking.date}
-                      onChange={(dateStr) => setBooking({ ...booking, date: dateStr })}
+                      onChange={(dateStr) =>
+                        setBooking((prev) => ({
+                          ...prev,
+                          date: dateStr,
+                          appointmentTime:
+                            prev.appointmentTime && availableTimeSlots.includes(prev.appointmentTime)
+                              ? prev.appointmentTime
+                              : availableTimeSlots[0] || '',
+                        }))
+                      }
                       label="Preferred Appointment Date"
                       placeholder="Select appointment date"
+                      allowedDaysOfWeek={allowedDaysOfWeek}
+                      availableTimeSlots={availableTimeSlots}
+                      selectedTime={booking.appointmentTime}
+                      onSelectTime={(timeStr) => setBooking((prev) => ({ ...prev, appointmentTime: timeStr }))}
+                      availabilityHint={availabilityHint}
                     />
                   </div>
 
@@ -1503,7 +1659,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         }`}
                       >
                         <span className="truncate">
-                          {BEST_TIME_OPTIONS.find(t => t.value === booking.bestTime)?.label || 'Morning'}
+                          {bestTimeOptions.find(t => t.value === booking.bestTime)?.label || bestTimeOptions[0]?.label || 'Morning'}
                         </span>
                         <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'bestTime' ? 'rotate-180 text-luxury-gold' : ''}`} />
                       </button>
@@ -1517,7 +1673,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                             transition={{ duration: 0.12 }}
                             className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
                           >
-                            {BEST_TIME_OPTIONS.map((time) => {
+                            {bestTimeOptions.map((time) => {
                               const isSelected = booking.bestTime === time.value;
                               return (
                                 <button
@@ -1554,7 +1710,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         }`}
                       >
                         <span className="truncate">
-                          {HEAR_ABOUT_US_OPTIONS.find(h => h.value === booking.hearAboutUs)?.label || 'Search Engine (Google)'}
+                          {hearAboutUsOptions.find(h => h.value === booking.hearAboutUs)?.label || hearAboutUsOptions[0]?.label || 'Search Engine (Google)'}
                         </span>
                         <ChevronDown className={`h-4 w-4 text-luxury-muted transition-transform duration-200 shrink-0 ml-2 ${activeConsultMenu === 'hearAboutUs' ? 'rotate-180 text-luxury-gold' : ''}`} />
                       </button>
@@ -1568,7 +1724,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                             transition={{ duration: 0.12 }}
                             className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden py-1.5 divide-y divide-luxury-border/20 max-h-60 overflow-y-auto"
                           >
-                            {HEAR_ABOUT_US_OPTIONS.map((opt) => {
+                            {hearAboutUsOptions.map((opt) => {
                               const isSelected = booking.hearAboutUs === opt.value;
                               return (
                                 <button
@@ -1621,13 +1777,20 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         {availabilityStatus === 'available' && (
                           <>
                             <Check className="h-4 w-4 shrink-0" />
-                            <span>Good availability on {new Date(booking.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} ({booking.bestTime}).</span>
+                            <span>
+                              Good availability on {new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              {booking.appointmentTime ? ` at ${booking.appointmentTime}` : ` (${bestTimeOptions.find(t => t.value === booking.bestTime)?.label || booking.bestTime})`}
+                              {selectedDoctorObj ? ` with ${selectedDoctorObj.name}` : ''}.
+                            </span>
                           </>
                         )}
                         {availabilityStatus === 'limited' && (
                           <>
                             <AlertCircle className="h-4 w-4 shrink-0" />
-                            <span>Limited availability on {new Date(booking.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} ({booking.bestTime}). We'll try our best to accommodate you.</span>
+                            <span>
+                              Limited availability on {new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                              {booking.appointmentTime ? ` at ${booking.appointmentTime}` : ` (${bestTimeOptions.find(t => t.value === booking.bestTime)?.label || booking.bestTime})`}. We'll try our best to accommodate you.
+                            </span>
                           </>
                         )}
                       </div>
@@ -1636,40 +1799,45 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                 </AnimatePresence>
 
                 {/* Stay in Touch Preferences Section */}
-                <div className="space-y-3">
-                  <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text block">
-                    Stay in Touch (Preferred Contact Channels)
-                  </label>
-                  <p className="text-xs text-luxury-subtext/70 font-sans -mt-1">
-                    Please select your preferred option(s) for updates, notifications, and future communications:
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { id: 'email', label: 'Email', icon: Mail },
-                      { id: 'phone', label: 'Phone', icon: Phone },
-                      { id: 'telephone', label: 'Tel Phone', icon: PhoneCall },
-                      { id: 'post', label: 'Post Mail', icon: MapPin },
-                    ].map((channel) => {
-                      const isSelected = booking.stayInTouch.includes(channel.id);
-                      const IconComponent = channel.icon;
-                      return (
-                        <button
-                          key={channel.id}
-                          type="button"
-                          onClick={() => toggleStayInTouch(channel.id)}
-                          className={`flex items-center gap-2.5 p-3 rounded-lg border transition-all duration-200 cursor-pointer text-left ${
-                            isSelected
-                              ? 'bg-black border-luxury-text text-white shadow-sm'
-                              : 'bg-luxury-secondary border-luxury-border text-luxury-text hover:bg-slate-50'
-                          }`}
-                        >
-                          <IconComponent className={`h-4 w-4 shrink-0 ${isSelected ? 'text-luxury-gold' : 'text-luxury-text'}`} />
-                          <span className="font-sans text-xs font-semibold tracking-wide">{channel.label}</span>
-                        </button>
-                      );
-                    })}
+                {visibleStayInTouchChannels.length > 0 && (
+                  <div className="space-y-3">
+                    <label className="font-sans font-bold text-xs tracking-wider uppercase text-luxury-text block">
+                      Stay in Touch (Preferred Contact Channels)
+                    </label>
+                    <p className="text-xs text-luxury-subtext/70 font-sans -mt-1">
+                      Please select your preferred option(s) for updates, notifications, and future communications:
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {visibleStayInTouchChannels.map((channel) => {
+                        const isSelected = booking.stayInTouch.includes(channel.id);
+                        const iconMap: Record<string, React.ElementType> = {
+                          email: Mail,
+                          phone: Phone,
+                          telephone: PhoneCall,
+                          post: MapPin,
+                          whatsapp: MessageCircle,
+                          sms: MessageSquare,
+                        };
+                        const IconComponent = iconMap[channel.id.toLowerCase()] || Mail;
+                        return (
+                          <button
+                            key={channel.id}
+                            type="button"
+                            onClick={() => toggleStayInTouch(channel.id)}
+                            className={`flex items-center gap-2.5 p-3 rounded-lg border transition-all duration-200 cursor-pointer text-left ${
+                              isSelected
+                                ? 'bg-black border-luxury-text text-white shadow-sm'
+                                : 'bg-luxury-secondary border-luxury-border text-luxury-text hover:bg-slate-50'
+                            }`}
+                          >
+                            <IconComponent className={`h-4 w-4 shrink-0 ${isSelected ? 'text-luxury-gold' : 'text-luxury-text'}`} />
+                            <span className="font-sans text-xs font-semibold tracking-wide">{channel.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Additional notes */}
                 <div className="space-y-2">
@@ -1766,15 +1934,18 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                     <span className="font-bold shrink-0 text-xs text-luxury-text">Stay in Touch Via:</span>
                     <div className="flex flex-wrap justify-center gap-1.5">
                       {booking.stayInTouch.map(id => {
-                        const labelMap: Record<string, string> = {
+                        const channelObj = (consultationConfig?.stayInTouchChannels || []).find(c => c.id === id);
+                        const fallbackMap: Record<string, string> = {
                           email: 'Email',
                           phone: 'Phone',
                           telephone: 'Tel Phone',
-                          post: 'Post Mail'
+                          post: 'Post Mail',
+                          whatsapp: 'WhatsApp',
+                          sms: 'SMS',
                         };
                         return (
                           <span key={id} className="bg-black/5 text-luxury-text font-bold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider border border-luxury-text/10">
-                            {labelMap[id] || id}
+                            {channelObj?.label || fallbackMap[id] || id}
                           </span>
                         );
                       })}
@@ -1782,12 +1953,28 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   </div>
                 )}
                 
-                {booking.preferredLocation && (
-                  <div className="mb-4 inline-flex items-center gap-1.5 bg-white border border-luxury-border/30 px-3.5 py-1.5 rounded-full text-xs text-luxury-text shadow-2xs">
-                    <MapPin className="h-3.5 w-3.5 text-luxury-gold shrink-0" />
-                    <span>Clinic Location: <strong>{booking.preferredLocation}</strong></span>
-                  </div>
-                )}
+                <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+                  {booking.preferredLocation && (
+                    <div className="inline-flex items-center gap-1.5 bg-white border border-luxury-border/30 px-3.5 py-1.5 rounded-full text-xs text-luxury-text shadow-2xs">
+                      <MapPin className="h-3.5 w-3.5 text-luxury-gold shrink-0" />
+                      <span>Location: <strong>{booking.preferredLocation}</strong></span>
+                    </div>
+                  )}
+                  {selectedDoctorObj && (
+                    <div className="inline-flex items-center gap-1.5 bg-white border border-luxury-border/30 px-3.5 py-1.5 rounded-full text-xs text-luxury-text shadow-2xs">
+                      <Sparkles className="h-3.5 w-3.5 text-luxury-gold shrink-0" />
+                      <span>{specialistLabel}: <strong>{selectedDoctorObj.name}</strong></span>
+                    </div>
+                  )}
+                  {booking.date && (
+                    <div className="inline-flex items-center gap-1.5 bg-white border border-luxury-border/30 px-3.5 py-1.5 rounded-full text-xs text-luxury-text shadow-2xs">
+                      <Clock className="h-3.5 w-3.5 text-luxury-gold shrink-0" />
+                      <span>
+                        Requested: <strong>{new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{booking.appointmentTime ? ` • ${booking.appointmentTime}` : ''}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex justify-center w-full px-1 sm:px-0 pt-2">
                   <button 
@@ -1804,8 +1991,9 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         doctor: '',
                         preferredLocation: '',
                         date: '',
-                        bestTime: 'morning',
-                        hearAboutUs: 'search',
+                        appointmentTime: '',
+                        bestTime: bestTimeOptions[0]?.value || 'morning',
+                        hearAboutUs: hearAboutUsOptions[0]?.value || 'search',
                         stayInTouch: [],
                         notes: '',
                         agreePrivacy: false,

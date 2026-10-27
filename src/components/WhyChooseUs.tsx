@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Icons from 'lucide-react';
 import { motion } from 'motion/react';
-import { getWhyChooseUsConfig } from '../lib/adminStore';
+import { getWhyChooseUsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { WhyChooseUsConfig } from '../types';
 
 // Fallback high-aesthetic UI images and badges for Why Choose Us pillars
@@ -27,7 +27,7 @@ const PILLAR_IMAGES_FALLBACK: Record<string, { image: string; badge: string }> =
 };
 
 export default function WhyChooseUs() {
-  const [config, setConfig] = useState<WhyChooseUsConfig | null>(null);
+  const [config, setConfig] = useState<WhyChooseUsConfig | null>(() => getWhyChooseUsConfig());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeScrollIndex, setActiveScrollIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -39,7 +39,38 @@ export default function WhyChooseUs() {
   const [scrollLeftPos, setScrollLeftPos] = useState(0);
 
   useEffect(() => {
-    setConfig(getWhyChooseUsConfig());
+    const syncFromStore = () => {
+      const clinicWhy = getClinicData()?.whyChooseUs;
+      if (clinicWhy && Array.isArray(clinicWhy.pillars) && clinicWhy.pillars.length > 0) {
+        setConfig({
+          heading: clinicWhy.heading,
+          subheading: clinicWhy.subheading,
+          description: clinicWhy.subheading || '',
+          pillars: clinicWhy.pillars,
+        });
+      } else {
+        setConfig(getWhyChooseUsConfig());
+      }
+    };
+
+    syncFromStore();
+    fetchRemoteClinicData().then((remote) => {
+      if (remote?.whyChooseUs && Array.isArray(remote.whyChooseUs.pillars) && remote.whyChooseUs.pillars.length > 0) {
+        setConfig({
+          heading: remote.whyChooseUs.heading,
+          subheading: remote.whyChooseUs.subheading,
+          description: remote.whyChooseUs.subheading || '',
+          pillars: remote.whyChooseUs.pillars,
+        });
+      }
+    });
+
+    window.addEventListener('clinic_data_changed', syncFromStore);
+    window.addEventListener('why_choose_us_updated', syncFromStore);
+    return () => {
+      window.removeEventListener('clinic_data_changed', syncFromStore);
+      window.removeEventListener('why_choose_us_updated', syncFromStore);
+    };
   }, []);
 
   const isProgrammaticScrollRef = useRef(false);
@@ -149,6 +180,11 @@ export default function WhyChooseUs() {
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-serif font-light text-luxury-text mb-3 sm:mb-5 tracking-tight leading-tight">
             {config.heading}
           </h2>
+          {(config.subheading || config.description) && (
+            <p className="font-sans text-xs sm:text-sm text-luxury-subtext max-w-xl mx-auto font-light leading-relaxed">
+              {config.subheading || config.description}
+            </p>
+          )}
           <div className="w-12 h-[1px] bg-luxury-gold mx-auto mt-5 sm:mt-8" />
         </div>
 

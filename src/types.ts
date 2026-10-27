@@ -95,6 +95,8 @@ export interface ConsultationRequest {
   email: string;
   phone: string;
   date: string;
+  appointmentTime?: string;
+  preferredLocation?: string;
   bestTime: string;
   hearAboutUs: string;
   notes: string;
@@ -281,6 +283,7 @@ export interface WhyChooseUsPillar {
 
 export interface WhyChooseUsConfig {
   heading: string;
+  subheading?: string;
   description: string;
   pillars: WhyChooseUsPillar[];
 }
@@ -318,6 +321,38 @@ export interface OurLocationsConfig {
   description: string;
   locations: LocationItemConfig[];
   backgroundImage?: string;
+}
+
+// BOOK CONSULTATION CONFIGS
+export interface ConsultationDoctorConfig {
+  id: string;
+  name: string;
+  specialty?: string;
+  locationIds?: string[];
+  availableDays?: number[]; // 0=Sun .. 6=Sat
+  timeSlots?: string[];
+}
+
+export interface ConsultationOptionConfig {
+  value: string;
+  label: string;
+}
+
+export interface StayInTouchChannelConfig {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+export interface ConsultationSectionConfig {
+  heading?: string;
+  subheading?: string;
+  specialistLabel?: string;
+  doctors: ConsultationDoctorConfig[];
+  defaultTimeSlots: string[];
+  bestTimeOptions: ConsultationOptionConfig[];
+  hearAboutUsOptions: ConsultationOptionConfig[];
+  stayInTouchChannels: StayInTouchChannelConfig[];
 }
 
 export interface TeamLeadershipConfig {

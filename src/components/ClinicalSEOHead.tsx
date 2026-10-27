@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { CLINIC_DATA } from '../data/clinicInfo';
+import { useState, useEffect } from 'react';
+import { ClinicData } from '../data/clinicInfo';
+import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { generateAllClinicalSchemas } from '../lib/clinicalSEO';
 import { generateSingleProductSchema } from '../lib/shopSEO';
 import { ShopProduct } from '../types/shop';
@@ -64,30 +65,56 @@ export default function ClinicalSEOHead({
   customKeywords,
   treatmentData
 }: ClinicalSEOHeadProps) {
+  const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
+
+  useEffect(() => {
+    setClinicData(getClinicData());
+    fetchRemoteClinicData().then((remote) => {
+      if (remote) setClinicData(remote);
+    });
+
+    const handleClinicDataChanged = (e: Event) => {
+      const customEvt = e as CustomEvent<ClinicData>;
+      setClinicData(customEvt.detail || getClinicData());
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    window.addEventListener('storage', handleClinicDataChanged);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+      window.removeEventListener('storage', handleClinicDataChanged);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
     let pageTitle = customTitle 
-      ? `${customTitle} | ${CLINIC_DATA.name}`
-      : `${CLINIC_DATA.name} | ${CLINIC_DATA.tagline}`;
+      ? `${customTitle} | ${clinicData.name}`
+      : `${clinicData.name} | ${clinicData.tagline}`;
 
-    let pageDescription = customDescription || CLINIC_DATA.metaDescription;
-    let pageImage = customImage || CLINIC_DATA.ogImage;
-    let pageUrl = `${CLINIC_DATA.canonicalUrl}${canonicalPath}`;
+    let pageDescription = customDescription || clinicData.metaDescription;
+    let pageImage =
+      customImage ||
+      clinicData.ogImage ||
+      clinicData.exteriorPhoto ||
+      clinicData.logo?.full ||
+      clinicData.logo?.icon;
+    let pageUrl = `${clinicData.canonicalUrl}${canonicalPath}`;
     const ogType = productData ? 'product' : 'website';
 
     if (productData) {
-      pageTitle = `${productData.name} | ${productData.brand || productData.range} | ${CLINIC_DATA.name}`;
+      pageTitle = `${productData.name} | ${productData.brand || productData.range} | ${clinicData.name}`;
       pageDescription = `${productData.description} Active Ingredients: ${productData.keyIngredients?.slice(0, 3).join(', ')}. Volume: ${productData.volume || 'Standard'}. Price: £${productData.price.toFixed(2)}`;
       pageImage = productData.image;
-      pageUrl = `${CLINIC_DATA.canonicalUrl}/#product-${productData.id}`;
+      pageUrl = `${clinicData.canonicalUrl}/#product-${productData.id}`;
     }
 
     if (treatmentData) {
-      pageTitle = `${treatmentData.title} | ${treatmentData.category} | ${CLINIC_DATA.name}`;
+      pageTitle = `${treatmentData.title} | ${treatmentData.category} | ${clinicData.name}`;
       pageDescription = `${treatmentData.description} Starting from ${treatmentData.price || '£250'}. Harley Street clinical excellence and bespoke recovery protocols.`;
       if (treatmentData.imageUrl) pageImage = treatmentData.imageUrl;
-      pageUrl = `${CLINIC_DATA.canonicalUrl}/#treatment-${treatmentData.id}`;
+      pageUrl = `${clinicData.canonicalUrl}/#treatment-${treatmentData.id}`;
     }
 
     // 1. Update Title & Standard Meta
@@ -98,10 +125,10 @@ export default function ClinicalSEOHead({
     const mergedKeywords = Array.from(new Set([
       ...(customKeywords || []),
       ...(treatmentData?.seoKeywords || []),
-      ...CLINIC_DATA.brandKeywords
+      ...(clinicData.brandKeywords || [])
     ]));
     setMetaTag('name', 'keywords', mergedKeywords.join(', '));
-    setMetaTag('name', 'author', CLINIC_DATA.name);
+    setMetaTag('name', 'author', clinicData.name);
     setMetaTag('name', 'geo.region', 'GB-ENG');
     setMetaTag('name', 'geo.placename', 'London, Harley Street');
 
@@ -110,7 +137,7 @@ export default function ClinicalSEOHead({
 
     // 3. OpenGraph / Social Share Card Meta Tags (WhatsApp, iMessage, Facebook, Slack)
     setMetaTag('property', 'og:type', ogType);
-    setMetaTag('property', 'og:site_name', CLINIC_DATA.name);
+    setMetaTag('property', 'og:site_name', clinicData.name);
     setMetaTag('property', 'og:title', pageTitle);
     setMetaTag('property', 'og:description', pageDescription);
     setMetaTag('property', 'og:image', pageImage);
@@ -152,10 +179,11 @@ export default function ClinicalSEOHead({
         ? parseInt(treatmentData.price.replace(/[^0-9]/g, '') || '250', 10) 
         : 250;
 
+      const primaryLoc = clinicData.locations?.[0];
       const procedureSchema = {
         '@context': 'https://schema.org',
         '@type': 'MedicalProcedure',
-        '@id': `${CLINIC_DATA.canonicalUrl}/#procedure-${treatmentData.id}`,
+        '@id': `${clinicData.canonicalUrl}/#procedure-${treatmentData.id}`,
         name: treatmentData.title,
         description: treatmentData.description,
         procedureType: treatmentData.category,
@@ -166,35 +194,37 @@ export default function ClinicalSEOHead({
         offers: {
           '@type': 'Offer',
           price: treatmentPrice,
-          priceCurrency: CLINIC_DATA.currency,
+          priceCurrency: clinicData.currency,
           availability: 'https://schema.org/InStock',
           url: pageUrl
         },
         provider: {
           '@type': 'MedicalClinic',
-          name: CLINIC_DATA.name,
-          url: CLINIC_DATA.canonicalUrl,
-          telephone: CLINIC_DATA.phone,
+          name: clinicData.name,
+          url: clinicData.canonicalUrl,
+          logo: clinicData.logo?.full || clinicData.logo?.icon || clinicData.ogImage,
+          image: clinicData.exteriorPhoto || clinicData.ogImage,
+          telephone: clinicData.phone,
           address: {
             '@type': 'PostalAddress',
-            streetAddress: '4 Harley Street, Marylebone',
-            addressLocality: 'London',
-            postalCode: 'W1G 9PB',
-            addressCountry: 'GB'
+            streetAddress: primaryLoc?.address || '4 Harley Street, Marylebone',
+            addressLocality: primaryLoc?.city || 'London',
+            postalCode: primaryLoc?.postalCode || 'W1G 9PB',
+            addressCountry: primaryLoc?.country || 'GB'
           }
         }
       };
       scriptElement.textContent = JSON.stringify(procedureSchema, null, 2);
     } else {
       // Master complete Schema graph (Clinic + FAQs + Procedures + Catalog)
-      const allSchemas = generateAllClinicalSchemas();
+      const allSchemas = generateAllClinicalSchemas(clinicData);
       scriptElement.textContent = JSON.stringify(allSchemas, null, 2);
     }
 
     return () => {
       // Cleanup is optional as SPA stays in-app
     };
-  }, [customTitle, customDescription, customImage, canonicalPath, productData, customKeywords, treatmentData]);
+  }, [clinicData, customTitle, customDescription, customImage, canonicalPath, productData, customKeywords, treatmentData]);
 
   return null;
 }

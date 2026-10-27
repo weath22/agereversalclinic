@@ -1,4 +1,4 @@
-import { CLINIC_DATA } from '../data/clinicInfo';
+import { CLINIC_DATA, ClinicData } from '../data/clinicInfo';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import { TREATMENT_PRICING_DATA } from '../data/treatmentPricing';
 import { generateAllProductsSchema, generateSingleProductSchema, generateProductCatalogItemListSchema } from './shopSEO';
@@ -8,42 +8,63 @@ export { generateAllProductsSchema, generateSingleProductSchema, generateProduct
 /**
  * 1. Generates Google-compliant Schema.org MedicalClinic & MedicalBusiness structured data
  */
-export const generateMedicalClinicSchema = () => {
-  const primaryLocation = CLINIC_DATA.locations[0] || {
+export const generateMedicalClinicSchema = (clinicData: ClinicData = CLINIC_DATA) => {
+  const primaryLocation = clinicData.locations?.[0] || {
     name: 'Harley Street Flagship Clinic',
     address: '4 Harley Street, Marylebone',
     city: 'London',
     postalCode: 'W1G 9PB',
     country: 'United Kingdom',
-    phone: CLINIC_DATA.phone,
-    hours: CLINIC_DATA.openingHours,
+    phone: clinicData.phone,
+    hours: clinicData.openingHours,
     latitude: 51.5173,
     longitude: -0.1472
   };
 
+  const resolvedLogoUrl =
+    clinicData.logo?.full ||
+    clinicData.logo?.icon ||
+    clinicData.ogImage;
+
+  const resolvedSchemaImages = Array.from(
+    new Set(
+      [
+        clinicData.exteriorPhoto,
+        clinicData.ogImage,
+        clinicData.logo?.full,
+        ...(Array.isArray(clinicData.interiorPhotos) ? clinicData.interiorPhotos : []),
+      ]
+        .map((u) => u?.trim())
+        .filter(Boolean)
+    )
+  );
+
   return {
     '@context': 'https://schema.org',
     '@type': ['MedicalClinic', 'MedicalBusiness', 'Dermatology'],
-    '@id': `${CLINIC_DATA.canonicalUrl}/#medical-clinic`,
-    name: CLINIC_DATA.name,
-    alternateName: CLINIC_DATA.tagline,
-    description: CLINIC_DATA.metaDescription,
-    url: CLINIC_DATA.canonicalUrl,
+    '@id': `${clinicData.canonicalUrl}/#medical-clinic`,
+    name: clinicData.name,
+    alternateName: clinicData.tagline,
+    description: clinicData.metaDescription,
+    url: clinicData.canonicalUrl,
     logo: {
       '@type': 'ImageObject',
-      url: CLINIC_DATA.ogImage,
+      url: resolvedLogoUrl,
       width: 1200,
       height: 630
     },
-    image: CLINIC_DATA.ogImage,
-    telephone: CLINIC_DATA.phone,
-    email: CLINIC_DATA.email,
-    priceRange: CLINIC_DATA.priceRange,
-    currenciesAccepted: CLINIC_DATA.currency,
-    paymentAccepted: CLINIC_DATA.acceptedPayments.join(', '),
-    knowsLanguage: CLINIC_DATA.languagesSpoken,
-    medicalSpecialty: CLINIC_DATA.medicalSpecialties,
-    award: CLINIC_DATA.accreditations,
+    image:
+      resolvedSchemaImages.length > 1
+        ? resolvedSchemaImages
+        : resolvedSchemaImages[0] || clinicData.ogImage,
+    telephone: clinicData.phone,
+    email: clinicData.email,
+    priceRange: clinicData.priceRange,
+    currenciesAccepted: clinicData.currency,
+    paymentAccepted: (clinicData.acceptedPayments || []).join(', '),
+    knowsLanguage: clinicData.languagesSpoken,
+    medicalSpecialty: clinicData.medicalSpecialties,
+    award: clinicData.accreditations,
     address: {
       '@type': 'PostalAddress',
       streetAddress: primaryLocation.address,
@@ -70,10 +91,11 @@ export const generateMedicalClinicSchema = () => {
         closes: '17:00'
       }
     ],
-    department: CLINIC_DATA.locations.map((loc) => ({
+    department: (clinicData.locations || []).map((loc) => ({
       '@type': 'MedicalClinic',
-      name: `${CLINIC_DATA.name} - ${loc.name}`,
-      telephone: loc.phone || CLINIC_DATA.phone,
+      name: `${clinicData.name} - ${loc.name}`,
+      image: loc.image || loc.gallery?.[0] || clinicData.exteriorPhoto || clinicData.ogImage,
+      telephone: loc.phone || clinicData.phone,
       address: {
         '@type': 'PostalAddress',
         streetAddress: loc.address,
@@ -87,7 +109,7 @@ export const generateMedicalClinicSchema = () => {
         longitude: loc.longitude || -0.1472
       }
     })),
-    sameAs: Object.values(CLINIC_DATA.socials).filter(Boolean)
+    sameAs: Object.values(clinicData.socials || {}).filter(Boolean)
   };
 };
 
@@ -186,8 +208,8 @@ export const generateClinicalFAQSchema = () => {
 /**
  * 4. Master Combined Graph: Generates the full Schema.org payload for the application
  */
-export const generateAllClinicalSchemas = () => {
-  const clinicSchema = generateMedicalClinicSchema();
+export const generateAllClinicalSchemas = (clinicData: ClinicData = CLINIC_DATA) => {
+  const clinicSchema = generateMedicalClinicSchema(clinicData);
   const proceduresSchema = generateMedicalProceduresSchema();
   const faqSchema = generateClinicalFAQSchema();
   const productSchemas = generateAllProductsSchema();
