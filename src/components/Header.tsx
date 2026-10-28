@@ -8,7 +8,18 @@ import {
   fetchRemoteClinicData,
   getMasterServices,
   normalizeMasterBranch,
+  getTreatmentTaxonomy,
+  fetchRemoteTreatmentTaxonomy,
+  getTreatmentPricingData,
+  fetchRemoteTreatmentPricingData,
 } from '../lib/adminStore';
+import {
+  TreatmentTaxonomyGroup,
+  TreatmentPricingCardSummary,
+  projectTreatmentCardSummary,
+  doesTreatmentMatchBranch,
+  doesTreatmentMatchSubOptions,
+} from '../data/treatmentPricing';
 import { useCart } from '../context/CartContext';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
@@ -26,6 +37,7 @@ interface HeaderProps {
 }
 
 interface MegaColumn {
+  id?: string;
   title: string;
   items: string[];
 }
@@ -41,8 +53,17 @@ interface NavItem {
   hideOnDesktop?: boolean;
   imageUrl?: string;
   megaColumns?: MegaColumn[];
-  procedures?: { name: string; desc?: string; id?: string }[];
+  procedures?: { name: string; desc?: string; id?: string; categoryFilter?: string }[];
 }
+
+const BRANCH_PREVIEW_IMAGES: Record<string, string> = {
+  'face-injectables': 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=400&q=80',
+  'body-sculpting': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
+  'advanced-facials': 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
+  'hair-beauty': 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=400&q=80',
+  'iv-drips-wellness': 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=400&q=80',
+  'iv-wellness': 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=400&q=80',
+};
 
 export default function Header({
   onBookClick,
@@ -65,6 +86,10 @@ export default function Header({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
+  const [taxonomy, setTaxonomy] = useState<TreatmentTaxonomyGroup[]>(() => getTreatmentTaxonomy());
+  const [treatmentCards, setTreatmentCards] = useState<TreatmentPricingCardSummary[]>(() =>
+    getTreatmentPricingData().map(projectTreatmentCardSummary)
+  );
   const lastScrollY = useRef(0);
 
   useEffect(() => {
@@ -72,25 +97,39 @@ export default function Header({
     fetchRemoteClinicData().then((remote) => {
       if (remote) setClinicData(remote);
     });
+    fetchRemoteTreatmentTaxonomy().then((remoteTax) => {
+      if (remoteTax && remoteTax.length > 0) setTaxonomy(remoteTax);
+    });
+    fetchRemoteTreatmentPricingData().then((remotePricing) => {
+      if (remotePricing && remotePricing.length > 0) {
+        setTreatmentCards(remotePricing.map(projectTreatmentCardSummary));
+      }
+    });
 
     const handleClinicDataChanged = (e: Event) => {
       const customEvt = e as CustomEvent<ClinicData>;
       setClinicData(customEvt.detail || getClinicData());
     };
 
-    const handleMasterServicesUpdate = () => {
+    const handleServicesAndTaxonomyUpdate = () => {
       setMasterServices(getMasterServices());
+      setTaxonomy(getTreatmentTaxonomy());
+      setTreatmentCards(getTreatmentPricingData().map(projectTreatmentCardSummary));
     };
 
     window.addEventListener('clinic_data_changed', handleClinicDataChanged);
-    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+    window.addEventListener('master_services_updated', handleServicesAndTaxonomyUpdate);
+    window.addEventListener('treatment_taxonomy_updated', handleServicesAndTaxonomyUpdate);
+    window.addEventListener('treatment_pricing_updated', handleServicesAndTaxonomyUpdate);
     window.addEventListener('storage', handleClinicDataChanged);
-    window.addEventListener('storage', handleMasterServicesUpdate);
+    window.addEventListener('storage', handleServicesAndTaxonomyUpdate);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
-      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+      window.removeEventListener('master_services_updated', handleServicesAndTaxonomyUpdate);
+      window.removeEventListener('treatment_taxonomy_updated', handleServicesAndTaxonomyUpdate);
+      window.removeEventListener('treatment_pricing_updated', handleServicesAndTaxonomyUpdate);
       window.removeEventListener('storage', handleClinicDataChanged);
-      window.removeEventListener('storage', handleMasterServicesUpdate);
+      window.removeEventListener('storage', handleServicesAndTaxonomyUpdate);
     };
   }, []);
 
@@ -123,330 +162,99 @@ export default function Header({
     };
   }, [hoveredItem, isMobileMenuOpen]);
 
-  const baseNavItems: NavItem[] = [
-    {
-      name: 'Our Clinic',
-      id: 'home',
-      href: '#home'
-    },
-    {
-      name: 'Face & Injectables',
-      desktopName: 'Face & Injectables',
-      mobileName: 'Face & Injectables',
-      id: 'face-injectables',
-      branchCategory: 'Face & Injectables',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'ANTI-WRINKLE (BOTOX)',
-          items: [
-            '1 Area (£180)',
-            '2 Areas (£250)',
-            '3 Areas (£280)',
-            'Forehead Lines (£230)',
-            'Jaw Slimming / Masseter (£320)',
-            'Bunny Lines (£160)',
-            'Crow\'s Feet (£160)',
-            'Lip Flip (£160)',
-            'Gummy Smile (£160)',
-            'Puppet Lines (£160)',
-            'Neck Bands (£290 / Extended £370)'
-          ]
-        },
-        {
-          title: 'DERMAL FILLERS (1ML)',
-          items: [
-            'Cheeks Soft Volumisation (£290)',
-            'Cheeks Deep Contouring (£350)',
-            'Lip Enhancement (£290)',
-            'Non-Surgical Rhinoplasty (from £290)',
-            'Tear Troughs & Under Eyes (£290)',
-            'Temples Rejuvenation (£290)',
-            'Jaw & Chin Contouring (£350)',
-            'Cleavage & Neck Lines (£290)',
-            'Hand Rejuvenation (£470)'
-          ]
-        },
-        {
-          title: 'SKIN BOOSTERS & LIFTING',
-          items: [
-            'Profhilo 2ml (£350 / Course £560)',
-            'Polynucleotides / Salmon Sperm (from £350)',
-            'Morpheus8 Facial (£190)',
-            'Emface Tightening & Lifting (from £250)',
-            'Endolift Fiber Lift (from £950)',
-            'Fractional CO2 Laser Face & Neck (£300)'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Body Sculpting',
-      desktopName: 'Body',
-      mobileName: 'Body Sculpting',
-      id: 'body-sculpting',
-      branchCategory: 'Body Sculpting',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'FAT DISSOLVING INJECTIONS',
-          items: [
-            'Aqualyx Small Area (£170)',
-            'Aqualyx Medium Area (£190)',
-            'Aqualyx Large Area (£230)',
-            'Aqualyx Course of 3 (from £408)',
-            'Desoface Single (£150)',
-            'Desobody Single (£170 - £210)',
-            'Deso Course of 3 (from £360)'
-          ]
-        },
-        {
-          title: 'BODY CONTOURING & FAT LOSS',
-          items: [
-            'Cryo Fat Freezing (from £95)',
-            'EMSCULPT Body Sculpt (from £275)',
-            'Medical Slimming Pen (1 Mo £155 / 3 Mo £450)',
-            'Cellulite & Fat Loss (£195)',
-            'Morpheus8 Body Sculpting (£200)'
-          ]
-        },
-        {
-          title: 'BUTTOCK & TIGHTENING',
-          items: [
-            'Non-Surgical Buttock Lift (Lanluma / Sculptra)',
-            'Hip Dip Correction',
-            'CO2 Laser Scars & Stretch Marks (£100 - £200)',
-            'Excessive Sweating Hyperhidrosis'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Advanced Facials',
-      desktopName: 'Advanced Facials',
-      mobileName: 'Advanced Facials',
-      id: 'advanced-facials',
-      branchCategory: 'Advanced Facials',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'CLINICAL & MEDICAL FACIALS',
-          items: [
-            'Medical Aquafacial (£150)',
-            'Ultimate Glass Skin Protocol (£250)',
-            'Microneedling Collagen Induction (£150)',
-            'BB Glow Mesotherapy (£180)',
-            'Diamond Microdermabrasion (£60)'
-          ]
-        },
-        {
-          title: 'LIGHT & OXYGEN PROTOCOLS',
-          items: [
-            'Oxygen O2 Dome Therapy (£90)',
-            'Medical LED Light Therapy (£25)',
-            'High Frequency Acne Treatment (£55)'
-          ]
-        },
-        {
-          title: 'WEEKLY CLINICAL SPECIALS',
-          items: [
-            'Gold Special Facial (£95)',
-            'Idebenone Antioxidant Facial (£105)',
-            'EGF Cellular Growth Factor (£115)',
-            'Red Carpet Celebrity Glow (£120)'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Beauty & Hair',
-      desktopName: 'Beauty & Hair',
-      mobileName: 'Hair & Beauty',
-      id: 'hair-beauty',
-      branchCategory: 'Hair & Beauty',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'PRP & REGENERATIVE HAIR',
-          items: [
-            'PRP for Hair Loss (£150)',
-            'PRP Facial / Vampire (from £120)',
-            'PRP Cosmetic Injections'
-          ]
-        },
-        {
-          title: 'BEAUTY, LASHES & SPMU',
-          items: [
-            'Classic Lashes (£55) / Russian (£65)',
-            'Lash Lift & Tint (£30)',
-            'Brow Wax (£8) & Lamination (£30)',
-            'Microblading & Ombré Brows (£250)',
-            'Lip Blushing (£250)',
-            'Semi-Permanent Eyeliner (£200)',
-            'Laser Tattoo Removal (from £350)'
-          ]
-        },
-        {
-          title: 'LASER HAIR REMOVAL & SALON',
-          items: [
-            'Alma Soprano Full Body Laser (from £250)',
-            'Bikini (£40) & Underarms',
-            'Legs (£65 - £85) & Arms (£40 - £65)',
-            'Medical Electrolysis (£50/h)',
-            'Hair Salon Cuts, Highlights & Balayage',
-            'Keratin (£60) & Hair Botox (£65)',
-            'Olaplex Restorative Treatment'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'IV Drip Lounge & Wellness',
-      desktopName: 'IV Drips',
-      mobileName: 'IV Drips & Wellness',
-      id: 'iv-wellness',
-      branchCategory: 'IV Drips & Wellness',
-      isMega: true,
-      imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=400&q=80',
-      megaColumns: [
-        {
-          title: 'BOOSTER SHOTS',
-          items: [
-            'Vitamin B12 Booster (£45)',
-            'Iron Booster (£75)',
-            'Ginko Focus Booster (£80)',
-            'Performance Booster (£90)'
-          ]
-        },
-        {
-          title: 'WELLNESS & IMMUNITY DRIPS',
-          items: [
-            'High-Dose Vitamin C (£100)',
-            'Vitamin Cocktail (£110)',
-            'Detox & Hangover Recovery (£125)',
-            'Zinc & Mineral Infusion (£130)'
-          ]
-        },
-        {
-          title: 'PREMIUM INFUSIONS',
-          items: [
-            'Skinny Metabolic Drip (£160)',
-            'Cinderella Glow Drip (£200)',
-            'Myers Immune Booster (£200)'
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Pricing',
-      id: 'pricing',
-      procedures: [
-        { name: 'Specialist Treatment Rates', id: 'preferred-consultation', desc: 'Browse all clinical procedure fees' },
-        { name: 'Consultation Price Calculator', id: 'preferred-consultation', desc: 'Custom estimated cost builder' },
-        { name: 'Special Promotional Packages', id: 'offers', desc: 'Seasonal clinical packages & offers' },
-        { name: 'Doctor Consultation Booking', id: 'preferred-consultation', desc: 'Book with leading Harley St practitioners' }
-      ]
-    },
-    {
-      name: 'Shop',
-      id: 'shop',
-      hideOnDesktop: true,
-      procedures: [
-        { name: 'Skincare Essentials Collection', id: 'essentials', desc: 'Dermatologist-formulated daily care' },
-        { name: 'Anti-Aging & Cellular Serums', id: 'essentials', desc: 'Potent restorative active formulas' },
-        { name: 'Post-Procedure Recovery', id: 'essentials', desc: 'Calming and regenerative care' },
-        { name: 'View Full Skincare Range', id: 'essentials', desc: 'Explore all clinic-exclusive products' }
-      ]
-    },
-    {
-      name: 'More',
-      id: 'more',
-      procedures: [
-        { name: 'Clinical Skincare Shop', id: 'shop', desc: 'Dermatologist-formulated skincare range' },
-        { name: 'Before & After Gallery', id: 'gallery', desc: 'Real patient transformation results' },
-        { name: 'Patient Reviews & Stories', id: 'reviews', desc: 'Verified 5-star clinical feedback' },
-        { name: 'Medical Leadership & Team', id: 'leadership', desc: 'Meet our consultants & doctors' },
-        { name: 'Our Clinics & Locations', id: 'locations', desc: 'Harley Street London & Lewisham' },
-        { name: 'Facility & Interior Tour', id: 'facility', desc: 'State-of-the-art treatment suites' },
-        { name: 'Latest Clinical News', id: 'latest-news', desc: 'Medical research and skincare journal' }
-      ]
-    }
-  ];
-
   const navItems: NavItem[] = useMemo(() => {
-    const doesStaticItemMatchService = (staticItem: string, serviceTitle: string): boolean => {
-      const cleanStatic = staticItem.replace(/\([^)]*\)/g, '').toLowerCase().trim();
-      const cleanService = serviceTitle.toLowerCase().trim();
-      if (!cleanStatic || !cleanService) return false;
-      if (cleanStatic === cleanService || cleanStatic.includes(cleanService) || cleanService.includes(cleanStatic)) {
-        return true;
-      }
-      const keyPhrases = [
-        'salmon sperm',
-        'profhilo',
-        'morpheus8',
-        'emface',
-        'endolift',
-        'aqualyx',
-        'desoface',
-        'desobody',
-        'fat freezing',
-        'emsculpt',
-        'slimming pen',
-        'buttock lift',
-        'tattoo removal',
-        'electrolysis',
-      ];
-      return keyPhrases.some(
-        (phrase) => cleanStatic.includes(phrase) && cleanService.includes(phrase)
-      );
-    };
+    const activeTreatments = treatmentCards.filter((t) => !t.hidden && t.isActive !== false);
 
-    return baseNavItems.map((item) => {
-      if (!item.isMega || !item.branchCategory) return item;
-      const targetBranch = item.branchCategory;
-
-      // Services currently assigned to this branch
-      const branchServices = masterServices.filter(
-        (s) => normalizeMasterBranch(s.pricingCategory || s.category, s.title) === targetBranch
+    const dynamicBranchNavItems: NavItem[] = taxonomy.map((branch) => {
+      const branchTreatments = activeTreatments.filter((t) =>
+        doesTreatmentMatchBranch(t, branch.name, taxonomy)
       );
 
-      // Services currently assigned to a DIFFERENT branch
-      const otherBranchServices = masterServices.filter(
-        (s) => normalizeMasterBranch(s.pricingCategory || s.category, s.title) !== targetBranch
-      );
+      const megaColumns: MegaColumn[] = (branch.subGroups || []).map((sub) => {
+        const subTreatments = branchTreatments.filter((t) =>
+          doesTreatmentMatchSubOptions(t, [sub.id, sub.name], branch.name, taxonomy)
+        );
+        const formattedItems = subTreatments.map((t) => {
+          const currency = t.currency || '£';
+          const priceSuffix =
+            typeof t.startingPrice === 'number' ? ` (${currency}${t.startingPrice})` : '';
+          return `${t.title}${priceSuffix}`;
+        });
 
-      // Filter out any static sub-items that correspond to a service moved to another branch
-      const filteredStaticColumns: MegaColumn[] = (item.megaColumns || [])
-        .map((col) => ({
-          ...col,
-          items: col.items.filter(
-            (subItem) =>
-              !otherBranchServices.some((otherService) =>
-                doesStaticItemMatchService(subItem, otherService.title)
-              )
-          ),
-        }))
-        .filter((col) => col.items.length > 0);
+        return {
+          id: sub.id,
+          title: sub.name,
+          items: formattedItems,
+        };
+      });
 
-      const specialistColumn: MegaColumn = {
-        title: 'SPECIALIST SERVICES',
-        items: branchServices.map((s) => s.title),
-      };
+      const isIvDripsBranch =
+        branch.id === 'iv-drips-wellness' ||
+        branch.id === 'iv-wellness' ||
+        branch.name.toLowerCase().includes('iv drip');
 
       return {
-        ...item,
-        megaColumns:
-          specialistColumn.items.length > 0
-            ? [specialistColumn, ...filteredStaticColumns]
-            : filteredStaticColumns,
+        name: branch.name,
+        desktopName: branch.name,
+        mobileName: branch.name,
+        id: branch.id,
+        branchCategory: branch.name as MasterBranchCategory,
+        isMega: true,
+        hideOnDesktop: isIvDripsBranch,
+        imageUrl:
+          BRANCH_PREVIEW_IMAGES[branch.id] ||
+          'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
+        megaColumns,
       };
     });
-  }, [masterServices]);
+
+    const staticTailItems: NavItem[] = [
+      {
+        name: 'Pricing',
+        id: 'pricing',
+        procedures: [
+          { name: 'Specialist Treatment Rates', id: 'preferred-consultation', desc: 'Browse all clinical procedure fees' },
+          { name: 'Consultation Price Calculator', id: 'preferred-consultation', desc: 'Custom estimated cost builder' },
+          { name: 'Special Promotional Packages', id: 'offers', desc: 'Seasonal clinical packages & offers' },
+          { name: 'Doctor Consultation Booking', id: 'preferred-consultation', desc: 'Book with leading Harley St practitioners' }
+        ]
+      },
+      {
+        name: 'Shop',
+        id: 'shop',
+        hideOnDesktop: true,
+        procedures: [
+          { name: 'Skincare Essentials Collection', id: 'essentials', desc: 'Dermatologist-formulated daily care' },
+          { name: 'Anti-Aging & Cellular Serums', id: 'essentials', desc: 'Potent restorative active formulas' },
+          { name: 'Post-Procedure Recovery', id: 'essentials', desc: 'Calming and regenerative care' },
+          { name: 'View Full Skincare Range', id: 'essentials', desc: 'Explore all clinic-exclusive products' }
+        ]
+      },
+      {
+        name: 'More',
+        id: 'more',
+        procedures: [
+          { name: 'Clinical Skincare Shop', id: 'shop', desc: 'Dermatologist-formulated skincare range' },
+          { name: 'Before & After Gallery', id: 'gallery', desc: 'Real patient transformation results' },
+          { name: 'Patient Reviews & Stories', id: 'reviews', desc: 'Verified 5-star clinical feedback' },
+          { name: 'Medical Leadership & Team', id: 'leadership', desc: 'Meet our consultants & doctors' },
+          { name: 'Our Clinics & Locations', id: 'locations', desc: 'Harley Street London & Lewisham' },
+          { name: 'Facility & Interior Tour', id: 'facility', desc: 'State-of-the-art treatment suites' },
+          { name: 'Latest Clinical News', id: 'latest-news', desc: 'Medical research and skincare journal' }
+        ]
+      }
+    ];
+
+    return [
+      {
+        name: 'Our Clinic',
+        id: 'home',
+        href: '#home'
+      },
+      ...dynamicBranchNavItems,
+      ...staticTailItems,
+    ];
+  }, [taxonomy, treatmentCards]);
 
   const handleNavClick = (id: string) => {
     setActiveSection(id);
@@ -651,26 +459,8 @@ export default function Header({
           })}
         </nav>
 
-        {/* CTA Button & Cart (Larger Screens Only - lg:flex) */}
+        {/* CTA Button (Larger Screens Only - lg:flex) */}
         <div className="hidden lg:flex items-center space-x-2.5 xl:space-x-3.5">
-          
-
-          {/* Skincare Bag Button */}
-          <button
-            onClick={openCart}
-            className="relative p-2.5 rounded-full border border-luxury-border/80 bg-white hover:bg-stone-50 text-luxury-text hover:text-black transition-all flex items-center gap-2 cursor-pointer shadow-xs group"
-            aria-label="Open clinical shopping cart"
-            title="View shopping bag"
-          >
-            <ShoppingBag className="h-4 w-4 text-luxury-muted group-hover:text-luxury-gold transition-colors" strokeWidth={1.5} />
-            <span className="hidden xl:inline text-xs font-sans font-medium tracking-wide">Bag</span>
-            {totalCartCount > 0 && (
-              <span className="bg-black text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center -ml-1 border border-luxury-gold/50 shadow-xs">
-                {totalCartCount}
-              </span>
-            )}
-          </button>
-
           {/* Book Appointment CTA */}
           <button
             onClick={() => onBookClick()}
@@ -740,25 +530,58 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Right Columns: Mega Columns */}
-                <div className="col-span-10 grid gap-6" style={{ gridTemplateColumns: `repeat(${activeMegaItem.megaColumns?.length || 4}, minmax(0, 1fr))` }}>
+                {/* Right Columns: Dynamic Subcategory Mega Columns */}
+                <div
+                  className={`col-span-10 grid gap-x-6 gap-y-6 ${
+                    (activeMegaItem.megaColumns?.length || 0) === 1
+                      ? 'grid-cols-1'
+                      : (activeMegaItem.megaColumns?.length || 0) === 2
+                      ? 'grid-cols-2'
+                      : (activeMegaItem.megaColumns?.length || 0) === 3
+                      ? 'grid-cols-3'
+                      : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  }`}
+                >
                   {activeMegaItem.megaColumns?.map((col) => {
+                    const isSingleSubGroup = (activeMegaItem.megaColumns?.length || 0) === 1;
                     return (
-                      <div key={col.title} className="flex flex-col">
-                        <span className="text-[11px] font-sans font-semibold tracking-wider text-luxury-text mb-3 border-b border-luxury-border/80 pb-1.5 select-none">
-                          {col.title}
-                        </span>
-                        <div className="flex flex-col gap-1">
-                          {col.items.map((subItem) => (
+                      <div key={col.id || col.title} className="flex flex-col">
+                        <button
+                          type="button"
+                          onClick={() => handleProcedureClick(col.title, activeMegaItem.branchCategory)}
+                          className="text-left text-xs font-sans font-bold tracking-wider text-luxury-text hover:text-luxury-gold transition-colors mb-2.5 border-b border-luxury-border/80 pb-1.5 flex items-center justify-between group cursor-pointer"
+                          title={col.title}
+                        >
+                          <span className="truncate">{col.title}</span>
+                          <ChevronRight className="h-3.5 w-3.5 text-luxury-muted group-hover:text-luxury-gold group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                        </button>
+                        <div
+                          className={
+                            isSingleSubGroup
+                              ? 'grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1'
+                              : 'flex flex-col gap-1'
+                          }
+                        >
+                          {col.items.length > 0 ? (
+                            col.items.map((subItem) => (
+                              <button
+                                key={subItem}
+                                onClick={() => handleProcedureClick(subItem, activeMegaItem.branchCategory)}
+                                className="text-left text-[11px] xl:text-xs text-luxury-subtext hover:text-luxury-gold hover:translate-x-0.5 transition-all py-1 cursor-pointer truncate"
+                                title={subItem}
+                              >
+                                {subItem}
+                              </button>
+                            ))
+                          ) : (
                             <button
-                              key={subItem}
-                              onClick={() => handleProcedureClick(subItem, activeMegaItem.branchCategory)}
-                              className="text-left text-[11px] xl:text-xs text-luxury-subtext hover:text-luxury-gold hover:translate-x-0.5 transition-all py-1 cursor-pointer truncate"
-                              title={subItem}
+                              type="button"
+                              onClick={() => handleProcedureClick(col.title, activeMegaItem.branchCategory)}
+                              className="text-left text-[11px] xl:text-xs text-luxury-subtext hover:text-luxury-gold hover:translate-x-0.5 transition-all py-1 cursor-pointer"
                             >
-                              {subItem}
+                              Explore {col.title}
                             </button>
-                          ))}
+                          )}
                         </div>
                       </div>
                     );
@@ -1109,13 +932,21 @@ export default function Header({
                           </h4>
 
                           <div className="text-white space-y-4">
-                            {/* If Mega Columns (e.g. Face, Body, Buttocks) */}
+                            {/* If Mega Columns (Dynamic Sub-Groups & Treatments) */}
                             {resolvedMobileSubmenu?.isMega && resolvedMobileSubmenu?.megaColumns ? (
                               resolvedMobileSubmenu.megaColumns.map((col) => (
-                                <div key={col.title} className="space-y-1.5 pt-2 first:pt-0">
-                                  <span className="text-[11px] font-bold uppercase tracking-widest text-silver-400 block pb-1 border-b border-white/10">
-                                    {col.title}
-                                  </span>
+                                <div key={col.id || col.title} className="space-y-1.5 pt-2 first:pt-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveMobileSubmenu(null);
+                                      handleProcedureClick(col.title, resolvedMobileSubmenu.branchCategory);
+                                    }}
+                                    className="w-full flex items-center justify-between text-left text-xs font-bold uppercase tracking-widest text-luxury-gold hover:text-white pb-1.5 border-b border-white/15 cursor-pointer transition-colors"
+                                  >
+                                    <span>{col.title}</span>
+                                    <ChevronRight className="h-4 w-4 text-luxury-gold/70" />
+                                  </button>
                                   <div className="flex flex-col gap-0.5">
                                     {col.items.map((subItem) => (
                                       <button

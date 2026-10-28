@@ -1243,6 +1243,22 @@ app.get('/api/admin/treatment-pricing', (req, res) => {
 
     if (hasPaginationParams) {
       const catalog = getServerTreatmentCatalog();
+      let serverTaxonomy = DEFAULT_TREATMENT_TAXONOMY;
+      if (fs.existsSync(customizationsPath)) {
+        try {
+          const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+          if (
+            customizations.treatment_taxonomy_data &&
+            Array.isArray(customizations.treatment_taxonomy_data) &&
+            customizations.treatment_taxonomy_data.length > 0
+          ) {
+            serverTaxonomy = customizations.treatment_taxonomy_data;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       const page = req.query.page !== undefined ? Number(req.query.page) : undefined;
       const offset = req.query.offset !== undefined ? Number(req.query.offset) : undefined;
       const limit = req.query.limit !== undefined ? Number(req.query.limit) : 10;
@@ -1265,6 +1281,7 @@ app.get('/api/admin/treatment-pricing', (req, res) => {
         search,
         sort,
         fields: 'card',
+        taxonomy: serverTaxonomy,
       });
 
       return res.json({

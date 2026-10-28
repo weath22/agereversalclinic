@@ -1070,16 +1070,16 @@ export default function TreatmentPricingEditor() {
         {/* =========================================================================
             TWO-TIER INTERACTIVE FILTER PILL BAR
            ========================================================================= */}
-        <div className="pt-2 border-t border-slate-100 space-y-2.5">
+        <div className="pt-3.5 border-t border-slate-100 space-y-3.5">
           {/* ROW 1: PARENT BRANCHES BAR */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex flex-wrap items-center gap-2.5 pb-1">
             {/* All Procedures pill */}
             <button
               onClick={() => {
                 setSelectedParentId('all');
                 setSelectedSubGroupId('all');
               }}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedParentId === 'all'
                   ? 'bg-[#003334] text-white shadow-sm ring-1 ring-[#c5a880]/40'
                   : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
@@ -1087,7 +1087,7 @@ export default function TreatmentPricingEditor() {
             >
               <span>All Procedures</span>
               <span
-                className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
                   selectedParentId === 'all'
                     ? 'bg-[#c5a880] text-[#003334]'
                     : 'bg-white/80 text-slate-500'
@@ -1119,11 +1119,11 @@ export default function TreatmentPricingEditor() {
                         setSelectedSubGroupId('all');
                       }
                     }}
-                    className="flex items-center gap-2 pl-3.5 pr-1.5 py-1.5 text-xs font-semibold whitespace-nowrap cursor-pointer"
+                    className="flex items-center gap-2.5 pl-4 pr-2 py-2 text-sm font-semibold whitespace-nowrap cursor-pointer"
                   >
                     <span>{branch.name}</span>
                     <span
-                      className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                      className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
                         isParentActive
                           ? 'bg-[#c5a880] text-[#003334]'
                           : 'bg-white/80 text-slate-500'
@@ -1134,7 +1134,7 @@ export default function TreatmentPricingEditor() {
                   </button>
 
                   {/* Hover / Action Icons: Edit & Delete */}
-                  <div className="flex items-center pr-2 pl-1 gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center pr-2.5 pl-1 gap-1 opacity-75 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1142,13 +1142,13 @@ export default function TreatmentPricingEditor() {
                         setRenameBranchName(branch.name);
                       }}
                       title={`Rename branch "${branch.name}"`}
-                      className={`p-1 rounded-full cursor-pointer transition-colors ${
+                      className={`p-1.5 rounded-full cursor-pointer transition-colors ${
                         isParentActive
                           ? 'text-slate-300 hover:text-white hover:bg-white/20'
                           : 'text-slate-400 hover:text-slate-700 hover:bg-slate-300/60'
                       }`}
                     >
-                      <Edit3 className="h-3 w-3" />
+                      <Edit3 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -1158,13 +1158,13 @@ export default function TreatmentPricingEditor() {
                         setReassignBranchTargetId(other[0]?.id || '');
                       }}
                       title={`Delete branch "${branch.name}"`}
-                      className={`p-1 rounded-full cursor-pointer transition-colors ${
+                      className={`p-1.5 rounded-full cursor-pointer transition-colors ${
                         isParentActive
                           ? 'text-rose-300 hover:text-rose-100 hover:bg-rose-900/40'
                           : 'text-slate-400 hover:text-rose-600 hover:bg-rose-100'
                       }`}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -1177,10 +1177,10 @@ export default function TreatmentPricingEditor() {
                 setNewBranchName('');
                 setIsAddBranchModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border border-dashed border-[#003334]/40 hover:border-[#003334] text-[#003334] hover:bg-[#003334]/5 transition-all cursor-pointer shrink-0"
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap border border-dashed border-[#003334]/40 hover:border-[#003334] text-[#003334] hover:bg-[#003334]/5 transition-all cursor-pointer shrink-0"
               title="Add new parent service branch"
             >
-              <Plus className="h-3.5 w-3.5 text-[#003334]" />
+              <Plus className="h-4 w-4 text-[#003334]" />
               <span>Add Branch</span>
             </button>
           </div>
@@ -1195,15 +1195,15 @@ export default function TreatmentPricingEditor() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden pt-0.5"
               >
-                <div className="p-2.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex items-center gap-2 overflow-x-auto no-scrollbar">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 pl-1 shrink-0">
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 pl-1.5 pr-1 shrink-0">
                     <span>Sub-Groups:</span>
                   </div>
 
                   {/* All [Parent Name] pill */}
                   <button
                     onClick={() => setSelectedSubGroupId('all')}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                       selectedSubGroupId === 'all'
                         ? 'bg-[#003334] text-[#c5a880] shadow-xs ring-1 ring-[#c5a880]/30'
                         : 'bg-white hover:bg-slate-100 text-slate-600 border border-slate-200'
@@ -1211,7 +1211,7 @@ export default function TreatmentPricingEditor() {
                   >
                     <span>All {selectedParentBranch.name}</span>
                     <span
-                      className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${
                         selectedSubGroupId === 'all'
                           ? 'bg-[#c5a880] text-[#003334]'
                           : 'bg-slate-100 text-slate-600'
@@ -1237,11 +1237,11 @@ export default function TreatmentPricingEditor() {
                       >
                         <button
                           onClick={() => setSelectedSubGroupId(sub.id)}
-                          className="flex items-center gap-1.5 pl-3 pr-1 py-1 text-[11px] font-semibold whitespace-nowrap cursor-pointer"
+                          className="flex items-center gap-2 pl-4 pr-1.5 py-2 text-xs sm:text-[13px] font-semibold whitespace-nowrap cursor-pointer"
                         >
                           <span>{sub.name}</span>
                           <span
-                            className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                            className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${
                               isSubActive
                                 ? 'bg-[#c5a880] text-[#003334]'
                                 : 'bg-slate-100 text-slate-600'
@@ -1252,7 +1252,7 @@ export default function TreatmentPricingEditor() {
                         </button>
 
                         {/* Action Icons: Edit & Delete */}
-                        <div className="flex items-center pr-1.5 pl-0.5 gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center pr-2 pl-1 gap-0.5 opacity-75 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1260,13 +1260,13 @@ export default function TreatmentPricingEditor() {
                               setRenameSubGroupName(sub.name);
                             }}
                             title={`Rename sub-group "${sub.name}"`}
-                            className={`p-1 rounded-full cursor-pointer transition-colors ${
+                            className={`p-1.5 rounded-full cursor-pointer transition-colors ${
                               isSubActive
                                 ? 'text-slate-300 hover:text-white hover:bg-white/20'
                                 : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
                             }`}
                           >
-                            <Edit3 className="h-2.5 w-2.5" />
+                            <Edit3 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -1276,13 +1276,13 @@ export default function TreatmentPricingEditor() {
                               setReassignSubGroupTargetId(other[0]?.id || '');
                             }}
                             title={`Delete sub-group "${sub.name}"`}
-                            className={`p-1 rounded-full cursor-pointer transition-colors ${
+                            className={`p-1.5 rounded-full cursor-pointer transition-colors ${
                               isSubActive
                                 ? 'text-rose-300 hover:text-rose-100 hover:bg-rose-900/40'
                                 : 'text-slate-400 hover:text-rose-600 hover:bg-rose-100'
                             }`}
                           >
-                            <Trash2 className="h-2.5 w-2.5" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
@@ -1296,10 +1296,10 @@ export default function TreatmentPricingEditor() {
                       setNewSubGroupName('');
                       setIsAddSubGroupModalOpen(true);
                     }}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap border border-dashed border-[#c5a880] text-[#003334] hover:bg-[#c5a880]/15 transition-all cursor-pointer shrink-0"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs sm:text-[13px] font-bold whitespace-nowrap border border-dashed border-[#c5a880] text-[#003334] hover:bg-[#c5a880]/15 transition-all cursor-pointer shrink-0"
                     title={`Add sub-group under ${selectedParentBranch.name}`}
                   >
-                    <Plus className="h-3 w-3 text-[#c5a880]" />
+                    <Plus className="h-3.5 w-3.5 text-[#c5a880]" />
                     <span>Add Sub-Group</span>
                   </button>
                 </div>

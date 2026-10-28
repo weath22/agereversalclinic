@@ -4237,8 +4237,10 @@ export function getPaginatedTreatmentCards(
   params: TreatmentPricingQueryParams = {}
 ): PaginatedTreatmentCardsResponse {
   const fullData = getTreatmentPricingData();
+  const activeTaxonomy = params.taxonomy || getTreatmentTaxonomy();
   return filterAndSortTreatmentCards(fullData, {
     ...params,
+    taxonomy: activeTaxonomy,
     limit: params.limit ?? 10,
     fields: 'card',
   });
@@ -4257,7 +4259,12 @@ export async function fetchPaginatedTreatmentCards(
   const offset = params.offset !== undefined ? params.offset : (page - 1) * limit;
 
   // If the admin has local storage overrides in the current browser session, ensure immediate consistency
-  if (typeof window !== 'undefined' && window.localStorage.getItem(TREATMENT_PRICING_DATA_KEY)) {
+  if (
+    typeof window !== 'undefined' &&
+    (window.localStorage.getItem(TREATMENT_PRICING_DATA_KEY) ||
+      window.localStorage.getItem(TREATMENT_TAXONOMY_KEY) ||
+      window.localStorage.getItem(MASTER_SERVICES_CONFIG_KEY))
+  ) {
     return getPaginatedTreatmentCards({ ...params, limit, offset, page });
   }
 

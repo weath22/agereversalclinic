@@ -99,9 +99,13 @@ export default function App() {
       syncConfigs();
     }
     window.addEventListener('master_services_updated', syncConfigs);
+    window.addEventListener('treatment_pricing_updated', syncConfigs);
+    window.addEventListener('treatment_taxonomy_updated', syncConfigs);
     window.addEventListener('storage', syncConfigs);
     return () => {
       window.removeEventListener('master_services_updated', syncConfigs);
+      window.removeEventListener('treatment_pricing_updated', syncConfigs);
+      window.removeEventListener('treatment_taxonomy_updated', syncConfigs);
       window.removeEventListener('storage', syncConfigs);
     };
   }, [isAdminOpen]);
