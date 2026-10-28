@@ -526,15 +526,16 @@ export default function App() {
             />
 
             {/* Specialist Areas with Sculptural Bust Background */}
-            <div className="relative overflow-hidden bg-[#faf9f8] isolate">
-              <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="relative overflow-hidden bg-[#faf9f8] isolate transform-gpu">
+              <div className="absolute inset-0 z-0 pointer-events-none transform-gpu">
                 <img
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bgRX2IN0PJIId4hwyXvIXyAXymszL74AdUgStK58dFHc8-yHd7YTcqnjhsif69RjPTorG7X3K2L_bd7s4gjmN7BWOz_FKR0y4diN2rWbgdn3rsH3ormt2YNjUPPENB3P5V1pf5Vv3Opmiei3njD4hgCUAyHv5TB258eloVBqp55EW_KeB5ZpB9uITDcr9V8Hr0owysVe95b66YQbYKPz1BzX_NuBJVChJdYZxvlErr8HaxLbOY6AVAvs4gtL9k-XKw"
                   alt="Sculptural bust with pedestal in monochrome violet"
                   loading="lazy"
                   decoding="async"
                   fetchPriority="low"
-                  className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
+                  className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90 transform-gpu"
+                  style={{ transform: 'translateZ(0)' }}
                 />
                 {/* Hardware-native alpha fade overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/25 to-white/45 pointer-events-none" />

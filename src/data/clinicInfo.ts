@@ -306,12 +306,7 @@ export const CLINIC_DATA: ClinicData = {
     "youtube": "",
     "linkedin": ""
   },
-  "googleReviewUrl": "",
-  "consultationConfig": {},
-  "processSection": {},
-  "facilityGallery": {},
-  "trustBrandsSection": {},
-  "accreditationsSection": {}
+  "googleReviewUrl": ""
 };
 
 /**

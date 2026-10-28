@@ -71,9 +71,15 @@ export default function Footer() {
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDjxq3WzjVonyYRXNXzK5c475rxgNujUJ0Cm9YnyMOaDn-cHHquCFSlgH51zEgGkVPBsUpIyK718k700FLjwoLlBP3LkU7j_c00e92k6nFndooqDaIr1Pr2xUHXnRpgbPjpIbQSLFhkE5dED9HuHvYEKB-plLBBj9pajUERxdBPCkT2TBLr8H_-ge7BRzNzPL6t4Pt06Rq9QLBy1bWAA1Dp6eDlqqEEPLDmxHYzNuCzpZVkp_JYmjp4xLxt5i0S4ge7kG8fwjWUL80z";
 
   return (
-    <footer className="bg-gradient-to-b from-[#0e0e12] via-[#0a0a0d] to-[#070709] py-16 md:py-24 border-t border-[#D8C2A3]/30 text-white relative overflow-hidden">
-      {/* Top subtle champagne gold ambient illumination */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-gradient-to-b from-[#D8C2A3]/12 to-transparent rounded-full blur-3xl pointer-events-none" />
+    <footer className="bg-gradient-to-b from-[#0e0e12] via-[#0a0a0d] to-[#070709] py-16 md:py-24 border-t border-[#D8C2A3]/30 text-white relative overflow-hidden isolate transform-gpu">
+      {/* Top subtle champagne gold ambient illumination (GPU-accelerated pre-computed radial gradient) */}
+      <div 
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] pointer-events-none transform-gpu"
+        style={{
+          background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(216, 194, 163, 0.12) 0%, transparent 75%)',
+          transform: 'translateZ(0)'
+        }}
+      />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         
@@ -100,6 +106,8 @@ export default function Footer() {
             <div className="mb-6 text-center">
               <img
                 alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || `${clinicData.name} Emblem`}
+                loading="lazy"
+                decoding="async"
                 className="h-16 w-auto mb-4 mx-auto transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
                 src={footerLogoSrc}
               />

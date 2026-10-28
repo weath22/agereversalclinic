@@ -57,33 +57,41 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
   };
 
   return (
-    <section id="home" ref={sectionRef} className="relative bg-luxury-primary overflow-hidden min-h-0 md:min-h-[calc(100vh-140px)] flex items-center py-8 sm:py-12 md:pt-6 md:pb-16 border-b border-luxury-border">
+    <section id="home" ref={sectionRef} className="relative bg-luxury-primary overflow-hidden min-h-0 md:min-h-[calc(100vh-140px)] flex items-center py-8 sm:py-12 md:pt-6 md:pb-16 border-b border-luxury-border isolate transform-gpu">
       {/* Mobile Full-bleed Background Media */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0">
+      <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0 transform-gpu">
         {(heroConfig?.mediaType || 'video') === 'image' ? (
           <img
-            className="w-full h-full object-cover object-center brightness-100 contrast-[1.02] opacity-85"
+            className="w-full h-full object-cover object-center brightness-100 contrast-[1.02] opacity-85 transform-gpu"
+            style={{ transform: 'translateZ(0)' }}
             src={heroConfig?.mediaUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC"}
             alt="Hero Background"
+            loading="eager"
+            decoding="async"
           />
         ) : (
           <video
-            className="w-full h-full object-cover object-center brightness-100 contrast-[1.02] opacity-85"
+            className="w-full h-full object-cover object-center brightness-100 contrast-[1.02] opacity-85 transform-gpu"
+            style={{ transform: 'translateZ(0)' }}
             src={heroConfig?.mediaUrl || "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-woman-receiving-a-facial-treatment-40541-large.mp4"}
             autoPlay
             loop
             muted
             playsInline
+            preload="metadata"
           />
         )}
-        {/* Subtle, Reduced White Fade Overlay (Matching SpecialistAreas & Treatments) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/20 to-white/40 backdrop-blur-[0.5px] pointer-events-none" />
+        {/* Subtle, Reduced White Fade Overlay (Hardware native alpha, zero blur lag) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/20 to-white/45 pointer-events-none" />
 
-        {/* Ambient Light Blooms for Luxury Depth */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-50">
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[480px] h-[320px] bg-gradient-to-b from-[#D8C2A3]/25 via-[#ecdcc8]/15 to-transparent rounded-full blur-2xl" />
-          <div className="absolute bottom-2 -left-10 w-[280px] h-[280px] bg-[#ecdcc8]/20 rounded-full blur-2xl" />
-        </div>
+        {/* Ambient Light Blooms for Luxury Depth (GPU-accelerated pre-computed radial gradients) */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-60 transform-gpu"
+          style={{
+            background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.25) 0%, rgba(236, 220, 200, 0.12) 50%, transparent 75%), radial-gradient(circle 280px at 0% 95%, rgba(236, 220, 200, 0.2) 0%, transparent 70%)',
+            transform: 'translateZ(0)'
+          }}
+        />
       </div>
 
       {/* Desktop Full-bleed Right Half Slow-motion Media */}
@@ -248,7 +256,7 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             </button>
             <button
               onClick={onPricingClick || onExploreClick}
-              className="bg-white/95 backdrop-blur-md border border-luxury-border hover:border-luxury-gold/60 text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
+              className="bg-white sm:bg-white/95 sm:backdrop-blur-md border border-luxury-border hover:border-luxury-gold/60 text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2.5 group text-sm sm:text-base cursor-pointer shadow-xs"
             >
               <span>Pricing</span>
               <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-luxury-muted group-hover:text-luxury-gold group-hover:translate-x-1 transition-all" strokeWidth={1.5} />
@@ -256,7 +264,7 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             {onTransformationsClick && (
               <button
                 onClick={onTransformationsClick}
-                className="bg-gradient-to-r from-white via-luxury-secondary/70 to-white backdrop-blur-md border border-luxury-gold/60 hover:border-luxury-gold text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-sm sm:text-base group cursor-pointer shadow-xs"
+                className="bg-gradient-to-r from-white via-luxury-secondary/70 to-white sm:backdrop-blur-md border border-luxury-gold/60 hover:border-luxury-gold text-luxury-text px-6 sm:px-8 py-3.5 sm:py-4 rounded-full hover:bg-luxury-secondary hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 text-sm sm:text-base group cursor-pointer shadow-xs"
               >
                 <Sparkles className="h-4 w-4 text-luxury-gold group-hover:rotate-12 transition-transform" />
                 <span>Transformations</span>
@@ -274,16 +282,22 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
             <div className="flex -space-x-3 sm:-space-x-4 shrink-0 group-hover:scale-105 transition-transform">
               <img 
                 alt="Patient 1" 
+                loading="lazy"
+                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4"
               />
               <img 
                 alt="Patient 2" 
+                loading="lazy"
+                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR"
               />
               <img 
                 alt="Patient 3" 
+                loading="lazy"
+                decoding="async"
                 className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-white shadow-xs object-cover" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs"
               />

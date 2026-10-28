@@ -1,126 +1,10 @@
 {
-  "lastSynced": "2026-10-28T19:56:50.579Z",
+  "lastSynced": "2026-10-28T21:06:19.942Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
-    "primaryName": "Age Reversal Clinics",
+    "primaryName": "Age Reversal",
     "secondaryName": "Clinic"
-  },
-  "clinic_info_data": {
-    "name": "Age Reversal Clinics",
-    "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
-    "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
-    "canonicalUrl": "https://agereversalclinics.co.uk",
-    "brandKeywords": [
-      "dermatology clinic london",
-      "harley street dermatologist",
-      "anti-aging clinic london",
-      "botox harley street",
-      "aesthetic dermatology",
-      "Clinical aesthetics UK",
-      "Professional skincare clinic UK",
-      "Aesthetic medicine UK",
-      "Skin rejuvenation clinic UK",
-      "Non-surgical cosmetic treatments UK",
-      "Advanced aesthetics UK",
-      "Cosmetic skin clinic UK",
-      "Medical aesthetics UK",
-      "Aesthetic clinics UK"
-    ],
-    "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
-    "logo": {
-      "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
-      "alt": "Age Reversal Clinics Logo",
-      "full": "/assets/1791726190127-arc-logo__2_.webp"
-    },
-    "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
-    "interiorPhotos": [
-      "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
-    ],
-    "phone": "+44 (0) 20 7984159517",
-    "email": "agereversalbeautyspa@gmail.com",
-    "whatsapp": "https://wa.me/44207984159517",
-    "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
-    "priceRange": "£",
-    "currency": "GBP",
-    "acceptedPayments": [
-      "Cash",
-      "Credit Card",
-      "Debit Card",
-      "American Express",
-      "Bank Transfer",
-      "Private Medical Insurance"
-    ],
-    "languagesSpoken": [
-      "English",
-      "French"
-    ],
-    "medicalSpecialties": [
-      "Dermatology",
-      "Cosmetic Dermatology",
-      "Aesthetic Medicine",
-      "Anti-Ageing Therapeutics",
-      "Laser Skin Resurfacing",
-      "Minor Skin Surgery"
-    ],
-    "gmcRegistration": "GMC Designated Medical Body #7492014",
-    "cqcStatus": "CQC Registered Provider (Good Rating)",
-    "accreditations": [
-      "Care Quality Commission (CQC) Registered",
-      "General Medical Council (GMC) Compliant",
-      "British Association of Dermatologists (BAD) Member",
-      "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
-      "Save Face Accredited Excellence"
-    ],
-    "locations": [
-      {
-        "id": "location-1791722960928",
-        "name": "Age Reversal Clinic",
-        "address": "Age Reversal Clinic Grove Park",
-        "city": "London",
-        "postalCode": "",
-        "country": "United Kingdom",
-        "phone": "+44 (0) 20 88572000",
-        "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
-        "directionsUrl": "",
-        "latitude": 51.5173,
-        "longitude": -0.1472,
-        "parkingAvailable": false,
-        "wheelchairAccessible": true,
-        "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
-        "imageAlt": ""
-      },
-      {
-        "id": "location-1791728808656",
-        "name": "374 Baring Road London UK",
-        "address": "374 Baring Road Se12 0EF",
-        "city": "London",
-        "postalCode": "",
-        "country": "United Kingdom",
-        "phone": "+44 (0) 20 8857 2000",
-        "hours": "Mon – Sat: 09:00 – 19:00",
-        "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
-        "latitude": 51.5173,
-        "longitude": -0.1472,
-        "parkingAvailable": false,
-        "wheelchairAccessible": false,
-        "image": "/assets/1791729403362-arc-logo__1___2_.webp",
-        "imageAlt": ""
-      }
-    ],
-    "socials": {
-      "facebook": "https://www.facebook.com/agereversalmedspa",
-      "instagram": "https://www.instagram.com/agereversalclinicuk/",
-      "twitter": "",
-      "youtube": "",
-      "linkedin": ""
-    },
-    "googleReviewUrl": "",
-    "consultationConfig": {},
-    "processSection": {},
-    "facilityGallery": {},
-    "trustBrandsSection": {},
-    "accreditationsSection": {}
   },
   "homepage_hero_config_v2": {
     "badge": "Expert Care. Advanced Solutions.",
@@ -545,6 +429,117 @@
         "source": "tiktok"
       }
     ]
+  },
+  "clinic_info_data": {
+    "name": "Age Reversal Clinics",
+    "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
+    "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
+    "canonicalUrl": "https://agereversalclinics.co.uk",
+    "brandKeywords": [
+      "dermatology clinic london",
+      "harley street dermatologist",
+      "anti-aging clinic london",
+      "botox harley street",
+      "aesthetic dermatology",
+      "Clinical aesthetics UK",
+      "Professional skincare clinic UK",
+      "Aesthetic medicine UK",
+      "Skin rejuvenation clinic UK",
+      "Non-surgical cosmetic treatments UK",
+      "Advanced aesthetics UK",
+      "Cosmetic skin clinic UK",
+      "Medical aesthetics UK",
+      "Aesthetic clinics UK"
+    ],
+    "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
+    "logo": {
+      "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+      "alt": "Age Reversal Clinics Logo",
+      "full": "/assets/1791726190127-arc-logo__2_.webp"
+    },
+    "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+    "interiorPhotos": [
+      "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
+    ],
+    "phone": "+44 (0) 20 7984159517",
+    "email": "agereversalbeautyspa@gmail.com",
+    "whatsapp": "https://wa.me/44207984159517",
+    "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
+    "priceRange": "£",
+    "currency": "GBP",
+    "acceptedPayments": [
+      "Cash",
+      "Credit Card",
+      "Debit Card",
+      "American Express",
+      "Bank Transfer",
+      "Private Medical Insurance"
+    ],
+    "languagesSpoken": [
+      "English",
+      "French"
+    ],
+    "medicalSpecialties": [
+      "Dermatology",
+      "Cosmetic Dermatology",
+      "Aesthetic Medicine",
+      "Anti-Ageing Therapeutics",
+      "Laser Skin Resurfacing",
+      "Minor Skin Surgery"
+    ],
+    "gmcRegistration": "GMC Designated Medical Body #7492014",
+    "cqcStatus": "CQC Registered Provider (Good Rating)",
+    "accreditations": [
+      "Care Quality Commission (CQC) Registered",
+      "General Medical Council (GMC) Compliant",
+      "British Association of Dermatologists (BAD) Member",
+      "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
+      "Save Face Accredited Excellence"
+    ],
+    "locations": [
+      {
+        "id": "location-1791722960928",
+        "name": "Age Reversal Clinic",
+        "address": "Age Reversal Clinic Grove Park",
+        "city": "London",
+        "postalCode": "",
+        "country": "United Kingdom",
+        "phone": "+44 (0) 20 88572000",
+        "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
+        "directionsUrl": "",
+        "latitude": 51.5173,
+        "longitude": -0.1472,
+        "parkingAvailable": false,
+        "wheelchairAccessible": true,
+        "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
+        "imageAlt": ""
+      },
+      {
+        "id": "location-1791728808656",
+        "name": "374 Baring Road London UK",
+        "address": "374 Baring Road Se12 0EF",
+        "city": "London",
+        "postalCode": "",
+        "country": "United Kingdom",
+        "phone": "+44 (0) 20 8857 2000",
+        "hours": "Mon – Sat: 09:00 – 19:00",
+        "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
+        "latitude": 51.5173,
+        "longitude": -0.1472,
+        "parkingAvailable": false,
+        "wheelchairAccessible": false,
+        "image": "/assets/1791729403362-arc-logo__1___2_.webp",
+        "imageAlt": ""
+      }
+    ],
+    "socials": {
+      "facebook": "https://www.facebook.com/agereversalmedspa",
+      "instagram": "https://www.instagram.com/agereversalclinicuk/",
+      "twitter": "",
+      "youtube": "",
+      "linkedin": ""
+    },
+    "googleReviewUrl": ""
   },
   "clinical_protocols_config": {
     "protocols": {

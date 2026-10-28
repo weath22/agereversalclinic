@@ -4421,8 +4421,8 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     logo: {
       ...base.logo,
       ...(candidate.logo || {}),
-      icon: (candidate.logo?.icon && candidate.logo.icon.trim()) ? candidate.logo.icon.trim() : base.logo.icon,
-      full: (candidate.logo?.full && candidate.logo.full.trim()) ? candidate.logo.full.trim() : base.logo.full,
+      icon: candidate.logo?.icon || base.logo.icon,
+      full: candidate.logo?.full || base.logo.full,
       alt: candidate.logo?.alt || base.logo.alt,
     },
     socials: {
@@ -4430,20 +4430,12 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       ...(candidate.socials || {}),
     },
     interiorPhotos:
-      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0).length > 0
-        ? candidate.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0)
+      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.length > 0
+        ? candidate.interiorPhotos
         : base.interiorPhotos,
     locations:
       Array.isArray(candidate.locations) && candidate.locations.length > 0
-        ? candidate.locations.map((loc, idx) => {
-            const matchingBase = base.locations?.find((b) => b.id === loc.id || b.name === loc.name) || base.locations?.[idx];
-            const resolvedImg = (loc.image && loc.image.trim()) ? loc.image.trim() : (matchingBase?.image || '');
-            return {
-              ...matchingBase,
-              ...loc,
-              image: resolvedImg,
-            };
-          })
+        ? candidate.locations
         : base.locations,
     whyChooseUs: {
       heading: candidate.whyChooseUs?.heading || base.whyChooseUs?.heading || defaultWhyChooseUs.heading,
@@ -4573,8 +4565,11 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
 
 export function getClinicData(): ClinicData {
   if (typeof window !== 'undefined' && !_hasHydratedClinicDataFromServer) {
-    _hasHydratedClinicDataFromServer = true;
-    fetchRemoteClinicData().catch(() => {});
+    const hasLocalOverride = Boolean(window.localStorage.getItem(CLINIC_INFO_DATA_KEY));
+    if (!hasLocalOverride) {
+      _hasHydratedClinicDataFromServer = true;
+      fetchRemoteClinicData().catch(() => {});
+    }
   }
 
   const stored = getStorageItem<Partial<ClinicData> | null>(CLINIC_INFO_DATA_KEY, null);

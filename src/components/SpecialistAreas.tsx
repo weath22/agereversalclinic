@@ -123,7 +123,7 @@ export default function SpecialistAreas({
       {/* 1. Explore Specialist Areas Section (Reduced bottom spacing on mobile) */}
       <section
         id="specialist-areas"
-        className="pt-12 sm:pt-20 md:py-32 pb-6 sm:pb-12 md:pb-24 bg-transparent border-b border-luxury-border/40"
+        className="pt-12 sm:pt-20 md:py-32 pb-6 sm:pb-12 md:pb-24 bg-transparent border-b border-luxury-border/40 isolate transform-gpu"
       >
         <div className="container mx-auto px-4 md:px-12 max-w-7xl">
           {/* Header Layout */}
@@ -153,7 +153,7 @@ export default function SpecialistAreas({
             <div className="shrink-0">
               <button
                 onClick={() => (onExploreAllClick ? onExploreAllClick() : onBookClick('All Specialty Areas'))}
-                className="bg-white/95 backdrop-blur-md border border-luxury-border/80 text-silver-900 px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-full hover:bg-white hover:border-luxury-gold transition-all duration-300 font-sans text-xs sm:text-sm font-medium tracking-wide flex items-center gap-2 cursor-pointer shadow-sm"
+                className="bg-white sm:bg-white/95 sm:backdrop-blur-md border border-luxury-border/80 text-silver-900 px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-full hover:bg-white hover:border-luxury-gold transition-all duration-300 font-sans text-xs sm:text-sm font-medium tracking-wide flex items-center gap-2 cursor-pointer shadow-sm"
               >
                 <span>See all treatment areas ({treatmentsList.length})</span>
                 <ChevronRight className="h-4 w-4 text-silver-500 group-hover:translate-x-1 transition-transform" strokeWidth={1.5} />
@@ -176,7 +176,7 @@ export default function SpecialistAreas({
                       ? onTreatmentClick(treatment.title, treatment.pricingCategory)
                       : onBookClick(treatment.title)
                   }
-                  className="group bg-white/95 backdrop-blur-md overflow-hidden border border-white/30 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_10px_35px_-5px_rgba(0,0,0,0.25)] hover:shadow-2xl hover:-translate-y-1 rounded-xl"
+                  className="group bg-white/98 sm:bg-white/95 sm:backdrop-blur-md overflow-hidden border border-white/40 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_8px_30px_-5px_rgba(0,0,0,0.2)] hover:shadow-2xl hover:-translate-y-1 rounded-xl transform-gpu will-change-transform"
                 >
                   <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-luxury-secondary relative">
                     <img
@@ -190,7 +190,7 @@ export default function SpecialistAreas({
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
                     {treatment.category && (
-                      <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs">
+                      <span className="absolute top-3 left-3 bg-white/95 text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs">
                         {treatment.category}
                       </span>
                     )}

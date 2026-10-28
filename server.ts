@@ -845,18 +845,8 @@ const parseClinicDataFromTsFile = (): Record<string, any> | null => {
     if (jsonBlock.endsWith(';')) {
       jsonBlock = jsonBlock.slice(0, -1).trim();
     }
-    try {
-      return JSON.parse(jsonBlock);
-    } catch {
-      // Robust fallback for JS object literals (single quotes, trailing commas, unquoted keys)
-      const sanitized = Function(`"use strict"; return (${jsonBlock});`)();
-      if (sanitized && typeof sanitized === 'object') {
-        return sanitized;
-      }
-      return null;
-    }
-  } catch (err) {
-    console.warn('[Admin] Could not parse clinicInfo.ts:', err);
+    return JSON.parse(jsonBlock);
+  } catch {
     return null;
   }
 };
@@ -1103,15 +1093,49 @@ const collectClinicDataAssetUrls = (clinicData: any): string[] => {
   return rawUrls;
 };
 
-// Helper: Safely preserve all uploaded clinic assets on disk (never delete uploaded user assets)
-const deleteReplacedClinicAssetFile = (_oldUrl: string, _activeUrlsSet: Set<string>): boolean => {
-  // Safety rule: Never delete uploaded clinic assets from disk on update or replacement.
-  // Preserving assets prevents image loss when updating files, drafting changes, or switching branches.
-  return false;
+// Helper: Delete a replaced clinicInfo.ts asset file from both public/assets/ and src/assets/images/
+// while ensuring it is not still referenced by another active slot in clinicInfo.ts
+const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string>): boolean => {
+  if (!oldUrl || typeof oldUrl !== 'string') return false;
+
+  const cleanPath = oldUrl.split('?')[0].split('#')[0].trim();
+  if (!cleanPath.startsWith('/assets/')) return false;
+
+  // Only manage files directly under /assets/<filename> (do not touch /assets/treatments/, /assets/transformations/, or /assets/aistudio/)
+  if (path.posix.dirname(cleanPath) !== '/assets') {
+    return false;
+  }
+
+  const fileName = path.basename(cleanPath);
+  if (!fileName) return false;
+
+  // Ensure the file is not still referenced by another slot in clinicInfo.ts
+  for (const activeUrl of activeUrlsSet) {
+    const activeClean = activeUrl.split('?')[0].split('#')[0].trim();
+    if (activeClean === cleanPath || path.basename(activeClean) === fileName) {
+      return false;
+    }
+  }
+
+  let deletedAny = false;
+  for (const targetDir of [publicAssetsDir, srcAssetsDir]) {
+    try {
+      const targetFilePath = path.join(targetDir, fileName);
+      if (fs.existsSync(targetFilePath) && fs.statSync(targetFilePath).isFile()) {
+        fs.unlinkSync(targetFilePath);
+        deletedAny = true;
+        console.log(`[Admin Asset Cleanup] Deleted replaced clinic asset: ${targetFilePath}`);
+      }
+    } catch (unlinkErr) {
+      console.warn(`[Admin Asset Cleanup] Could not delete ${fileName} from ${targetDir}:`, unlinkErr);
+    }
+  }
+
+  return deletedAny;
 };
 
 // Helper: Inspect all image paths in clinicData and ensure any /assets/... file
-// exists in public/assets/, src/assets/images/, and dist/assets/
+// exists in both public/assets/ and src/assets/images/
 const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
   if (!clinicData || typeof clinicData !== 'object') return 0;
 
@@ -1126,13 +1150,10 @@ const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
 
     if (cleanPath.startsWith('/assets/treatments/')) {
       requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
-      if (fs.existsSync(distTreatmentsDir)) requiredDirs.push(distTreatmentsDir);
     } else if (cleanPath.startsWith('/assets/transformations/')) {
       requiredDirs = [publicTransformationsDir, srcTransformationsDir];
-      if (fs.existsSync(distTransformationsDir)) requiredDirs.push(distTransformationsDir);
     } else {
       requiredDirs = [publicAssetsDir, srcAssetsDir];
-      if (fs.existsSync(distAssetsDir)) requiredDirs.push(distAssetsDir);
     }
 
     const existingSourcePath = requiredDirs
@@ -1178,6 +1199,8 @@ const handleSaveClinicData = (req: any, res: any) => {
       return res.status(400).json({ success: false, error: 'Invalid clinicData object. Must include at least a clinic name.' });
     }
 
+    // Collect previous clinicInfo.ts & siteCustomizations.json image URLs before overwriting
+    const previousTsData = parseClinicDataFromTsFile();
     let existing: Record<string, any> = {};
     if (fs.existsSync(customizationsPath)) {
       try {
@@ -1186,12 +1209,24 @@ const handleSaveClinicData = (req: any, res: any) => {
         existing = {};
       }
     }
+    const previousUrls = new Set<string>([
+      ...collectClinicDataAssetUrls(previousTsData),
+      ...collectClinicDataAssetUrls(existing.clinic_info_data),
+    ]);
 
     // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
-    // across public/assets/, src/assets/images/, and dist/assets/
+    // between public/assets/ and src/assets/images/
     const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
     if (repairedAssetCount > 0) {
       console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
+    }
+
+    // 0b. Delete any replaced or removed clinicInfo.ts assets from public/assets/ and src/assets/images/
+    const activeUrlsSet = new Set<string>(collectClinicDataAssetUrls(clinicData));
+    for (const oldUrl of previousUrls) {
+      if (!activeUrlsSet.has(oldUrl)) {
+        deleteReplacedClinicAssetFile(oldUrl, activeUrlsSet);
+      }
     }
 
     // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
@@ -1201,24 +1236,6 @@ const handleSaveClinicData = (req: any, res: any) => {
 
     // 2. Also persist / cache to siteCustomizations.json under clinic_info_data key
     existing.clinic_info_data = clinicData;
-
-    // Synchronize header config logo when clinic logo is set
-    const resolvedHeaderLogo = clinicData.logo?.icon || clinicData.logo?.full;
-    if (resolvedHeaderLogo) {
-      if (!existing.homepage_header_config) {
-        existing.homepage_header_config = {
-          logoUrl: resolvedHeaderLogo,
-          primaryName: clinicData.name || "Age Reversal",
-          secondaryName: "Clinic"
-        };
-      } else {
-        existing.homepage_header_config.logoUrl = resolvedHeaderLogo;
-        if (clinicData.name) {
-          existing.homepage_header_config.primaryName = clinicData.name;
-        }
-      }
-    }
-
     if (Array.isArray(clinicData.locations)) {
       if (!existing.homepage_locations_config) {
         existing.homepage_locations_config = {
@@ -2179,20 +2196,30 @@ app.post('/api/admin/upload-asset', (req, res) => {
     const publicAssetPath = path.join(publicAssetsDir, safeName);
     const srcAssetPath = path.join(srcAssetsDir, safeName);
 
-    // Save to public/assets, src/assets/images, and mirror to dist/assets (if dist exists)
+    // Save only to public/assets and src/assets/images (no duplicate copies in public/uploads)
     fs.writeFileSync(publicAssetPath, buffer);
     fs.writeFileSync(srcAssetPath, buffer);
-    if (fs.existsSync(distAssetsDir)) {
-      try {
-        fs.writeFileSync(path.join(distAssetsDir, safeName), buffer);
-      } catch (distErr) {
-        console.warn(`[Admin] Could not mirror asset to dist/assets/${safeName}:`, distErr);
-      }
-    }
 
     const newAssetUrl = `/assets/${safeName}`;
 
-    console.log(`[Admin] Saved asset to public/assets/${safeName}, src/assets/images/${safeName}, and mirrored to dist/assets`);
+    // If replacing an existing clinicInfo.ts image, delete the displaced file from public/assets and src/assets/images
+    // unless it is still referenced by another slot in clinicInfo.ts
+    if (typeof previousUrl === 'string' && previousUrl.trim()) {
+      const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
+      if (normalizedPrev && normalizedPrev !== newAssetUrl) {
+        const currentClinicData = parseClinicDataFromTsFile();
+        const allCurrentUrls = collectClinicDataAssetUrls(currentClinicData);
+        // Remove a single occurrence of normalizedPrev (representing the slot being replaced)
+        const prevIdx = allCurrentUrls.indexOf(normalizedPrev);
+        if (prevIdx !== -1) {
+          allCurrentUrls.splice(prevIdx, 1);
+        }
+        const activeUrlsSet = new Set<string>([...allCurrentUrls, newAssetUrl]);
+        deleteReplacedClinicAssetFile(normalizedPrev, activeUrlsSet);
+      }
+    }
+
+    console.log(`[Admin] Saved asset to public/assets/${safeName} and src/assets/images/${safeName}`);
 
     return res.json({
       success: true,
