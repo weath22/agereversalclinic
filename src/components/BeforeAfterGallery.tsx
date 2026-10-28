@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getBeforeAfterGalleryConfig, fetchRemoteBeforeAfterGalleryConfig } from '../lib/adminStore';
 import { BeforeAfterGalleryConfig, BeforeAfterPair } from '../types';
 import Pagination from './Pagination';
@@ -278,10 +279,126 @@ export default function BeforeAfterGallery() {
     };
   }, []);
 
+  const [pillsPage, setPillsPage] = useState(1);
+  const measureContainerRef = useRef<HTMLDivElement>(null);
+
   const allCategories = useMemo(() => {
-    if (!config?.categories) return [{ id: 'all', name: 'All' }];
-    return [{ id: 'all', name: 'All' }, ...config.categories];
+    const valid = (config?.categories || []).filter((c) => Boolean(c && c.id && c.name));
+    return [{ id: 'all', name: 'All' }, ...valid];
   }, [config]);
+
+  const allCategoriesRef = useRef(allCategories);
+  useEffect(() => {
+    allCategoriesRef.current = allCategories;
+  }, [allCategories]);
+
+  // Pill pages chunked so that tablets and desktop screens never exceed 3 visual rows per page
+  const [pillPages, setPillPages] = useState<Array<typeof allCategories>>([allCategories]);
+
+  useEffect(() => {
+    const measurePillsRows = () => {
+      const container = measureContainerRef.current;
+      if (!container) return;
+      if (container.offsetWidth === 0) return;
+
+      const currentCats = allCategoriesRef.current;
+      if (!currentCats || !currentCats.length) return;
+
+      const children = Array.from(container.children) as HTMLElement[];
+      // If the rendered DOM children count does not match category count yet, wait for DOM update
+      if (children.length !== currentCats.length) return;
+
+      const rows: (typeof allCategories)[] = [];
+      let currentRow: typeof allCategories = [];
+      let lastTop: number | null = null;
+
+      children.forEach((child, index) => {
+        const cat = currentCats[index];
+        if (!cat || !cat.id) return;
+
+        const top = child.offsetTop;
+        if (lastTop === null || Math.abs(top - lastTop) < 6) {
+          currentRow.push(cat);
+          if (lastTop === null) lastTop = top;
+        } else {
+          if (currentRow.length > 0) {
+            rows.push(currentRow);
+          }
+          currentRow = [cat];
+          lastTop = top;
+        }
+      });
+      if (currentRow.length > 0) {
+        rows.push(currentRow);
+      }
+
+      // Max 3 row lines per page as requested
+      const MAX_ROWS_PER_PAGE = 3;
+      const pages: (typeof allCategories)[] = [];
+      for (let i = 0; i < rows.length; i += MAX_ROWS_PER_PAGE) {
+        const chunk = rows.slice(i, i + MAX_ROWS_PER_PAGE).flat().filter((c) => Boolean(c && c.id));
+        if (chunk.length > 0) {
+          pages.push(chunk);
+        }
+      }
+
+      if (pages.length > 0) {
+        setPillPages(pages);
+      }
+    };
+
+    const rafId = requestAnimationFrame(measurePillsRows);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && measureContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        measurePillsRows();
+      });
+      resizeObserver.observe(measureContainerRef.current);
+    }
+
+    window.addEventListener('resize', measurePillsRows);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (resizeObserver) resizeObserver.disconnect();
+      window.removeEventListener('resize', measurePillsRows);
+    };
+  }, [allCategories]);
+
+  const totalPillsPages = Math.max(1, pillPages.length);
+  const safePillsPage = Math.min(Math.max(1, pillsPage), totalPillsPages);
+
+  useEffect(() => {
+    if (pillsPage > totalPillsPages && totalPillsPages > 0) {
+      setPillsPage(totalPillsPages);
+    }
+  }, [totalPillsPages, pillsPage]);
+
+  // Current pills for visible tablet & desktop page (up to 3 rows max per page)
+  const visibleCategoriesDesktop = useMemo(() => {
+    const page = pillPages[safePillsPage - 1];
+    if (Array.isArray(page) && page.length > 0) {
+      const valid = page.filter((c) => Boolean(c && c.id));
+      if (valid.length > 0) return valid;
+    }
+    return allCategories.filter((c) => Boolean(c && c.id));
+  }, [pillPages, safePillsPage, allCategories]);
+
+  // Split categories into two rows for mobile horizontal scrolling
+  const { mobileRow1, mobileRow2 } = useMemo(() => {
+    const valid = allCategories.filter((c) => Boolean(c && c.id));
+    const r1: typeof valid = [];
+    const r2: typeof valid = [];
+    valid.forEach((cat, idx) => {
+      if (idx % 2 === 0) {
+        r1.push(cat);
+      } else {
+        r2.push(cat);
+      }
+    });
+    return { mobileRow1: r1, mobileRow2: r2 };
+  }, [allCategories]);
 
   // Render admin-configured pairs directly (all 8 default clinical pairs live in DEFAULT_GALLERY_CONFIG so edits, hiding, and deletions take effect immediately)
   const currentCategoryData = useMemo(() => {
@@ -290,12 +407,12 @@ export default function BeforeAfterGallery() {
         activeCategory === 'all'
           ? config.categories.flatMap((c) => c.pairs || [])
           : config.categories.find((c) => c.id === activeCategory)?.pairs || [];
-      return pairs.filter((p) => !p.hidden);
+      return (pairs || []).filter((p) => Boolean(p && !p.hidden && p.id));
     }
 
     return activeCategory === 'all'
       ? COMPREHENSIVE_GALLERY_PAIRS
-      : COMPREHENSIVE_GALLERY_PAIRS.filter((p) => p.categoryId === activeCategory);
+      : COMPREHENSIVE_GALLERY_PAIRS.filter((p) => Boolean(p && p.categoryId === activeCategory && p.id));
   }, [config, activeCategory]);
 
   // Schema.org/ImageObject Structured Data for Google Image Search
@@ -379,23 +496,131 @@ export default function BeforeAfterGallery() {
           <div className="w-12 h-[1.5px] bg-slate-950 mx-auto" />
         </div>
 
-        {/* Category Selector Tabs (Reduced mobile margins) */}
-        <div
-          className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-x-visible justify-start md:justify-center gap-2 sm:gap-3 mb-6 sm:mb-10 md:mb-12 max-w-3xl mx-auto pb-2 md:pb-0 px-2 md:px-0 snap-x no-scrollbar"
-        >
-          {allCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategorySelect(cat.id)}
-              className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full font-sans text-[10px] sm:text-xs font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 snap-center whitespace-nowrap cursor-pointer ${
-                activeCategory === cat.id
-                  ? 'bg-slate-950 text-white border-black shadow-sm scale-102 font-medium'
-                  : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+        {/* Category Selector Tabs & Filter Section */}
+        <div className="mb-6 sm:mb-10 md:mb-12 max-w-4xl mx-auto relative">
+          {/* Hidden measurement container for 3-rows-max pagination calculation on tablet/desktop */}
+          <div
+            ref={measureContainerRef}
+            aria-hidden="true"
+            className="invisible absolute -top-[9999px] left-0 right-0 pointer-events-none opacity-0 hidden sm:flex flex-wrap justify-center gap-2.5 md:gap-3"
+          >
+            {allCategories.filter((cat) => Boolean(cat && cat.id)).map((cat) => (
+              <span
+                key={cat.id}
+                className="px-5 md:px-6 py-2.5 rounded-full font-sans text-xs font-normal tracking-[0.12em] uppercase border whitespace-nowrap inline-block"
+              >
+                {cat.name}
+              </span>
+            ))}
+          </div>
+
+          {/* Mobile Only: Horizontal scroll with all pills in two rows */}
+          <div className="flex sm:hidden flex-col gap-2 overflow-x-auto pb-2 px-2 no-scrollbar touch-pan-x overscroll-x-contain">
+            <div className="flex flex-nowrap gap-2 w-max">
+              {mobileRow1.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => handleCategorySelect(cat.id)}
+                  className={`px-4 py-2 rounded-full font-sans text-[10px] font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
+                    activeCategory === cat.id
+                      ? 'bg-slate-950 text-white border-black shadow-sm font-medium'
+                      : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+            {mobileRow2.length > 0 && (
+              <div className="flex flex-nowrap gap-2 w-max">
+                {mobileRow2.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategorySelect(cat.id)}
+                    className={`px-4 py-2 rounded-full font-sans text-[10px] font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
+                      activeCategory === cat.id
+                        ? 'bg-slate-950 text-white border-black shadow-sm font-medium'
+                        : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tablets & Desktop: Paginated Pills (Max 3 rows per page) */}
+          <div className="hidden sm:flex flex-wrap justify-center gap-2.5 md:gap-3">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={safePillsPage}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-wrap justify-center gap-2.5 md:gap-3"
+              >
+                {visibleCategoriesDesktop.filter((cat) => Boolean(cat && cat.id)).map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategorySelect(cat.id)}
+                    className={`px-5 md:px-6 py-2.5 rounded-full font-sans text-xs font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
+                      activeCategory === cat.id
+                        ? 'bg-slate-950 text-white border-black shadow-sm scale-102 font-medium'
+                        : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* 1 2 3 Pagination for the Filter Pills (Tablets & Desktop Screens Only, Treatment Component Style) */}
+          {totalPillsPages > 1 && (
+            <div className="hidden sm:flex items-center justify-center gap-1.5 mt-5 select-none">
+              <button
+                type="button"
+                onClick={() => setPillsPage((p) => Math.max(1, p - 1))}
+                disabled={safePillsPage === 1}
+                aria-label="Previous categories"
+                className="p-1.5 sm:p-2 rounded-full border border-slate-950/30 text-slate-950 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer disabled:opacity-20 disabled:pointer-events-none"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {Array.from({ length: totalPillsPages }).map((_, idx) => {
+                const pageNum = idx + 1;
+                const isActive = safePillsPage === pageNum;
+                return (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setPillsPage(pageNum)}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs font-sans font-semibold transition-colors cursor-pointer ${
+                      isActive
+                        ? 'bg-slate-950 text-white'
+                        : 'text-slate-950 hover:bg-slate-950/10'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => setPillsPage((p) => Math.min(totalPillsPages, p + 1))}
+                disabled={safePillsPage === totalPillsPages}
+                aria-label="Next categories"
+                className="p-1.5 sm:p-2 rounded-full border border-slate-950/30 text-slate-950 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer disabled:opacity-20 disabled:pointer-events-none"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Comparison Showcase Grid (Exact Treatment Services Page Frames) */}
@@ -410,7 +635,7 @@ export default function BeforeAfterGallery() {
                 transition={{ duration: 0.35, ease: 'easeOut' }}
                 className="grid grid-cols-1 md:grid-cols-2 gap-x-6 lg:gap-x-10 gap-y-8 sm:gap-y-10 md:gap-y-14 max-w-6xl mx-auto justify-items-center"
               >
-                {visiblePairs.map((item) => (
+                {visiblePairs.filter((item) => Boolean(item && item.id)).map((item) => (
                   <TreatmentServiceFrameComparison
                     key={item.id}
                     pair={item}

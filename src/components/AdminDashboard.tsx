@@ -129,6 +129,7 @@ import TreatmentImageManager from './TreatmentImageManager';
 import TreatmentMediaStudio from './TreatmentMediaStudio';
 import ClinicalProtocolsEditor from './ClinicalProtocolsEditor';
 import { MasterServicesManager } from './MasterServicesManager';
+import HomepageTreatmentsEditor from './HomepageTreatmentsEditor';
 
 
 interface AdminDashboardProps {
@@ -928,7 +929,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                  activeTab === 'edit-header' ? 'Header Branding' : 
                  activeTab === 'edit-hero' ? 'Hero Presentation' : 
                  activeTab === 'edit-specialist' ? 'Services & Branches (Specialist Areas)' : 
-                 activeTab === 'edit-treatments' ? 'Services & Branches (Treatments & Pricing)' : 
+                 activeTab === 'edit-treatments' ? 'Homepage Treatments & SEO Studio' : 
                  activeTab === 'edit-gallery' ? 'Before & After Gallery' : 
                  activeTab === 'edit-whychoose' ? 'Why Choose Us' : 
                  activeTab === 'edit-awards' ? 'Awards & Honors' : 
@@ -1066,62 +1067,120 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* Pre-Deployment Customization Studio Banner */}
-            <div className="bg-gradient-to-r from-[#003334] via-[#044445] to-[#003334] text-white p-6 rounded-3xl border border-[#c5a880]/30 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            {/* Pre-Deployment Customization Studio Section (Directly on page without outer box) */}
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[11px] font-bold text-[#c5a880] uppercase tracking-wider font-mono">Pre-Deployment Customization Active</span>
+                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-3 py-1 rounded-full shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider font-mono text-emerald-800">Pre-Deployment Customization Active</span>
                 </div>
-                <h3 className="text-lg font-serif font-bold text-white">Visual Customization & Real Project File Sync</h3>
-                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                  Every edit you make in any section editor is automatically written directly to <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">src/data/siteCustomizations.json</code> and uploaded assets to <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">public/uploads/</code> on disk. When you run <code className="text-[#c5a880] bg-black/30 px-1 py-0.5 rounded font-mono">npm run build</code>, all customized content is compiled permanently into your deployment!
+                <h3 className="text-xl sm:text-2xl font-serif font-black text-[#003334]">Visual Customization & Real Project File Sync</h3>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
+                  Every edit you make in any section editor is automatically written directly to <code className="text-[#003334] bg-slate-200/80 px-1 py-0.5 rounded font-mono font-bold">src/data/siteCustomizations.json</code> and uploaded assets to <code className="text-[#003334] bg-slate-200/80 px-1 py-0.5 rounded font-mono font-bold">public/uploads/</code> on disk. When you run <code className="text-[#003334] bg-slate-200/80 px-1 py-0.5 rounded font-mono font-bold">npm run build</code>, all customized content is compiled permanently into your deployment!
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+
+              {/* Quick Navigation & Customization Grid Items */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 w-full">
                 <button
+                  type="button"
                   onClick={() => setActiveTab('master-services')}
-                  className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow cursor-pointer"
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
                 >
-                  <Layers className="h-4 w-4" />
-                  <span>Services & Branches</span>
+                  <div className="p-2.5 rounded-xl bg-[#c5a880]/15 text-[#003334] group-hover:bg-[#c5a880] group-hover:text-[#003334] transition-colors shrink-0">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Services & Branches</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">Manage branches</span>
+                  </div>
                 </button>
+
                 <button
+                  type="button"
+                  onClick={() => setActiveTab('edit-treatments')}
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
+                >
+                  <div className="p-2.5 rounded-xl bg-orange-100 text-orange-600 group-hover:bg-[#ff8656] group-hover:text-slate-950 transition-colors shrink-0">
+                    <Image className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Homepage Treatments</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">SEO & Card Studio</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setActiveTab('edit-gallery')}
-                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/25 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
                 >
-                  <Image className="h-4 w-4 text-[#c5a880]" />
-                  <span>Before & After Gallery</span>
+                  <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 group-hover:bg-purple-200 group-hover:text-purple-900 transition-colors shrink-0">
+                    <Image className="h-4 w-4 text-[#c5a880]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Before & After Gallery</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">Clinical results</span>
+                  </div>
                 </button>
+
                 <button
+                  type="button"
                   onClick={() => setActiveTab('treatment-pricing')}
-                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 text-white border border-white/25 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
                 >
-                  <Sparkles className="h-4 w-4 text-[#c5a880]" />
-                  <span>Treatment Pricing & Media</span>
+                  <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-200 group-hover:text-amber-900 transition-colors shrink-0">
+                    <Sparkles className="h-4 w-4 text-[#c5a880]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Treatment Pricing</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">Rates & media</span>
+                  </div>
                 </button>
+
                 <button
+                  type="button"
                   onClick={() => setActiveTab('clinic-info')}
-                  className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
                 >
-                  <FileText className="h-4 w-4" />
-                  <span>Edit clinicInfo.ts File</span>
+                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Edit clinicInfo.ts</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">Master data file</span>
+                  </div>
                 </button>
+
                 <button
+                  type="button"
                   onClick={handleBakeToSourceFiles}
                   disabled={isSyncingFiles}
-                  className="flex items-center gap-2 bg-[#c5a880] hover:bg-[#d5b890] text-[#003334] px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-3 bg-[#c5a880]/15 hover:bg-[#c5a880] text-[#003334] p-3.5 rounded-2xl border border-[#c5a880]/50 hover:border-[#c5a880] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0 disabled:opacity-50"
+                  title="Save all changes directly into source code and public assets"
                 >
-                  <Database className={`h-4 w-4 shrink-0 ${isSyncingFiles ? 'animate-spin' : ''}`} />
-                  <span>{isSyncingFiles ? 'Writing to Disk...' : 'Save to Project Files'}</span>
+                  <div className="p-2.5 rounded-xl bg-[#c5a880] text-[#003334] group-hover:bg-[#003334] group-hover:text-[#c5a880] transition-colors shrink-0">
+                    <Database className={`h-4 w-4 ${isSyncingFiles ? 'animate-spin' : ''}`} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-black block truncate">{isSyncingFiles ? 'Saving...' : 'Save to Files'}</span>
+                    <span className="text-[10px] text-[#003334]/80 block truncate">Bake to disk</span>
+                  </div>
                 </button>
+
                 <button
+                  type="button"
                   onClick={handleExportSiteConfig}
-                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="flex items-center gap-3 bg-white hover:bg-slate-100 text-slate-700 p-3.5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
                   title="Download JSON copy of all customizations"
                 >
-                  <Download className="h-4 w-4 text-[#c5a880]" />
-                  <span>Download Backup</span>
+                  <div className="p-2.5 rounded-xl bg-slate-100 text-slate-600 group-hover:bg-slate-200 transition-colors shrink-0">
+                    <Download className="h-4 w-4 text-[#c5a880]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Download Backup</span>
+                    <span className="text-[10px] text-slate-400 block truncate">JSON config</span>
+                  </div>
                 </button>
               </div>
             </div>
@@ -1887,9 +1946,14 @@ CREATE TABLE inquiries (
           </div>
         )}
 
-        {/* TAB: SERVICES & BRANCHES / SPECIALIST AREAS / TREATMENTS LIST */}
-        {(activeTab === 'master-services' || activeTab === 'edit-specialist' || activeTab === 'edit-treatments') && (
+        {/* TAB: SERVICES & BRANCHES / SPECIALIST AREAS */}
+        {(activeTab === 'master-services' || activeTab === 'edit-specialist') && (
           <MasterServicesManager />
+        )}
+
+        {/* TAB: HOMEPAGE TREATMENTS & SEO EDITOR */}
+        {activeTab === 'edit-treatments' && (
+          <HomepageTreatmentsEditor />
         )}
 
         {/* TAB: EDIT BEFORE & AFTER GALLERY */}

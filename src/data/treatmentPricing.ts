@@ -31,81 +31,161 @@ export interface TreatmentTaxonomyGroup {
   subGroups: TreatmentSubGroup[];
 }
 
+export const LEGACY_BROCHURE_SUBGROUP_IDS = new Set<string>([
+  'anti-wrinkles-injection',
+  'dermal-fillers-1ml',
+  'profhilo-2ml',
+  'salmon-sperm-injection',
+  'platelet-rich-plasma-prp',
+  'endolift-fiber-lift',
+  'emface-skin-tightening-and-lifting',
+  'aqualyx-course-3',
+  'deso-face-and-body-course-of-1',
+  'deso-face-and-body-course-of-3',
+  'slimming-pen',
+  'emscuplt-body-sculpt-and-tightening',
+  'body-slimming-fat-loss-cellulite-reduction',
+  'facial-skin-care',
+  'co2-laser-from',
+  'tattoo-removal',
+  'morpheus8-treatment',
+  'lash-eyebrow',
+  'body-waxing',
+  'ladies-girls-cut-collors-treatments',
+  'men-and-kids',
+  'men-kids-services',
+  'semi-permanent-makeup',
+  'iv-drip-lounge-course-of-1',
+]);
+
 export const DEFAULT_TREATMENT_TAXONOMY: TreatmentTaxonomyGroup[] = [
   {
-    id: 'face-injectables',
-    name: 'Face & Injectables',
-    subGroups: [
-      { id: 'anti-wrinkles-injection', name: "Anti-wrinkle's injection" },
-      { id: 'dermal-fillers-1ml', name: 'Dermal Fillers-1ml' },
-      { id: 'profhilo-2ml', name: 'Profhilo 2ml' },
-      { id: 'salmon-sperm-injection', name: 'Salmon sperm injection' },
-      { id: 'platelet-rich-plasma-prp', name: 'Platelet-Rich Plasma (PRP)' },
-      { id: 'endolift-fiber-lift', name: 'Endolift - Fiber Lift' },
-      { id: 'emface-skin-tightening-and-lifting', name: 'Emface skin tightening and lifting' },
-    ],
+    "id": "face-injectables",
+    "name": "Face & Injectables",
+    "subGroups": [
+      {
+        "id": "platelet-rich-plasma-prp",
+        "name": "Platelet-Rich Plasma (PRP)"
+      },
+      {
+        "id": "endolift-fiber-lift",
+        "name": "Endolift - Fiber Lift"
+      },
+      {
+        "id": "salmon-sperm-injection",
+        "name": "Salmon sperm injection"
+      },
+      {
+        "id": "emface-skin-tightening-and-lifting",
+        "name": "Emface skin tightening and lifting"
+      },
+      {
+        "id": "anti-wrinkles-injection",
+        "name": "Anti-wrinkle's injection"
+      },
+      {
+        "id": "dermal-fillers-1ml",
+        "name": "Dermal Fillers-1ml"
+      },
+      {
+        "id": "profhilo-2ml",
+        "name": "Profhilo 2ml"
+      }
+    ]
   },
   {
-    id: 'body-sculpting',
-    name: 'Body Sculpting',
-    subGroups: [
-      { id: 'aqualyx-course-3', name: 'Aqualyx Course 3' },
-      { id: 'deso-face-and-body-course-of-1', name: 'Deso Face and body Course of 1' },
-      { id: 'deso-face-and-body-course-of-3', name: 'Deso Face and body Course of 3' },
-      { id: 'slimming-pen', name: 'Slimming pen' },
-      { id: 'emscuplt-body-sculpt-and-tightening', name: 'Emscuplt body sculpt and tightening' },
-      { id: 'body-slimming-fat-loss-cellulite-reduction', name: 'Body slimming for fat and loss Cellulite reduction' },
-    ],
+    "id": "body-sculpting",
+    "name": "Body Sculpting",
+    "subGroups": [
+      {
+        "id": "aqualyx-course-3",
+        "name": "Aqualyx Course 3"
+      },
+      {
+        "id": "deso-face-and-body-course-of-1",
+        "name": "Deso Face and body Course of 1"
+      },
+      {
+        "id": "deso-face-and-body-course-of-3",
+        "name": "Deso Face and body Course of 3"
+      },
+      {
+        "id": "slimming-pen",
+        "name": "Slimming pen"
+      },
+      {
+        "id": "emscuplt-body-sculpt-and-tightening",
+        "name": "Emscuplt body sculpt and tightening"
+      },
+      {
+        "id": "body-slimming-fat-loss-cellulite-reduction",
+        "name": "Body slimming for fat and loss Cellulite reduction"
+      }
+    ]
   },
   {
-    id: 'advanced-facials',
-    name: 'Advanced Facials',
-    subGroups: [
-      { id: 'facial-skin-care', name: 'Facial skin care' },
-      { id: 'co2-laser-from', name: 'Co@ Laser from' },
-      { id: 'tattoo-removal', name: 'Tattoo removal' },
-      { id: 'morpheus8-treatment', name: 'Morpheus8 treatment' },
-    ],
+    "id": "advanced-facials",
+    "name": "Advanced Facials",
+    "subGroups": [
+      {
+        "id": "facial-skin-care",
+        "name": "Facial skin care"
+      },
+      {
+        "id": "co2-laser-from",
+        "name": "Co@ Laser from"
+      },
+      {
+        "id": "tattoo-removal",
+        "name": "Tattoo removal"
+      },
+      {
+        "id": "morpheus8-treatment",
+        "name": "Morpheus8 treatment"
+      }
+    ]
   },
   {
-    id: 'hair-beauty',
-    name: 'Hair & Beauty',
-    subGroups: [
-      { id: 'lash-eyebrow', name: 'lash & eyebrow' },
-      { id: 'body-waxing', name: 'body waxing' },
-      { id: 'ladies-girls-cut-collors-treatments', name: 'Ladies & Girls Cut, Collors, Treatments' },
-      { id: 'men-and-kids', name: 'Men and Kids' },
-      { id: 'men-kids-services', name: 'Men / kids services' },
-      { id: 'semi-permanent-makeup', name: 'Semi-permanent makeup' },
-    ],
+    "id": "hair-beauty",
+    "name": "Hair & Beauty",
+    "subGroups": [
+      {
+        "id": "lash-eyebrow",
+        "name": "lash & eyebrow"
+      },
+      {
+        "id": "body-waxing",
+        "name": "body waxing"
+      },
+      {
+        "id": "ladies-girls-cut-collors-treatments",
+        "name": "Ladies & Girls Cut, Collors, Treatments"
+      },
+      {
+        "id": "men-and-kids",
+        "name": "Men and Kids"
+      },
+      {
+        "id": "men-kids-services",
+        "name": "Men / kids services"
+      },
+      {
+        "id": "semi-permanent-makeup",
+        "name": "Semi-permanent makeup"
+      }
+    ]
   },
   {
-    id: 'iv-drips-wellness',
-    name: 'IV Drips & Wellness',
-    subGroups: [
-      { id: 'iv-drip-lounge-course-of-1', name: 'IV Drip Lounge-course of 1' },
-    ],
-  },
+    "id": "iv-drips-wellness",
+    "name": "IV Drips & Wellness",
+    "subGroups": [
+      {
+        "id": "iv-drip-lounge-course-of-1",
+        "name": "IV Drip Lounge-course of 1"
+      }
+    ]
+  }
 ];
-
-export const LEGACY_BROCHURE_SUBGROUP_IDS = new Set([
-  'anti-wrinkle',
-  'dermal-fillers',
-  'skin-boosters',
-  'high-tech-lifting',
-  'fat-dissolving',
-  'body-contouring',
-  'high-tech-body',
-  'clinical-medical-facials',
-  'weekly-specials',
-  'light-oxygen-extractions',
-  'beauty-lashes-spmu',
-  'hair-salon-trichology',
-  'laser-hair-removal',
-  'booster-shots',
-  'wellness-immunity-drips',
-  'premium-infusions',
-]);
 
 export function inferTreatmentSubGroup(item: {
   id: string;

@@ -3,7 +3,8 @@ import {
   getClinicData, 
   saveClinicDataToFile, 
   resetClinicDataToDefault,
-  uploadAssetFile
+  uploadAssetFile,
+  fetchRemoteClinicData
 } from '../lib/adminStore';
 import { 
   ClinicData, 
@@ -155,9 +156,27 @@ export default function ClinicDataManager() {
     onConfirm: () => {}
   });
 
-  // Initial load
+  // Initial load: prioritize freshly fetched server data and react to clinic_data_changed
   useEffect(() => {
     setData(getClinicData());
+
+    fetchRemoteClinicData().then((remoteData) => {
+      if (remoteData) {
+        setData(remoteData);
+      }
+    });
+
+    const handleClinicDataChange = (e: Event) => {
+      const customEvt = e as CustomEvent<ClinicData>;
+      if (customEvt.detail) {
+        setData(customEvt.detail);
+      }
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChange);
+    return () => {
+      window.removeEventListener('clinic_data_changed', handleClinicDataChange);
+    };
   }, []);
 
   const updateField = <K extends keyof ClinicData>(key: K, value: ClinicData[K]) => {

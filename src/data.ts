@@ -14,6 +14,7 @@ import {
 
 export * from './data/clinicInfo';
 import { ALL_SPECIALIST_TREATMENTS } from './data/specialistTreatments';
+import { TREATMENT_PRICING_DATA, inferTreatmentSubGroup } from './data/treatmentPricing';
 
 export const SPECIALIST_AREAS = ALL_SPECIALIST_TREATMENTS.map((item) => ({
   id: item.id,
@@ -21,6 +22,10 @@ export const SPECIALIST_AREAS = ALL_SPECIALIST_TREATMENTS.map((item) => ({
   description: item.description,
   image: item.image
 }));
+
+const SPECIALIST_BY_SUBGROUP_ID = new Map(
+  ALL_SPECIALIST_TREATMENTS.map((item) => [item.id, item])
+);
 
 export const SERVICES: Service[] = [
   {
@@ -60,15 +65,44 @@ export const SERVICES: Service[] = [
   }
 ];
 
-export const TREATMENTS: TreatmentType[] = ALL_SPECIALIST_TREATMENTS.map((item, idx) => ({
-  id: item.id,
-  name: item.title,
-  stepNumber: String(idx + 1).padStart(2, '0'),
-  description: item.description,
-  tag: item.pricingCategory || item.category,
-  image: item.image,
-  duration: item.duration
-}));
+export const TREATMENTS: TreatmentType[] = ALL_SPECIALIST_TREATMENTS.map((item, idx) => {
+  const cleanTitle = (item.title || '').trim();
+  const rawParent = item.pricingCategory || item.category || 'Face & Injectables';
+  const categoryLabel =
+    rawParent === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawParent;
+  const cleanImage =
+    item.image || '/assets/images/treatments/specialist-profhilo.jpg';
+
+  const defaultKeywords =
+    item.seoKeywords && item.seoKeywords.length > 0
+      ? item.seoKeywords
+      : [
+          cleanTitle.toLowerCase(),
+          categoryLabel.toLowerCase(),
+          `${cleanTitle.toLowerCase()} london`,
+          'age reversal clinic treatment',
+          'medical aesthetics london'
+        ];
+
+  return {
+    id: item.id,
+    name: cleanTitle,
+    stepNumber: String(idx + 1).padStart(2, '0'),
+    description: item.description || '',
+    tag: categoryLabel,
+    subGroupId: item.id,
+    subCategory: cleanTitle,
+    image: cleanImage,
+    imageAlt:
+      item.coverMedia?.altText ||
+      `${cleanTitle} (${categoryLabel}) at Age Reversal Clinic London`,
+    seoTitle:
+      item.coverMedia?.seoTitle ||
+      `${cleanTitle} | Age Reversal Clinic London`,
+    seoKeywords: defaultKeywords,
+    duration: item.duration || '45 Mins'
+  };
+});
 
 export const TREATMENT_IMAGES: string[] = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCxFMpWCmamXBrqtr3byekk8IxhE2yyDGA5Csl0k1gX-QAm0WlSNnY7JWxBhi_P-0cI9aXcm0u37Lx1mJD71bT1r7vkf_hkUKHQ5r5ZHO1lyWEJGrjcCjqbPHtMrqaADl5RHnV6wrOK5t6lYD0eDfR9A9e6HQrhvFCGQfDHqTSilyjMctWh0oe2v6Ftf0bnAmbfY9UxcG-hz6RqHNvavTumhSjzrQQzAMwwmIBBDPhKeG4tnbCMg1vvBC-d0H-SmLSihL8Yr0X6CCgA',

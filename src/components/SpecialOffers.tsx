@@ -38,13 +38,22 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
     desktopPage * desktopItemsPerPage
   );
 
-  // Mobile slide tracking
+  // Mobile slide tracking throttled with requestAnimationFrame to prevent re-render jank
+  const scrollRafRef = useRef<number | null>(null);
+
   const handleMobileScroll = () => {
     if (!scrollContainerRef.current) return;
-    const { scrollLeft, clientWidth } = scrollContainerRef.current;
-    const cardWidth = clientWidth * 0.76;
-    const newIndex = Math.round(scrollLeft / (cardWidth || 1));
-    setActiveSlideIndex(Math.min(Math.max(0, newIndex), allOffers.length - 1));
+    if (scrollRafRef.current !== null) return;
+
+    scrollRafRef.current = window.requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      if (!scrollContainerRef.current) return;
+      const { scrollLeft, clientWidth } = scrollContainerRef.current;
+      const cardWidth = clientWidth * 0.76;
+      const newIndex = Math.round(scrollLeft / (cardWidth || 1));
+      const clamped = Math.min(Math.max(0, newIndex), allOffers.length - 1);
+      setActiveSlideIndex(prev => (prev !== clamped ? clamped : prev));
+    });
   };
 
   const scrollToSlide = (index: number) => {
@@ -71,16 +80,18 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
   };
 
   return (
-    <section id="offers" className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-t border-[#D8C2A3]/40 overflow-hidden relative selection:bg-[#D8C2A3]/30">
+    <section id="offers" className="py-16 sm:py-20 md:py-24 bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-t border-[#D8C2A3]/40 overflow-hidden relative selection:bg-[#D8C2A3]/30 isolate">
       {/* Soft Fade Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/20 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/25 to-white/50 pointer-events-none" />
 
-      {/* Luxury Ambient Light Blooms */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-gradient-to-b from-[#D8C2A3]/30 via-[#ecdcc8]/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-28 w-[500px] h-[500px] bg-[#ecdcc8]/25 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 -left-28 w-[500px] h-[500px] bg-[#e4d2bc]/30 rounded-full blur-3xl" />
-      </div>
+      {/* Luxury Ambient Light Blooms (GPU-accelerated pre-computed radial gradients, zero blur filter lag) */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-90 transform-gpu"
+        style={{
+          background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 100% 35%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 0% 90%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)',
+          transform: 'translateZ(0)'
+        }}
+      />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         
@@ -95,25 +106,25 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
           <div className="w-16 h-0.5 bg-luxury-gold mx-auto" />
         </div>
 
-        {/* 1. MOBILE & TABLET VIEW: Horizontally scrollable cards with slightly visible next card */}
+        {/* 1. MOBILE & TABLET VIEW: Horizontally scrollable cards with hardware acceleration */}
         <div
           ref={scrollContainerRef}
           onScroll={handleMobileScroll}
-          className="flex lg:hidden overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-6 max-w-6xl mx-auto pb-4 px-4 -mx-4 no-scrollbar scroll-smooth items-stretch"
+          className="flex lg:hidden overflow-x-auto snap-x snap-mandatory gap-4 sm:gap-6 max-w-6xl mx-auto pb-4 px-4 -mx-4 no-scrollbar scroll-smooth items-stretch touch-pan-x overscroll-x-contain"
         >
           {allOffers.map((offer) => {
             const isRose = offer.theme === 'rose';
             return (
               <div
                 key={offer.id}
-                className={`w-[76vw] min-w-[76vw] max-w-[76vw] sm:w-[360px] sm:min-w-[360px] sm:max-w-[360px] min-h-[410px] sm:min-h-[460px] snap-start shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border relative transition-all duration-300 hover:shadow-xl flex flex-col justify-between ${
+                className={`w-[76vw] min-w-[76vw] max-w-[76vw] sm:w-[360px] sm:min-w-[360px] sm:max-w-[360px] min-h-[410px] sm:min-h-[460px] snap-start shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border relative transition-all duration-300 hover:shadow-xl flex flex-col justify-between transform-gpu will-change-transform ${
                   isRose
                     ? 'bg-gradient-to-br from-[#ffffff] via-[#fff5f5] to-[#fdebeb] border-[#f5d0d0] shadow-[0_10px_30px_-8px_rgba(244,180,180,0.35)]'
                     : 'bg-gradient-to-br from-[#ffffff] via-[#fbf8f3] to-[#f4ece0] border-[#e8dcc8] shadow-[0_10px_30px_-8px_rgba(216,194,163,0.35)]'
                 }`}
               >
                 {/* Floating decor badge */}
-                <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-md border border-white/60 p-2 rounded-full shadow-xs">
+                <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 bg-white/95 border border-white/70 p-2 rounded-full shadow-xs">
                   <Sparkles className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isRose ? 'text-rose-gold-dark' : 'text-luxury-gold'}`} />
                 </div>
 
@@ -145,7 +156,9 @@ export default function SpecialOffers({ onClaimOffer, treatmentId, category }: S
                   <div className="w-full flex justify-center relative mt-2 sm:mt-4">
                     <img
                       alt={`${offer.title} Promotional Pack`}
-                      className={`h-32 sm:h-42 w-auto object-contain drop-shadow-md transition-transform duration-500 hover:scale-105 ${
+                      loading="lazy"
+                      decoding="async"
+                      className={`h-32 sm:h-42 w-auto object-contain transition-transform duration-500 hover:scale-105 ${
                         !isRose ? 'opacity-95' : ''
                       }`}
                       src={offer.image}

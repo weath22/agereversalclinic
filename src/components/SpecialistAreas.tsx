@@ -43,22 +43,21 @@ export default function SpecialistAreas({
       setLiveAreasConfig(getSpecialistAreasConfig());
     };
     window.addEventListener('master_services_updated', handleMasterServicesUpdate);
+    window.addEventListener('specialist_areas_updated', handleMasterServicesUpdate);
     window.addEventListener('storage', handleMasterServicesUpdate);
     return () => {
       window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
+      window.removeEventListener('specialist_areas_updated', handleMasterServicesUpdate);
       window.removeEventListener('storage', handleMasterServicesUpdate);
     };
   }, []);
 
-  // Dynamic treatment database customization store (Task 6.6)
-  const customDb = getTreatmentDetailsConfig();
-
-  // Derive specialist area cards from live masterServices + config
+  // Derive specialist area cards directly from live masterServices ("Services & Branches")
   const treatmentsList: SpecialistTreatment[] = useMemo(() => {
     const sourceServices =
       masterServices && masterServices.length > 0 ? masterServices : ALL_SPECIALIST_TREATMENTS;
 
-    const baseList: SpecialistTreatment[] = sourceServices.map((service) => {
+    return sourceServices.map((service) => {
       const staticMatch = ALL_SPECIALIST_TREATMENTS.find(
         (m) =>
           m.id.toLowerCase() === service.id.toLowerCase() ||
@@ -77,6 +76,14 @@ export default function SpecialistAreas({
         service.transformationCategory ||
         inferTransformationCategoryFromBranch(branch, service.title);
 
+      const resolvedImage =
+        service.image ||
+        areaMatch?.image ||
+        service.coverMedia?.url ||
+        areaMatch?.coverMedia?.url ||
+        staticMatch?.image ||
+        '';
+
       return {
         id: service.id,
         title: service.title,
@@ -85,34 +92,20 @@ export default function SpecialistAreas({
         transformationCategory,
         description:
           service.description || areaMatch?.description || staticMatch?.description || '',
-        image: service.image || areaMatch?.image || staticMatch?.image || '',
+        image: resolvedImage,
         badge: staticMatch?.badge,
         duration: service.duration || staticMatch?.duration,
-        coverMedia: service.coverMedia || areaMatch?.coverMedia || staticMatch?.coverMedia,
+        coverMedia: service.coverMedia
+          ? { ...service.coverMedia, url: resolvedImage }
+          : areaMatch?.coverMedia
+          ? { ...areaMatch.coverMedia, url: resolvedImage }
+          : staticMatch?.coverMedia
+          ? { ...staticMatch.coverMedia, url: resolvedImage }
+          : undefined,
         seoKeywords: service.seoKeywords || areaMatch?.seoKeywords || staticMatch?.seoKeywords,
       };
     });
-
-    if (!customDb) return baseList;
-
-    return baseList.map((t) => {
-      const match =
-        customDb[t.id] ||
-        Object.values(customDb).find(
-          (d: any) =>
-            (d.id && d.id.toLowerCase() === t.id.toLowerCase()) ||
-            (d.title && d.title.toLowerCase() === t.title.toLowerCase())
-        );
-      if (match && match.coverMedia?.url) {
-        return {
-          ...t,
-          image: match.coverMedia.url,
-          coverMedia: match.coverMedia,
-        };
-      }
-      return t;
-    });
-  }, [masterServices, liveAreasConfig, customDb]);
+  }, [masterServices, liveAreasConfig]);
 
   const itemsPerPage = 4;
   const totalPages = Math.ceil(treatmentsList.length / itemsPerPage) || 1;
@@ -187,7 +180,7 @@ export default function SpecialistAreas({
                 >
                   <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-luxury-secondary relative">
                     <img
-                      src={treatment.coverMedia?.url || treatment.image}
+                      src={treatment.image || treatment.coverMedia?.url}
                       alt={treatment.coverMedia?.altText || treatment.title}
                       title={treatment.coverMedia?.seoTitle || treatment.title}
                       loading="lazy"

@@ -152,9 +152,15 @@ export const MasterServicesManager: React.FC = () => {
   };
 
   const uploadServiceImagePersisted = async (serviceId: string, file: File, previousUrl?: string): Promise<string | null> => {
-    // Convert file to dataUrl and upload to /api/admin/treatments/:id/image so it saves
-    // to both public/assets/treatments/ and src/assets/images/treatments/ for permanent deployment persistence
-    const cleanId = slugifyServiceId(serviceId || file.name.replace(/\.[^/.]+$/, ''));
+    // Primary: Upload to general /api/admin/upload-asset endpoint (writes to public/assets & src/assets/images)
+    // so Services & Branches images target the Homepage "Specialist Areas" cards without overwriting treatment pricing images
+    const assetRes = await uploadAssetFile(file, previousUrl);
+    if (assetRes.success && assetRes.url) {
+      return assetRes.url;
+    }
+
+    // Fallback to direct dataUrl endpoint if needed
+    const cleanId = slugifyServiceId(`specialist-area-${serviceId || file.name.replace(/\.[^/.]+$/, '')}`);
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -179,14 +185,9 @@ export const MasterServicesManager: React.FC = () => {
         }
       }
     } catch (err) {
-      console.warn('Direct treatment image endpoint fallback:', err);
+      console.warn('Direct image endpoint fallback failed:', err);
     }
 
-    // Fallback to general /api/admin/upload-asset endpoint (writes to public/assets & src/assets/images)
-    const fallbackRes = await uploadAssetFile(file, previousUrl);
-    if (fallbackRes.success && fallbackRes.url) {
-      return fallbackRes.url;
-    }
     return null;
   };
 
@@ -213,7 +214,7 @@ export const MasterServicesManager: React.FC = () => {
               }
             : s
         );
-        persistAndSync(updated, 'Photo saved to project files');
+        persistAndSync(updated, 'Photo saved to Specialist Areas');
       }
     } catch (err) {
       console.error('Failed to upload card image:', err);
@@ -303,6 +304,7 @@ export const MasterServicesManager: React.FC = () => {
         counter += 1;
       }
 
+      const resolvedNewImage = modalDraft.image.trim() || '/assets/images/treatments/specialist-profhilo.jpg';
       const newService: SpecialistArea = {
         id: uniqueId,
         number: String(services.length + 1).padStart(2, '0'),
@@ -310,7 +312,14 @@ export const MasterServicesManager: React.FC = () => {
         description:
           modalDraft.description.trim() ||
           `Bespoke ${cleanTitle} treatment tailored for natural, clinically proven results.`,
-        image: modalDraft.image.trim() || '/assets/images/treatments/specialist-profhilo.jpg',
+        image: resolvedNewImage,
+        coverMedia: {
+          url: resolvedNewImage,
+          mediaType: 'image',
+          altText: `${cleanTitle} clinical aesthetic treatment at Age Reversal Clinic`,
+          seoTitle: `${cleanTitle} - Specialist Care`,
+          seoKeywords: [cleanTitle.toLowerCase()],
+        },
         pricingCategory: branch,
         category: branch,
         transformationCategory,
@@ -322,21 +331,30 @@ export const MasterServicesManager: React.FC = () => {
       const next = [...services, newService];
       persistAndSync(next, `Added "${cleanTitle}"`);
     } else {
-      const next = services.map((s) =>
-        s.id === modalDraft.id
-          ? {
-              ...s,
-              title: cleanTitle,
-              pricingCategory: branch,
-              category: branch,
-              transformationCategory,
-              image: modalDraft.image.trim() || s.image,
-              description: modalDraft.description.trim() || s.description,
-              price: modalDraft.price.trim() || s.price || 'From £150',
-              duration: modalDraft.duration.trim() || s.duration || '45–60 Mins',
-            }
-          : s
-      );
+      const next = services.map((s) => {
+        if (s.id !== modalDraft.id) return s;
+        const resolvedImg = modalDraft.image.trim() || s.image;
+        return {
+          ...s,
+          title: cleanTitle,
+          pricingCategory: branch,
+          category: branch,
+          transformationCategory,
+          image: resolvedImg,
+          coverMedia: {
+            ...(s.coverMedia || {
+              mediaType: 'image',
+              altText: `${cleanTitle} clinical aesthetic treatment at Age Reversal Clinic`,
+              seoTitle: `${cleanTitle} - Specialist Care`,
+              seoKeywords: s.seoKeywords || [cleanTitle.toLowerCase()],
+            }),
+            url: resolvedImg,
+          },
+          description: modalDraft.description.trim() || s.description,
+          price: modalDraft.price.trim() || s.price || 'From £150',
+          duration: modalDraft.duration.trim() || s.duration || '45–60 Mins',
+        };
+      });
       persistAndSync(next, `Updated "${cleanTitle}"`);
     }
 

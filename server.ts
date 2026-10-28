@@ -7,8 +7,10 @@ import {
   filterAndSortTreatmentCards,
   TreatmentSortOption,
   DEFAULT_TREATMENT_TAXONOMY,
+  inferTreatmentSubGroup,
 } from './src/data/treatmentPricing.ts';
 import { CLINIC_DATA } from './src/data/clinicInfo.ts';
+import { TREATMENTS } from './src/data.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +53,7 @@ const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
 const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
 const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
 const specialistTreatmentsPath = path.resolve(__dirname, 'src/data/specialistTreatments.ts');
+const dataTsPath = path.resolve(__dirname, 'src/data.ts');
 
 // ============================================================================
 // TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
@@ -66,8 +69,8 @@ try {
   ];
 
   // Read active configuration files so the duplicate-extension cleaner never deletes
-  // any file actively referenced in clinicInfo.ts, specialistTreatments.ts, or siteCustomizations.json
-  const activeReferenceContent = [clinicInfoPath, specialistTreatmentsPath, customizationsPath]
+  // any file actively referenced in clinicInfo.ts, specialistTreatments.ts, data.ts, or siteCustomizations.json
+  const activeReferenceContent = [clinicInfoPath, specialistTreatmentsPath, dataTsPath, customizationsPath]
     .map((filePath) => {
       try {
         return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
@@ -282,6 +285,239 @@ function syncSpecialistTreatmentsTs(services: any[]): void {
   } catch (err) {
     console.warn('[Admin] Could not sync specialistTreatments.ts:', err);
   }
+}
+
+/**
+ * Exact 10-column projection for Homepage Treatments bento cards:
+ * (id, name, stepNumber, tag, duration, description, image, imageAlt, seoTitle, seoKeywords)
+ */
+function projectServerHomepageTreatmentCard(item: any, idx: number = 0) {
+  const fallbackSeed =
+    TREATMENTS.find(
+      (t: any) =>
+        t.id === item?.id ||
+        String(t.name || '').toLowerCase() === String(item?.name || item?.title || '').toLowerCase()
+    ) || TREATMENTS[idx % Math.max(1, TREATMENTS.length)];
+
+  const cleanName = String(item?.name || item?.title || fallbackSeed?.name || `Treatment ${idx + 1}`).trim();
+  const cleanId =
+    String(item?.id || fallbackSeed?.id || '')
+      .trim() ||
+    cleanName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') ||
+    `treatment-${idx + 1}`;
+
+  const inferred = inferTreatmentSubGroup({
+    id: cleanId,
+    title: cleanName,
+    category: item?.tag || item?.pricingCategory || item?.category || fallbackSeed?.tag,
+    badge: item?.subCategory || item?.badge,
+  });
+
+  const cleanSubGroupId = String(
+    item?.subGroupId || fallbackSeed?.subGroupId || inferred.subGroupId || ''
+  ).trim();
+  const cleanSubCategory = String(
+    item?.subCategory || fallbackSeed?.subCategory || inferred.subCategory || cleanName
+  ).trim();
+
+  const rawTag = String(
+    item?.tag ||
+      item?.pricingCategory ||
+      item?.category ||
+      fallbackSeed?.tag ||
+      inferred.parentCategory ||
+      'Face & Injectables'
+  ).trim();
+  const cleanTag = rawTag === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawTag;
+
+  const cleanStepNumber = String(item?.stepNumber || String(idx + 1).padStart(2, '0')).trim();
+  const cleanDuration = String(item?.duration || item?.procedureTime || fallbackSeed?.duration || '45 - 60 Mins').trim();
+  const cleanDescription = String(
+    item?.description ||
+      fallbackSeed?.description ||
+      `Bespoke ${cleanName} clinical protocol performed at Age Reversal Clinic.`
+  ).trim();
+  const rawImg = String(item?.image || '').trim();
+  const cleanRawImg = rawImg && !rawImg.includes('unsplash.com') ? rawImg : '';
+  const cleanImage = String(
+    cleanRawImg || fallbackSeed?.image || '/assets/images/treatments/specialist-profhilo.jpg'
+  ).trim();
+  const cleanImageAlt = String(
+    item?.imageAlt ||
+      fallbackSeed?.imageAlt ||
+      `${cleanName} — ${cleanSubCategory} (${cleanTag}) at Age Reversal Clinic London`
+  ).trim();
+  const cleanSeoTitle = String(
+    item?.seoTitle ||
+      fallbackSeed?.seoTitle ||
+      `${cleanName} | ${cleanSubCategory} — Age Reversal Clinic`
+  ).trim();
+  const rawKeywords = Array.isArray(item?.seoKeywords) && item.seoKeywords.length > 0
+    ? item.seoKeywords
+    : Array.isArray(fallbackSeed?.seoKeywords) && fallbackSeed.seoKeywords.length > 0
+    ? fallbackSeed.seoKeywords
+    : [
+        cleanName.toLowerCase(),
+        cleanSubCategory.toLowerCase(),
+        cleanTag.toLowerCase(),
+        `${cleanName.toLowerCase()} london`,
+        'age reversal clinic treatment',
+        'medical aesthetics london',
+      ];
+  const cleanSeoKeywords = Array.from(
+    new Set(
+      rawKeywords
+        .map((k: unknown) => String(k || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+  return {
+    id: cleanId,
+    name: cleanName,
+    stepNumber: cleanStepNumber,
+    tag: cleanTag,
+    subGroupId: cleanSubGroupId,
+    subCategory: cleanSubCategory,
+    duration: cleanDuration,
+    description: cleanDescription,
+    image: cleanImage,
+    imageAlt: cleanImageAlt,
+    seoTitle: cleanSeoTitle,
+    seoKeywords: cleanSeoKeywords,
+  };
+}
+
+/**
+ * Syncs homepage_treatments_config directly into src/data.ts (TREATMENTS array)
+ * while keeping it decoupled from specialistTreatments.ts.
+ */
+function syncHomepageTreatmentsDataTs(treatmentsConfig: any): void {
+  if (
+    !treatmentsConfig ||
+    !Array.isArray(treatmentsConfig.treatments) ||
+    treatmentsConfig.treatments.length === 0 ||
+    !fs.existsSync(dataTsPath)
+  ) {
+    return;
+  }
+  try {
+    const projectedList = treatmentsConfig.treatments.map((item: any, idx: number) =>
+      projectServerHomepageTreatmentCard(item, idx)
+    );
+    const existingContent = fs.readFileSync(dataTsPath, 'utf-8');
+    const startMarker = 'export const TREATMENTS: TreatmentType[] =';
+    const endMarker = 'export const TREATMENT_IMAGES: string[] =';
+    const startIdx = existingContent.indexOf(startMarker);
+    const endIdx = existingContent.indexOf(endMarker);
+
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+      const updatedTs =
+        existingContent.slice(0, startIdx) +
+        `${startMarker} ${JSON.stringify(projectedList, null, 2)};\n\n` +
+        existingContent.slice(endIdx);
+      fs.writeFileSync(dataTsPath, updatedTs, 'utf-8');
+      console.log(`[Admin] Synced ${projectedList.length} Homepage Treatments (with SEO metadata) to ${dataTsPath}`);
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not sync homepage treatments to src/data.ts:', err);
+  }
+}
+
+/**
+ * Collects all /assets/treatments/... and /assets/... URLs currently referenced across
+ * homepage_treatments_config, treatment_pricing_data, master_services_config_v1, and specialist areas
+ * so replaced files can be safely deleted without removing shared assets.
+ */
+function collectActiveTreatmentAssetUrls(customizations: Record<string, any>): Set<string> {
+  const active = new Set<string>();
+  const addUrl = (val: unknown) => {
+    if (typeof val === 'string' && val.trim()) {
+      const clean = val.split('?')[0].split('#')[0].trim();
+      if (clean.startsWith('/assets/')) {
+        active.add(clean);
+      }
+    }
+  };
+
+  const treatCfg = customizations?.homepage_treatments_config;
+  if (treatCfg && Array.isArray(treatCfg.treatments)) {
+    for (const item of treatCfg.treatments) {
+      addUrl(item?.image);
+    }
+  }
+  if (Array.isArray(customizations?.treatment_pricing_data)) {
+    for (const item of customizations.treatment_pricing_data) {
+      addUrl(item?.image);
+      addUrl(item?.coverMedia?.url);
+    }
+  }
+  if (Array.isArray(customizations?.master_services_config_v1)) {
+    for (const item of customizations.master_services_config_v1) {
+      addUrl(item?.image);
+      addUrl(item?.coverMedia?.url);
+    }
+  }
+  if (Array.isArray(customizations?.homepage_specialist_areas_config_v4?.areas)) {
+    for (const item of customizations.homepage_specialist_areas_config_v4.areas) {
+      addUrl(item?.image);
+      addUrl(item?.coverMedia?.url);
+    }
+  }
+  for (const item of TREATMENT_PRICING_DATA) {
+    addUrl((item as any)?.image);
+  }
+  return active;
+}
+
+/**
+ * Deletes a replaced /assets/treatments/<file> (or /assets/<file>) from both public and src directories
+ * if it is not referenced in activeUrlsSet and is not a protected static seed file.
+ */
+function deleteReplacedTreatmentAssetFile(oldUrl: string, activeUrlsSet: Set<string>): string[] {
+  const deleted: string[] = [];
+  if (!oldUrl || typeof oldUrl !== 'string') return deleted;
+
+  const cleanPath = oldUrl.split('?')[0].split('#')[0].trim();
+  if (!cleanPath.startsWith('/assets/')) return deleted;
+  if (cleanPath.startsWith('/assets/aistudio/') || cleanPath.startsWith('/assets/images/treatments/specialist-')) {
+    return deleted;
+  }
+
+  const fileName = path.basename(cleanPath);
+  if (!fileName || fileName.startsWith('specialist-')) return deleted;
+
+  for (const activeUrl of activeUrlsSet) {
+    const activeClean = activeUrl.split('?')[0].split('#')[0].trim();
+    if (activeClean === cleanPath || path.basename(activeClean) === fileName) {
+      return deleted;
+    }
+  }
+
+  const isTreatmentSubdir = cleanPath.startsWith('/assets/treatments/');
+  const targetDirs = isTreatmentSubdir
+    ? [publicTreatmentsDir, srcTreatmentsDir, ...(fs.existsSync(distTreatmentsDir) ? [distTreatmentsDir] : [])]
+    : path.posix.dirname(cleanPath) === '/assets'
+    ? [publicAssetsDir, srcAssetsDir, ...(fs.existsSync(distAssetsDir) ? [distAssetsDir] : [])]
+    : [];
+
+  for (const dir of targetDirs) {
+    try {
+      const fullPath = path.join(dir, fileName);
+      if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+        fs.unlinkSync(fullPath);
+        deleted.push(fileName);
+        console.log(`[Admin Treatment Cleanup] Deleted replaced treatment asset: ${fullPath}`);
+      }
+    } catch (err) {
+      console.warn(`[Admin Treatment Cleanup] Could not delete ${fileName} from ${dir}:`, err);
+    }
+  }
+
+  return [...new Set(deleted)];
 }
 
 function syncTreatmentTaxonomyTs(taxonomy: any[]): void {
@@ -609,8 +845,18 @@ const parseClinicDataFromTsFile = (): Record<string, any> | null => {
     if (jsonBlock.endsWith(';')) {
       jsonBlock = jsonBlock.slice(0, -1).trim();
     }
-    return JSON.parse(jsonBlock);
-  } catch {
+    try {
+      return JSON.parse(jsonBlock);
+    } catch {
+      // Robust fallback for JS object literals (single quotes, trailing commas, unquoted keys)
+      const sanitized = Function(`"use strict"; return (${jsonBlock});`)();
+      if (sanitized && typeof sanitized === 'object') {
+        return sanitized;
+      }
+      return null;
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not parse clinicInfo.ts:', err);
     return null;
   }
 };
@@ -857,49 +1103,15 @@ const collectClinicDataAssetUrls = (clinicData: any): string[] => {
   return rawUrls;
 };
 
-// Helper: Delete a replaced clinicInfo.ts asset file from both public/assets/ and src/assets/images/
-// while ensuring it is not still referenced by another active slot in clinicInfo.ts
-const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string>): boolean => {
-  if (!oldUrl || typeof oldUrl !== 'string') return false;
-
-  const cleanPath = oldUrl.split('?')[0].split('#')[0].trim();
-  if (!cleanPath.startsWith('/assets/')) return false;
-
-  // Only manage files directly under /assets/<filename> (do not touch /assets/treatments/, /assets/transformations/, or /assets/aistudio/)
-  if (path.posix.dirname(cleanPath) !== '/assets') {
-    return false;
-  }
-
-  const fileName = path.basename(cleanPath);
-  if (!fileName) return false;
-
-  // Ensure the file is not still referenced by another slot in clinicInfo.ts
-  for (const activeUrl of activeUrlsSet) {
-    const activeClean = activeUrl.split('?')[0].split('#')[0].trim();
-    if (activeClean === cleanPath || path.basename(activeClean) === fileName) {
-      return false;
-    }
-  }
-
-  let deletedAny = false;
-  for (const targetDir of [publicAssetsDir, srcAssetsDir]) {
-    try {
-      const targetFilePath = path.join(targetDir, fileName);
-      if (fs.existsSync(targetFilePath) && fs.statSync(targetFilePath).isFile()) {
-        fs.unlinkSync(targetFilePath);
-        deletedAny = true;
-        console.log(`[Admin Asset Cleanup] Deleted replaced clinic asset: ${targetFilePath}`);
-      }
-    } catch (unlinkErr) {
-      console.warn(`[Admin Asset Cleanup] Could not delete ${fileName} from ${targetDir}:`, unlinkErr);
-    }
-  }
-
-  return deletedAny;
+// Helper: Safely preserve all uploaded clinic assets on disk (never delete uploaded user assets)
+const deleteReplacedClinicAssetFile = (_oldUrl: string, _activeUrlsSet: Set<string>): boolean => {
+  // Safety rule: Never delete uploaded clinic assets from disk on update or replacement.
+  // Preserving assets prevents image loss when updating files, drafting changes, or switching branches.
+  return false;
 };
 
 // Helper: Inspect all image paths in clinicData and ensure any /assets/... file
-// exists in both public/assets/ and src/assets/images/
+// exists in public/assets/, src/assets/images/, and dist/assets/
 const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
   if (!clinicData || typeof clinicData !== 'object') return 0;
 
@@ -914,10 +1126,13 @@ const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
 
     if (cleanPath.startsWith('/assets/treatments/')) {
       requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
+      if (fs.existsSync(distTreatmentsDir)) requiredDirs.push(distTreatmentsDir);
     } else if (cleanPath.startsWith('/assets/transformations/')) {
       requiredDirs = [publicTransformationsDir, srcTransformationsDir];
+      if (fs.existsSync(distTransformationsDir)) requiredDirs.push(distTransformationsDir);
     } else {
       requiredDirs = [publicAssetsDir, srcAssetsDir];
+      if (fs.existsSync(distAssetsDir)) requiredDirs.push(distAssetsDir);
     }
 
     const existingSourcePath = requiredDirs
@@ -963,8 +1178,6 @@ const handleSaveClinicData = (req: any, res: any) => {
       return res.status(400).json({ success: false, error: 'Invalid clinicData object. Must include at least a clinic name.' });
     }
 
-    // Collect previous clinicInfo.ts & siteCustomizations.json image URLs before overwriting
-    const previousTsData = parseClinicDataFromTsFile();
     let existing: Record<string, any> = {};
     if (fs.existsSync(customizationsPath)) {
       try {
@@ -973,24 +1186,12 @@ const handleSaveClinicData = (req: any, res: any) => {
         existing = {};
       }
     }
-    const previousUrls = new Set<string>([
-      ...collectClinicDataAssetUrls(previousTsData),
-      ...collectClinicDataAssetUrls(existing.clinic_info_data),
-    ]);
 
     // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
-    // between public/assets/ and src/assets/images/
+    // across public/assets/, src/assets/images/, and dist/assets/
     const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
     if (repairedAssetCount > 0) {
       console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
-    }
-
-    // 0b. Delete any replaced or removed clinicInfo.ts assets from public/assets/ and src/assets/images/
-    const activeUrlsSet = new Set<string>(collectClinicDataAssetUrls(clinicData));
-    for (const oldUrl of previousUrls) {
-      if (!activeUrlsSet.has(oldUrl)) {
-        deleteReplacedClinicAssetFile(oldUrl, activeUrlsSet);
-      }
     }
 
     // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
@@ -1000,6 +1201,24 @@ const handleSaveClinicData = (req: any, res: any) => {
 
     // 2. Also persist / cache to siteCustomizations.json under clinic_info_data key
     existing.clinic_info_data = clinicData;
+
+    // Synchronize header config logo when clinic logo is set
+    const resolvedHeaderLogo = clinicData.logo?.icon || clinicData.logo?.full;
+    if (resolvedHeaderLogo) {
+      if (!existing.homepage_header_config) {
+        existing.homepage_header_config = {
+          logoUrl: resolvedHeaderLogo,
+          primaryName: clinicData.name || "Age Reversal",
+          secondaryName: "Clinic"
+        };
+      } else {
+        existing.homepage_header_config.logoUrl = resolvedHeaderLogo;
+        if (clinicData.name) {
+          existing.homepage_header_config.primaryName = clinicData.name;
+        }
+      }
+    }
+
     if (Array.isArray(clinicData.locations)) {
       if (!existing.homepage_locations_config) {
         existing.homepage_locations_config = {
@@ -1452,10 +1671,82 @@ app.post('/api/admin/save-to-files', (req, res) => {
       }
     }
 
+    // Preserve existing homepage_treatments_config card images & SEO metadata so saving
+    // Services & Branches (master_services_config_v1 / homepage_specialist_areas_config_v4) never overwrites them
+    const prevTreatmentsConfig = existing.homepage_treatments_config;
+
     if (allConfigs && typeof allConfigs === 'object') {
       existing = { ...existing, ...allConfigs };
     } else if (key && data !== undefined) {
       existing[key] = data;
+    }
+
+    // If Services & Branches was saved, ensure any existing custom images & SEO fields in homepage_treatments_config are preserved
+    if (
+      (key === 'master_services_config_v1' || key === 'homepage_specialist_areas_config_v4') &&
+      prevTreatmentsConfig &&
+      Array.isArray(prevTreatmentsConfig.treatments)
+    ) {
+      const prevById = new Map<string, any>(
+        prevTreatmentsConfig.treatments.map((t: any) => [String(t.id), t])
+      );
+      const currentList = Array.isArray(existing.homepage_treatments_config?.treatments)
+        ? existing.homepage_treatments_config.treatments
+        : prevTreatmentsConfig.treatments;
+
+      existing.homepage_treatments_config = {
+        ...prevTreatmentsConfig,
+        ...(existing.homepage_treatments_config || {}),
+        seoKeywords:
+          Array.isArray(existing.homepage_treatments_config?.seoKeywords) &&
+          existing.homepage_treatments_config.seoKeywords.length > 0
+            ? existing.homepage_treatments_config.seoKeywords
+            : prevTreatmentsConfig.seoKeywords || [],
+        treatments: currentList.map((item: any, idx: number) => {
+          const prevItem = prevById.get(String(item.id));
+          return projectServerHomepageTreatmentCard(
+            {
+              ...item,
+              image: prevItem?.image || item.image,
+              imageAlt: prevItem?.imageAlt || item.imageAlt,
+              seoTitle: prevItem?.seoTitle || item.seoTitle,
+              seoKeywords:
+                Array.isArray(prevItem?.seoKeywords) && prevItem.seoKeywords.length > 0
+                  ? prevItem.seoKeywords
+                  : item.seoKeywords,
+            },
+            idx
+          );
+        }),
+      };
+    }
+
+    // If homepage_treatments_config is part of this save, project exact required fields and bake into src/data.ts
+    if (
+      existing.homepage_treatments_config &&
+      typeof existing.homepage_treatments_config === 'object' &&
+      Array.isArray(existing.homepage_treatments_config.treatments)
+    ) {
+      existing.homepage_treatments_config = {
+        editorialHeading: existing.homepage_treatments_config.editorialHeading || 'rejuvenation',
+        editorialSub: existing.homepage_treatments_config.editorialSub || 'Begin your transformation',
+        description:
+          existing.homepage_treatments_config.description ||
+          'At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.',
+        seoKeywords: Array.isArray(existing.homepage_treatments_config.seoKeywords)
+          ? existing.homepage_treatments_config.seoKeywords
+          : [
+              'age reversal clinic london treatments',
+              'regenerative aesthetics london',
+              'non-surgical facial rejuvenation',
+              'body sculpting & skin boosters london',
+              'clinical dermatology procedures',
+            ],
+        treatments: existing.homepage_treatments_config.treatments.map((item: any, idx: number) =>
+          projectServerHomepageTreatmentCard(item, idx)
+        ),
+      };
+      syncHomepageTreatmentsDataTs(existing.homepage_treatments_config);
     }
 
     // If clinic_info_data is part of this save, also bake directly into src/data/clinicInfo.ts
@@ -1503,6 +1794,201 @@ app.post('/api/admin/save-to-files', (req, res) => {
     });
   } catch (error) {
     console.error('Error writing customizations to file:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// ============================================================================
+// HOMEPAGE TREATMENTS BENTO SECTION: PAGINATED QUERY, PERSISTENCE & WEBP UPLOAD
+// ============================================================================
+app.get('/api/admin/homepage-treatments', (req, res) => {
+  try {
+    let rawConfig: any = null;
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+        if (existing && existing.homepage_treatments_config) {
+          rawConfig = existing.homepage_treatments_config;
+        }
+      } catch {
+        rawConfig = null;
+      }
+    }
+
+    const savedById = new Map<string, any>();
+    if (rawConfig && Array.isArray(rawConfig.treatments)) {
+      for (const t of rawConfig.treatments) {
+        if (t && t.id) {
+          savedById.set(String(t.id).trim().toLowerCase(), t);
+        }
+      }
+    }
+
+    // Project strictly the required card columns for every subcategory treatment card
+    const allProjected = TREATMENTS.map((baseItem: any, idx: number) => {
+      const saved =
+        savedById.get(String(baseItem.id || '').toLowerCase()) ||
+        savedById.get(String(baseItem.subGroupId || '').toLowerCase());
+      return projectServerHomepageTreatmentCard(
+        {
+          ...baseItem,
+          ...(saved && saved.id === baseItem.id ? saved : {}),
+          image:
+            (saved && saved.id === baseItem.id && saved.image) ||
+            (saved && saved.image && String(saved.image).startsWith('/assets/treatments/')
+              ? saved.image
+              : baseItem.image),
+        },
+        idx
+      );
+    });
+
+    const tagFilter = req.query.tag || req.query.category ? String(req.query.tag || req.query.category).trim() : '';
+    const subGroupFilter =
+      req.query.subGroupId || req.query.subCategory
+        ? String(req.query.subGroupId || req.query.subCategory).trim().toLowerCase()
+        : '';
+    const searchFilter = req.query.search ? String(req.query.search).trim().toLowerCase() : '';
+
+    const filtered = allProjected.filter((item: any) => {
+      if (tagFilter && tagFilter !== 'ALL' && tagFilter !== 'All' && item.tag.toLowerCase() !== tagFilter.toLowerCase()) {
+        return false;
+      }
+      if (
+        subGroupFilter &&
+        subGroupFilter !== 'all' &&
+        String(item.subGroupId || '').toLowerCase() !== subGroupFilter &&
+        String(item.subCategory || '').toLowerCase() !== subGroupFilter
+      ) {
+        return false;
+      }
+      if (searchFilter) {
+        const hay = `${item.name} ${item.tag} ${item.subCategory} ${item.description} ${item.imageAlt} ${item.seoTitle} ${(item.seoKeywords || []).join(' ')}`.toLowerCase();
+        if (!hay.includes(searchFilter)) return false;
+      }
+      return true;
+    });
+
+    const totalCount = filtered.length;
+    const limit = req.query.limit !== undefined ? Math.max(1, Number(req.query.limit) || 6) : totalCount || 6;
+    const page = req.query.page !== undefined ? Math.max(1, Number(req.query.page) || 1) : 1;
+    const offset =
+      req.query.offset !== undefined
+        ? Math.max(0, Number(req.query.offset) || 0)
+        : (page - 1) * limit;
+
+    const paginatedItems = filtered.slice(offset, offset + limit);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+    const hasMore = offset + paginatedItems.length < totalCount;
+
+    const cleanConfig = {
+      editorialHeading: rawConfig?.editorialHeading || 'rejuvenation',
+      editorialSub: rawConfig?.editorialSub || 'Begin your transformation',
+      description:
+        rawConfig?.description ||
+        'At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.',
+      seoKeywords: Array.isArray(rawConfig?.seoKeywords)
+        ? rawConfig.seoKeywords
+        : [
+            'age reversal clinic london treatments',
+            'regenerative aesthetics london',
+            'non-surgical facial rejuvenation',
+            'body sculpting & skin boosters london',
+            'clinical dermatology procedures',
+          ],
+      treatments: allProjected,
+    };
+
+    return res.json({
+      success: true,
+      config: cleanConfig,
+      data: paginatedItems,
+      items: paginatedItems,
+      totalCount,
+      hasMore,
+      page: Math.floor(offset / limit) + 1,
+      totalPages,
+      offset,
+      limit,
+    });
+  } catch (error) {
+    console.error('[Admin] Error reading Homepage Treatments config:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+app.post('/api/admin/homepage-treatments', (req, res) => {
+  try {
+    const incoming = req.body?.config || req.body?.data || req.body;
+    if (!incoming || !Array.isArray(incoming.treatments)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Homepage Treatments configuration payload.',
+      });
+    }
+
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    // Collect previous treatment image URLs so displaced files in /assets/treatments/ can be cleaned up
+    const previousTreatUrls = new Set<string>();
+    if (Array.isArray(existing.homepage_treatments_config?.treatments)) {
+      for (const item of existing.homepage_treatments_config.treatments) {
+        if (typeof item?.image === 'string' && item.image.startsWith('/assets/treatments/')) {
+          previousTreatUrls.add(item.image.split('?')[0].split('#')[0].trim());
+        }
+      }
+    }
+
+    const normalizedConfig = {
+      editorialHeading: incoming.editorialHeading || 'rejuvenation',
+      editorialSub: incoming.editorialSub || 'Begin your transformation',
+      description:
+        incoming.description ||
+        'At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.',
+      seoKeywords: Array.isArray(incoming.seoKeywords)
+        ? Array.from(new Set(incoming.seoKeywords.map((k: unknown) => String(k || '').trim()).filter(Boolean)))
+        : [
+            'age reversal clinic london treatments',
+            'regenerative aesthetics london',
+            'non-surgical facial rejuvenation',
+            'body sculpting & skin boosters london',
+            'clinical dermatology procedures',
+          ],
+      treatments: incoming.treatments.map((item: any, idx: number) =>
+        projectServerHomepageTreatmentCard(item, idx)
+      ),
+    };
+
+    existing.homepage_treatments_config = normalizedConfig;
+    existing.lastSynced = new Date().toISOString();
+
+    // Clean up any replaced /assets/treatments/ files that are no longer referenced anywhere
+    const activeUrls = collectActiveTreatmentAssetUrls(existing);
+    for (const oldUrl of previousTreatUrls) {
+      if (!activeUrls.has(oldUrl)) {
+        deleteReplacedTreatmentAssetFile(oldUrl, activeUrls);
+      }
+    }
+
+    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    syncHomepageTreatmentsDataTs(normalizedConfig);
+
+    console.log(`[Admin] Persisted Homepage Treatments config to siteCustomizations.json and src/data.ts`);
+    return res.json({
+      success: true,
+      config: normalizedConfig,
+      message: 'Homepage Treatments config saved to siteCustomizations.json and src/data.ts',
+      updatedAt: existing.lastSynced,
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving Homepage Treatments config:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
 });
@@ -1621,10 +2107,10 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
   }
 });
 
-// API: Upload an asset directly into public/assets and src/assets/images
+// API: Upload an asset directly into public/assets (or public/assets/treatments) and src/assets/images
 app.post('/api/admin/upload-asset', (req, res) => {
   try {
-    const { fileName, dataUrl, base64, previousUrl } = req.body;
+    const { fileName, dataUrl, base64, previousUrl, folder, category } = req.body;
     if (!fileName || (!dataUrl && !base64)) {
       return res.status(400).json({ success: false, error: 'Missing fileName or image data' });
     }
@@ -1632,37 +2118,81 @@ app.post('/api/admin/upload-asset', (req, res) => {
     const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
     const buffer = Buffer.from(rawData, 'base64');
 
-    // Clean file name
-    const ext = path.extname(fileName) || '.png';
-    const baseName = path.basename(fileName, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeName = `${Date.now()}-${baseName}${ext}`;
+    const isTreatmentsFolder =
+      folder === 'treatments' ||
+      category === 'treatments' ||
+      (typeof previousUrl === 'string' && previousUrl.startsWith('/assets/treatments/'));
+
+    // Clean file name (force .webp when dataUrl is image/webp or when uploading to treatments folder)
+    const isWebpPayload = typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp');
+    const rawExt = path.extname(fileName) || '.webp';
+    const ext = isTreatmentsFolder || isWebpPayload ? '.webp' : rawExt;
+    const baseName = path
+      .basename(fileName, path.extname(fileName))
+      .replace(/[^a-zA-Z0-9_-]/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
+    const timestamp = Date.now();
+    const safeName = `${baseName || 'asset'}-${timestamp}${ext}`;
+
+    if (isTreatmentsFolder) {
+      const publicTreatPath = path.join(publicTreatmentsDir, safeName);
+      const srcTreatPath = path.join(srcTreatmentsDir, safeName);
+
+      fs.writeFileSync(publicTreatPath, buffer);
+      fs.writeFileSync(srcTreatPath, buffer);
+      if (fs.existsSync(distTreatmentsDir)) {
+        try {
+          fs.writeFileSync(path.join(distTreatmentsDir, safeName), buffer);
+        } catch {}
+      }
+
+      const newTreatmentAssetUrl = `/assets/treatments/${safeName}`;
+
+      if (typeof previousUrl === 'string' && previousUrl.trim()) {
+        const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
+        if (normalizedPrev && normalizedPrev !== newTreatmentAssetUrl) {
+          let existingCustomizations: Record<string, any> = {};
+          if (fs.existsSync(customizationsPath)) {
+            try {
+              existingCustomizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+            } catch {}
+          }
+          const activeSet = collectActiveTreatmentAssetUrls(existingCustomizations);
+          activeSet.delete(normalizedPrev);
+          activeSet.add(newTreatmentAssetUrl);
+          deleteReplacedTreatmentAssetFile(normalizedPrev, activeSet);
+        }
+      }
+
+      console.log(`[Admin] Saved treatment WebP asset to ${newTreatmentAssetUrl}`);
+      return res.json({
+        success: true,
+        url: newTreatmentAssetUrl,
+        rawPath: newTreatmentAssetUrl,
+        fileName: safeName,
+        version: timestamp,
+        message: 'Treatment WebP asset saved to /assets/treatments/ and previous file cleaned up!',
+      });
+    }
+
     const publicAssetPath = path.join(publicAssetsDir, safeName);
     const srcAssetPath = path.join(srcAssetsDir, safeName);
 
-    // Save only to public/assets and src/assets/images (no duplicate copies in public/uploads)
+    // Save to public/assets, src/assets/images, and mirror to dist/assets (if dist exists)
     fs.writeFileSync(publicAssetPath, buffer);
     fs.writeFileSync(srcAssetPath, buffer);
-
-    const newAssetUrl = `/assets/${safeName}`;
-
-    // If replacing an existing clinicInfo.ts image, delete the displaced file from public/assets and src/assets/images
-    // unless it is still referenced by another slot in clinicInfo.ts
-    if (typeof previousUrl === 'string' && previousUrl.trim()) {
-      const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
-      if (normalizedPrev && normalizedPrev !== newAssetUrl) {
-        const currentClinicData = parseClinicDataFromTsFile();
-        const allCurrentUrls = collectClinicDataAssetUrls(currentClinicData);
-        // Remove a single occurrence of normalizedPrev (representing the slot being replaced)
-        const prevIdx = allCurrentUrls.indexOf(normalizedPrev);
-        if (prevIdx !== -1) {
-          allCurrentUrls.splice(prevIdx, 1);
-        }
-        const activeUrlsSet = new Set<string>([...allCurrentUrls, newAssetUrl]);
-        deleteReplacedClinicAssetFile(normalizedPrev, activeUrlsSet);
+    if (fs.existsSync(distAssetsDir)) {
+      try {
+        fs.writeFileSync(path.join(distAssetsDir, safeName), buffer);
+      } catch (distErr) {
+        console.warn(`[Admin] Could not mirror asset to dist/assets/${safeName}:`, distErr);
       }
     }
 
-    console.log(`[Admin] Saved asset to public/assets/${safeName} and src/assets/images/${safeName}`);
+    const newAssetUrl = `/assets/${safeName}`;
+
+    console.log(`[Admin] Saved asset to public/assets/${safeName}, src/assets/images/${safeName}, and mirrored to dist/assets`);
 
     return res.json({
       success: true,
@@ -1676,13 +2206,37 @@ app.post('/api/admin/upload-asset', (req, res) => {
   }
 });
 
-// API: List assets in src/assets/images, public/assets, and public/assets/transformations
+// API: List assets in src/assets/images, public/assets, public/assets/treatments, and public/assets/transformations
 app.get('/api/admin/assets', (_req, res) => {
   try {
     const assetsList: Array<{ name: string; url: string; size: number; mtime: string; location: string }> = [];
     const seen = new Set<string>();
 
-    // Read public/assets/transformations & src/assets/images/transformations first
+    // Read public/assets/treatments & src/assets/images/treatments first
+    for (const treatDir of [publicTreatmentsDir, srcTreatmentsDir]) {
+      if (fs.existsSync(treatDir)) {
+        const files = fs.readdirSync(treatDir);
+        for (const file of files) {
+          const url = `/assets/treatments/${file}`;
+          if (!seen.has(url)) {
+            const fullPath = path.join(treatDir, file);
+            const stat = fs.statSync(fullPath);
+            if (stat.isFile()) {
+              seen.add(url);
+              assetsList.push({
+                name: file,
+                url,
+                size: stat.size,
+                mtime: stat.mtime.toISOString(),
+                location: 'public/assets/treatments'
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Read public/assets/transformations & src/assets/images/transformations
     for (const transDir of [publicTransformationsDir, srcTransformationsDir]) {
       if (fs.existsSync(transDir)) {
         const files = fs.readdirSync(transDir);
@@ -1753,7 +2307,7 @@ app.get('/api/admin/assets', (_req, res) => {
 });
 
 // ============================================================================
-// TREATMENT PRICING CARDS: ID-BASED IMAGE UPLOAD & CLEANUP
+// TREATMENT CARDS (PRICING & HOMEPAGE TREATMENTS): ID-BASED WEBP UPLOAD & CLEANUP
 // ============================================================================
 // API: Upload, replace, and clean previous images for a specific treatment ID
 app.post('/api/admin/treatments/:id/image', (req, res) => {
@@ -1765,34 +2319,34 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
 
     // Standardize treatment ID (lowercase, alphanumeric + hyphens/underscores)
     const sanitizedId = String(rawId).trim().replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
-    const { dataUrl, base64, fileName, extension } = req.body || {};
+    const {
+      dataUrl,
+      base64,
+      previousUrl,
+      scope,
+      target,
+      imageAlt,
+      seoTitle,
+      seoKeywords,
+    } = req.body || {};
 
     if (!dataUrl && !base64) {
       return res.status(400).json({ success: false, error: 'Missing image data (dataUrl or base64 required)' });
     }
 
-    // Determine extension from explicit parameter, fileName, or data URL MIME type
-    let ext = '.webp';
-    if (extension) {
-      ext = extension.startsWith('.') ? extension.toLowerCase() : `.${extension.toLowerCase()}`;
-    } else if (fileName && path.extname(fileName)) {
-      ext = path.extname(fileName).toLowerCase();
-    } else if (dataUrl) {
-      const match = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,/);
-      if (match && match[1]) {
-        const mimeSub = match[1].toLowerCase();
-        if (mimeSub === 'jpeg' || mimeSub === 'jpg') ext = '.jpg';
-        else if (mimeSub === 'png') ext = '.png';
-        else if (mimeSub === 'webp') ext = '.webp';
-        else if (mimeSub === 'svg+xml') ext = '.svg';
-      }
-    }
+    const isHomepageTreatmentScope =
+      scope === 'homepage_treatments' ||
+      target === 'homepage_treatments' ||
+      sanitizedId.startsWith('homepage-');
+
+    const baseCardId = sanitizedId.replace(/^homepage-/, '');
+    const fileStem = isHomepageTreatmentScope ? `homepage-${baseCardId}` : sanitizedId;
 
     // Extract raw base64 buffer
-    const rawData = dataUrl ? dataUrl.replace(/^data:image\/\w+;base64,/, '') : base64;
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
     const buffer = Buffer.from(rawData, 'base64');
 
-    // 1. Scan target directories and delete any previous image matching `${sanitizedId}.*`
+    // 1. Scan target directories and delete any previous image matching `${fileStem}.*`
     // Includes public, src, and production dist directories
     const targetDirs = [publicTreatmentsDir, srcTreatmentsDir];
     if (fs.existsSync(distTreatmentsDir)) {
@@ -1805,8 +2359,7 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
         try {
           const files = fs.readdirSync(dir);
           for (const f of files) {
-            // Delete if file starts with `${sanitizedId}.` regardless of extension (.jpg, .png, .webp, etc.)
-            if (f.startsWith(`${sanitizedId}.`)) {
+            if (f.startsWith(`${fileStem}.`)) {
               const fullPath = path.join(dir, f);
               try {
                 fs.unlinkSync(fullPath);
@@ -1823,8 +2376,8 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
       }
     }
 
-    // 2. Save strictly ONE single .webp image per treatment ID
-    const singleFileName = `${sanitizedId}.webp`;
+    // 2. Save strictly ONE single .webp image per treatment card slot
+    const singleFileName = `${fileStem}.webp`;
     const publicPath = path.join(publicTreatmentsDir, singleFileName);
     const srcPath = path.join(srcTreatmentsDir, singleFileName);
 
@@ -1843,7 +2396,7 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
     const cleanRelativePath = `/assets/treatments/${singleFileName}`;
     const cacheBustedUrl = `${cleanRelativePath}?v=${timestamp}`;
 
-    // 3. Sync: Update siteCustomizations.json and treatmentPricing.ts if matching item exists
+    // 3. Sync: Update siteCustomizations.json (and decoupled target source file)
     try {
       let customizations: Record<string, any> = {};
       if (fs.existsSync(customizationsPath)) {
@@ -1854,43 +2407,123 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
         }
       }
 
-      const sourceList: any[] =
-        customizations.treatment_pricing_data && Array.isArray(customizations.treatment_pricing_data) && customizations.treatment_pricing_data.length > 0
-          ? customizations.treatment_pricing_data
-          : TREATMENT_PRICING_DATA;
+      if (isHomepageTreatmentScope) {
+        // Decoupled persistence for Homepage Treatments card image + SEO metadata
+        const existingTreatConfig = customizations.homepage_treatments_config || {};
+        const sourceTreatments: any[] =
+          Array.isArray(existingTreatConfig.treatments) && existingTreatConfig.treatments.length > 0
+            ? existingTreatConfig.treatments
+            : TREATMENTS;
 
-      let updated = false;
-      const updatedList = sourceList.map((item: any) => {
-        const itemId = String(item.id || '').trim().toLowerCase();
-        const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
-        if (itemId === sanitizedId || normalizedItemId === sanitizedId) {
-          updated = true;
-          return { ...item, image: cleanRelativePath, updatedAt: timestamp };
-        }
-        return item;
-      });
+        let previousCardImageUrl = typeof previousUrl === 'string' ? previousUrl : '';
+        const updatedTreatments = sourceTreatments.map((item: any, idx: number) => {
+          const itemId = String(item.id || '').trim().toLowerCase();
+          const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
+          if (itemId === baseCardId || normalizedItemId === baseCardId) {
+            if (!previousCardImageUrl && typeof item.image === 'string') {
+              previousCardImageUrl = item.image;
+            }
+            return projectServerHomepageTreatmentCard(
+              {
+                ...item,
+                image: cleanRelativePath,
+                ...(typeof imageAlt === 'string' && imageAlt.trim() ? { imageAlt: imageAlt.trim() } : {}),
+                ...(typeof seoTitle === 'string' && seoTitle.trim() ? { seoTitle: seoTitle.trim() } : {}),
+                ...(Array.isArray(seoKeywords) && seoKeywords.length > 0 ? { seoKeywords } : {}),
+              },
+              idx
+            );
+          }
+          return projectServerHomepageTreatmentCard(item, idx);
+        });
 
-      if (updated) {
-        customizations.treatment_pricing_data = updatedList;
+        customizations.homepage_treatments_config = {
+          editorialHeading: existingTreatConfig.editorialHeading || 'rejuvenation',
+          editorialSub: existingTreatConfig.editorialSub || 'Begin your transformation',
+          description:
+            existingTreatConfig.description ||
+            'At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.',
+          seoKeywords: Array.isArray(existingTreatConfig.seoKeywords)
+            ? existingTreatConfig.seoKeywords
+            : [
+                'age reversal clinic london treatments',
+                'regenerative aesthetics london',
+                'non-surgical facial rejuvenation',
+                'body sculpting & skin boosters london',
+                'clinical dermatology procedures',
+              ],
+          treatments: updatedTreatments,
+        };
         customizations.lastSynced = new Date().toISOString();
+
+        if (previousCardImageUrl) {
+          const normPrev = previousCardImageUrl.split('?')[0].split('#')[0].trim();
+          if (normPrev && normPrev !== cleanRelativePath) {
+            const activeSet = collectActiveTreatmentAssetUrls(customizations);
+            activeSet.delete(normPrev);
+            activeSet.add(cleanRelativePath);
+            const extraDeleted = deleteReplacedTreatmentAssetFile(normPrev, activeSet);
+            deletedFiles.push(...extraDeleted);
+          }
+        }
+
         fs.writeFileSync(customizationsPath, JSON.stringify(customizations, null, 2), 'utf-8');
-        const tsCode = generateTreatmentPricingTs(updatedList);
-        fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
-        console.log(`[Admin] Synced updated treatment image directly into treatmentPricing.ts`);
+        syncHomepageTreatmentsDataTs(customizations.homepage_treatments_config);
+        console.log(`[Admin] Synced Homepage Treatment WebP image directly into homepage_treatments_config & src/data.ts`);
+      } else {
+        // Default Treatment Pricing card image sync
+        const sourceList: any[] =
+          customizations.treatment_pricing_data &&
+          Array.isArray(customizations.treatment_pricing_data) &&
+          customizations.treatment_pricing_data.length > 0
+            ? customizations.treatment_pricing_data
+            : TREATMENT_PRICING_DATA;
+
+        let updated = false;
+        const updatedList = sourceList.map((item: any) => {
+          const itemId = String(item.id || '').trim().toLowerCase();
+          const normalizedItemId = itemId.replace(/[^a-zA-Z0-9_-]/g, '-');
+          if (itemId === sanitizedId || normalizedItemId === sanitizedId) {
+            updated = true;
+            return { ...item, image: cleanRelativePath, updatedAt: timestamp };
+          }
+          return item;
+        });
+
+        if (typeof previousUrl === 'string' && previousUrl.trim()) {
+          const normPrev = previousUrl.split('?')[0].split('#')[0].trim();
+          if (normPrev && normPrev !== cleanRelativePath) {
+            const activeSet = collectActiveTreatmentAssetUrls(customizations);
+            activeSet.delete(normPrev);
+            activeSet.add(cleanRelativePath);
+            const extraDeleted = deleteReplacedTreatmentAssetFile(normPrev, activeSet);
+            deletedFiles.push(...extraDeleted);
+          }
+        }
+
+        if (updated) {
+          customizations.treatment_pricing_data = updatedList;
+          customizations.lastSynced = new Date().toISOString();
+          fs.writeFileSync(customizationsPath, JSON.stringify(customizations, null, 2), 'utf-8');
+          const tsCode = generateTreatmentPricingTs(updatedList);
+          fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
+          console.log(`[Admin] Synced updated treatment image directly into treatmentPricing.ts`);
+        }
       }
     } catch (syncErr) {
-      console.warn(`[Admin] Could not sync with treatmentPricing.ts:`, syncErr);
+      console.warn(`[Admin] Could not sync treatment image metadata:`, syncErr);
     }
 
     return res.json({
       success: true,
       id: sanitizedId,
       fileName: singleFileName,
+      url: cleanRelativePath,
       imagePath: cacheBustedUrl,
       rawPath: cleanRelativePath,
       deletedFiles: [...new Set(deletedFiles)],
       version: timestamp,
-      message: `Treatment image for '${sanitizedId}' successfully saved and previous images purged.`
+      message: `Treatment image for '${fileStem}' successfully saved as .webp and previous images purged.`
     });
   } catch (error) {
     console.error('[Admin] Error saving treatment image:', error);

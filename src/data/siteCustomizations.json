@@ -1,10 +1,126 @@
 {
-  "lastSynced": "2026-10-10T07:16:28.094Z",
+  "lastSynced": "2026-10-28T19:56:50.579Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
-    "logoUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
-    "primaryName": "Age Reversal",
+    "logoUrl": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+    "primaryName": "Age Reversal Clinics",
     "secondaryName": "Clinic"
+  },
+  "clinic_info_data": {
+    "name": "Age Reversal Clinics",
+    "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
+    "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
+    "canonicalUrl": "https://agereversalclinics.co.uk",
+    "brandKeywords": [
+      "dermatology clinic london",
+      "harley street dermatologist",
+      "anti-aging clinic london",
+      "botox harley street",
+      "aesthetic dermatology",
+      "Clinical aesthetics UK",
+      "Professional skincare clinic UK",
+      "Aesthetic medicine UK",
+      "Skin rejuvenation clinic UK",
+      "Non-surgical cosmetic treatments UK",
+      "Advanced aesthetics UK",
+      "Cosmetic skin clinic UK",
+      "Medical aesthetics UK",
+      "Aesthetic clinics UK"
+    ],
+    "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
+    "logo": {
+      "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+      "alt": "Age Reversal Clinics Logo",
+      "full": "/assets/1791726190127-arc-logo__2_.webp"
+    },
+    "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+    "interiorPhotos": [
+      "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
+    ],
+    "phone": "+44 (0) 20 7984159517",
+    "email": "agereversalbeautyspa@gmail.com",
+    "whatsapp": "https://wa.me/44207984159517",
+    "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
+    "priceRange": "£",
+    "currency": "GBP",
+    "acceptedPayments": [
+      "Cash",
+      "Credit Card",
+      "Debit Card",
+      "American Express",
+      "Bank Transfer",
+      "Private Medical Insurance"
+    ],
+    "languagesSpoken": [
+      "English",
+      "French"
+    ],
+    "medicalSpecialties": [
+      "Dermatology",
+      "Cosmetic Dermatology",
+      "Aesthetic Medicine",
+      "Anti-Ageing Therapeutics",
+      "Laser Skin Resurfacing",
+      "Minor Skin Surgery"
+    ],
+    "gmcRegistration": "GMC Designated Medical Body #7492014",
+    "cqcStatus": "CQC Registered Provider (Good Rating)",
+    "accreditations": [
+      "Care Quality Commission (CQC) Registered",
+      "General Medical Council (GMC) Compliant",
+      "British Association of Dermatologists (BAD) Member",
+      "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
+      "Save Face Accredited Excellence"
+    ],
+    "locations": [
+      {
+        "id": "location-1791722960928",
+        "name": "Age Reversal Clinic",
+        "address": "Age Reversal Clinic Grove Park",
+        "city": "London",
+        "postalCode": "",
+        "country": "United Kingdom",
+        "phone": "+44 (0) 20 88572000",
+        "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
+        "directionsUrl": "",
+        "latitude": 51.5173,
+        "longitude": -0.1472,
+        "parkingAvailable": false,
+        "wheelchairAccessible": true,
+        "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
+        "imageAlt": ""
+      },
+      {
+        "id": "location-1791728808656",
+        "name": "374 Baring Road London UK",
+        "address": "374 Baring Road Se12 0EF",
+        "city": "London",
+        "postalCode": "",
+        "country": "United Kingdom",
+        "phone": "+44 (0) 20 8857 2000",
+        "hours": "Mon – Sat: 09:00 – 19:00",
+        "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
+        "latitude": 51.5173,
+        "longitude": -0.1472,
+        "parkingAvailable": false,
+        "wheelchairAccessible": false,
+        "image": "/assets/1791729403362-arc-logo__1___2_.webp",
+        "imageAlt": ""
+      }
+    ],
+    "socials": {
+      "facebook": "https://www.facebook.com/agereversalmedspa",
+      "instagram": "https://www.instagram.com/agereversalclinicuk/",
+      "twitter": "",
+      "youtube": "",
+      "linkedin": ""
+    },
+    "googleReviewUrl": "",
+    "consultationConfig": {},
+    "processSection": {},
+    "facilityGallery": {},
+    "trustBrandsSection": {},
+    "accreditationsSection": {}
   },
   "homepage_hero_config_v2": {
     "badge": "Expert Care. Advanced Solutions.",
@@ -15,6 +131,7 @@
   },
   "homepage_why_choose_us_config_v3": {
     "heading": "Why choose Age Reversal Clinic London?",
+    "subheading": "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
     "description": "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
     "pillars": [
       {
@@ -60,34 +177,20 @@
         "title": "Dermatology Clinic of the Year",
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
-        "iconName": "Trophy"
+        "imageUrl": "/src/assets/images/clinic/awards/award_dermatology.jpg"
       },
       {
         "id": "aw-2",
         "title": "Best Non-Surgical Rejuvenation",
         "year": "2025",
         "organization": "Global Cosmetic Congress",
-        "iconName": "Sparkles"
-      },
-      {
-        "id": "aw-3",
-        "title": "Patient Safety Excellence Award",
-        "year": "2024",
-        "organization": "British Health Standards",
-        "iconName": "ShieldCheck"
-      },
-      {
-        "id": "aw-4",
-        "title": "Best Laser Skin Clinic",
-        "year": "2024",
-        "organization": "International Laser Association",
-        "iconName": "Award"
+        "imageUrl": "/src/assets/images/clinic/awards/award_rejuvenation.jpg"
       }
     ]
   },
   "homepage_locations_config": {
     "heading": "Our Locations",
-    "description": "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
+    "description": "Conveniently located in the heart of London's medical district, providing world-class care across multiple specialized facilities.",
     "locations": [
       {
         "id": "location-1791722960928",
@@ -95,7 +198,7 @@
         "address": "Age Reversal Clinic Grove Park, London",
         "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
         "phone": "+44 (0) 20 88572000",
-        "mapsUrl": "https://maps.google.com/?q=Age+Reversal+Clinic+Grove+Park+London",
+        "mapsUrl": "https://maps.google.com/?q=Age%20Reversal%20Clinic%20Grove%20Park%2C%20London",
         "bannerType": "Clinic",
         "imageUrl": "/assets/1791723050511-Screenshot_2026-07-24_193158.png"
       },
@@ -106,7 +209,7 @@
         "hours": "Mon – Sat: 09:00 – 19:00",
         "phone": "+44 (0) 20 8857 2000",
         "mapsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
-        "bannerType": "Building",
+        "bannerType": "Clinic",
         "imageUrl": "/assets/1791729403362-arc-logo__1___2_.webp"
       }
     ]
@@ -132,38 +235,47 @@
     ]
   },
   "homepage_process_config": {
-    "heading": "Our Process",
-    "description": "Your journey to exceptional results.",
+    "eyebrow": "Our Process",
+    "heading": "The Journey to Radiance",
+    "description": "From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.",
+    "seoKeywords": [],
     "steps": [
       {
         "id": "step-1",
         "stepNumber": "01",
-        "title": "Consultation",
+        "title": "Comprehensive Consultation & Assessment",
         "image": "https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=400&fit=crop"
       },
       {
         "id": "step-2",
         "stepNumber": "02",
-        "title": "Treatment Plan",
+        "title": "Bespoke Treatment Plan",
         "image": "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=400&h=400&fit=crop"
       }
     ]
   },
   "homepage_facility_interiors_config": {
-    "heading": "Our Facilities",
+    "eyebrow": "Our Facility",
+    "heading": "Clinic Gallery",
     "description": "Experience world-class care in our state-of-the-art clinic.",
+    "seoKeywords": [
+      "medspa",
+      "london medspa"
+    ],
     "rooms": [
       {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop"
+        "image": "/assets/1793130890366-arcoutsideview.jpg",
+        "imageAlt": "Medspa Consultation Suite"
       },
       {
         "id": "room-2",
-        "title": "Treatment Room",
+        "title": "Age Reversal Treatment Area",
         "tag": "Clinical",
-        "image": "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop"
+        "image": "/assets/1793130908513-arctreatment.jpg",
+        "imageAlt": "Age Reversal Treatment Area"
       }
     ]
   },
@@ -209,6 +321,8 @@
     "description": "Dermatologist-approved formulations."
   },
   "homepage_trust_brands_config": {
+    "heading": "Over 1,000+ Brands & Laboratories Trust Us",
+    "seoKeywords": [],
     "brands": [
       {
         "id": "bp-1",
@@ -238,14 +352,37 @@
     ]
   },
   "homepage_accreditations_config": {
+    "eyebrow": "Accreditations & Certifications",
+    "heading": "Excellence guaranteed. Trusted globally.",
+    "description": "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
+    "seoKeywords": [],
+    "items": [
+      "Care Quality Commission (CQC) Registered",
+      "General Medical Council (GMC) Compliant",
+      "British Association of Dermatologists (BAD) Member",
+      "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
+      "Save Face Accredited Excellence"
+    ],
     "accreditations": [
       {
         "id": "acc-1",
-        "text": "CQC Registered"
+        "text": "Care Quality Commission (CQC) Registered"
       },
       {
         "id": "acc-2",
-        "text": "Save Face Accredited"
+        "text": "General Medical Council (GMC) Compliant"
+      },
+      {
+        "id": "acc-3",
+        "text": "British Association of Dermatologists (BAD) Member"
+      },
+      {
+        "id": "acc-4",
+        "text": "Joint Council for Cosmetic Practitioners (JCCP) Accredited"
+      },
+      {
+        "id": "acc-5",
+        "text": "Save Face Accredited Excellence"
       }
     ]
   },
@@ -408,117 +545,6 @@
         "source": "tiktok"
       }
     ]
-  },
-  "clinic_info_data": {
-    "name": "Age Reversal Clinics",
-    "tagline": "Beauty, Cosmetic & Personal Care, Beauty Salon",
-    "metaDescription": "Award-winning Harley Street & London aesthetic dermatology clinic specializing in anti-ageing, medical dermatology, laser treatments, and facial aesthetics.",
-    "canonicalUrl": "https://agereversalclinics.co.uk",
-    "brandKeywords": [
-      "dermatology clinic london",
-      "harley street dermatologist",
-      "anti-aging clinic london",
-      "botox harley street",
-      "aesthetic dermatology",
-      "Clinical aesthetics UK",
-      "Professional skincare clinic UK",
-      "Aesthetic medicine UK",
-      "Skin rejuvenation clinic UK",
-      "Non-surgical cosmetic treatments UK",
-      "Advanced aesthetics UK",
-      "Cosmetic skin clinic UK",
-      "Medical aesthetics UK",
-      "Aesthetic clinics UK"
-    ],
-    "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
-    "logo": {
-      "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
-      "alt": "Age Reversal Clinics Logo",
-      "full": "/assets/1791726190127-arc-logo__2_.webp"
-    },
-    "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
-    "interiorPhotos": [
-      "/assets/1791726254284-Screenshot_2026-07-24_193158.png"
-    ],
-    "phone": "+44 (0) 20 7984159517",
-    "email": "agereversalbeautyspa@gmail.com",
-    "whatsapp": "https://wa.me/44207984159517",
-    "openingHours": "Mon - Sat: 09:00 AM – 18:00 PM",
-    "priceRange": "£",
-    "currency": "GBP",
-    "acceptedPayments": [
-      "Cash",
-      "Credit Card",
-      "Debit Card",
-      "American Express",
-      "Bank Transfer",
-      "Private Medical Insurance"
-    ],
-    "languagesSpoken": [
-      "English",
-      "French"
-    ],
-    "medicalSpecialties": [
-      "Dermatology",
-      "Cosmetic Dermatology",
-      "Aesthetic Medicine",
-      "Anti-Ageing Therapeutics",
-      "Laser Skin Resurfacing",
-      "Minor Skin Surgery"
-    ],
-    "gmcRegistration": "GMC Designated Medical Body #7492014",
-    "cqcStatus": "CQC Registered Provider (Good Rating)",
-    "accreditations": [
-      "Care Quality Commission (CQC) Registered",
-      "General Medical Council (GMC) Compliant",
-      "British Association of Dermatologists (BAD) Member",
-      "Joint Council for Cosmetic Practitioners (JCCP) Accredited",
-      "Save Face Accredited Excellence"
-    ],
-    "locations": [
-      {
-        "id": "location-1791722960928",
-        "name": "Age Reversal Clinic",
-        "address": "Age Reversal Clinic Grove Park",
-        "city": "London",
-        "postalCode": "",
-        "country": "United Kingdom",
-        "phone": "+44 (0) 20 88572000",
-        "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
-        "directionsUrl": "",
-        "latitude": 51.5173,
-        "longitude": -0.1472,
-        "parkingAvailable": false,
-        "wheelchairAccessible": true,
-        "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
-        "imageAlt": ""
-      },
-      {
-        "id": "location-1791728808656",
-        "name": "374 Baring Road London UK",
-        "address": "374 Baring Road Se12 0EF",
-        "city": "London",
-        "postalCode": "",
-        "country": "United Kingdom",
-        "phone": "+44 (0) 20 8857 2000",
-        "hours": "Mon – Sat: 09:00 – 19:00",
-        "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
-        "latitude": 51.5173,
-        "longitude": -0.1472,
-        "parkingAvailable": false,
-        "wheelchairAccessible": false,
-        "image": "/assets/1791729403362-arc-logo__1___2_.webp",
-        "imageAlt": ""
-      }
-    ],
-    "socials": {
-      "facebook": "https://www.facebook.com/agereversalmedspa",
-      "instagram": "https://www.instagram.com/agereversalclinicuk/",
-      "twitter": "",
-      "youtube": "",
-      "linkedin": ""
-    },
-    "googleReviewUrl": ""
   },
   "clinical_protocols_config": {
     "protocols": {
@@ -1012,55 +1038,250 @@
       "id": "face-injectables",
       "name": "Face & Injectables",
       "subGroups": [
-        { "id": "anti-wrinkles-injection", "name": "Anti-wrinkle's injection" },
-        { "id": "dermal-fillers-1ml", "name": "Dermal Fillers-1ml" },
-        { "id": "profhilo-2ml", "name": "Profhilo 2ml" },
-        { "id": "salmon-sperm-injection", "name": "Salmon sperm injection" },
-        { "id": "platelet-rich-plasma-prp", "name": "Platelet-Rich Plasma (PRP)" },
-        { "id": "endolift-fiber-lift", "name": "Endolift - Fiber Lift" },
-        { "id": "emface-skin-tightening-and-lifting", "name": "Emface skin tightening and lifting" }
+        {
+          "id": "platelet-rich-plasma-prp",
+          "name": "Platelet-Rich Plasma (PRP)"
+        },
+        {
+          "id": "endolift-fiber-lift",
+          "name": "Endolift - Fiber Lift"
+        },
+        {
+          "id": "salmon-sperm-injection",
+          "name": "Salmon sperm injection"
+        },
+        {
+          "id": "emface-skin-tightening-and-lifting",
+          "name": "Emface skin tightening and lifting"
+        },
+        {
+          "id": "anti-wrinkles-injection",
+          "name": "Anti-wrinkle's injection"
+        },
+        {
+          "id": "dermal-fillers-1ml",
+          "name": "Dermal Fillers-1ml"
+        },
+        {
+          "id": "profhilo-2ml",
+          "name": "Profhilo 2ml"
+        }
       ]
     },
     {
       "id": "body-sculpting",
       "name": "Body Sculpting",
       "subGroups": [
-        { "id": "aqualyx-course-3", "name": "Aqualyx Course 3" },
-        { "id": "deso-face-and-body-course-of-1", "name": "Deso Face and body Course of 1" },
-        { "id": "deso-face-and-body-course-of-3", "name": "Deso Face and body Course of 3" },
-        { "id": "slimming-pen", "name": "Slimming pen" },
-        { "id": "emscuplt-body-sculpt-and-tightening", "name": "Emscuplt body sculpt and tightening" },
-        { "id": "body-slimming-fat-loss-cellulite-reduction", "name": "Body slimming for fat and loss Cellulite reduction" }
+        {
+          "id": "aqualyx-course-3",
+          "name": "Aqualyx Course 3"
+        },
+        {
+          "id": "deso-face-and-body-course-of-1",
+          "name": "Deso Face and body Course of 1"
+        },
+        {
+          "id": "deso-face-and-body-course-of-3",
+          "name": "Deso Face and body Course of 3"
+        },
+        {
+          "id": "slimming-pen",
+          "name": "Slimming pen"
+        },
+        {
+          "id": "emscuplt-body-sculpt-and-tightening",
+          "name": "Emscuplt body sculpt and tightening"
+        },
+        {
+          "id": "body-slimming-fat-loss-cellulite-reduction",
+          "name": "Body slimming for fat and loss Cellulite reduction"
+        }
       ]
     },
     {
       "id": "advanced-facials",
       "name": "Advanced Facials",
       "subGroups": [
-        { "id": "facial-skin-care", "name": "Facial skin care" },
-        { "id": "co2-laser-from", "name": "Co@ Laser from" },
-        { "id": "tattoo-removal", "name": "Tattoo removal" },
-        { "id": "morpheus8-treatment", "name": "Morpheus8 treatment" }
+        {
+          "id": "facial-skin-care",
+          "name": "Facial skin care"
+        },
+        {
+          "id": "co2-laser-from",
+          "name": "Co@ Laser from"
+        },
+        {
+          "id": "tattoo-removal",
+          "name": "Tattoo removal"
+        },
+        {
+          "id": "morpheus8-treatment",
+          "name": "Morpheus8 treatment"
+        }
       ]
     },
     {
       "id": "hair-beauty",
       "name": "Hair & Beauty",
       "subGroups": [
-        { "id": "lash-eyebrow", "name": "lash & eyebrow" },
-        { "id": "body-waxing", "name": "body waxing" },
-        { "id": "ladies-girls-cut-collors-treatments", "name": "Ladies & Girls Cut, Collors, Treatments" },
-        { "id": "men-and-kids", "name": "Men and Kids" },
-        { "id": "men-kids-services", "name": "Men / kids services" },
-        { "id": "semi-permanent-makeup", "name": "Semi-permanent makeup" }
+        {
+          "id": "lash-eyebrow",
+          "name": "lash & eyebrow"
+        },
+        {
+          "id": "body-waxing",
+          "name": "body waxing"
+        },
+        {
+          "id": "ladies-girls-cut-collors-treatments",
+          "name": "Ladies & Girls Cut, Collors, Treatments"
+        },
+        {
+          "id": "men-and-kids",
+          "name": "Men and Kids"
+        },
+        {
+          "id": "men-kids-services",
+          "name": "Men / kids services"
+        },
+        {
+          "id": "semi-permanent-makeup",
+          "name": "Semi-permanent makeup"
+        }
       ]
     },
     {
       "id": "iv-drips-wellness",
       "name": "IV Drips & Wellness",
       "subGroups": [
-        { "id": "iv-drip-lounge-course-of-1", "name": "IV Drip Lounge-course of 1" }
+        {
+          "id": "iv-drip-lounge-course-of-1",
+          "name": "IV Drip Lounge-course of 1"
+        }
       ]
     }
-  ]
+  ],
+  "homepage_consultation_config": {
+    "heading": "Book a Preferred Consultation",
+    "subheading": "Schedule your bespoke clinical assessment with our aesthetic specialists.",
+    "specialistLabel": "Preferred Specialist",
+    "doctors": [
+      {
+        "id": "dr-smith",
+        "name": "Med Faith Chris",
+        "specialty": "Lead Aesthetic Specialist",
+        "locationIds": [
+          "location-1791722960928"
+        ],
+        "availableDays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "timeSlots": [
+          "09:30",
+          "11:00",
+          "13:30",
+          "15:00",
+          "16:30"
+        ]
+      },
+      {
+        "id": "dr-jaipur",
+        "name": "Med Nuri",
+        "specialty": "Regenerative & Laser Specialist",
+        "locationIds": [
+          "location-1791728808656"
+        ],
+        "availableDays": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "timeSlots": [
+          "09:30",
+          "12:00",
+          "14:30",
+          "17:00"
+        ]
+      }
+    ],
+    "defaultTimeSlots": [
+      "09:30",
+      "11:00",
+      "12:30",
+      "14:00",
+      "15:30",
+      "17:00"
+    ],
+    "bestTimeOptions": [
+      {
+        "value": "morning",
+        "label": "Morning (9am - 12pm)"
+      },
+      {
+        "value": "afternoon",
+        "label": "Afternoon (12pm - 4pm)"
+      },
+      {
+        "value": "evening",
+        "label": "Evening (4pm - 7pm)"
+      }
+    ],
+    "hearAboutUsOptions": [
+      {
+        "value": "google",
+        "label": "Google Search"
+      },
+      {
+        "value": "social",
+        "label": "Social Media (Instagram / Facebook / TikTok)"
+      },
+      {
+        "value": "referral",
+        "label": "Friend / Family Referral"
+      },
+      {
+        "value": "other",
+        "label": "Other"
+      }
+    ],
+    "stayInTouchChannels": [
+      {
+        "id": "email",
+        "label": "Email",
+        "enabled": false
+      },
+      {
+        "id": "phone",
+        "label": "Phone",
+        "enabled": true
+      },
+      {
+        "id": "telephone",
+        "label": "Tel Phone",
+        "enabled": true
+      },
+      {
+        "id": "post",
+        "label": "Post Mail",
+        "enabled": true
+      },
+      {
+        "id": "whatsapp",
+        "label": "WhatsApp",
+        "enabled": false
+      },
+      {
+        "id": "sms",
+        "label": "SMS",
+        "enabled": false
+      }
+    ]
+  }
 }

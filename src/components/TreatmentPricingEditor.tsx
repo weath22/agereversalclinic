@@ -138,6 +138,7 @@ export default function TreatmentPricingEditor() {
 
   const [subGroupToRename, setSubGroupToRename] = useState<{ parentBranch: TreatmentTaxonomyGroup; subGroup: TreatmentSubGroup } | null>(null);
   const [renameSubGroupName, setRenameSubGroupName] = useState('');
+  const [reassignSubGroupParentId, setReassignSubGroupParentId] = useState<string>('');
 
   const [subGroupToDelete, setSubGroupToDelete] = useState<{ parentBranch: TreatmentTaxonomyGroup; subGroup: TreatmentSubGroup } | null>(null);
   const [reassignSubGroupTargetId, setReassignSubGroupTargetId] = useState<string>('');
@@ -243,9 +244,10 @@ export default function TreatmentPricingEditor() {
   const matchesSubGroup = (t: TreatmentPricingItem, parentBranch: TreatmentTaxonomyGroup, subGroup: TreatmentSubGroup) => {
     if (!matchesParentBranch(t, parentBranch)) return false;
     const hasLegacySub = Boolean(t.subGroupId && LEGACY_BROCHURE_SUBGROUP_IDS.has(t.subGroupId));
-    if (!hasLegacySub) {
+    if (!hasLegacySub && (t.subGroupId || t.subCategory)) {
       if (t.subGroupId === subGroup.id) return true;
       if (t.subCategory && t.subCategory.toLowerCase() === subGroup.name.toLowerCase()) return true;
+      return false;
     }
 
     const inferred = inferTreatmentSubGroup(t);
@@ -476,37 +478,97 @@ export default function TreatmentPricingEditor() {
       return;
     }
     const { parentBranch, subGroup } = subGroupToRename;
-    if (newName === subGroup.name) {
+    const targetBranch =
+      taxonomy.find((b) => b.id === reassignSubGroupParentId) || parentBranch;
+    const isMovingParent = targetBranch.id !== parentBranch.id;
+
+    if (newName === subGroup.name && !isMovingParent) {
       setSubGroupToRename(null);
       return;
     }
 
+    if (
+      !isMovingParent &&
+      parentBranch.subGroups.some(
+        (s) => s.id !== subGroup.id && s.name.toLowerCase() === newName.toLowerCase()
+      )
+    ) {
+      showToast('A sub-group with this name already exists in this branch', 'error');
+      return;
+    }
+
+    let finalSubId = subGroup.id;
+    let finalSubName = newName;
+
     const updatedTaxonomy = taxonomy.map((b) => {
-      if (b.id === parentBranch.id) {
-        return {
-          ...b,
-          subGroups: b.subGroups.map((s) => (s.id === subGroup.id ? { ...s, name: newName } : s)),
-        };
+      if (isMovingParent) {
+        if (b.id === parentBranch.id) {
+          return {
+            ...b,
+            subGroups: b.subGroups.filter((s) => s.id !== subGroup.id),
+          };
+        }
+        if (b.id === targetBranch.id) {
+          const existingInTarget = b.subGroups.find(
+            (s) => s.id === subGroup.id || s.name.toLowerCase() === newName.toLowerCase()
+          );
+          if (existingInTarget) {
+            finalSubId = existingInTarget.id;
+            finalSubName = newName;
+            return {
+              ...b,
+              subGroups: b.subGroups.map((s) =>
+                s.id === existingInTarget.id ? { ...s, name: newName } : s
+              ),
+            };
+          }
+          return {
+            ...b,
+            subGroups: [...b.subGroups, { id: subGroup.id, name: newName }],
+          };
+        }
+        return b;
+      } else {
+        if (b.id === parentBranch.id) {
+          return {
+            ...b,
+            subGroups: b.subGroups.map((s) =>
+              s.id === subGroup.id ? { ...s, name: newName } : s
+            ),
+          };
+        }
+        return b;
       }
-      return b;
     });
 
-    // Automatically update subCategory field of all assigned treatments!
+    // Update all assigned treatments with the new sub-group name and (if reassigned) new parent category
+    let movedCount = 0;
     const updatedTreatments = treatments.map((t) => {
       if (matchesSubGroup(t, parentBranch, subGroup)) {
+        movedCount += 1;
         return {
           ...t,
-          subCategory: newName,
-          subGroupId: subGroup.id,
+          category: (isMovingParent ? targetBranch.name : t.category) as any,
+          subCategory: finalSubName,
+          subGroupId: finalSubId,
         };
       }
       return t;
     });
 
     await persistTaxonomy(updatedTaxonomy);
-    await persistTreatments(updatedTreatments, `Renamed sub-group to "${newName}" and updated assigned treatments`);
-    if (selectedSubGroupId === subGroup.id || selectedSubGroupId === subGroup.name) {
-      setSelectedSubGroupId(subGroup.id);
+    await persistTreatments(
+      updatedTreatments,
+      isMovingParent
+        ? `Reassigned "${finalSubName}" to "${targetBranch.name}" (${movedCount} treatments updated)`
+        : `Renamed sub-group to "${finalSubName}" and updated assigned treatments`
+    );
+
+    if (isMovingParent) {
+      setSelectedParentId(targetBranch.id);
+      setSelectedSubGroupId(finalSubId);
+    } else if (selectedSubGroupId === subGroup.id || selectedSubGroupId === subGroup.name) {
+      setSelectedSubGroupId(finalSubId);
     }
     setSubGroupToRename(null);
   };
@@ -1258,8 +1320,9 @@ export default function TreatmentPricingEditor() {
                               e.stopPropagation();
                               setSubGroupToRename({ parentBranch: selectedParentBranch, subGroup: sub });
                               setRenameSubGroupName(sub.name);
+                              setReassignSubGroupParentId(selectedParentBranch.id);
                             }}
-                            title={`Rename sub-group "${sub.name}"`}
+                            title={`Edit or reassign sub-group "${sub.name}"`}
                             className={`p-1.5 rounded-full cursor-pointer transition-colors ${
                               isSubActive
                                 ? 'text-slate-300 hover:text-white hover:bg-white/20'
@@ -1340,14 +1403,16 @@ export default function TreatmentPricingEditor() {
             return (
               <div
                 key={treatment.id}
-                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-lg hover:shadow-slate-200/50 group relative flex flex-col overflow-hidden ${
+                className={`bg-white rounded-2xl border transition-all duration-200 hover:shadow-lg hover:shadow-slate-200/50 group relative flex flex-col ${
+                  isMenuOpen ? 'z-30 shadow-xl ring-1 ring-[#c5a880]/50' : 'z-0'
+                } ${
                   treatment.hidden 
                     ? 'border-dashed border-amber-300/80 bg-amber-50/15 opacity-80' 
                     : 'border-slate-200/90 hover:border-[#c5a880]/60'
                 }`}
               >
                 {/* 1. Cover Image Thumbnail with Quick-Swap Hover Overlay */}
-                <div className="relative aspect-[16/10] bg-slate-100 overflow-hidden shrink-0">
+                <div className="relative aspect-[16/10] bg-slate-100 rounded-t-[15px] overflow-hidden shrink-0">
                   <img
                     src={getTreatmentImagePath(treatment.id, treatment.image, (treatment as any).updatedAt)}
                     alt={treatment.title}
@@ -1464,7 +1529,7 @@ export default function TreatmentPricingEditor() {
 
                         {/* Floating Contextual Dropdown Menu */}
                         {isMenuOpen && (
-                          <div className="treatment-context-menu-container absolute right-0 top-7 z-40 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95">
+                          <div className="treatment-context-menu-container absolute right-0 top-7 z-50 w-56 bg-white rounded-2xl border border-slate-200 shadow-2xl p-1.5 space-y-0.5 animate-in fade-in zoom-in-95">
                             {/* 1. Edit Details & Pricing */}
                             <button
                               onClick={() => handleOpenEditTreatment(treatment)}
@@ -2819,7 +2884,7 @@ export default function TreatmentPricingEditor() {
       </AnimatePresence>
 
       {/* =========================================================================
-          MODAL 10: RENAME SUB-GROUP
+          MODAL 10: EDIT / RENAME & REASSIGN SUB-GROUP
          ========================================================================= */}
       <AnimatePresence>
         {subGroupToRename && (
@@ -2837,10 +2902,10 @@ export default function TreatmentPricingEditor() {
                   </span>
                   <div>
                     <h3 className="font-serif font-bold text-base text-[#003334]">
-                      Rename Sub-Group
+                      Edit & Reassign Sub-Group
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Under {subGroupToRename.parentBranch.name} ({treatments.filter((t) => matchesSubGroup(t, subGroupToRename.parentBranch, subGroupToRename.subGroup)).length} treatments will be updated)
+                      Currently in <span className="font-semibold text-slate-700">{subGroupToRename.parentBranch.name}</span> ({treatments.filter((t) => matchesSubGroup(t, subGroupToRename.parentBranch, subGroupToRename.subGroup)).length} treatments assigned)
                     </p>
                   </div>
                 </div>
@@ -2867,6 +2932,46 @@ export default function TreatmentPricingEditor() {
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">
+                    Parent Group (Service Branch) *
+                  </label>
+                  <select
+                    value={reassignSubGroupParentId || subGroupToRename.parentBranch.id}
+                    onChange={(e) => setReassignSubGroupParentId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#003334] text-xs font-semibold text-slate-800 cursor-pointer"
+                  >
+                    {taxonomy.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                        {branch.id === subGroupToRename.parentBranch.id ? ' (Current)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {reassignSubGroupParentId &&
+                  reassignSubGroupParentId !== subGroupToRename.parentBranch.id && (
+                    <div className="text-[11px] text-[#003334] bg-[#003334]/5 border border-[#003334]/20 rounded-xl p-3 leading-relaxed flex items-start gap-2">
+                      <ArrowUpDown className="h-4 w-4 text-[#c5a880] shrink-0 mt-0.5" />
+                      <span>
+                        Moving <strong>{renameSubGroupName || subGroupToRename.subGroup.name}</strong> to{' '}
+                        <strong>
+                          {taxonomy.find((b) => b.id === reassignSubGroupParentId)?.name}
+                        </strong>{' '}
+                        will automatically reassign all{' '}
+                        <strong>
+                          {
+                            treatments.filter((t) =>
+                              matchesSubGroup(t, subGroupToRename.parentBranch, subGroupToRename.subGroup)
+                            ).length
+                          }
+                        </strong>{' '}
+                        linked procedure(s) to that parent group.
+                      </span>
+                    </div>
+                  )}
+
                 <div className="flex gap-2 pt-2">
                   <button
                     type="button"
@@ -2879,7 +2984,10 @@ export default function TreatmentPricingEditor() {
                     type="submit"
                     className="flex-1 py-2.5 rounded-xl bg-[#003334] hover:bg-[#004d4f] text-[#c5a880] hover:text-white text-xs font-bold transition-all shadow cursor-pointer border border-[#c5a880]/30"
                   >
-                    Save Rename
+                    {reassignSubGroupParentId &&
+                    reassignSubGroupParentId !== subGroupToRename.parentBranch.id
+                      ? 'Save & Reassign'
+                      : 'Save Changes'}
                   </button>
                 </div>
               </form>

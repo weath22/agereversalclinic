@@ -22,16 +22,18 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
   const currentArticles = activeTab === 'news' ? NEWS_ARTICLES : STORY_ARTICLES;
 
   return (
-    <section id="latest-news" className="py-12 sm:py-16 md:py-24 lg:py-32 px-4 sm:px-6 md:px-12 bg-gradient-to-b from-[#fbf8f3] via-[#f4ebe1] to-[#faf6f0] text-luxury-text border-b border-[#D8C2A3]/40 overflow-hidden relative selection:bg-[#D8C2A3]/30">
+    <section id="latest-news" className="py-12 sm:py-16 md:py-24 lg:py-32 px-4 sm:px-6 md:px-12 bg-gradient-to-b from-[#fbf8f3] via-[#f4ebe1] to-[#faf6f0] text-luxury-text border-b border-[#D8C2A3]/40 overflow-hidden relative selection:bg-[#D8C2A3]/30 isolate">
       {/* Soft Fade Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/45 via-white/20 to-white/45 backdrop-blur-[0.5px] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/25 to-white/50 pointer-events-none" />
 
-      {/* Luminous Champagne Ambient Light Blooms */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[950px] h-[550px] bg-gradient-to-b from-[#D8C2A3]/30 via-[#ecdcc8]/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-10 -left-20 w-[550px] h-[550px] bg-[#ecdcc8]/25 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -right-24 w-[500px] h-[500px] bg-[#e4d2bc]/30 rounded-full blur-3xl" />
-      </div>
+      {/* Luminous Champagne Ambient Light Blooms (GPU-accelerated pre-computed radial gradients) */}
+      <div 
+        className="absolute inset-0 pointer-events-none overflow-hidden opacity-90 transform-gpu"
+        style={{
+          background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 0% 90%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 100% 50%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)',
+          transform: 'translateZ(0)'
+        }}
+      />
 
       <div className="max-w-7xl mx-auto relative z-10">
         
@@ -59,7 +61,7 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
             className={`px-5 py-2 sm:px-8 sm:py-3 rounded-full font-sans font-medium tracking-wide text-xs sm:text-sm transition-all duration-300 cursor-pointer shadow-xs ${
               activeTab === 'news'
                 ? 'bg-black text-white shadow-md'
-                : 'border border-[#D8C2A3]/50 bg-white/85 backdrop-blur-sm text-luxury-subtext hover:bg-white hover:text-luxury-text'
+                : 'border border-[#D8C2A3]/50 bg-white/90 text-luxury-subtext hover:bg-white hover:text-luxury-text'
             }`}
           >
             News
@@ -72,7 +74,7 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
             className={`px-5 py-2 sm:px-8 sm:py-3 rounded-full font-sans font-medium tracking-wide text-xs sm:text-sm transition-all duration-300 cursor-pointer shadow-xs ${
               activeTab === 'stories'
                 ? 'bg-black text-white shadow-md'
-                : 'border border-[#D8C2A3]/50 bg-white/85 backdrop-blur-sm text-luxury-subtext hover:bg-white hover:text-luxury-text'
+                : 'border border-[#D8C2A3]/50 bg-white/90 text-luxury-subtext hover:bg-white hover:text-luxury-text'
             }`}
           >
             Patient stories
@@ -88,20 +90,22 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, delay: index * 0.08, ease: "easeOut" }}
+                transition={{ duration: 0.35, delay: index * 0.05, ease: "easeOut" }}
                 onClick={() => onArticleClick?.(article)}
-                className="flex flex-col bg-white/95 backdrop-blur-md rounded-2xl sm:rounded-[22px] md:rounded-[24px] overflow-hidden border border-[#e8dcc8] shadow-[0_8px_30px_-8px_rgba(216,194,163,0.3)] hover:shadow-xl hover:border-luxury-gold hover:-translate-y-1 transition-all duration-500 group cursor-pointer"
+                className="flex flex-col bg-white/98 rounded-2xl sm:rounded-[22px] md:rounded-[24px] overflow-hidden border border-[#e8dcc8] shadow-[0_8px_30px_-8px_rgba(216,194,163,0.3)] hover:shadow-xl hover:border-luxury-gold hover:-translate-y-1 transition-all duration-300 group cursor-pointer transform-gpu will-change-transform"
               >
                 {/* Image Container */}
                 <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-[#faf7f2] relative">
                   <img
                     alt={article.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
                     src={article.image}
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
-                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4 md:top-5 md:left-5 bg-white/95 backdrop-blur-sm text-luxury-text font-sans font-medium text-[9px] sm:text-[10px] tracking-[0.12em] uppercase px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs border border-[#e8dcc8]">
+                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4 md:top-5 md:left-5 bg-white/95 text-luxury-text font-sans font-medium text-[9px] sm:text-[10px] tracking-[0.12em] uppercase px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs border border-[#e8dcc8]">
                     {article.tag}
                   </div>
                 </div>

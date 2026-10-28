@@ -56,7 +56,8 @@ import {
   TreatmentTaxonomyGroup,
   TreatmentSubGroup,
   DEFAULT_TREATMENT_TAXONOMY,
-  LEGACY_BROCHURE_SUBGROUP_IDS
+  LEGACY_BROCHURE_SUBGROUP_IDS,
+  inferTreatmentSubGroup
 } from '../data/treatmentPricing';
 import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
 import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
@@ -446,53 +447,243 @@ export function syncConfigToFile(key: string, data: any): void {
 }
 
 /**
- * Upload an image or media asset directly to public/assets/ and src/assets/images/ on disk
- * and optionally delete a displaced previousUrl file
+ * Client-side WebP conversion utility:
+ * Converts any uploaded image file (JPG, PNG, HEIC, WebP, etc.) into a lightweight,
+ * clean .webp data URL before uploading to /assets/treatments/ or /assets/.
+ */
+export async function convertImageFileToWebpDataUrl(
+  file: File,
+  maxDimension: number = 1600,
+  quality: number = 0.88
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('Window is not available for image conversion'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const rawDataUrl = reader.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          let width = img.naturalWidth || img.width || 1200;
+          let height = img.naturalHeight || img.height || 900;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(rawDataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const webpUrl = canvas.toDataURL('image/webp', quality);
+          resolve(webpUrl.startsWith('data:image/webp') ? webpUrl : rawDataUrl);
+        } catch {
+          resolve(rawDataUrl);
+        }
+      };
+      img.onerror = () => resolve(rawDataUrl);
+      img.src = rawDataUrl;
+    };
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Upload an image or media asset directly to public/assets/ (or public/assets/treatments/)
+ * and src/assets/images/ on disk, optionally converting to WebP and deleting a displaced previousUrl file
  */
 export async function uploadAssetFile(
   file: File,
-  previousUrl?: string
-): Promise<{ success: boolean; url?: string; error?: string }> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      try {
-        const res = await fetch('/api/admin/upload-asset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: file.name,
-            dataUrl,
-            previousUrl: previousUrl?.trim() || undefined
-          })
+  previousUrl?: string,
+  options?: { folder?: 'assets' | 'treatments' | 'transformations'; convertToWebp?: boolean }
+): Promise<{ success: boolean; url?: string; fileName?: string; error?: string }> {
+  try {
+    const isVideo = file.type.startsWith('video/');
+    const shouldConvertWebp =
+      !isVideo && (options?.convertToWebp === true || options?.folder === 'treatments');
+
+    const dataUrl = shouldConvertWebp
+      ? await convertImageFileToWebpDataUrl(file)
+      : await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
         });
-        const data = await res.json();
-        if (data.success && data.url) {
-          // Automatic Asset Library Registration (Task 2.1)
-          try {
-            registerMediaAsset({
-              name: file.name,
-              url: data.url,
-              mediaType: file.type.startsWith('video/') ? 'video' : 'image',
-              size: file.size,
-              category: 'Uploads',
-              altText: `${file.name.replace(/\.[^/.]+$/, '')} - Age Reversal Clinic London`
-            });
-          } catch (regErr) {
-            console.warn('Could not auto-register uploaded asset:', regErr);
-          }
-          resolve({ success: true, url: data.url });
-        } else {
-          resolve({ success: false, error: data.error || 'Failed to upload asset' });
-        }
-      } catch (e) {
-        resolve({ success: false, error: String(e) });
+
+    const cleanFileName = shouldConvertWebp
+      ? `${file.name.replace(/\.[^/.]+$/, '')}.webp`
+      : file.name;
+
+    const res = await fetch('/api/admin/upload-asset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: cleanFileName,
+        dataUrl,
+        previousUrl: previousUrl?.trim() || undefined,
+        folder: options?.folder,
+      }),
+    });
+    const data = await res.json();
+    if (data.success && data.url) {
+      try {
+        registerMediaAsset({
+          name: cleanFileName,
+          url: data.url,
+          mediaType: isVideo ? 'video' : 'image',
+          size: file.size,
+          category: options?.folder === 'treatments' ? 'Treatments' : 'Uploads',
+          altText: `${cleanFileName.replace(/\.[^/.]+$/, '')} - Age Reversal Clinic London`,
+        });
+      } catch (regErr) {
+        console.warn('Could not auto-register uploaded asset:', regErr);
       }
-    };
-    reader.onerror = () => resolve({ success: false, error: 'Failed to read file' });
-    reader.readAsDataURL(file);
-  });
+      return { success: true, url: data.url, fileName: data.fileName || cleanFileName };
+    }
+    return { success: false, error: data.error || 'Failed to upload asset' };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+/**
+ * Dedicated Clean WebP Image Upload Pipeline for Homepage Treatments Bento Cards:
+ * Converts the uploaded File to a lightweight .webp via convertImageFileToWebpDataUrl,
+ * uploads it to /api/admin/treatments/:id/image (with fallback to /api/admin/upload-asset),
+ * saves to public/assets/treatments/ and src/assets/images/treatments/,
+ * and automatically cleans up any replaced previousUrl file.
+ */
+export async function uploadHomepageTreatmentWebpImage(params: {
+  id: string;
+  file?: File;
+  dataUrl?: string;
+  fileName?: string;
+  previousUrl?: string;
+  name?: string;
+  imageAlt?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
+}): Promise<{
+  success: boolean;
+  url?: string;
+  rawPath?: string;
+  fileName?: string;
+  version?: number;
+  error?: string;
+}> {
+  if (typeof window === 'undefined') {
+    return { success: false, error: 'Window is not defined' };
+  }
+
+  try {
+    const cleanId =
+      String(params.id || params.name || 'treatment')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '') || `treatment-${Date.now()}`;
+
+    const webpDataUrl = params.file
+      ? await convertImageFileToWebpDataUrl(params.file)
+      : params.dataUrl || '';
+
+    if (!webpDataUrl) {
+      return { success: false, error: 'Missing image file or WebP data URL' };
+    }
+
+    const targetFileName = `homepage-${cleanId}.webp`;
+
+    // Primary: Dedicated ID-based treatment image endpoint with automatic cleanup of replaced files
+    const res = await fetch(`/api/admin/treatments/${encodeURIComponent(cleanId)}/image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: cleanId,
+        scope: 'homepage_treatments',
+        fileName: targetFileName,
+        extension: '.webp',
+        dataUrl: webpDataUrl,
+        previousUrl: params.previousUrl?.trim() || undefined,
+        imageAlt: params.imageAlt,
+        seoTitle: params.seoTitle,
+        seoKeywords: params.seoKeywords,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const resolvedRawPath = data.rawPath || data.url || `/assets/treatments/${targetFileName}`;
+      const resolvedUrl = data.imagePath || `${resolvedRawPath}?v=${data.version || Date.now()}`;
+      if (data.success && resolvedRawPath) {
+        try {
+          registerMediaAsset({
+            name: params.seoTitle || params.name || targetFileName,
+            url: resolvedRawPath,
+            mediaType: 'image',
+            category: 'Treatments',
+            altText:
+              params.imageAlt ||
+              `${params.name || cleanId} clinical aesthetic treatment at Age Reversal Clinic London`,
+            seoKeywords: params.seoKeywords,
+          });
+        } catch {}
+
+        return {
+          success: true,
+          url: resolvedUrl,
+          rawPath: resolvedRawPath,
+          fileName: data.fileName || targetFileName,
+          version: data.version || Date.now(),
+        };
+      }
+    }
+
+    // Fallback: /api/admin/upload-asset with folder='treatments' and previousUrl cleanup
+    const fallbackRes = await fetch('/api/admin/upload-asset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: targetFileName,
+        dataUrl: webpDataUrl,
+        previousUrl: params.previousUrl?.trim() || undefined,
+        folder: 'treatments',
+      }),
+    });
+
+    if (fallbackRes.ok) {
+      const fbData = await fallbackRes.json();
+      if (fbData.success && fbData.url) {
+        const version = fbData.version || Date.now();
+        return {
+          success: true,
+          url: `${fbData.url}?v=${version}`,
+          rawPath: fbData.url,
+          fileName: fbData.fileName || targetFileName,
+          version,
+        };
+      }
+    }
+
+    return { success: false, error: 'Server failed to store treatment WebP image' };
+  } catch (err) {
+    console.error('Error uploading Homepage Treatment WebP image:', err);
+    return { success: false, error: String(err) };
+  }
 }
 
 /**
@@ -732,19 +923,59 @@ const DEFAULT_SPECIALIST_AREAS_CONFIG: SpecialistAreasConfig = {
   }))
 };
 
-const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
+const DEFAULT_SPECIALIST_BY_ID = new Map(
+  ALL_SPECIALIST_TREATMENTS.map((item) => [item.id, item])
+);
+
+export const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
   editorialHeading: "rejuvenation",
   editorialSub: "Begin your transformation",
   description: "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.",
-  treatments: ALL_SPECIALIST_TREATMENTS.map((item, idx) => ({
-    id: item.id,
-    name: item.title,
-    stepNumber: String(idx + 1).padStart(2, '0'),
-    description: item.description,
-    tag: item.pricingCategory || item.category,
-    image: item.image,
-    duration: item.duration
-  }))
+  seoKeywords: [
+    "age reversal clinic london treatments",
+    "regenerative aesthetics london",
+    "non-surgical facial rejuvenation",
+    "body sculpting & skin boosters london",
+    "clinical dermatology procedures"
+  ],
+  treatments: ALL_SPECIALIST_TREATMENTS.map((item, idx) => {
+    const cleanTitle = (item.title || '').trim();
+    const rawParent = item.pricingCategory || item.category || 'Face & Injectables';
+    const categoryLabel =
+      rawParent === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawParent;
+    const cleanImage =
+      item.image || '/assets/images/treatments/specialist-profhilo.jpg';
+
+    const defaultKeywords =
+      item.seoKeywords && item.seoKeywords.length > 0
+        ? item.seoKeywords
+        : [
+            cleanTitle.toLowerCase(),
+            categoryLabel.toLowerCase(),
+            `${cleanTitle.toLowerCase()} london`,
+            'age reversal clinic treatment',
+            'medical aesthetics london'
+          ];
+
+    return {
+      id: item.id,
+      name: cleanTitle,
+      stepNumber: String(idx + 1).padStart(2, '0'),
+      description: item.description || '',
+      tag: categoryLabel,
+      subGroupId: item.id,
+      subCategory: cleanTitle,
+      image: cleanImage,
+      imageAlt:
+        item.coverMedia?.altText ||
+        `${cleanTitle} (${categoryLabel}) at Age Reversal Clinic London`,
+      seoTitle:
+        item.coverMedia?.seoTitle ||
+        `${cleanTitle} | Age Reversal Clinic London`,
+      seoKeywords: defaultKeywords,
+      duration: item.duration || '45 Mins'
+    };
+  })
 };
 
 const DEFAULT_GALLERY_PAIRS_BY_GROUP: Record<string, BeforeAfterPair[]> = {
@@ -2422,6 +2653,11 @@ export function normalizeSpecialistServiceItem(raw: SpecialistArea, idx = 0): Sp
     fallback?.transformationCategory ||
     inferTransformationCategoryFromBranch(pricingCategory, cleanTitle);
 
+  const resolvedImage =
+    raw.image ||
+    fallback?.image ||
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ';
+
   return {
     ...fallback,
     ...raw,
@@ -2431,10 +2667,20 @@ export function normalizeSpecialistServiceItem(raw: SpecialistArea, idx = 0): Sp
       raw.description ||
       fallback?.description ||
       `Bespoke ${cleanTitle} protocol performed at Age Reversal Clinic.`,
-    image:
-      raw.image ||
-      fallback?.image ||
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ',
+    image: resolvedImage,
+    coverMedia:
+      raw.coverMedia || fallback?.coverMedia
+        ? {
+            ...(fallback?.coverMedia || {
+              mediaType: 'image',
+              altText: `${cleanTitle} clinical aesthetic treatment at Age Reversal Clinic`,
+              seoTitle: `${cleanTitle} - Specialist Care`,
+              seoKeywords: [`${cleanTitle.toLowerCase()} london`],
+            }),
+            ...(raw.coverMedia || {}),
+            url: resolvedImage,
+          }
+        : undefined,
     pricingCategory,
     transformationCategory,
     category: raw.category || pricingCategory,
@@ -2522,31 +2768,54 @@ export function saveMasterServices(
   setStorageItem(SPECIALIST_AREAS_CONFIG_KEY, nextSpecConfig);
   syncConfigToFile(SPECIALIST_AREAS_CONFIG_KEY, nextSpecConfig);
 
-  // 3. Auto-sync Homepage: Treatments (homepage_treatments_config)
+  // 3. Auto-sync Homepage: Treatments metadata (keeping Treatments card images, imageAlt, seoTitle & seoKeywords 100% decoupled from Services & Branches)
   const currentTreatConfig = getStorageItem<TreatmentsConfig>(
     TREATMENTS_CONFIG_KEY,
-    DEFAULT_TREATMENTS_CONFIG
+    getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG)
   );
+  const serviceBySubId = new Map(normalizedServices.map((s) => [s.id, s]));
+  const currentSourceCards =
+    currentTreatConfig?.treatments && currentTreatConfig.treatments.length > normalizedServices.length
+      ? currentTreatConfig.treatments
+      : DEFAULT_TREATMENTS_CONFIG.treatments;
   const existingTreatById = new Map(
     (currentTreatConfig?.treatments || []).map((t) => [t.id, t])
   );
-  const nextTreatments: Treatment[] = normalizedServices.map((item, idx) => {
-    const prev = existingTreatById.get(item.id);
-    return {
-      id: item.id,
-      name: item.title,
-      stepNumber: String(idx + 1).padStart(2, '0'),
-      description: item.description,
-      tag: item.pricingCategory || item.category || prev?.tag || 'Face & Injectables',
-      image: item.image,
-      duration: item.duration || prev?.duration || '45 Mins',
-      price: item.price !== undefined && item.price !== '' ? item.price : prev?.price
-    };
+
+  const nextTreatments: Treatment[] = currentSourceCards.map((card, idx) => {
+    const projected = projectHomepageTreatmentCard(card, idx);
+    const prev = existingTreatById.get(projected.id) || existingTreatById.get(projected.subGroupId);
+    const matchedSubService = serviceBySubId.get(projected.subGroupId);
+    const resolvedTag = matchedSubService
+      ? normalizeMasterBranch(matchedSubService.pricingCategory || matchedSubService.category, matchedSubService.title)
+      : projected.tag;
+    const resolvedSubCategory = matchedSubService ? matchedSubService.title : projected.subCategory;
+
+    return projectHomepageTreatmentCard(
+      {
+        ...projected,
+        tag: resolvedTag,
+        subGroupId: projected.subGroupId,
+        subCategory: resolvedSubCategory,
+        image: prev?.image || projected.image,
+        imageAlt: prev?.imageAlt || projected.imageAlt,
+        seoTitle: prev?.seoTitle || projected.seoTitle,
+        seoKeywords:
+          prev?.seoKeywords && prev.seoKeywords.length > 0
+            ? prev.seoKeywords
+            : projected.seoKeywords,
+      },
+      idx
+    );
   });
   const nextTreatConfig: TreatmentsConfig = {
     editorialHeading: currentTreatConfig?.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
     editorialSub: currentTreatConfig?.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
     description: currentTreatConfig?.description || DEFAULT_TREATMENTS_CONFIG.description,
+    seoKeywords:
+      currentTreatConfig?.seoKeywords && currentTreatConfig.seoKeywords.length > 0
+        ? currentTreatConfig.seoKeywords
+        : DEFAULT_TREATMENTS_CONFIG.seoKeywords,
     treatments: nextTreatments
   };
   setStorageItem(TREATMENTS_CONFIG_KEY, nextTreatConfig);
@@ -2685,6 +2954,185 @@ export function saveSpecialistAreasConfig(config: SpecialistAreasConfig): Specia
   };
 }
 
+export interface HomepageTreatmentCardItem {
+  id: string;
+  name: string;
+  stepNumber: string;
+  tag: string;
+  subGroupId: string;
+  subCategory: string;
+  duration: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  seoTitle: string;
+  seoKeywords: string[];
+}
+
+export interface HomepageTreatmentsQueryParams {
+  page?: number;
+  offset?: number;
+  limit?: number;
+  tag?: string;
+  category?: string;
+  subGroupId?: string;
+  subCategory?: string;
+  search?: string;
+}
+
+export interface PaginatedHomepageTreatmentsResponse {
+  items: HomepageTreatmentCardItem[];
+  totalCount: number;
+  hasMore: boolean;
+  page: number;
+  totalPages: number;
+  offset: number;
+  limit: number;
+  sectionMeta: {
+    editorialHeading: string;
+    editorialSub: string;
+    description: string;
+    seoKeywords: string[];
+  };
+}
+
+const DEFAULT_TREATMENT_SEEDS_BY_ID = new Map(
+  DEFAULT_TREATMENTS_CONFIG.treatments.map((t) => [t.id, t])
+);
+
+/**
+ * Exact Column Projection for Homepage Treatments Bento Cards:
+ * Projects ONLY the needed card & SEO columns (id, name, stepNumber, tag, subGroupId, subCategory, duration, description, image, imageAlt, seoTitle, seoKeywords)
+ * so no excess package or gallery fields are fetched or stored.
+ */
+export function projectHomepageTreatmentCard(
+  raw: Partial<Treatment> & {
+    title?: string;
+    pricingCategory?: string;
+    category?: string;
+    procedureTime?: string;
+    badge?: string;
+  },
+  idx: number = 0
+): HomepageTreatmentCardItem {
+  const rawId = (raw?.id || '').trim();
+  const rawName = (raw?.name || raw?.title || '').trim();
+  const seed =
+    (rawId ? DEFAULT_TREATMENT_SEEDS_BY_ID.get(rawId) : undefined) ||
+    DEFAULT_TREATMENTS_CONFIG.treatments.find(
+      (t) => t.name.toLowerCase() === rawName.toLowerCase()
+    );
+
+  const cleanName = rawName || seed?.name || `Treatment ${idx + 1}`;
+  const cleanId =
+    rawId ||
+    seed?.id ||
+    cleanName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') ||
+    `treatment-${idx + 1}`;
+
+  const inferred = inferTreatmentSubGroup({
+    id: cleanId,
+    title: cleanName,
+    category: raw?.tag || raw?.pricingCategory || raw?.category || seed?.tag,
+    badge: raw?.subCategory || raw?.badge,
+  });
+
+  const cleanSubGroupId = (raw?.subGroupId || seed?.subGroupId || inferred.subGroupId || '').trim();
+  const specialistSub = DEFAULT_SPECIALIST_BY_ID.get(cleanSubGroupId);
+  const cleanSubCategory = (
+    raw?.subCategory ||
+    seed?.subCategory ||
+    specialistSub?.title ||
+    inferred.subCategory ||
+    cleanName
+  ).trim();
+
+  const cleanTag = normalizeMasterBranch(
+    raw?.tag ||
+      raw?.pricingCategory ||
+      raw?.category ||
+      seed?.tag ||
+      specialistSub?.pricingCategory ||
+      inferred.parentCategory,
+    cleanSubCategory || cleanName
+  );
+  const cleanStepNumber = (raw?.stepNumber || String(idx + 1).padStart(2, '0')).trim();
+  const cleanDuration = (
+    raw?.duration ||
+    raw?.procedureTime ||
+    seed?.duration ||
+    specialistSub?.duration ||
+    '45 - 60 Mins'
+  ).trim();
+  const cleanDescription = (
+    raw?.description ||
+    seed?.description ||
+    specialistSub?.description ||
+    `Bespoke ${cleanName} clinical protocol tailored at Age Reversal Clinic.`
+  ).trim();
+
+  const rawImgCandidate = (raw?.image || '').trim();
+  const cleanRawImg =
+    rawImgCandidate && !rawImgCandidate.includes('unsplash.com') ? rawImgCandidate : '';
+  const cleanImage = (
+    cleanRawImg ||
+    seed?.image ||
+    specialistSub?.image ||
+    '/assets/images/treatments/specialist-profhilo.jpg'
+  ).trim();
+
+  const cleanImageAlt = (
+    raw?.imageAlt ||
+    seed?.imageAlt ||
+    `${cleanName} — ${cleanSubCategory} (${cleanTag}) at Age Reversal Clinic London`
+  ).trim();
+  const cleanSeoTitle = (
+    raw?.seoTitle ||
+    seed?.seoTitle ||
+    `${cleanName} | ${cleanSubCategory} — Age Reversal Clinic`
+  ).trim();
+
+  const candidateKeywords =
+    Array.isArray(raw?.seoKeywords) && raw.seoKeywords.length > 0
+      ? raw.seoKeywords
+      : Array.isArray(seed?.seoKeywords) && seed.seoKeywords.length > 0
+      ? seed.seoKeywords
+      : [
+          cleanName.toLowerCase(),
+          cleanSubCategory.toLowerCase(),
+          cleanTag.toLowerCase(),
+          `${cleanName.toLowerCase()} london`,
+          'age reversal clinic treatment',
+          'medical aesthetics london',
+        ];
+
+  const cleanSeoKeywords = Array.from(
+    new Set(
+      candidateKeywords
+        .map((k) => String(k || '').trim())
+        .filter(Boolean)
+    )
+  );
+
+  return {
+    id: cleanId,
+    name: cleanName,
+    stepNumber: cleanStepNumber,
+    tag: cleanTag,
+    subGroupId: cleanSubGroupId,
+    subCategory: cleanSubCategory,
+    duration: cleanDuration,
+    description: cleanDescription,
+    image: cleanImage,
+    imageAlt: cleanImageAlt,
+    seoTitle: cleanSeoTitle,
+    seoKeywords: cleanSeoKeywords,
+  };
+}
+
 export function getTreatmentsConfig(): TreatmentsConfig {
   initializeAdminStore();
   const stored = getStorageItem<TreatmentsConfig>(
@@ -2692,45 +3140,272 @@ export function getTreatmentsConfig(): TreatmentsConfig {
     getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG)
   );
 
-  const legacyNames = new Set([
-    'permanent cosmetic makeup',
-    'cosmetic makeup services',
-    'facial services',
-    'tinting',
-    'facial injectables & volume contouring',
-    'morpheus8 rf & deep skin tightening',
-    'ultherapy non-surgical smas lift',
-    'precision lip & facial dermal fillers',
-    'polynucleotide & exosome cellular therapy',
-    'fractional co2 laser & skin resurfacing',
-    'minor surgery & scars'
-  ]);
-
-  const isLegacyDefaultList =
-    !stored?.treatments ||
-    stored.treatments.length === 0 ||
-    stored.treatments.every(
-      (t) =>
-        ['1', '2', '3', '4', '5', '6', '7'].includes(String(t.id)) ||
-        legacyNames.has((t.name || '').toLowerCase().trim()) ||
-        /\b(birmingham|london|manchester|oxford)\b/i.test(t.name || '')
-    );
-
-  if (isLegacyDefaultList) {
-    return {
-      ...DEFAULT_TREATMENTS_CONFIG,
-      ...stored,
-      treatments: DEFAULT_TREATMENTS_CONFIG.treatments
-    };
+  // Dynamically load active taxonomy for parent branch metadata
+  const activeTaxonomy = getTreatmentTaxonomy();
+  const subGroupMetaById = new Map<string, { subCategory: string; parentBranch: string }>();
+  for (const branch of activeTaxonomy) {
+    for (const sub of branch.subGroups || []) {
+      subGroupMetaById.set(sub.id.toLowerCase(), {
+        subCategory: sub.name,
+        parentBranch: branch.name,
+      });
+    }
   }
 
-  return stored;
+  // Base source cards are strictly the standalone visual image cards (completely decoupled from treatment pricing)
+  const defaultCards = DEFAULT_TREATMENTS_CONFIG.treatments || [];
+  const storedTreatments = Array.isArray(stored?.treatments) ? stored.treatments : [];
+
+  const storedById = new Map<string, Treatment>();
+  for (const t of storedTreatments) {
+    if (t && t.id) {
+      storedById.set(String(t.id).trim().toLowerCase(), t);
+    }
+  }
+
+  // Build the standalone image cards, merging any custom WebP images & SEO metadata saved by admin
+  const standaloneCards: HomepageTreatmentCardItem[] = defaultCards.map((baseItem, idx) => {
+    const cleanId = String(baseItem.id).trim().toLowerCase();
+    const saved = storedById.get(cleanId);
+    const taxMeta =
+      subGroupMetaById.get(cleanId) ||
+      (baseItem.subGroupId ? subGroupMetaById.get(baseItem.subGroupId.toLowerCase()) : undefined);
+
+    const resolvedParentTag =
+      saved?.tag ||
+      taxMeta?.parentBranch ||
+      normalizeMasterBranch(baseItem.tag || 'Face & Injectables', baseItem.name);
+    const resolvedSubName =
+      saved?.subCategory || taxMeta?.subCategory || baseItem.subCategory || baseItem.name;
+
+    return projectHomepageTreatmentCard(
+      {
+        id: baseItem.id,
+        name: saved?.name || baseItem.name,
+        stepNumber: String(idx + 1).padStart(2, '0'),
+        tag: resolvedParentTag,
+        subGroupId: baseItem.subGroupId || baseItem.id,
+        subCategory: resolvedSubName,
+        duration: saved?.duration || baseItem.duration || '45 Mins',
+        description: saved?.description || baseItem.description || '',
+        image: saved?.image || baseItem.image,
+        imageAlt: saved?.imageAlt || baseItem.imageAlt,
+        seoTitle: saved?.seoTitle || baseItem.seoTitle,
+        seoKeywords:
+          saved?.seoKeywords && saved.seoKeywords.length > 0
+            ? saved.seoKeywords
+            : baseItem.seoKeywords,
+      },
+      idx
+    );
+  });
+
+  return {
+    editorialHeading: stored?.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
+    editorialSub: stored?.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
+    description: stored?.description || DEFAULT_TREATMENTS_CONFIG.description,
+    seoKeywords:
+      Array.isArray(stored?.seoKeywords) && stored.seoKeywords.length > 0
+        ? stored.seoKeywords
+        : DEFAULT_TREATMENTS_CONFIG.seoKeywords || [],
+    treatments: standaloneCards,
+  };
 }
 
 export function saveTreatmentsConfig(config: TreatmentsConfig): TreatmentsConfig {
-  setStorageItem(TREATMENTS_CONFIG_KEY, config);
-  syncConfigToFile(TREATMENTS_CONFIG_KEY, config);
-  return config;
+  const projectedTreatments: Treatment[] = (config.treatments || []).map((item, idx) =>
+    projectHomepageTreatmentCard(item, idx)
+  );
+
+  const normalizedConfig: TreatmentsConfig = {
+    editorialHeading: config.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
+    editorialSub: config.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
+    description: config.description || DEFAULT_TREATMENTS_CONFIG.description,
+    seoKeywords:
+      Array.isArray(config.seoKeywords) && config.seoKeywords.length > 0
+        ? Array.from(new Set(config.seoKeywords.map((k) => String(k || '').trim()).filter(Boolean)))
+        : DEFAULT_TREATMENTS_CONFIG.seoKeywords || [],
+    treatments: projectedTreatments,
+  };
+
+  setStorageItem(TREATMENTS_CONFIG_KEY, normalizedConfig);
+  syncConfigToFile(TREATMENTS_CONFIG_KEY, normalizedConfig);
+
+  if (typeof window !== 'undefined') {
+    fetch('/api/admin/homepage-treatments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: normalizedConfig }),
+    }).catch((err) => {
+      console.warn('Could not sync Homepage Treatments config to server endpoint:', err);
+    });
+
+    // Register custom treatment card images in the Central Media Asset Library for Google Image SEO
+    try {
+      for (const item of projectedTreatments) {
+        if (item.image && item.image.startsWith('/assets/treatments/')) {
+          registerMediaAsset({
+            name: item.seoTitle || item.name,
+            url: item.image.split('?')[0],
+            mediaType: 'image',
+            category: 'Treatments',
+            altText: item.imageAlt,
+            seoKeywords: item.seoKeywords,
+          });
+        }
+      }
+    } catch {}
+
+    window.dispatchEvent(
+      new CustomEvent('treatments_config_updated', { detail: normalizedConfig })
+    );
+  }
+
+  return normalizedConfig;
+}
+
+export function resetTreatmentsConfigToDefaults(): TreatmentsConfig {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(TREATMENTS_CONFIG_KEY);
+  }
+  return saveTreatmentsConfig(DEFAULT_TREATMENTS_CONFIG);
+}
+
+/**
+ * Paginated & Exact-Column Projected Query for Homepage Treatments Bento Cards:
+ * Projects ONLY (id, name, stepNumber, tag, subGroupId, subCategory, duration, description, image, imageAlt, seoTitle, seoKeywords)
+ * and slices by page / offset / limit.
+ */
+export function getPaginatedHomepageTreatments(
+  params: HomepageTreatmentsQueryParams = {}
+): PaginatedHomepageTreatmentsResponse {
+  const config = getTreatmentsConfig();
+  const allCards = (config.treatments || []).map((item, idx) =>
+    projectHomepageTreatmentCard(item, idx)
+  );
+
+  const tagFilter = (params.tag || params.category || '').trim();
+  const subGroupFilter = (params.subGroupId || params.subCategory || '').trim().toLowerCase();
+  const searchFilter = (params.search || '').trim().toLowerCase();
+
+  const filtered = allCards.filter((card) => {
+    if (
+      tagFilter &&
+      tagFilter !== 'ALL' &&
+      tagFilter !== 'All' &&
+      tagFilter !== 'All Procedures' &&
+      card.tag.toLowerCase() !== tagFilter.toLowerCase()
+    ) {
+      return false;
+    }
+    if (
+      subGroupFilter &&
+      subGroupFilter !== 'all' &&
+      card.subGroupId.toLowerCase() !== subGroupFilter &&
+      card.subCategory.toLowerCase() !== subGroupFilter
+    ) {
+      return false;
+    }
+    if (searchFilter) {
+      const hay = `${card.name} ${card.tag} ${card.subCategory} ${card.description} ${card.imageAlt} ${card.seoTitle} ${(card.seoKeywords || []).join(' ')}`.toLowerCase();
+      if (!hay.includes(searchFilter)) return false;
+    }
+    return true;
+  });
+
+  const totalCount = filtered.length;
+  const limit = params.limit !== undefined ? Math.max(1, params.limit) : 6;
+  const page = params.page !== undefined ? Math.max(1, params.page) : 1;
+  const offset = params.offset !== undefined ? Math.max(0, params.offset) : (page - 1) * limit;
+
+  const items = filtered.slice(offset, offset + limit);
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const hasMore = offset + items.length < totalCount;
+
+  return {
+    items,
+    totalCount,
+    hasMore,
+    page: Math.floor(offset / limit) + 1,
+    totalPages,
+    offset,
+    limit,
+    sectionMeta: {
+      editorialHeading: config.editorialHeading,
+      editorialSub: config.editorialSub,
+      description: config.description,
+      seoKeywords: config.seoKeywords || [],
+    },
+  };
+}
+
+/**
+ * Remote Paginated & Exact-Column Projected Fetcher for Homepage Treatments:
+ * Queries GET /api/admin/homepage-treatments with page, offset, limit, tag, subGroupId, and search,
+ * falling back to getPaginatedHomepageTreatments when offline or when local edits exist.
+ */
+export async function fetchPaginatedHomepageTreatments(
+  params: HomepageTreatmentsQueryParams = {}
+): Promise<PaginatedHomepageTreatmentsResponse> {
+  if (typeof window !== 'undefined' && window.localStorage.getItem(TREATMENTS_CONFIG_KEY)) {
+    return getPaginatedHomepageTreatments(params);
+  }
+
+  const limit = params.limit !== undefined ? Math.max(1, params.limit) : 6;
+  const page = params.page !== undefined ? Math.max(1, params.page) : 1;
+  const offset = params.offset !== undefined ? Math.max(0, params.offset) : (page - 1) * limit;
+
+  try {
+    const qs = new URLSearchParams();
+    qs.set('fields', 'card');
+    qs.set('limit', String(limit));
+    qs.set('offset', String(offset));
+    qs.set('page', String(page));
+    if (params.tag || params.category) {
+      qs.set('tag', String(params.tag || params.category));
+    }
+    if (params.subGroupId || params.subCategory) {
+      qs.set('subGroupId', String(params.subGroupId || params.subCategory));
+    }
+    if (params.search && params.search.trim()) {
+      qs.set('search', params.search.trim());
+    }
+
+    const res = await fetch(`/api/admin/homepage-treatments?${qs.toString()}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && Array.isArray(json.items || json.data)) {
+        const rawItems = json.items || json.data;
+        const cfg = json.config || getTreatmentsConfig();
+        return {
+          items: rawItems.map((item: any, idx: number) =>
+            projectHomepageTreatmentCard(item, offset + idx)
+          ),
+          totalCount: typeof json.totalCount === 'number' ? json.totalCount : rawItems.length,
+          hasMore: Boolean(json.hasMore),
+          page: typeof json.page === 'number' ? json.page : page,
+          totalPages:
+            typeof json.totalPages === 'number'
+              ? json.totalPages
+              : Math.max(1, Math.ceil((json.totalCount || rawItems.length) / limit)),
+          offset: typeof json.offset === 'number' ? json.offset : offset,
+          limit: typeof json.limit === 'number' ? json.limit : limit,
+          sectionMeta: {
+            editorialHeading: cfg.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
+            editorialSub: cfg.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
+            description: cfg.description || DEFAULT_TREATMENTS_CONFIG.description,
+            seoKeywords: Array.isArray(cfg.seoKeywords)
+              ? cfg.seoKeywords
+              : DEFAULT_TREATMENTS_CONFIG.seoKeywords || [],
+          },
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Falling back to local paginated Homepage Treatments:', err);
+  }
+
+  return getPaginatedHomepageTreatments(params);
 }
 
 export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').BeforeAfterPair): void {
@@ -3746,8 +4421,8 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     logo: {
       ...base.logo,
       ...(candidate.logo || {}),
-      icon: candidate.logo?.icon || base.logo.icon,
-      full: candidate.logo?.full || base.logo.full,
+      icon: (candidate.logo?.icon && candidate.logo.icon.trim()) ? candidate.logo.icon.trim() : base.logo.icon,
+      full: (candidate.logo?.full && candidate.logo.full.trim()) ? candidate.logo.full.trim() : base.logo.full,
       alt: candidate.logo?.alt || base.logo.alt,
     },
     socials: {
@@ -3755,12 +4430,20 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       ...(candidate.socials || {}),
     },
     interiorPhotos:
-      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.length > 0
-        ? candidate.interiorPhotos
+      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0).length > 0
+        ? candidate.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0)
         : base.interiorPhotos,
     locations:
       Array.isArray(candidate.locations) && candidate.locations.length > 0
-        ? candidate.locations
+        ? candidate.locations.map((loc, idx) => {
+            const matchingBase = base.locations?.find((b) => b.id === loc.id || b.name === loc.name) || base.locations?.[idx];
+            const resolvedImg = (loc.image && loc.image.trim()) ? loc.image.trim() : (matchingBase?.image || '');
+            return {
+              ...matchingBase,
+              ...loc,
+              image: resolvedImg,
+            };
+          })
         : base.locations,
     whyChooseUs: {
       heading: candidate.whyChooseUs?.heading || base.whyChooseUs?.heading || defaultWhyChooseUs.heading,
@@ -3890,11 +4573,8 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
 
 export function getClinicData(): ClinicData {
   if (typeof window !== 'undefined' && !_hasHydratedClinicDataFromServer) {
-    const hasLocalOverride = Boolean(window.localStorage.getItem(CLINIC_INFO_DATA_KEY));
-    if (!hasLocalOverride) {
-      _hasHydratedClinicDataFromServer = true;
-      fetchRemoteClinicData().catch(() => {});
-    }
+    _hasHydratedClinicDataFromServer = true;
+    fetchRemoteClinicData().catch(() => {});
   }
 
   const stored = getStorageItem<Partial<ClinicData> | null>(CLINIC_INFO_DATA_KEY, null);
@@ -4394,13 +5074,34 @@ export function buildTaxonomyFromMasterServices(
     }
   }
 
+  // Track sub-group IDs already placed in custom branches so they aren't duplicated into core branches
+  const placedSubGroupIds = new Set<string>();
+  for (const g of groups) {
+    for (const s of g.subGroups) {
+      placedSubGroupIds.add(s.id);
+    }
+  }
+
   // Populate subGroups directly from Services & Branches (getMasterServices)
   for (const service of services) {
+    if (placedSubGroupIds.has(service.id)) continue;
+
+    const customCatCandidate = (service.category || '').trim();
     const rawBranch = service.pricingCategory || service.category || '';
-    // Match custom branch first if applicable, otherwise normalize to core branch
-    let targetGroup = groups.find(
-      (g) => g.name.toLowerCase() === rawBranch.toLowerCase() || g.id === rawBranch.toLowerCase()
-    );
+
+    // Match custom branch first if applicable, otherwise match core branch
+    let targetGroup =
+      groups.find(
+        (g) =>
+          !coreIds.has(g.id) &&
+          customCatCandidate &&
+          (g.name.toLowerCase() === customCatCandidate.toLowerCase() ||
+            g.id === customCatCandidate.toLowerCase())
+      ) ||
+      groups.find(
+        (g) => g.name.toLowerCase() === rawBranch.toLowerCase() || g.id === rawBranch.toLowerCase()
+      );
+
     if (!targetGroup) {
       const normalizedBranchName = normalizeMasterBranch(rawBranch, service.title);
       const coreMatch = CORE_BRANCH_ID_TO_NAME.find((c) => c.name === normalizedBranchName);
@@ -4412,6 +5113,7 @@ export function buildTaxonomyFromMasterServices(
         id: service.id,
         name: service.title,
       });
+      placedSubGroupIds.add(service.id);
     }
   }
 

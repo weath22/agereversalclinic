@@ -12,7 +12,12 @@ export interface TreatmentType {
   stepNumber?: string;
   description?: string;
   tag?: string;
+  subGroupId?: string;
+  subCategory?: string;
   image?: string;
+  imageAlt?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
   duration?: string;
 }
 
@@ -266,7 +271,12 @@ export interface Treatment {
   stepNumber?: string;
   description?: string;
   tag?: string;
+  subGroupId?: string;
+  subCategory?: string;
   image?: string;
+  imageAlt?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
   price?: string;
   duration?: string;
 }
@@ -275,6 +285,7 @@ export interface TreatmentsConfig {
   editorialHeading: string;
   editorialSub: string;
   description: string;
+  seoKeywords?: string[];
   treatments: Treatment[];
 }
 
