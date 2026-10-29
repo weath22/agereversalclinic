@@ -65,44 +65,464 @@ export const SERVICES: Service[] = [
   }
 ];
 
-export const TREATMENTS: TreatmentType[] = ALL_SPECIALIST_TREATMENTS.map((item, idx) => {
-  const cleanTitle = (item.title || '').trim();
-  const rawParent = item.pricingCategory || item.category || 'Face & Injectables';
-  const categoryLabel =
-    rawParent === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawParent;
-  const cleanImage =
-    item.image || '/assets/images/treatments/specialist-profhilo.jpg';
-
-  const defaultKeywords =
-    item.seoKeywords && item.seoKeywords.length > 0
-      ? item.seoKeywords
-      : [
-          cleanTitle.toLowerCase(),
-          categoryLabel.toLowerCase(),
-          `${cleanTitle.toLowerCase()} london`,
-          'age reversal clinic treatment',
-          'medical aesthetics london'
-        ];
-
-  return {
-    id: item.id,
-    name: cleanTitle,
-    stepNumber: String(idx + 1).padStart(2, '0'),
-    description: item.description || '',
-    tag: categoryLabel,
-    subGroupId: item.id,
-    subCategory: cleanTitle,
-    image: cleanImage,
-    imageAlt:
-      item.coverMedia?.altText ||
-      `${cleanTitle} (${categoryLabel}) at Age Reversal Clinic London`,
-    seoTitle:
-      item.coverMedia?.seoTitle ||
-      `${cleanTitle} | Age Reversal Clinic London`,
-    seoKeywords: defaultKeywords,
-    duration: item.duration || '45 Mins'
-  };
-});
+export const TREATMENTS: TreatmentType[] = [
+  {
+    "id": "lash-eyebrow",
+    "name": "lash & eyebrow",
+    "stepNumber": "01",
+    "tag": "Hair & Beauty",
+    "subGroupId": "lash-eyebrow",
+    "subCategory": "lash & eyebrow",
+    "duration": "45 mins",
+    "description": "Bespoke brow architecture, precision tinting, lamination, and lash enhancement tailored to frame and elevate your natural facial features.",
+    "image": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+    "imageAlt": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "lash & eyebrow - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "body-waxing",
+    "name": "body waxing",
+    "stepNumber": "02",
+    "tag": "Hair & Beauty",
+    "subGroupId": "body-waxing",
+    "subCategory": "body waxing",
+    "duration": "30 - 60 mins",
+    "description": "Gentle, medical-grade hypoallergenic waxing protocols formulated for smooth, long-lasting hair removal and calm, conditioned skin.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+    "imageAlt": "body waxing clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "body waxing - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "body waxing",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "ladies-girls-cut-collors-treatments",
+    "name": "Ladies & Girls Cut, Collors, Treatments",
+    "stepNumber": "03",
+    "tag": "Hair & Beauty",
+    "subGroupId": "ladies-girls-cut-collors-treatments",
+    "subCategory": "Ladies & Girls Cut, Collors, Treatments",
+    "duration": "60 - 120 mins",
+    "description": "Artisanal hair cutting, dimensional colour formulation, and deep bond-repair conditioning treatments for luminous, healthy hair.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+    "imageAlt": "Ladies & Girls Cut, Collors, Treatments clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Ladies & Girls Cut, Collors, Treatments - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "ladies & girls cut, collors, treatments",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "men-and-kids",
+    "name": "Men and Kids",
+    "stepNumber": "04",
+    "tag": "Hair & Beauty",
+    "subGroupId": "men-and-kids",
+    "subCategory": "Men and Kids",
+    "duration": "30 - 45 mins",
+    "description": "Tailored precision grooming, contemporary styling, and gentle hair care services designed for gentlemen and young clients.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w",
+    "imageAlt": "Men and Kids clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Men and Kids - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "men and kids",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "men-kids-services",
+    "name": "Men / kids services",
+    "stepNumber": "05",
+    "tag": "Hair & Beauty",
+    "subGroupId": "men-kids-services",
+    "subCategory": "Men / kids services",
+    "duration": "45 mins",
+    "description": "Complete specialist grooming, scalp vitality care, and bespoke styling packages crafted for men and children.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g",
+    "imageAlt": "Men / kids services clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Men / kids services - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "men / kids services",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "facial-skin-care",
+    "name": "Facial skin care",
+    "stepNumber": "06",
+    "tag": "Advanced Facials",
+    "subGroupId": "facial-skin-care",
+    "subCategory": "Facial skin care",
+    "duration": "60 mins",
+    "description": "Multi-step clinical facial protocols combining deep pore purification, active botanical serums, and cellular barrier restoration.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuB2a_0Datjn8f2On3mNF7IY6_QgXkw0AQl1Il2WqYPqYqTU7wUKYRpJUg2xdA_d0B8SfBpbvVzzYOczvA85hXWv6hkb0snKG0UXUjP3EUDr0nkt_A_nINJJOIpGcQ2X_iD94V14qlhvJmRUp8In6cOEtlONSRSf5Kpdd8uA6VUX3SFIaBku4xsVbSvg9fE6K0FWVX-QGNWmY4jhYY70yZCEdfN_V3cezSz0jiycoy31X-hMxrw-bNoMrpEVo43FV1z8TnWKiqVpTdlK",
+    "imageAlt": "Facial skin care clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Facial skin care - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "advanced facials",
+      "facial skin care",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "aqualyx-course-3",
+    "name": "Aqualyx Course 3",
+    "stepNumber": "07",
+    "tag": "Body Sculpting",
+    "subGroupId": "aqualyx-course-3",
+    "subCategory": "Aqualyx Course 3",
+    "duration": "45 mins",
+    "description": "Comprehensive 3-session deoxycholic acid lipolysis protocol engineered to dissolve stubborn localized fat pockets with lasting contour definition.",
+    "image": "/assets/treatments/aqualyx-course-3.webp?v=1793152243398",
+    "imageAlt": "Aqualyx Course 3 clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Aqualyx Course 3 - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "aqualyx course 3",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "deso-face-and-body-course-of-1",
+    "name": "Deso Face and body Course of 1",
+    "stepNumber": "08",
+    "tag": "Body Sculpting",
+    "subGroupId": "deso-face-and-body-course-of-1",
+    "subCategory": "Deso Face and body Course of 1",
+    "duration": "45 mins",
+    "description": "Targeted single-session next-generation DesoFace and DesoBody lipolysis for precise submental and body fat sculpting.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+    "imageAlt": "Deso Face and body Course of 1 clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Deso Face and body Course of 1 - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "deso face and body course of 1",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "deso-face-and-body-course-of-3",
+    "name": "Deso Face and body Course of 3",
+    "stepNumber": "09",
+    "tag": "Body Sculpting",
+    "subGroupId": "deso-face-and-body-course-of-3",
+    "subCategory": "Deso Face and body Course of 3",
+    "duration": "45 mins",
+    "description": "Progressive 3-session DesoFace and DesoBody contouring program designed for optimal adipose reduction and sculpted definition.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW",
+    "imageAlt": "Deso Face and body Course of 3 clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Deso Face and body Course of 3 - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "deso face and body course of 3",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "slimming-pen",
+    "name": "Slimming pen",
+    "stepNumber": "10",
+    "tag": "Body Sculpting",
+    "subGroupId": "slimming-pen",
+    "subCategory": "Slimming pen",
+    "duration": "30 mins",
+    "description": "Clinically supervised metabolic weight management and appetite regulation protocol supporting sustainable body slimming.",
+    "image": "/assets/treatments/slimming-pen.webp?v=1793132821363",
+    "imageAlt": "Slimming pen clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Slimming pen - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "slimming pen",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "platelet-rich-plasma-prp",
+    "name": "Platelet-Rich Plasma (PRP)",
+    "stepNumber": "11",
+    "tag": "Face & Injectables",
+    "subGroupId": "platelet-rich-plasma-prp",
+    "subCategory": "Platelet-Rich Plasma (PRP)",
+    "duration": "60 mins",
+    "description": "Autologous platelet growth factor therapy that accelerates dermal collagen synthesis, tissue repair, and natural hair follicle vitality.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ",
+    "imageAlt": "Platelet-Rich Plasma (PRP) clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Platelet-Rich Plasma (PRP) - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "platelet-rich plasma (prp)",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "co2-laser-from",
+    "name": "Co@ Laser from",
+    "stepNumber": "12",
+    "tag": "Advanced Facials",
+    "subGroupId": "co2-laser-from",
+    "subCategory": "Co@ Laser from",
+    "duration": "60 mins",
+    "description": "Fractional ablative laser resurfacing engineered to remodel deep acne scarring, refine pore architecture, and renew aged epidermis.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+    "imageAlt": "Co@ Laser from clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Co@ Laser from - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "advanced facials",
+      "co@ laser from",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "endolift-fiber-lift",
+    "name": "Endolift - Fiber Lift",
+    "stepNumber": "13",
+    "tag": "Face & Injectables",
+    "subGroupId": "endolift-fiber-lift",
+    "subCategory": "Endolift - Fiber Lift",
+    "duration": "60 - 90 mins",
+    "description": "Minimally invasive interstitial laser fiber lifting that contracts deep subdermal septa, melts jowl adiposity, and sculpts the jawline.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBIu85aRvZNCnJgLddXBAuzq6-ZrHWm-RCio9ODG39WwLFMrukeSSTm7pYkErIfMtjwLveWBFsg7ViYoAHOh-QpVTrmygr1xGSzufZe33L847MBWThvbDnB59YUMqTnpKSUf_k70zg7HLIgogkrC3OyyAAH8Hcs-TZE835yDj",
+    "imageAlt": "Endolift - Fiber Lift clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Endolift - Fiber Lift - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "endolift - fiber lift",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "salmon-sperm-injection",
+    "name": "Salmon sperm injection",
+    "stepNumber": "14",
+    "tag": "Face & Injectables",
+    "subGroupId": "salmon-sperm-injection",
+    "subCategory": "Salmon sperm injection",
+    "duration": "45 mins",
+    "description": "Ultra-purified polynucleotide DNA bio-revitalisation that repairs cellular damage, boosts elasticity, and illuminates delicate under-eye and facial skin.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDvTYE6O7-KUUhCD-DEa_kWziNerDAQzqbJJakBZ4fXCoZvCTmzQAT_VOqYbyHZ5ElTXNJ_6Ln6p-YkNwBsZJFL9AXe3LSjvR3Yo7ftDk8xjfRWbH-zoSfBc3kToZ27GZUJWEW92bJxW2lA9BVYy3gX8dDmrNGjy8D1mdKFG2EZebtfKtYbMYZdhT253WKmBSW9WsfRYdezgr1Pi8xzRL7L90-MH4HGeOKjiUDl_jnVpZwr6O_LiLdVSAZ-87OmvVUbzsaA1NJZ1nac",
+    "imageAlt": "Salmon sperm injection clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Salmon sperm injection - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "salmon sperm injection",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "semi-permanent-makeup",
+    "name": "Semi-permanent makeup",
+    "stepNumber": "15",
+    "tag": "Hair & Beauty",
+    "subGroupId": "semi-permanent-makeup",
+    "subCategory": "Semi-permanent makeup",
+    "duration": "90 - 120 mins",
+    "description": "Micro-pigment artistry for natural-looking brow strokes, lip blush tinting, and subtle lash-line definition with medical-grade pigments.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww",
+    "imageAlt": "Semi-permanent makeup clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Semi-permanent makeup - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "hair & beauty",
+      "semi-permanent makeup",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "tattoo-removal",
+    "name": "Tattoo removal",
+    "stepNumber": "16",
+    "tag": "Advanced Facials",
+    "subGroupId": "tattoo-removal",
+    "subCategory": "Tattoo removal",
+    "duration": "30 - 45 mins",
+    "description": "High-powered multi-wavelength laser pulses that shatter unwanted ink particles across all pigment spectrums without harming surrounding tissue.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUloxcWsT4NRCnTfn0RneF4Q4BwymxBAMsqFKJv9IIvSzEjhVsjT_MDtI4irgzGW0su__ZFlPbs8_2ebSsDU3aWDop2YR9ea2x21K8fdCKFFVUTyJj9U_xiYZFY63zL5Btb43hR-HaxmbiKFgUp8DqEgm5D4mrjpPpfVzplLWjcWFD75MC4S3cc8dnLB7CywLocC5PIZJPdVTfCwgrgG4WqwQZabVdZ8OAlRAeHeZCBxQt2rP-Gm1MJcgjtoht4nVH3CBwLsNAF8OI",
+    "imageAlt": "Tattoo removal clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Tattoo removal - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "advanced facials",
+      "tattoo removal",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "morpheus8-treatment",
+    "name": "Morpheus8 treatment",
+    "stepNumber": "17",
+    "tag": "Advanced Facials",
+    "subGroupId": "morpheus8-treatment",
+    "subCategory": "Morpheus8 treatment",
+    "duration": "60 mins",
+    "description": "Fractional radiofrequency microneedling penetrating deep subdermal layers to remodel collagen, tighten skin laxity, and refine facial contours.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAOtBKp33pnPLoKpvckXkiIS-1G2cj7yNpUXZYP7v7nB3HgYFreRRFM-F6UZt2uwFsUMzf2u0m_0SvHcja7AjjBjq8B4mo1Gk_Y3ihgY2qmmbr1Vc48W8QizQ3BLTsaPHv9ojoje0Q8wG64F4zjwPy98roZuGAorsk2N5TxRUibfaZ4gZ7L9r7cFXGqA6jBiryjo3-fh10ZWdkryws_w14ASGtvXypafuUczwEFeVz6SywQsQKFg--N76UkgP9d4Um3Q5Snz8eG_XyS",
+    "imageAlt": "Morpheus8 treatment clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Morpheus8 treatment - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "advanced facials",
+      "morpheus8 treatment",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "emface-skin-tightening-and-lifting",
+    "name": "Emface skin tightening and lifting",
+    "stepNumber": "18",
+    "tag": "Face & Injectables",
+    "subGroupId": "emface-skin-tightening-and-lifting",
+    "subCategory": "Emface skin tightening and lifting",
+    "duration": "30 mins",
+    "description": "Needle-free synchronized radiofrequency and HIFES facial muscle stimulation that elevates brow, cheek, and jawline architecture naturally.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA7UgkEtf-bZluGv7l-41WwJhNf6ZeHMpU9TjZpAKKiahvk1t9bfl0Mkxg5NCQ_kRYgAnrTTt9RUksFV8p444Zgd0ZMqNFOFXOEUq_yiCVZq9Zx1D2i-vo7LwPyVVHKmbDWQaWZ5DOA_pbZzyNvC111kWejO_nRgRCXCXLJFWWVeF1P2jY2q2e9yvoW5K2BqB9p4WMOweJldiczqPsdtmVnL2IVUWpgCA6FGEy0IBW2dpqISk24QrqJkcprWIL-_yJpN2okgDYT8IWs",
+    "imageAlt": "Emface skin tightening and lifting clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Emface skin tightening and lifting - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "emface skin tightening and lifting",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "emscuplt-body-sculpt-and-tightening",
+    "name": "Emscuplt body sculpt and tightening",
+    "stepNumber": "19",
+    "tag": "Body Sculpting",
+    "subGroupId": "emscuplt-body-sculpt-and-tightening",
+    "subCategory": "Emscuplt body sculpt and tightening",
+    "duration": "30 - 45 mins",
+    "description": "High-intensity electromagnetic supramaximal contractions paired with thermal energy to build core muscle tone and burn stubborn fat.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXc7SORxoXUK7Kzbf256KDGjYoiGB3XeCLNYObBtlw7h8260KwmKxaiEQL7E2Wg3BTQhjpJs0Iw9GVYkNkpYhd4WPz_jdW6PA2i4yXAVvmrMoBCqMX479nyNRdb7X8GwVNjcQtb1OIG8li-NYXrs-55c2CPQIIew0siqNajiO8--wLogFbflBlElSPQ9GlaxJ2VmWkjKCbGUr2QX1FhpzqTBOU86kyynhHW4UjQMqKe-XDBVsXygiZM-ACB4nUWQl8J4dDjsBIEw",
+    "imageAlt": "Emscuplt body sculpt and tightening clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Emscuplt body sculpt and tightening - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "emscuplt body sculpt and tightening",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "body-slimming-fat-loss-cellulite-reduction",
+    "name": "Body slimming for fat and loss Cellulite reduction",
+    "stepNumber": "20",
+    "tag": "Body Sculpting",
+    "subGroupId": "body-slimming-fat-loss-cellulite-reduction",
+    "subCategory": "Body slimming for fat and loss Cellulite reduction",
+    "duration": "60 mins",
+    "description": "Multi-modality acoustic wave, lymphatic drainage, and thermal lipolysis protocol to smooth fibrous dimpling and contour the silhouette.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+    "imageAlt": "Body slimming for fat and loss Cellulite reduction clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Body slimming for fat and loss Cellulite reduction - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "body sculpting",
+      "body slimming for fat and loss cellulite reduction",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "anti-wrinkles-injection",
+    "name": "Anti-wrinkle's injection",
+    "stepNumber": "21",
+    "tag": "Face & Injectables",
+    "subGroupId": "anti-wrinkles-injection",
+    "subCategory": "Anti-wrinkle's injection",
+    "duration": "30 mins",
+    "description": "Precision micro-dosed neuromodulator injections that relax dynamic forehead, frown, and periorbital lines while preserving natural expression.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAOPTQtfj8J1bbB7SlVVRU6fYo2gWaZ-vP4FOmbQ0GK-wiSWxgFv7RrufflpNtjGP9Dk5eLV2kMfUIPVx1N4ETnRWMUGQ-pnWBcZCa97apM4cg71CV6hKaKDiQOlU26NKqLXuvzRkHrDNd-vXfy5u3MHCvpyxfbnHdk9lkm5vhjg9zIrK1aYJGwOOOPurVrXxbRr7FprgjD7ZzrUzhcc4DM6YdWc6J8P_jEx9W_ffwKfL2E8x3PIYt0_G8MTcbFUJlLtFYmgOa7s-OK",
+    "imageAlt": "Anti-wrinkle's injection clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Anti-wrinkle's injection - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "anti-wrinkle's injection",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "iv-drip-lounge-course-of-1",
+    "name": "IV Drip Lounge-course of 1",
+    "stepNumber": "22",
+    "tag": "IV Drips & Wellness",
+    "subGroupId": "iv-drip-lounge-course-of-1",
+    "subCategory": "IV Drip Lounge-course of 1",
+    "duration": "45 mins",
+    "description": "Single-session intravenous micronutrient, antioxidant, and hydration infusion formulated for rapid cellular replenishment and immunity.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+    "imageAlt": "IV Drip Lounge-course of 1 clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "IV Drip Lounge-course of 1 - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "iv drips & wellness",
+      "iv drip lounge-course of 1",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "dermal-fillers-1ml",
+    "name": "Dermal Fillers-1ml",
+    "stepNumber": "23",
+    "tag": "Face & Injectables",
+    "subGroupId": "dermal-fillers-1ml",
+    "subCategory": "Dermal Fillers-1ml",
+    "duration": "45 mins",
+    "description": "Bespoke 1ml hyaluronic acid structural contouring for balanced lip volume, cheek definition, jawline sculpting, or fold softening.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCxFMpWCmamXBrqtr3byekk8IxhE2yyDGA5Csl0k1gX-QAm0WlSNnY7JWxBhi_P-0cI9aXcm0u37Lx1mJD71bT1r7vkf_hkUKHQ5r5ZHO1lyWEJGrjcCjqbPHtMrqaADl5RHnV6wrOK5t6lYD0eDfR9A9e6HQrhvFCGQfDHqTSilyjMctWh0oe2v6Ftf0bnAmbfY9UxcG-hz6RqHNvavTumhSjzrQQzAMwwmIBBDPhKeG4tnbCMg1vvBC-d0H-SmLSihL8Yr0X6CCgA",
+    "imageAlt": "Dermal Fillers-1ml clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Dermal Fillers-1ml - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "dermal fillers-1ml",
+      "clinical aesthetic treatments"
+    ]
+  },
+  {
+    "id": "profhilo-2ml",
+    "name": "Profhilo 2ml",
+    "stepNumber": "24",
+    "tag": "Face & Injectables",
+    "subGroupId": "profhilo-2ml",
+    "subCategory": "Profhilo 2ml",
+    "duration": "30 mins",
+    "description": "Award-winning 2ml ultra-pure hyaluronic acid bio-remodeling treatment that stimulates 4 types of collagen and elastin for dewy skin firmness.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC",
+    "imageAlt": "Profhilo 2ml clinical aesthetic treatment at Age Reversal Clinic",
+    "seoTitle": "Profhilo 2ml - Specialist Care",
+    "seoKeywords": [
+      "anti-aging clinic london",
+      "face & injectables",
+      "profhilo 2ml",
+      "clinical aesthetic treatments"
+    ]
+  }
+];
 
 export const TREATMENT_IMAGES: string[] = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuCxFMpWCmamXBrqtr3byekk8IxhE2yyDGA5Csl0k1gX-QAm0WlSNnY7JWxBhi_P-0cI9aXcm0u37Lx1mJD71bT1r7vkf_hkUKHQ5r5ZHO1lyWEJGrjcCjqbPHtMrqaADl5RHnV6wrOK5t6lYD0eDfR9A9e6HQrhvFCGQfDHqTSilyjMctWh0oe2v6Ftf0bnAmbfY9UxcG-hz6RqHNvavTumhSjzrQQzAMwwmIBBDPhKeG4tnbCMg1vvBC-d0H-SmLSihL8Yr0X6CCgA',

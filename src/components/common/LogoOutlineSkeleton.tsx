@@ -38,6 +38,10 @@ export interface LogoOutlineSkeletonProps {
    * Accessible ARIA label
    */
   label?: string;
+  /**
+   * Explicit brand logo image URL to use as placeholder
+   */
+  logoUrl?: string;
 }
 
 const DEFAULT_BRAND_LOGO_URL =
@@ -94,9 +98,13 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
   showText = false,
   text,
   label = 'Age Reversal Clinic Brand Logo',
+  logoUrl,
 }) => {
   const headerConfig = getHeaderConfig();
-  const brandLogoUrl = headerConfig?.logoUrl || DEFAULT_BRAND_LOGO_URL;
+  const brandLogoUrl =
+    (logoUrl && !logoUrl.includes('unsplash.com') ? logoUrl : null) ||
+    headerConfig?.logoUrl ||
+    DEFAULT_BRAND_LOGO_URL;
 
   const variantStyles = VARIANT_CONFIG[variant] || VARIANT_CONFIG.gold;
   const isCustomNumeric = typeof size === 'number';

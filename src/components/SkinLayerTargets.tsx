@@ -114,7 +114,7 @@ export default function SkinLayerTargets({ targetLayer, targetDepth, treatmentNa
   };
 
   return (
-    <div className="flex flex-col space-y-6 w-full">
+    <div className="flex flex-col space-y-6 w-full relative isolate transform-gpu">
       {/* Section Header */}
       <div className="space-y-1">
         <span className="text-[10px] font-black uppercase tracking-widest text-[#D8C2A3] block">
@@ -130,16 +130,21 @@ export default function SkinLayerTargets({ targetLayer, targetDepth, treatmentNa
       </div>
 
       {/* Main Luxury Profiler Canvas Container (Outermost container disabled on mobile screens only) */}
-      <div className="bg-transparent sm:bg-gradient-to-b sm:from-[#14161f] sm:via-[#0f1118] sm:to-[#0a0b10] border-0 sm:border sm:border-[#D8C2A3]/30 rounded-none sm:rounded-3xl p-0 sm:p-7 md:p-9 shadow-none sm:shadow-2xl relative overflow-visible sm:overflow-hidden text-white">
-        {/* Subtle champagne & rose ambient illumination blooms (Desktop/Tablet only) */}
-        <div className="hidden sm:block absolute top-0 right-1/4 w-[450px] h-[300px] bg-[#D8C2A3]/12 rounded-full blur-3xl pointer-events-none" />
-        <div className="hidden sm:block absolute bottom-0 left-10 w-[350px] h-[350px] bg-rose-gold/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-transparent sm:bg-gradient-to-b sm:from-[#14161f] sm:via-[#0f1118] sm:to-[#0a0b10] border-0 sm:border sm:border-[#D8C2A3]/30 rounded-none sm:rounded-3xl p-0 sm:p-7 md:p-9 shadow-none sm:shadow-2xl relative overflow-visible sm:overflow-hidden text-white isolate transform-gpu">
+        {/* Subtle champagne & rose ambient illumination blooms (GPU-accelerated pre-computed radial gradients) */}
+        <div 
+          className="hidden sm:block absolute inset-0 pointer-events-none transform-gpu"
+          style={{
+            background: 'radial-gradient(ellipse 60% 40% at 75% 0%, rgba(216, 194, 163, 0.12) 0%, transparent 70%), radial-gradient(circle 280px at 10% 100%, rgba(183, 110, 121, 0.1) 0%, transparent 70%)',
+            transform: 'translateZ(0)'
+          }}
+        />
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:gap-8 items-stretch relative z-10">
           
           {/* Left Block: Interactive Layer Selector */}
-          <div className="lg:col-span-7 bg-[#14161f] sm:bg-white/[0.04] backdrop-blur-md border border-[#D8C2A3]/25 sm:border-white/10 rounded-2xl p-4 sm:p-6 md:p-7 flex flex-col justify-between space-y-4 sm:space-y-5 shadow-lg sm:shadow-inner">
+          <div className="lg:col-span-7 bg-[#14161f] sm:bg-white/[0.04] sm:backdrop-blur-md border border-[#D8C2A3]/25 sm:border-white/10 rounded-2xl p-4 sm:p-6 md:p-7 flex flex-col justify-between space-y-4 sm:space-y-5 shadow-lg sm:shadow-inner transform-gpu">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
               <p className="text-xs sm:text-sm text-white/80 leading-relaxed font-light">
                 Unlike generic topical cosmetics, <span className="font-medium text-[#D8C2A3]">{treatmentName}</span> delivers energy to calibrated dermal depths. Click any stratum to inspect its clinical specs.
@@ -239,7 +244,7 @@ export default function SkinLayerTargets({ targetLayer, targetDepth, treatmentNa
 
           {/* Right Block: Dynamic Cross-Section Visualizer & HUD */}
           <div className="lg:col-span-5 flex flex-col">
-            <div className="relative flex-1 min-h-[380px] lg:min-h-full rounded-2xl overflow-hidden border border-[#D8C2A3]/25 sm:border-white/10 bg-[#14161f] sm:bg-white/[0.04] backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 shadow-lg sm:shadow-inner">
+            <div className="relative flex-1 min-h-[380px] lg:min-h-full rounded-2xl overflow-hidden border border-[#D8C2A3]/25 sm:border-white/10 bg-[#14161f] sm:bg-white/[0.04] sm:backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 shadow-lg sm:shadow-inner transform-gpu">
               
               {/* HUD Header */}
               <div className="z-10 flex items-center justify-between border-b border-white/10 pb-3">
@@ -336,7 +341,8 @@ export default function SkinLayerTargets({ targetLayer, targetDepth, treatmentNa
 
                   {/* Calibrated Laser / Ultrasound Targeting Beam */}
                   <motion.div
-                    className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8C2A3] to-white shadow-[0_0_12px_#D8C2A3] z-20 pointer-events-none flex justify-end pr-4 items-center"
+                    className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8C2A3] to-white shadow-[0_0_12px_#D8C2A3] z-20 pointer-events-none flex justify-end pr-4 items-center transform-gpu will-change-transform"
+                    style={{ transform: 'translateZ(0)' }}
                     animate={{
                       top: activeHeights[selectedLayerId]
                     }}
@@ -355,7 +361,7 @@ export default function SkinLayerTargets({ targetLayer, targetDepth, treatmentNa
               </div>
 
               {/* Bottom HUD Telemetry Stats */}
-              <div className="z-10 bg-black/50 backdrop-blur-md rounded-xl p-3.5 sm:p-4 border border-white/10 space-y-3">
+              <div className="z-10 bg-black/85 sm:bg-black/50 sm:backdrop-blur-md rounded-xl p-3.5 sm:p-4 border border-white/10 space-y-3 transform-gpu">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <div className="flex items-center gap-1.5">
                     <Cpu className="h-3.5 w-3.5 text-[#D8C2A3] animate-pulse" />

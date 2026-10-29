@@ -83,7 +83,9 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
       <FacilityInteriors />
       <Testimonials />
       <TrustBrands />
-      <Accreditations />
+      <div className="relative isolate transform-gpu">
+        <Accreditations />
+      </div>
     </div>
   );
 }

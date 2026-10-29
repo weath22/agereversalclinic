@@ -58,12 +58,11 @@ export default function Accreditations() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, scale: 0.92, y: 10 },
+    hidden: { opacity: 0, y: 8 },
     visible: {
       opacity: 1,
-      scale: 1,
       y: 0,
-      transition: { type: 'spring' as const, stiffness: 120, damping: 14 }
+      transition: { duration: 0.35, ease: 'easeOut' as const }
     }
   };
 
@@ -73,7 +72,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-1"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2.5 rounded-xl h-28 border border-amber-500/10 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2.5 rounded-xl h-28 border border-amber-500/10 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[11px] font-serif font-semibold text-amber-700 tracking-tight leading-none">Aesthetics</span>
       <span className="text-[13px] font-serif font-extrabold text-amber-700 uppercase tracking-wider mt-0.5 leading-none">AWARDS</span>
@@ -85,7 +84,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-3"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-between items-center text-center w-full bg-neutral-800 border border-neutral-700 p-2 rounded-xl h-36 relative overflow-hidden group hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-between items-center text-center w-full bg-neutral-800 border border-neutral-700 p-2 rounded-xl h-36 relative overflow-hidden group hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="absolute top-0 inset-x-0 h-1 bg-red-800" />
       <span className="text-[13px] font-serif font-black tracking-widest text-neutral-100 leading-none mt-1">STYLE</span>
@@ -97,7 +96,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-2"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[9px] font-serif font-extrabold text-white uppercase tracking-tight leading-none">THE SUNDAY TIMES</span>
       <div className="w-4 h-[1px] bg-rose-gold/40 my-1.5" />
@@ -108,7 +107,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-4"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-yellow-600/20 p-2.5 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-yellow-600/20 p-2.5 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="w-8 h-8 rounded-full border border-yellow-500/50 flex flex-col justify-center items-center relative p-0.5 mb-1">
         <div className="absolute inset-0.5 rounded-full border border-dashed border-yellow-500/30" />
@@ -122,7 +121,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-8"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-32 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-32 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="flex items-center gap-1 mb-1">
         <div className="w-4 h-4 rounded-full bg-purple-100 flex items-center justify-center">
@@ -139,7 +138,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-6"
       variants={itemVariants} 
-      className="inline-flex w-full bg-neutral-900 border border-neutral-800 rounded-xl h-24 overflow-hidden hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex w-full bg-neutral-900 border border-neutral-800 rounded-xl h-24 overflow-hidden hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="w-1/2 bg-white flex flex-col justify-center items-start p-1.5 h-full">
         <span className="text-[10px] font-sans font-extrabold text-neutral-900 leading-none">ghp</span>
@@ -158,7 +157,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-7"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-28 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-28 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-white text-[10px] font-bold shadow-sm mb-1 relative">
         T
@@ -172,7 +171,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-5"
       variants={itemVariants} 
-      className="inline-flex justify-center items-center w-full bg-neutral-950 border border-neutral-850 p-2 rounded-xl h-16 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex justify-center items-center w-full bg-neutral-950 border border-neutral-850 p-2 rounded-xl h-16 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[13px] font-serif font-black tracking-[0.2em] text-white leading-none">GLAMOUR</span>
     </motion.div>,
@@ -181,7 +180,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-9"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-20 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2 rounded-xl h-20 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[11px] font-serif font-extrabold text-blue-950 leading-none">Aesthetics</span>
       <span className="text-[7px] font-sans font-bold text-neutral-400 uppercase tracking-widest mt-0.5">JOURNAL</span>
@@ -191,7 +190,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-13"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2.5 rounded-xl h-32 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-white p-2.5 rounded-xl h-32 border border-neutral-200 shadow-sm hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="w-12 h-12 rounded-full bg-neutral-900 flex flex-col justify-center items-center p-1 text-white relative">
         <span className="text-[6px] font-serif font-bold tracking-tight">STYLE</span>
@@ -204,7 +203,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-10"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-amber-600/20 p-2 rounded-xl h-24 relative overflow-hidden hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-amber-600/20 p-2 rounded-xl h-24 relative overflow-hidden hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="absolute inset-0 bg-gradient-to-tr from-amber-950/20 to-transparent opacity-50" />
       <span className="text-[6px] font-sans text-neutral-400 uppercase tracking-widest font-semibold leading-none mb-1">FINALIST</span>
@@ -216,7 +215,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-11"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2.5 rounded-xl h-28 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2.5 rounded-xl h-28 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="border border-white/10 p-1 rounded w-full h-full flex flex-col justify-center items-center">
         <span className="text-sm font-serif font-semibold text-white leading-none">B</span>
@@ -229,7 +228,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-12"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[6px] text-neutral-400 uppercase tracking-widest leading-none">THE BRITISH</span>
       <span className="text-[9px] font-serif font-bold text-white leading-none mt-1">Aesthetics</span>
@@ -240,7 +239,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-14"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-950 border border-neutral-850 p-2 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-950 border border-neutral-850 p-2 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-xs font-serif font-semibold text-neutral-500 leading-none">B</span>
       <span className="text-[5px] text-neutral-500 uppercase mt-0.5 font-bold">MIDLANDS BEAUTY</span>
@@ -251,7 +250,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-15"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-2 rounded-xl h-24 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <span className="text-[6px] text-neutral-500 tracking-wider">HAIR & BEAUTY AWARDS</span>
       <span className="text-[8px] text-neutral-300 font-sans font-bold uppercase mt-1">FINALIST</span>
@@ -262,7 +261,7 @@ export default function Accreditations() {
     <motion.div 
       key="card-16"
       variants={itemVariants} 
-      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-1.5 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3"
+      className="inline-flex flex-col justify-center items-center text-center w-full bg-neutral-900 border border-neutral-800 p-1.5 rounded-xl h-20 hover:scale-[1.03] transition-transform duration-200 break-inside-avoid mb-2.5 sm:mb-3 transform-gpu will-change-transform"
     >
       <div className="flex gap-0.5 text-yellow-500 text-[6px] mb-1">
         ★ ★ ★ ★ ★
@@ -276,11 +275,16 @@ export default function Accreditations() {
     <section
       aria-label={`${eyebrow} - ${heading}`}
       data-seo-keywords={seoKeywords.join(', ')}
-      className="py-20 bg-[#124c6a] border-t border-sky-950 overflow-hidden relative"
+      className="py-14 sm:py-20 bg-[#124c6a] border-t border-sky-950 overflow-hidden relative isolate transform-gpu"
     >
-      {/* Subtle background glow effect across the whole section */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-[#33B4AA]/10 rounded-full blur-[100px] pointer-events-none" />
+      {/* Subtle background glow effect across the whole section (GPU-accelerated pre-computed radial gradients) */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-40 transform-gpu"
+        style={{
+          background: 'radial-gradient(circle 360px at 25% 25%, rgba(255, 255, 255, 0.08) 0%, transparent 70%), radial-gradient(circle 360px at 75% 75%, rgba(51, 180, 170, 0.15) 0%, transparent 70%)',
+          transform: 'translateZ(0)'
+        }}
+      />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         {seoKeywords.length > 0 && (
@@ -290,7 +294,7 @@ export default function Accreditations() {
           
           {/* Left Column: Pure CSS masonry with direct flat cards to prevent any disappearing or isolated elements */}
           <div className="w-full lg:w-[58%] order-2 lg:order-1">
-            <div className="bg-black/25 p-4 sm:p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-sm">
+            <div className="bg-black/35 sm:bg-black/25 p-4 sm:p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden sm:backdrop-blur-sm transform-gpu">
               <div className="relative z-10">
                 <div className="flex justify-between items-center mb-6 px-1">
                   <span className="text-[10px] font-bold text-sky-200/70 uppercase tracking-widest block">

@@ -561,15 +561,16 @@ export default function App() {
             </div>
 
             {/* 8. Breathtaking Interactive Before/After Gallery */}
-            <div className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042] isolate">
+            <div className="relative overflow-hidden bg-[#ff8656] text-slate-950 border-b border-[#e57042] isolate transform-gpu">
               {/* Soft Fade Overlay (Matches Treatment component) */}
               <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
               {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
               <div 
-                className="absolute inset-0 pointer-events-none opacity-85" 
+                className="absolute inset-0 pointer-events-none opacity-85 transform-gpu" 
                 style={{
-                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
+                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)',
+                  transform: 'translateZ(0)'
                 }}
               />
 
@@ -579,15 +580,16 @@ export default function App() {
             </div>
 
             {/* Why Choose Us Section with App's Theme Background */}
-            <div className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40 isolate">
+            <div className="relative overflow-hidden bg-gradient-to-b from-[#fbf8f3] via-[#f5ede1] to-[#faf7f2] border-b border-[#D8C2A3]/40 isolate transform-gpu">
               {/* Soft Fade Overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/25 to-white/50 pointer-events-none" />
 
               {/* Luxury Ambient Light Blooms (GPU-optimized pre-computed radial gradients) */}
               <div 
-                className="absolute inset-0 pointer-events-none opacity-90"
+                className="absolute inset-0 pointer-events-none opacity-90 transform-gpu"
                 style={{
-                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 100% 35%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 0% 90%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)'
+                  background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(216, 194, 163, 0.35) 0%, rgba(236, 220, 200, 0.15) 50%, transparent 75%), radial-gradient(circle 380px at 100% 35%, rgba(236, 220, 200, 0.25) 0%, transparent 70%), radial-gradient(circle 380px at 0% 90%, rgba(228, 210, 188, 0.3) 0%, transparent 70%)',
+                  transform: 'translateZ(0)'
                 }}
               />
 
@@ -597,12 +599,12 @@ export default function App() {
             </div>       
 
             {/* 13.6 Awards & Recognition Auto-scrolling Section */}
-            <div className="relative isolate">
+            <div className="relative isolate transform-gpu">
               <AwardsShowcase />       
             </div>
 
             {/* Our Locations and Preferred Consultation Sections from HTML request */}
-            <div className="relative isolate">
+            <div className="relative isolate transform-gpu">
               <LocationsAndConsultation 
                 preselectedService={preferredService} 
                 onTreatmentClick={(name) => setSelectedTreatment(name)}

@@ -5,6 +5,7 @@ import * as Icons from 'lucide-react';
 import { motion } from 'motion/react';
 import { getWhyChooseUsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { WhyChooseUsConfig } from '../types';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 // Fallback high-aesthetic UI images and badges for Why Choose Us pillars
 const PILLAR_IMAGES_FALLBACK: Record<string, { image: string; badge: string }> = {
@@ -75,23 +76,28 @@ export default function WhyChooseUs() {
 
   const isProgrammaticScrollRef = useRef(false);
   const programmaticTimeoutRef = useRef<number | null>(null);
+  const scrollRafIdRef = useRef<number | null>(null);
 
   const updateScrollState = useCallback(() => {
-    if (!scrollContainerRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth, children } = scrollContainerRef.current;
-    const maxIndex = (config?.pillars.length || 4) - 1;
+    if (scrollRafIdRef.current !== null) return;
+    scrollRafIdRef.current = requestAnimationFrame(() => {
+      scrollRafIdRef.current = null;
+      if (!scrollContainerRef.current) return;
+      const { scrollLeft, scrollWidth, clientWidth, children } = scrollContainerRef.current;
+      const maxIndex = (config?.pillars.length || 4) - 1;
 
-    setCanScrollLeft(scrollLeft > 8 || activeScrollIndex > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8 || activeScrollIndex < maxIndex);
+      setCanScrollLeft(scrollLeft > 8);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8);
 
-    if (!isProgrammaticScrollRef.current && children.length > 0) {
-      const firstChild = children[0] as HTMLElement;
-      const cardWidth = firstChild.getBoundingClientRect().width;
-      const gap = 24;
-      const index = Math.round(scrollLeft / (cardWidth + gap));
-      setActiveScrollIndex(Math.max(0, Math.min(index, maxIndex)));
-    }
-  }, [config?.pillars.length, activeScrollIndex]);
+      if (!isProgrammaticScrollRef.current && children.length > 0) {
+        const firstChild = children[0] as HTMLElement;
+        const cardWidth = firstChild.offsetWidth || 280;
+        const gap = 24;
+        const index = Math.round(scrollLeft / (cardWidth + gap));
+        setActiveScrollIndex(Math.max(0, Math.min(index, maxIndex)));
+      }
+    });
+  }, [config?.pillars.length]);
 
   useEffect(() => {
     updateScrollState();
@@ -100,6 +106,9 @@ export default function WhyChooseUs() {
       window.removeEventListener('resize', updateScrollState);
       if (programmaticTimeoutRef.current) {
         window.clearTimeout(programmaticTimeoutRef.current);
+      }
+      if (scrollRafIdRef.current !== null) {
+        cancelAnimationFrame(scrollRafIdRef.current);
       }
     };
   }, [updateScrollState]);
@@ -165,10 +174,15 @@ export default function WhyChooseUs() {
   if (!config) return null;
 
   return (
-    <section className="bg-transparent pt-10 pb-12 sm:pt-16 sm:pb-16 md:py-24 lg:py-32 relative overflow-hidden">
-      {/* Subtle ambient lighting highlights */}
-      <div className="absolute top-0 right-1/4 w-[450px] h-[450px] bg-luxury-primary rounded-full blur-[100px] pointer-events-none opacity-40" />
-      <div className="absolute bottom-0 left-1/4 w-[450px] h-[450px] bg-luxury-gold/10 rounded-full blur-[100px] pointer-events-none opacity-30" />
+    <section className="bg-transparent pt-10 pb-12 sm:pt-16 sm:pb-16 md:py-24 lg:py-32 relative overflow-hidden isolate transform-gpu">
+      {/* Subtle ambient lighting highlights (GPU-accelerated pre-computed radial gradients) */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-50 transform-gpu"
+        style={{
+          background: 'radial-gradient(circle 350px at 75% 0%, rgba(216, 194, 163, 0.22) 0%, transparent 70%), radial-gradient(circle 350px at 25% 100%, rgba(216, 194, 163, 0.16) 0%, transparent 70%)',
+          transform: 'translateZ(0)'
+        }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 relative z-10">
         
@@ -196,7 +210,7 @@ export default function WhyChooseUs() {
             onClick={() => slide('left')}
             disabled={!canScrollLeft}
             aria-label="Previous standard"
-            className="hidden md:flex absolute -left-3 md:-left-5 lg:-left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg:w-12 lg:h-12 rounded-full border border-luxury-border/90 hover:border-luxury-gold bg-white/95 backdrop-blur-md text-luxury-text hover:text-luxury-gold items-center justify-center transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-md hover:shadow-xl active:scale-95 cursor-pointer"
+            className="hidden md:flex absolute -left-3 md:-left-5 lg:-left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 lg:w-12 lg:h-12 rounded-full border border-luxury-border/90 hover:border-luxury-gold bg-white sm:bg-white/95 sm:backdrop-blur-md text-luxury-text hover:text-luxury-gold items-center justify-center transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none shadow-md hover:shadow-xl active:scale-95 cursor-pointer"
           >
             <Icons.ChevronLeft className="w-5 h-5" strokeWidth={2} />
           </button>
@@ -235,8 +249,8 @@ export default function WhyChooseUs() {
                   initial={{ opacity: 0, y: 15 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.08 }}
-                  className={`w-[270px] sm:w-[310px] md:w-[340px] lg:w-[330px] xl:w-[360px] shrink-0 snap-start group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between select-none focus:outline-none ${
+                  transition={{ duration: 0.35, delay: idx * 0.05 }}
+                  className={`w-[270px] sm:w-[310px] md:w-[340px] lg:w-[330px] xl:w-[360px] shrink-0 snap-start group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer aspect-[3/4] sm:aspect-[4/5] md:aspect-[3/4] flex flex-col justify-between select-none focus:outline-none transform-gpu will-change-transform ${
                     isFocusedCard
                       ? 'border-2 border-luxury-gold ring-2 ring-luxury-gold/30 shadow-xl'
                       : 'border border-luxury-border/80 hover:border-luxury-gold/60 shadow-xs hover:shadow-xl'
@@ -253,14 +267,15 @@ export default function WhyChooseUs() {
                   />
 
                   {/* Full-bleed background image with smooth zoom */}
-                  <img
+                  <ClinicImageWithPlaceholder
                     src={imageUrl}
+                    slotId={`clinic-pillar-${pillar.id}`}
                     alt={pillar.title}
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 pointer-events-none"
-                    referrerPolicy="no-referrer"
+                    logoSize="lg"
+                    showBrandText={true}
+                    fallbackUrl={fallback.image}
+                    containerClassName="absolute inset-0 w-full h-full overflow-hidden bg-luxury-secondary flex items-center justify-center pointer-events-none"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 pointer-events-none transform-gpu"
                   />
 
                   {/* Subtle top gradient scrim for badge & icon clarity */}
@@ -269,7 +284,7 @@ export default function WhyChooseUs() {
                   {/* Top Overlay Bar: Clean outlined Badge & Outlined Icon with enhanced size and border */}
                   <div className="relative z-10 p-3.5 sm:p-4 md:p-4.5 flex items-center justify-between w-full pointer-events-none">
                     <span
-                      className={`inline-flex items-center px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-sans font-medium tracking-wider uppercase bg-transparent border-[1.5px] backdrop-blur-[2px] shadow-xs transition-colors duration-300 ${
+                      className={`inline-flex items-center px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-sans font-medium tracking-wider uppercase bg-black/30 sm:bg-transparent sm:backdrop-blur-[2px] border-[1.5px] shadow-xs transition-colors duration-300 ${
                         isFocusedCard
                           ? 'border-luxury-gold text-luxury-gold'
                           : 'border-white/80 text-white group-hover:border-luxury-gold group-hover:text-luxury-gold'
@@ -279,7 +294,7 @@ export default function WhyChooseUs() {
                     </span>
 
                     <div
-                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-transparent border-[1.5px] flex items-center justify-center backdrop-blur-[2px] shadow-xs transition-colors duration-300 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/30 sm:bg-transparent border-[1.5px] flex items-center justify-center sm:backdrop-blur-[2px] shadow-xs transition-colors duration-300 ${
                         isFocusedCard
                           ? 'border-luxury-gold text-luxury-gold'
                           : 'border-white/80 text-white group-hover:border-luxury-gold group-hover:text-luxury-gold'
@@ -290,7 +305,7 @@ export default function WhyChooseUs() {
                   </div>
 
                   {/* Bottom Dark Transparent Bar: Styled like treatment pricing cards */}
-                  <div className="absolute inset-x-0 bottom-0 w-full bg-noir-900/65 sm:bg-noir-900/60 backdrop-blur-[2px] border-t border-white/10 p-3.5 sm:p-4 md:p-4.5 z-20 flex flex-col justify-end pointer-events-none transition-colors duration-300 group-hover:bg-noir-900/75">
+                  <div className="absolute inset-x-0 bottom-0 w-full bg-noir-900/80 sm:bg-noir-900/60 sm:backdrop-blur-[2px] border-t border-white/10 p-3.5 sm:p-4 md:p-4.5 z-20 flex flex-col justify-end pointer-events-none transition-colors duration-300 group-hover:bg-noir-900/90">
                     <h3
                       className={`font-serif font-normal text-sm sm:text-base md:text-lg mb-1 leading-snug drop-shadow-sm transition-colors duration-300 ${
                         isFocusedCard

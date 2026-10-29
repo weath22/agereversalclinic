@@ -26,7 +26,7 @@ export const TreatmentVisualBanner: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#FAF6F0] border border-[#E6D5C3]/40 shadow-sm hover:shadow-md transition-all duration-300"
+            className="group relative cursor-pointer overflow-hidden rounded-2xl bg-[#FAF6F0] border border-[#E6D5C3]/40 shadow-sm hover:shadow-md transition-all duration-300 transform-gpu"
             onClick={() => {
               setSelectedImage(img.src);
               setIsZoomed(false);
@@ -39,7 +39,8 @@ export const TreatmentVisualBanner: React.FC = () => {
                 loading="lazy"
                 decoding="async"
                 referrerPolicy="no-referrer"
-                className="w-full h-auto max-h-[500px] object-contain rounded-xl transition-transform duration-500 group-hover:scale-[1.01]"
+                className="w-full h-auto max-h-[500px] object-contain rounded-xl transition-transform duration-500 group-hover:scale-[1.01] transform-gpu"
+                style={{ transform: 'translateZ(0)' }}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center rounded-2xl pointer-events-none">
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/70 text-white text-xs sm:text-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-sm">

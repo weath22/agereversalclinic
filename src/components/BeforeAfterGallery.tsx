@@ -65,8 +65,8 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
           whileInView={{ opacity: 1, x: 0, rotate: -2 }}
           viewport={{ once: true }}
           whileHover={{ scale: 1.04, rotate: 0, zIndex: 30 }}
-          transition={{ type: 'spring', stiffness: 90, damping: 15 }}
-          className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_20px_45px_rgba(0,0,0,0.08)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-10"
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_12px_32px_rgba(0,0,0,0.07)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-10 transform-gpu will-change-transform"
         >
           <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50 border border-neutral-200/50 rounded-xs">
             <img 
@@ -75,7 +75,8 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
               title={`${resolvedSeoTitle} (Before)`}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 transform-gpu"
+              style={{ transform: 'translateZ(0)' }}
               referrerPolicy="no-referrer"
             />
           </div>
@@ -92,8 +93,8 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
           whileInView={{ opacity: 1, x: 0, rotate: 2 }}
           viewport={{ once: true }}
           whileHover={{ scale: 1.04, rotate: 0, zIndex: 30 }}
-          transition={{ type: 'spring', stiffness: 90, damping: 15 }}
-          className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_20px_45px_rgba(0,0,0,0.08)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-20"
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_12px_32px_rgba(0,0,0,0.07)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-20 transform-gpu will-change-transform"
         >
           <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50 border border-neutral-200/50 rounded-xs">
             <img 
@@ -102,7 +103,8 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
               title={`${resolvedSeoTitle} (After)`}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 transform-gpu"
+              style={{ transform: 'translateZ(0)' }}
               referrerPolicy="no-referrer"
             />
           </div>
@@ -476,7 +478,7 @@ export default function BeforeAfterGallery() {
   return (
     <section 
       id="gallery"
-      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-transparent overflow-hidden relative"
+      className="pt-10 pb-6 sm:pt-16 sm:pb-12 md:py-28 bg-transparent overflow-hidden relative isolate transform-gpu"
     >
       {/* Google Image Search Schema.org ImageObject Structured Data */}
       <script
@@ -524,7 +526,7 @@ export default function BeforeAfterGallery() {
                   className={`px-4 py-2 rounded-full font-sans text-[10px] font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
                     activeCategory === cat.id
                       ? 'bg-slate-950 text-white border-black shadow-sm font-medium'
-                      : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
+                      : 'bg-white/95 sm:bg-white/85 sm:backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
                   }`}
                 >
                   {cat.name}
@@ -540,7 +542,7 @@ export default function BeforeAfterGallery() {
                     className={`px-4 py-2 rounded-full font-sans text-[10px] font-normal tracking-[0.12em] uppercase border transition-all duration-300 shrink-0 whitespace-nowrap cursor-pointer ${
                       activeCategory === cat.id
                         ? 'bg-slate-950 text-white border-black shadow-sm font-medium'
-                        : 'bg-white/85 backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
+                        : 'bg-white/95 sm:bg-white/85 sm:backdrop-blur-md text-slate-800 border-white/60 hover:text-black hover:bg-white'
                     }`}
                   >
                     {cat.name}

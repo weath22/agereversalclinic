@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAwardsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { AwardsConfig } from '../types';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 import { CLINIC_AWARDS_MEDIA } from '../data/clinicImages';
 
@@ -87,7 +88,7 @@ export default function AwardsShowcase() {
   return (
     <section 
       ref={sectionRef}
-      className="py-14 sm:py-20 md:py-28 bg-[#faf9f8] border-y border-luxury-border overflow-hidden relative isolate"
+      className="py-14 sm:py-20 md:py-28 bg-[#faf9f8] border-y border-luxury-border overflow-hidden relative isolate transform-gpu"
     >
       {/* Keyframes for Hardware-Accelerated translate3d Infinite Marquee */}
       <style>{`
@@ -103,6 +104,10 @@ export default function AwardsShowcase() {
           display: flex;
           width: max-content;
           will-change: transform;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
           animation: awardsMarqueeHardware 38s linear infinite;
         }
         .awards-hardware-track.paused {
@@ -115,15 +120,16 @@ export default function AwardsShowcase() {
         }
       `}</style>
 
-      {/* Background Image Layer */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      {/* Background Image Layer (Hardware-Accelerated Compositor Texture) */}
+      <div className="absolute inset-0 z-0 pointer-events-none transform-gpu overflow-hidden">
         <img
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtB50YnOlyADPuedg2qMzTGO8xfnwOcB7t2-m7_npkuSx1BTCC5UlaJwIdCO6x9ZxKYyMLa3yMXQul9a3Eqcb0D99YLu85cpSvpTEPjnGb1LASgnsPiZNc16H2bbqdwGvMNfakarMRTE7wT9V_i8C6YgRCdQCCE_ym_S8foYNXQtMhkCUQPh0nS01kyTovtyQCHAmrQD15ZBojWP5UyPQs3_I2UV1O9uA38vdL-97__HRpL4P8mETpoJKWggqKuB8N-w"
           alt="Atelier Aura Prestigious Gold Sculptures and Laureate Trophies"
           loading="lazy"
           decoding="async"
           fetchPriority="low"
-          className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90"
+          className="w-full h-full object-cover object-center brightness-100 contrast-105 opacity-90 transform-gpu"
+          style={{ transform: 'translateZ(0)' }}
         />
         {/* Subtle whitish fade overlay for aesthetic clarity & contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
@@ -144,7 +150,7 @@ export default function AwardsShowcase() {
       </div>
 
       {/* Scrolling Marquee Area */}
-      <div className="relative z-10 w-full flex overflow-x-hidden py-2 group/track isolate">
+      <div className="relative z-10 w-full flex overflow-x-hidden py-2 group/track isolate transform-gpu">
         <div
           className={`awards-hardware-track space-x-5 sm:space-x-7 shrink-0 pr-5 sm:pr-7 ${
             !isInView ? 'paused' : ''
@@ -157,25 +163,27 @@ export default function AwardsShowcase() {
             return (
               <div
                 key={`${award.id}-${index}`}
-                className="w-[260px] sm:w-[300px] md:w-[320px] shrink-0 bg-white rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.10)] hover:shadow-2xl hover:border-luxury-gold/60 transition-all duration-500 overflow-hidden flex flex-col group cursor-pointer"
+                className="w-[260px] sm:w-[300px] md:w-[320px] shrink-0 bg-white rounded-2xl sm:rounded-3xl border border-stone-200/90 shadow-[0_10px_35px_-5px_rgba(0,0,0,0.10)] hover:shadow-2xl hover:border-luxury-gold/60 transition-all duration-500 overflow-hidden flex flex-col group cursor-pointer transform-gpu will-change-transform"
               >
                 {/* 1. Award Image on top */}
-                <div className="relative aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden bg-luxury-secondary">
-                  <img
-                    src={imageUrl}
-                    alt={award.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                    referrerPolicy="no-referrer"
-                  />
+                <ClinicImageWithPlaceholder
+                  src={imageUrl}
+                  slotId={`clinic-award-${award.id}`}
+                  alt={award.title}
+                  logoSize="md"
+                  showBrandText={true}
+                  brandSubtext={`${award.year} Honors`}
+                  fallbackUrl={fallbackImg}
+                  containerClassName="relative aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden bg-luxury-secondary flex items-center justify-center"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106 transform-gpu"
+                >
                   {/* Status badge floating on image */}
-                  <div className="absolute top-3 left-3 z-10">
+                  <div className="absolute top-3 left-3 z-10 pointer-events-none">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-sans font-semibold tracking-wider uppercase bg-white/95 text-luxury-text border border-white/80 shadow-xs">
                       {award.year} Honors
                     </span>
                   </div>
-                </div>
+                </ClinicImageWithPlaceholder>
 
                 {/* 2. Details below the image */}
                 <div className="p-4 sm:p-5 flex flex-col justify-center bg-white">

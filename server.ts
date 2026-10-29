@@ -167,6 +167,10 @@ app.use('/assets', express.static(srcAssetsDir));
 if (fs.existsSync(distAssetsDir)) {
   app.use('/assets', express.static(distAssetsDir));
 }
+// Fast 404 for missing clinic assets (*.webp, *.png, *.jpg, etc.) so they never fall through to Vite SPA index.html
+app.use('/assets', (_req, res) => {
+  res.status(404).end();
+});
 app.use(express.static(path.resolve(__dirname, 'public')));
 
 const GROUP_TO_TRANSFORMATION_CATEGORY: Record<string, string> = {
@@ -1135,55 +1139,97 @@ const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string
 };
 
 // Helper: Inspect all image paths in clinicData and ensure any /assets/... file
-// exists in both public/assets/ and src/assets/images/
-const verifyAndRepairClinicDataAssets = (clinicData: any): number => {
-  if (!clinicData || typeof clinicData !== 'object') return 0;
-
-  const uniqueUrls = Array.from(new Set(collectClinicDataAssetUrls(clinicData)));
+// and all permanent clinic-*.webp slot files exist in both public/assets/ and src/assets/images/
+const verifyAndRepairClinicDataAssets = (clinicData?: any): number => {
   let repairedCount = 0;
 
-  for (const cleanPath of uniqueUrls) {
-    const fileName = path.basename(cleanPath);
-    if (!fileName) continue;
+  // 1. Synchronize all URLs actively referenced by clinicData
+  if (clinicData && typeof clinicData === 'object') {
+    const uniqueUrls = Array.from(new Set(collectClinicDataAssetUrls(clinicData)));
+    for (const cleanPath of uniqueUrls) {
+      const fileName = path.basename(cleanPath);
+      if (!fileName) continue;
 
-    let requiredDirs: string[] = [];
+      let requiredDirs: string[] = [];
 
-    if (cleanPath.startsWith('/assets/treatments/')) {
-      requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
-    } else if (cleanPath.startsWith('/assets/transformations/')) {
-      requiredDirs = [publicTransformationsDir, srcTransformationsDir];
-    } else {
-      requiredDirs = [publicAssetsDir, srcAssetsDir];
-    }
+      if (cleanPath.startsWith('/assets/treatments/')) {
+        requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
+      } else if (cleanPath.startsWith('/assets/transformations/')) {
+        requiredDirs = [publicTransformationsDir, srcTransformationsDir];
+      } else {
+        requiredDirs = [publicAssetsDir, srcAssetsDir];
+      }
 
-    const existingSourcePath = requiredDirs
-      .map((dir) => path.join(dir, fileName))
-      .find((candidatePath) => {
+      const existingSourcePath = requiredDirs
+        .map((dir) => path.join(dir, fileName))
+        .find((candidatePath) => {
+          try {
+            return fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile();
+          } catch {
+            return false;
+          }
+        });
+
+      if (!existingSourcePath) {
+        console.warn(`[Admin Asset Verify] Referenced clinic asset not found on disk: ${cleanPath}`);
+        continue;
+      }
+
+      for (const targetDir of requiredDirs) {
         try {
-          return fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile();
-        } catch {
-          return false;
+          if (!fs.existsSync(targetDir)) {
+            fs.mkdirSync(targetDir, { recursive: true });
+          }
+          const targetFilePath = path.join(targetDir, fileName);
+          if (!fs.existsSync(targetFilePath)) {
+            fs.copyFileSync(existingSourcePath, targetFilePath);
+            repairedCount++;
+            console.log(`[Admin Asset Repair] Restored ${fileName} -> ${targetDir}`);
+          }
+        } catch (copyErr) {
+          console.warn(`[Admin Asset Repair] Could not copy ${fileName} to ${targetDir}:`, copyErr);
         }
-      });
-
-    if (!existingSourcePath) {
-      console.warn(`[Admin Asset Verify] Referenced clinic asset not found on disk: ${cleanPath}`);
-      continue;
+      }
     }
+  }
 
-    for (const targetDir of requiredDirs) {
+  // 2. Bidirectionally synchronize all permanent slot files starting with 'clinic-'
+  // (e.g., clinic-logo-icon.webp, clinic-logo-full.webp, clinic-location-*.webp, clinic-interior-*.webp)
+  // between public/assets/ and src/assets/images/ (and dist/assets/ if exists)
+  const slotAssetDirs = [publicAssetsDir, srcAssetsDir];
+  if (fs.existsSync(distAssetsDir)) {
+    slotAssetDirs.push(distAssetsDir);
+  }
+
+  for (const sourceDir of [publicAssetsDir, srcAssetsDir]) {
+    if (fs.existsSync(sourceDir)) {
       try {
-        if (!fs.existsSync(targetDir)) {
-          fs.mkdirSync(targetDir, { recursive: true });
+        const files = fs.readdirSync(sourceDir);
+        for (const file of files) {
+          if (file.startsWith('clinic-') && file.endsWith('.webp')) {
+            const srcPath = path.join(sourceDir, file);
+            if (!fs.statSync(srcPath).isFile()) continue;
+
+            for (const targetDir of slotAssetDirs) {
+              if (targetDir === sourceDir) continue;
+              try {
+                if (!fs.existsSync(targetDir)) {
+                  fs.mkdirSync(targetDir, { recursive: true });
+                }
+                const destPath = path.join(targetDir, file);
+                if (!fs.existsSync(destPath)) {
+                  fs.copyFileSync(srcPath, destPath);
+                  repairedCount++;
+                  console.log(`[Permanent Slot Repair] Synchronized slot asset ${file} -> ${targetDir}`);
+                }
+              } catch (destErr) {
+                console.warn(`[Permanent Slot Repair] Could not mirror ${file} to ${targetDir}:`, destErr);
+              }
+            }
+          }
         }
-        const targetFilePath = path.join(targetDir, fileName);
-        if (!fs.existsSync(targetFilePath)) {
-          fs.copyFileSync(existingSourcePath, targetFilePath);
-          repairedCount++;
-          console.log(`[Admin Asset Repair] Restored ${fileName} -> ${targetDir}`);
-        }
-      } catch (copyErr) {
-        console.warn(`[Admin Asset Repair] Could not copy ${fileName} to ${targetDir}:`, copyErr);
+      } catch (readErr) {
+        console.warn(`[Permanent Slot Repair] Error scanning directory ${sourceDir}:`, readErr);
       }
     }
   }
@@ -2124,23 +2170,117 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
   }
 });
 
-// API: Upload an asset directly into public/assets (or public/assets/treatments) and src/assets/images
-app.post('/api/admin/upload-asset', (req, res) => {
+// API: Slot-Aware Upload for Clinic Assets (permanent slot IDs) & general/treatment asset uploads
+const handleAdminAssetUpload = (req: any, res: any) => {
   try {
-    const { fileName, dataUrl, base64, previousUrl, folder, category } = req.body;
-    if (!fileName || (!dataUrl && !base64)) {
-      return res.status(400).json({ success: false, error: 'Missing fileName or image data' });
+    const { fileName, dataUrl, base64, previousUrl, folder, category, slotId } = req.body || {};
+    const effectiveSlotId = slotId || req.query.slotId || (req.path.includes('/clinic-assets/upload') ? fileName : undefined);
+
+    if ((!fileName && !effectiveSlotId) || (!dataUrl && !base64)) {
+      return res.status(400).json({ success: false, error: 'Missing fileName/slotId or image data' });
     }
 
     const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
     const buffer = Buffer.from(rawData, 'base64');
+    const timestamp = Date.now();
 
+    // 1. Permanent Slot-Based Upload (Clinic Edit Info: logo, location, interior, award, pillar, process, etc.)
+    if (effectiveSlotId && typeof effectiveSlotId === 'string' && effectiveSlotId.trim().length > 0) {
+      const sanitizedSlotId = String(effectiveSlotId)
+        .trim()
+        .replace(/\.webp$/i, '')
+        .replace(/^(\/assets\/|assets\/)/, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .toLowerCase();
+
+      const singleFileName = `${sanitizedSlotId}.webp`;
+      const publicAssetPath = path.join(publicAssetsDir, singleFileName);
+      const srcAssetPath = path.join(srcAssetsDir, singleFileName);
+
+      // Purge any older obsolete files matching this slot (e.g. old PNGs, JPEGs, or timestamped duplicates)
+      const targetDirs = [publicAssetsDir, srcAssetsDir];
+      if (fs.existsSync(distAssetsDir)) {
+        targetDirs.push(distAssetsDir);
+      }
+      const deletedFiles: string[] = [];
+
+      for (const dir of targetDirs) {
+        if (fs.existsSync(dir)) {
+          try {
+            const files = fs.readdirSync(dir);
+            for (const f of files) {
+              if (
+                f !== singleFileName &&
+                (f.startsWith(`${sanitizedSlotId}.`) || f.startsWith(`${sanitizedSlotId}-`))
+              ) {
+                const fullPath = path.join(dir, f);
+                try {
+                  fs.unlinkSync(fullPath);
+                  deletedFiles.push(f);
+                  console.log(`[Admin Slot Cleanup] Deleted obsolete slot file: ${fullPath}`);
+                } catch (delErr) {
+                  console.warn(`[Admin Slot Cleanup] Could not delete old file ${fullPath}:`, delErr);
+                }
+              }
+            }
+          } catch (readErr) {
+            console.warn(`[Admin Slot Cleanup] Error reading directory ${dir}:`, readErr);
+          }
+        }
+      }
+
+      // Save the single .webp directly to public/assets and src/assets/images
+      fs.writeFileSync(publicAssetPath, buffer);
+      fs.writeFileSync(srcAssetPath, buffer);
+      if (fs.existsSync(distAssetsDir)) {
+        try {
+          fs.writeFileSync(path.join(distAssetsDir, singleFileName), buffer);
+        } catch {}
+      }
+
+      const cleanRelativeUrl = `/assets/${singleFileName}`;
+      const cacheBustedUrl = `${cleanRelativeUrl}?v=${timestamp}`;
+
+      // If replacing an existing clinicInfo.ts image (e.g. an old timestamped upload /assets/179172...png),
+      // delete the displaced file from public/assets and src/assets/images if not used elsewhere
+      if (typeof previousUrl === 'string' && previousUrl.trim()) {
+        const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
+        if (normalizedPrev && normalizedPrev !== cleanRelativeUrl) {
+          const currentClinicData = parseClinicDataFromTsFile();
+          const allCurrentUrls = collectClinicDataAssetUrls(currentClinicData);
+          const prevIdx = allCurrentUrls.indexOf(normalizedPrev);
+          if (prevIdx !== -1) {
+            allCurrentUrls.splice(prevIdx, 1);
+          }
+          const activeUrlsSet = new Set<string>([...allCurrentUrls, cleanRelativeUrl]);
+          const deletedOld = deleteReplacedClinicAssetFile(normalizedPrev, activeUrlsSet);
+          if (deletedOld) {
+            deletedFiles.push(path.basename(normalizedPrev));
+          }
+        }
+      }
+
+      console.log(`[Admin] Saved permanent slot WebP asset: ${cleanRelativeUrl}`);
+
+      return res.json({
+        success: true,
+        slotId: sanitizedSlotId,
+        fileName: singleFileName,
+        url: cleanRelativeUrl,
+        rawPath: cleanRelativeUrl,
+        imagePath: cacheBustedUrl,
+        version: timestamp,
+        deletedFiles: [...new Set(deletedFiles)],
+        message: `Clinic asset for slot '${sanitizedSlotId}' successfully saved to ${cleanRelativeUrl}`
+      });
+    }
+
+    // 2. Treatments Folder Upload
     const isTreatmentsFolder =
       folder === 'treatments' ||
       category === 'treatments' ||
       (typeof previousUrl === 'string' && previousUrl.startsWith('/assets/treatments/'));
 
-    // Clean file name (force .webp when dataUrl is image/webp or when uploading to treatments folder)
     const isWebpPayload = typeof dataUrl === 'string' && dataUrl.startsWith('data:image/webp');
     const rawExt = path.extname(fileName) || '.webp';
     const ext = isTreatmentsFolder || isWebpPayload ? '.webp' : rawExt;
@@ -2149,7 +2289,6 @@ app.post('/api/admin/upload-asset', (req, res) => {
       .replace(/[^a-zA-Z0-9_-]/g, '-')
       .replace(/^-+|-+$/g, '')
       .toLowerCase();
-    const timestamp = Date.now();
     const safeName = `${baseName || 'asset'}-${timestamp}${ext}`;
 
     if (isTreatmentsFolder) {
@@ -2193,23 +2332,20 @@ app.post('/api/admin/upload-asset', (req, res) => {
       });
     }
 
+    // 3. General non-slot asset upload fallback
     const publicAssetPath = path.join(publicAssetsDir, safeName);
     const srcAssetPath = path.join(srcAssetsDir, safeName);
 
-    // Save only to public/assets and src/assets/images (no duplicate copies in public/uploads)
     fs.writeFileSync(publicAssetPath, buffer);
     fs.writeFileSync(srcAssetPath, buffer);
 
     const newAssetUrl = `/assets/${safeName}`;
 
-    // If replacing an existing clinicInfo.ts image, delete the displaced file from public/assets and src/assets/images
-    // unless it is still referenced by another slot in clinicInfo.ts
     if (typeof previousUrl === 'string' && previousUrl.trim()) {
       const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
       if (normalizedPrev && normalizedPrev !== newAssetUrl) {
         const currentClinicData = parseClinicDataFromTsFile();
         const allCurrentUrls = collectClinicDataAssetUrls(currentClinicData);
-        // Remove a single occurrence of normalizedPrev (representing the slot being replaced)
         const prevIdx = allCurrentUrls.indexOf(normalizedPrev);
         if (prevIdx !== -1) {
           allCurrentUrls.splice(prevIdx, 1);
@@ -2231,7 +2367,10 @@ app.post('/api/admin/upload-asset', (req, res) => {
     console.error('Error saving asset:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
-});
+};
+
+app.post('/api/admin/upload-asset', handleAdminAssetUpload);
+app.post('/api/admin/clinic-assets/upload', handleAdminAssetUpload);
 
 // API: List assets in src/assets/images, public/assets, public/assets/treatments, and public/assets/transformations
 app.get('/api/admin/assets', (_req, res) => {
@@ -2612,5 +2751,13 @@ if (!isProd) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
+  try {
+    const repairedCount = verifyAndRepairClinicDataAssets(getMergedClinicData());
+    if (repairedCount > 0) {
+      console.log(`[Startup Asset Repair] Automatically mirrored and repaired ${repairedCount} clinic asset(s).`);
+    }
+  } catch (err) {
+    console.warn('[Startup Asset Repair] Verification notice:', err);
+  }
   console.log(`Age Reversal Clinic server running on http://0.0.0.0:${PORT}`);
 });

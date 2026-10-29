@@ -43,6 +43,12 @@ import {
   ClinicTrustBrandsSection,
   ClinicAccreditationsSection,
 } from '../data/clinicInfo';
+import {
+  convertClinicImageFileToWebP,
+  normalizeClinicSlotId,
+  setClinicImageVersion,
+  getClinicSlotId
+} from '../utils/clinicImageHelper';
 import { 
   TreatmentPricingItem, 
   TreatmentPricingCardSummary,
@@ -504,43 +510,64 @@ export async function convertImageFileToWebpDataUrl(
 
 /**
  * Upload an image or media asset directly to public/assets/ (or public/assets/treatments/)
- * and src/assets/images/ on disk, optionally converting to WebP and deleting a displaced previousUrl file
+ * and src/assets/images/ on disk, optionally converting to WebP, assigning a predictable slotId,
+ * and deleting a displaced previousUrl file
  */
 export async function uploadAssetFile(
   file: File,
   previousUrl?: string,
-  options?: { folder?: 'assets' | 'treatments' | 'transformations'; convertToWebp?: boolean }
-): Promise<{ success: boolean; url?: string; fileName?: string; error?: string }> {
+  options?: {
+    folder?: 'assets' | 'treatments' | 'transformations';
+    convertToWebp?: boolean;
+    slotId?: string;
+  }
+): Promise<{ success: boolean; url?: string; fileName?: string; version?: number | string; error?: string }> {
   try {
     const isVideo = file.type.startsWith('video/');
+    const isSlotUpload = Boolean(options?.slotId);
     const shouldConvertWebp =
-      !isVideo && (options?.convertToWebp === true || options?.folder === 'treatments');
+      !isVideo && (options?.convertToWebp === true || options?.folder === 'treatments' || isSlotUpload);
 
-    const dataUrl = shouldConvertWebp
-      ? await convertImageFileToWebpDataUrl(file)
-      : await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
+    let dataUrl: string;
+    if (isSlotUpload) {
+      dataUrl = await convertClinicImageFileToWebP(file);
+    } else if (shouldConvertWebp) {
+      dataUrl = await convertImageFileToWebpDataUrl(file);
+    } else {
+      dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
 
-    const cleanFileName = shouldConvertWebp
+    const cleanSlotId = options?.slotId ? normalizeClinicSlotId(options.slotId) : undefined;
+    const cleanFileName = cleanSlotId
+      ? `${cleanSlotId}.webp`
+      : shouldConvertWebp
       ? `${file.name.replace(/\.[^/.]+$/, '')}.webp`
       : file.name;
 
-    const res = await fetch('/api/admin/upload-asset', {
+    const endpoint = cleanSlotId ? '/api/admin/clinic-assets/upload' : '/api/admin/upload-asset';
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        slotId: cleanSlotId,
         fileName: cleanFileName,
         dataUrl,
         previousUrl: previousUrl?.trim() || undefined,
         folder: options?.folder,
+        category: cleanSlotId ? 'clinic' : undefined,
       }),
     });
     const data = await res.json();
     if (data.success && data.url) {
+      if (cleanSlotId && data.version) {
+        setClinicImageVersion(cleanSlotId, data.version);
+      }
       try {
         registerMediaAsset({
           name: cleanFileName,
@@ -553,12 +580,29 @@ export async function uploadAssetFile(
       } catch (regErr) {
         console.warn('Could not auto-register uploaded asset:', regErr);
       }
-      return { success: true, url: data.url, fileName: data.fileName || cleanFileName };
+      return { success: true, url: data.url, fileName: data.fileName || cleanFileName, version: data.version };
     }
     return { success: false, error: data.error || 'Failed to upload asset' };
   } catch (e) {
     return { success: false, error: String(e) };
   }
+}
+
+/**
+ * Dedicated Slot-Aware WebP Upload Pipeline for Clinic Edit Info assets:
+ * 1. Runs direct client-side WebP compression (convertClinicImageFileToWebP).
+ * 2. Uploads with permanent slotId to /api/admin/clinic-assets/upload.
+ * 3. Immediately registers cache-busting version in setClinicImageVersion(slotId, version).
+ */
+export async function uploadClinicSlotAsset(
+  file: File,
+  slotId: string,
+  previousUrl?: string
+): Promise<{ success: boolean; url?: string; fileName?: string; version?: number | string; error?: string }> {
+  return uploadAssetFile(file, previousUrl, {
+    slotId,
+    convertToWebp: true,
+  });
 }
 
 /**
@@ -5266,12 +5310,17 @@ export async function fetchRemoteTreatmentTaxonomy(): Promise<TreatmentTaxonomyG
           (g.subGroups || []).some((s: any) => LEGACY_BROCHURE_SUBGROUP_IDS.has(s.id))
         );
         if (!hasLegacy) {
-          setStorageItem(TREATMENT_TAXONOMY_KEY, json.taxonomy);
-          const merged = getTreatmentTaxonomy();
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('treatment_taxonomy_updated', { detail: merged }));
+          const currentStored = getStorageItem<TreatmentTaxonomyGroup[]>(TREATMENT_TAXONOMY_KEY, []);
+          const isDifferent = JSON.stringify(currentStored) !== JSON.stringify(json.taxonomy);
+          if (isDifferent) {
+            setStorageItem(TREATMENT_TAXONOMY_KEY, json.taxonomy);
+            const merged = getTreatmentTaxonomy();
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('treatment_taxonomy_updated', { detail: merged }));
+            }
+            return merged;
           }
-          return merged;
+          return getTreatmentTaxonomy();
         }
       }
     }

@@ -243,7 +243,7 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
           {/* Section 3.3: Dermal Layer Depth Analysis - Spacious Full Showcase */}
           {data.profilerEnabled !== false && (
-            <div className="pt-16 border-t border-silver-100 max-w-5xl mx-auto w-full">
+            <div className="pt-16 border-t border-silver-100 max-w-5xl mx-auto w-full relative isolate transform-gpu">
               <SkinLayerTargets
                 targetLayer={data.targetLayer}
                 targetDepth={data.targetLayerDepth}

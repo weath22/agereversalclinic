@@ -3,8 +3,17 @@ import {
   getClinicData, 
   saveClinicDataToFile, 
   resetClinicDataToDefault,
-  uploadAssetFile
+  uploadAssetFile,
+  uploadClinicSlotAsset
 } from '../lib/adminStore';
+import {
+  getClinicSlotId,
+  getClinicImagePath,
+  resolveClinicImageSrc,
+  handleClinicImageError,
+  normalizeClinicSlotId
+} from '../utils/clinicImageHelper';
+import { LogoOutlineSkeleton } from './common/LogoOutlineSkeleton';
 import { 
   ClinicData, 
   ClinicLocation, 
@@ -60,15 +69,18 @@ export default function ClinicDataManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
   const uploadPreviousUrlRef = useRef<string | undefined>(undefined);
+  const uploadSlotIdRef = useRef<string | undefined>(undefined);
 
-  // Trigger file upload and callback (passing previousUrl when replacing an existing image)
+  // Trigger file upload and callback (passing slotId and previousUrl when replacing an existing image)
   const triggerImageUpload = (
     callback: (url: string) => void,
     targetName: string,
-    previousUrl?: string
+    previousUrl?: string,
+    slotId?: string
   ) => {
     uploadCallbackRef.current = callback;
     uploadPreviousUrlRef.current = previousUrl?.trim() || undefined;
+    uploadSlotIdRef.current = slotId?.trim() || undefined;
     setUploadingTarget(targetName);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -81,15 +93,19 @@ export default function ClinicDataManager() {
     if (!file || !uploadCallbackRef.current) return;
     
     const prevUrl = uploadPreviousUrlRef.current;
+    const slotId = uploadSlotIdRef.current;
     setSaveStatus({ state: 'saving', message: `Uploading ${file.name} to assets...` });
     try {
-      const res = await uploadAssetFile(file, prevUrl);
+      const res = await uploadAssetFile(file, prevUrl, {
+        slotId,
+        convertToWebp: true,
+      });
       if (res.success && res.url) {
         uploadCallbackRef.current(res.url);
         setHasUnsavedChanges(true);
         setSaveStatus({ 
           state: 'saved', 
-          message: `Uploaded "${file.name}" successfully! Saved to ${res.url}` 
+          message: `Uploaded "${file.name}" successfully! Saved to permanent slot ${res.url}` 
         });
       } else {
         setSaveStatus({ state: 'error', message: res.error || 'Failed to upload image file' });
@@ -99,6 +115,7 @@ export default function ClinicDataManager() {
     } finally {
       setUploadingTarget(null);
       uploadPreviousUrlRef.current = undefined;
+      uploadSlotIdRef.current = undefined;
     }
   };
 
@@ -823,10 +840,143 @@ export default function ClinicDataManager() {
   };
 
   /**
+   * Admin Thumbnail Component with immediate LogoOutlineSkeleton 404 fallback
+   */
+  const AdminSlotThumbnail: React.FC<{
+    src?: string;
+    slotId?: string;
+    alt: string;
+    className?: string;
+    imgClassName?: string;
+    showStatusLabel?: boolean;
+    onStatusChange?: (status: 'active' | 'awaiting') => void;
+  }> = ({
+    src,
+    slotId,
+    alt,
+    className = 'h-14 w-14 shrink-0',
+    imgClassName = 'w-full h-full object-cover',
+    showStatusLabel = false,
+    onStatusChange,
+  }) => {
+    const targetUrl = slotId ? resolveClinicImageSrc(slotId, src) : (src || '');
+    const [hasError, setHasError] = useState<boolean>(!targetUrl);
+    const [isLoaded, setIsLoaded] = useState<boolean>(false);
+    const imgRef = useRef<HTMLImageElement | null>(null);
+
+    useEffect(() => {
+      const nextUrl = slotId ? resolveClinicImageSrc(slotId, src) : (src || '');
+      const isBlank = !nextUrl || nextUrl.trim() === '';
+      setHasError(isBlank);
+      setIsLoaded(false);
+      onStatusChange?.(isBlank ? 'awaiting' : 'active');
+    }, [src, slotId]);
+
+    useEffect(() => {
+      if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true);
+        setHasError(false);
+        onStatusChange?.('active');
+      }
+    }, [targetUrl]);
+
+    const handleError = () => {
+      setHasError(true);
+      setIsLoaded(false);
+      onStatusChange?.('awaiting');
+    };
+
+    return (
+      <div
+        className={`relative overflow-hidden rounded-lg border flex items-center justify-center select-none ${
+          hasError
+            ? 'border-amber-400/80 bg-gradient-to-b from-[#141b24] to-[#0a0e13]'
+            : 'border-slate-200 bg-slate-100'
+        } ${className}`}
+      >
+        {hasError ? (
+          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-[#141b24] to-[#0a0e13] relative z-0">
+            <LogoOutlineSkeleton size="xs" variant="gold" animate={false} />
+            {showStatusLabel && (
+              <span className="text-[7px] sm:text-[8px] font-bold tracking-wider text-amber-300 uppercase leading-none mt-1">
+                Awaiting Upload
+              </span>
+            )}
+          </div>
+        ) : (
+          <>
+            {!isLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-stone-900/90 z-0">
+                <LogoOutlineSkeleton size="xs" variant="gold" animate={true} />
+              </div>
+            )}
+            <img
+              ref={imgRef}
+              src={targetUrl}
+              alt={alt}
+              className={`${imgClassName} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+              onLoad={() => {
+                setIsLoaded(true);
+                setHasError(false);
+                onStatusChange?.('active');
+              }}
+              onError={handleError}
+            />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const AdminSlotImageFieldPreview: React.FC<{
+    value?: string;
+    slotId?: string;
+    label: string;
+  }> = ({ value, slotId, label }) => {
+    const [status, setStatus] = useState<'active' | 'awaiting'>('active');
+
+    return (
+      <div className="mt-1.5 flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+        <AdminSlotThumbnail
+          src={value}
+          slotId={slotId}
+          alt={label}
+          className="h-14 w-14 shrink-0"
+          showStatusLabel={false}
+          onStatusChange={setStatus}
+        />
+        <div className="flex-1 min-w-0 text-xs">
+          <span className="font-mono text-slate-700 font-bold block truncate">
+            {value || (slotId ? `No file uploaded for ${slotId}.webp` : 'No file chosen')}
+          </span>
+          {slotId && (
+            <span className="font-mono text-[10px] text-slate-500 block truncate">
+              Permanent Slot: /assets/{slotId}.webp
+            </span>
+          )}
+          <div className="mt-1">
+            {status === 'active' && value ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Asset Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 font-bold uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                Awaiting Upload
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /**
    * Reusable Image Asset Field with:
    * 1. Direct text/URL editing
    * 2. "Add Image" file upload button (uploads directly to project assets/images on disk)
-   * 3. Live image thumbnail preview
+   * 3. Live image thumbnail preview with LogoOutlineSkeleton 404 fallback
    * 4. Clear/Remove button
    */
   const renderImageField = (
@@ -834,15 +984,24 @@ export default function ClinicDataManager() {
     value: string, 
     onChange: (val: string) => void, 
     targetKey: string,
-    placeholder: string = '/assets/... or https://...'
+    placeholder: string = '/assets/... or https://...',
+    slotId?: string
   ) => {
+    const effectiveSlotId = slotId || (
+      targetKey === 'logo_icon' ? 'clinic-logo-icon' :
+      targetKey === 'logo_full' ? 'clinic-logo-full' :
+      targetKey === 'ogImage' ? 'clinic-og-image' :
+      targetKey === 'exteriorPhoto' ? 'clinic-exterior' :
+      undefined
+    );
+
     return (
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold uppercase text-slate-700">{label}</label>
           <button
             type="button"
-            onClick={() => triggerImageUpload((newUrl) => onChange(newUrl), targetKey, value)}
+            onClick={() => triggerImageUpload((newUrl) => onChange(newUrl), targetKey, value, effectiveSlotId)}
             disabled={uploadingTarget === targetKey}
             className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer transition-colors disabled:opacity-50"
           >
@@ -870,21 +1029,12 @@ export default function ClinicDataManager() {
           )}
         </div>
 
-        {value && (
-          <div className="mt-1.5 flex items-center gap-3 p-2 bg-slate-100 border border-slate-200 rounded-lg">
-            <img 
-              src={value} 
-              alt={label} 
-              className="h-12 w-12 object-cover rounded border border-slate-300 bg-white"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <div className="flex-1 min-w-0 text-xs">
-              <span className="font-mono text-slate-600 block truncate">{value}</span>
-              <span className="text-[10px] text-emerald-700 font-bold uppercase">Asset Active</span>
-            </div>
-          </div>
+        {(value || effectiveSlotId) && (
+          <AdminSlotImageFieldPreview
+            value={value}
+            slotId={effectiveSlotId}
+            label={label}
+          />
         )}
       </div>
     );
@@ -1127,7 +1277,9 @@ export default function ClinicDataManager() {
                 'Social Share Image (OG Image)',
                 data.ogImage || '',
                 (val) => updateField('ogImage', val),
-                'ogImage'
+                'ogImage',
+                '/assets/clinic-og-image.webp or image URL',
+                'clinic-og-image'
               )}
 
               {/* Brand Keywords */}
@@ -1178,7 +1330,8 @@ export default function ClinicDataManager() {
                   data.logo?.icon || '',
                   (val) => updateNestedField('logo', 'icon', val),
                   'logo_icon',
-                  '/assets/logo.svg or image URL'
+                  '/assets/clinic-logo-icon.webp or image URL',
+                  'clinic-logo-icon'
                 )}
 
                 {renderImageField(
@@ -1186,7 +1339,8 @@ export default function ClinicDataManager() {
                   data.logo?.full || '',
                   (val) => updateNestedField('logo', 'full', val),
                   'logo_full',
-                  '/assets/logo-full.svg or image URL'
+                  '/assets/clinic-logo-full.webp or image URL',
+                  'clinic-logo-full'
                 )}
 
                 <div className="space-y-1">
@@ -1206,7 +1360,8 @@ export default function ClinicDataManager() {
                     data.exteriorPhoto || '',
                     (val) => updateField('exteriorPhoto', val),
                     'exteriorPhoto',
-                    '/assets/exterior.jpg or image URL'
+                    '/assets/clinic-exterior.webp or image URL',
+                    'clinic-exterior'
                   )}
                 </div>
 
@@ -1274,13 +1429,12 @@ export default function ClinicDataManager() {
                       >
                         <div>
                           <div className="relative mb-2">
-                            <img
+                            <AdminSlotThumbnail
                               src={room.image}
+                              slotId={getClinicSlotId('facility', room.id || i + 1)}
                               alt={room.imageAlt || room.title}
-                              className="w-full h-28 object-cover rounded-lg bg-slate-100 border border-slate-100"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.opacity = '0.4';
-                              }}
+                              className="w-full h-28"
+                              showStatusLabel={true}
                             />
                             <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[9px] font-bold uppercase tracking-wider">
                               {room.tag || 'SUITE'}
@@ -1303,7 +1457,9 @@ export default function ClinicDataManager() {
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                const roomId = room.id || `suite-${i + 1}`;
+                                const slotId = getClinicSlotId('facility', roomId);
                                 triggerImageUpload(
                                   (newUrl) => {
                                     updateFacilityGallery(curr => ({
@@ -1314,9 +1470,10 @@ export default function ClinicDataManager() {
                                     }));
                                   },
                                   `facility_room_${i}`,
-                                  room.image
-                                )
-                              }
+                                  room.image,
+                                  slotId
+                                );
+                              }}
                               className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
                             >
                               Replace Img
@@ -1644,14 +1801,13 @@ export default function ClinicDataManager() {
                 <div key={loc.id || idx} className="border border-slate-200 bg-white rounded-xl p-3 sm:p-5 hover:border-slate-300 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-slate-100">
                     <div className="flex items-start gap-2.5 sm:gap-3.5">
-                      {loc.image && (
-                        <img 
-                          src={loc.image} 
-                          alt={loc.name} 
-                          className="h-12 w-12 sm:h-14 sm:w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      )}
+                      <AdminSlotThumbnail 
+                        src={loc.image} 
+                        slotId={getClinicSlotId('location', loc.id || idx + 1)}
+                        alt={loc.name} 
+                        className="h-12 w-12 sm:h-14 sm:w-14"
+                        showStatusLabel={true}
+                      />
                       <div>
                         <div className="text-[11px] font-mono font-bold text-[#c5a880] uppercase">
                           Location #{idx + 1} &middot; ID: {loc.id || `loc-${idx + 1}`}
@@ -1838,14 +1994,13 @@ export default function ClinicDataManager() {
                   className="border border-slate-200 bg-white rounded-xl p-3.5 flex items-start justify-between gap-3 hover:border-slate-300 transition-colors"
                 >
                   <div className="flex items-start gap-3 min-w-0">
-                    {pillar.imageUrl && (
-                      <img
-                        src={pillar.imageUrl}
-                        alt={pillar.title}
-                        className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    )}
+                    <AdminSlotThumbnail
+                      src={pillar.imageUrl}
+                      slotId={getClinicSlotId('pillar', pillar.id || idx + 1)}
+                      alt={pillar.title}
+                      className="h-14 w-14"
+                      showStatusLabel={true}
+                    />
                     <div className="min-w-0">
                       <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
                         {pillar.badge || `Pillar #${idx + 1}`} &middot; {pillar.iconName || 'Building'}
@@ -1925,14 +2080,13 @@ export default function ClinicDataManager() {
                   className="border border-slate-200 bg-white rounded-xl p-3.5 flex items-center justify-between gap-3 hover:border-slate-300 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {award.imageUrl && (
-                      <img
-                        src={award.imageUrl}
-                        alt={award.title}
-                        className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    )}
+                    <AdminSlotThumbnail
+                      src={award.imageUrl}
+                      slotId={getClinicSlotId('award', award.id || idx + 1)}
+                      alt={award.title}
+                      className="h-14 w-14"
+                      showStatusLabel={true}
+                    />
                     <div className="min-w-0">
                       <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
                         {award.year || 'Year'} &middot; {award.organization || 'Organization'}
@@ -2463,14 +2617,13 @@ export default function ClinicDataManager() {
                     className="border border-slate-200 bg-white rounded-xl p-3.5 flex flex-col justify-between gap-3 hover:border-slate-300 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      {step.image && (
-                        <img
-                          src={step.image}
-                          alt={step.imageAlt || step.title}
-                          className="h-14 w-14 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-100"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      )}
+                      <AdminSlotThumbnail
+                        src={step.image}
+                        slotId={getClinicSlotId('process', step.id || step.stepNumber || idx + 1)}
+                        alt={step.imageAlt || step.title}
+                        className="h-14 w-14"
+                        showStatusLabel={true}
+                      />
                       <div className="min-w-0">
                         <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase">
                           Step {step.stepNumber || String(idx + 1).padStart(2, '0')}
@@ -2563,11 +2716,12 @@ export default function ClinicDataManager() {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {brand.imageUrl ? (
-                        <img
+                        <AdminSlotThumbnail
                           src={brand.imageUrl}
+                          slotId={getClinicSlotId('brand', brand.id || idx + 1)}
                           alt={brand.name}
-                          className="h-10 w-10 object-contain rounded border border-slate-200 bg-slate-50 p-1 shrink-0"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                          className="h-10 w-10 shrink-0"
+                          imgClassName="w-full h-full object-contain p-1"
                         />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-mono font-bold uppercase text-[#003334] shrink-0">
@@ -2783,9 +2937,13 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Location Image Asset</label>
                       <button
                         type="button"
-                        onClick={() => triggerImageUpload((newUrl) => {
-                          setLocationDraft({ ...locationDraft, image: newUrl });
-                        }, 'loc_image', locationDraft.image)}
+                        onClick={() => {
+                          const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('location', locId);
+                          triggerImageUpload((newUrl) => {
+                            setLocationDraft({ ...locationDraft, image: newUrl });
+                          }, 'loc_image', locationDraft.image, slotId);
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         + Add Image File
@@ -2810,15 +2968,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {locationDraft.image && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img 
-                          src={locationDraft.image} 
-                          alt="Location Preview" 
-                          className="h-10 w-10 object-cover rounded border border-slate-300"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{locationDraft.image}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={locationDraft.image}
+                        slotId={getClinicSlotId('location', locationDraft.id || 'new')}
+                        label="Location Preview"
+                      />
                     )}
                   </div>
 
@@ -2830,12 +2984,15 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       </label>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
+                          const galleryIdx = (locationDraft.gallery?.length || 0);
+                          const slotId = `${getClinicSlotId('location', locId)}-gallery-${galleryIdx}`;
                           triggerImageUpload((newUrl) => {
                             const nextGallery = [...(locationDraft.gallery || []), newUrl];
                             setLocationDraft({ ...locationDraft, gallery: nextGallery });
-                          }, 'loc_gallery_add')
-                        }
+                          }, 'loc_gallery_add', undefined, slotId);
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800 hover:bg-slate-300 rounded cursor-pointer"
                       >
                         + Add Gallery Image
@@ -2849,20 +3006,21 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                             className="flex items-center justify-between gap-2 p-1.5 bg-slate-50 border border-slate-200 rounded-lg"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <img
+                              <AdminSlotThumbnail
                                 src={gUrl}
+                                slotId={`${getClinicSlotId('location', locationDraft.id || 'new')}-gallery-${gIdx}`}
                                 alt={`Gallery ${gIdx + 1}`}
-                                className="h-8 w-8 object-cover rounded border border-slate-300 shrink-0"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                                }}
+                                className="h-8 w-8 shrink-0"
+                                showStatusLabel={false}
                               />
                               <span className="font-mono text-slate-600 text-[11px] truncate">{gUrl}</span>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
+                                  const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
+                                  const slotId = `${getClinicSlotId('location', locId)}-gallery-${gIdx}`;
                                   triggerImageUpload(
                                     (newUrl) => {
                                       const nextGallery = [...(locationDraft.gallery || [])];
@@ -2870,9 +3028,10 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                                       setLocationDraft({ ...locationDraft, gallery: nextGallery });
                                     },
                                     `loc_gallery_${gIdx}`,
-                                    gUrl
-                                  )
-                                }
+                                    gUrl,
+                                    slotId
+                                  );
+                                }}
                                 className="text-[10px] font-bold uppercase text-[#003334] hover:underline cursor-pointer"
                               >
                                 Replace
@@ -2977,9 +3136,13 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Pillar Image Asset</label>
                       <button
                         type="button"
-                        onClick={() => triggerImageUpload((newUrl) => {
-                          setPillarDraft({ ...pillarDraft, imageUrl: newUrl });
-                        }, 'pillar_image', pillarDraft.imageUrl)}
+                        onClick={() => {
+                          const pillarId = pillarDraft.id || (editingPillarIndex !== null ? `pillar-${editingPillarIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('pillar', pillarId);
+                          triggerImageUpload((newUrl) => {
+                            setPillarDraft({ ...pillarDraft, imageUrl: newUrl });
+                          }, 'pillar_image', pillarDraft.imageUrl, slotId);
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         {pillarDraft.imageUrl ? 'Replace Image File' : '+ Add Image File'}
@@ -3004,15 +3167,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {pillarDraft.imageUrl && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img
-                          src={pillarDraft.imageUrl}
-                          alt="Pillar Preview"
-                          className="h-10 w-10 object-cover rounded border border-slate-300"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{pillarDraft.imageUrl}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={pillarDraft.imageUrl}
+                        slotId={getClinicSlotId('pillar', pillarDraft.id || (editingPillarIndex !== null ? `pillar-${editingPillarIndex + 1}` : 'new'))}
+                        label="Pillar Preview"
+                      />
                     )}
                   </div>
                 </div>
@@ -3060,9 +3219,13 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Award Image Asset</label>
                       <button
                         type="button"
-                        onClick={() => triggerImageUpload((newUrl) => {
-                          setAwardDraft({ ...awardDraft, imageUrl: newUrl });
-                        }, 'award_image', awardDraft.imageUrl)}
+                        onClick={() => {
+                          const awardId = awardDraft.id || (editingAwardIndex !== null ? `award-${editingAwardIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('award', awardId);
+                          triggerImageUpload((newUrl) => {
+                            setAwardDraft({ ...awardDraft, imageUrl: newUrl });
+                          }, 'award_image', awardDraft.imageUrl, slotId);
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         {awardDraft.imageUrl ? 'Replace Image File' : '+ Add Image File'}
@@ -3087,15 +3250,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {awardDraft.imageUrl && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img
-                          src={awardDraft.imageUrl}
-                          alt="Award Preview"
-                          className="h-10 w-10 object-cover rounded border border-slate-300"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{awardDraft.imageUrl}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={awardDraft.imageUrl}
+                        slotId={getClinicSlotId('award', awardDraft.id || (editingAwardIndex !== null ? `award-${editingAwardIndex + 1}` : 'new'))}
+                        label="Award Preview"
+                      />
                     )}
                   </div>
                 </div>
@@ -3303,13 +3462,16 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Suite Image Asset</label>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const roomId = roomDraft.id || (editingRoomIndex !== null ? `suite-${editingRoomIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('facility', roomId);
                           triggerImageUpload(
                             (newUrl) => setRoomDraft({ ...roomDraft, image: newUrl }),
                             'facility_room_modal',
-                            roomDraft.image
-                          )
-                        }
+                            roomDraft.image,
+                            slotId
+                          );
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         {roomDraft.image ? 'Replace Image File' : '+ Add Image File'}
@@ -3334,15 +3496,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {roomDraft.image && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img
-                          src={roomDraft.image}
-                          alt={roomDraft.imageAlt || 'Suite Preview'}
-                          className="h-12 w-12 object-cover rounded border border-slate-300"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{roomDraft.image}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={roomDraft.image}
+                        slotId={getClinicSlotId('facility', roomDraft.id || (editingRoomIndex !== null ? `suite-${editingRoomIndex + 1}` : 'new'))}
+                        label={roomDraft.imageAlt || 'Suite Preview'}
+                      />
                     )}
                   </div>
                 </div>
@@ -3390,13 +3548,16 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Step Image Asset</label>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const stepId = stepDraft.id || stepDraft.stepNumber || (editingStepIndex !== null ? `step-${editingStepIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('process', stepId);
                           triggerImageUpload(
                             (newUrl) => setStepDraft({ ...stepDraft, image: newUrl }),
                             'process_step_modal',
-                            stepDraft.image
-                          )
-                        }
+                            stepDraft.image,
+                            slotId
+                          );
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         {stepDraft.image ? 'Replace Image File' : '+ Add Image File'}
@@ -3421,15 +3582,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {stepDraft.image && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img
-                          src={stepDraft.image}
-                          alt={stepDraft.imageAlt || 'Step Preview'}
-                          className="h-12 w-12 object-cover rounded border border-slate-300"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{stepDraft.image}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={stepDraft.image}
+                        slotId={getClinicSlotId('process', stepDraft.id || stepDraft.stepNumber || (editingStepIndex !== null ? `step-${editingStepIndex + 1}` : 'new'))}
+                        label={stepDraft.imageAlt || 'Step Preview'}
+                      />
                     )}
                   </div>
 
@@ -3534,13 +3691,16 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <label className="font-bold uppercase text-slate-700">Custom Brand Logo (Optional)</label>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const brandId = brandDraft.id || (editingBrandIndex !== null ? `brand-${editingBrandIndex + 1}` : 'new');
+                          const slotId = getClinicSlotId('brand', brandId);
                           triggerImageUpload(
                             (newUrl) => setBrandDraft({ ...brandDraft, imageUrl: newUrl }),
                             'trust_brand_modal',
-                            brandDraft.imageUrl
-                          )
-                        }
+                            brandDraft.imageUrl,
+                            slotId
+                          );
+                        }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
                         {brandDraft.imageUrl ? 'Replace Logo File' : '+ Upload Logo'}
@@ -3565,15 +3725,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       )}
                     </div>
                     {brandDraft.imageUrl && (
-                      <div className="mt-1 flex items-center gap-2 p-1.5 bg-slate-100 rounded-lg">
-                        <img
-                          src={brandDraft.imageUrl}
-                          alt={brandDraft.name}
-                          className="h-10 w-10 object-contain rounded border border-slate-300 bg-white p-1"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <span className="font-mono text-slate-600 text-[11px] truncate">{brandDraft.imageUrl}</span>
-                      </div>
+                      <AdminSlotImageFieldPreview
+                        value={brandDraft.imageUrl}
+                        slotId={getClinicSlotId('brand', brandDraft.id || (editingBrandIndex !== null ? `brand-${editingBrandIndex + 1}` : 'new'))}
+                        label={brandDraft.name || 'Brand Logo Preview'}
+                      />
                     )}
                   </div>
                 </div>
@@ -3595,9 +3751,13 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       </div>
                       <button
                         type="button"
-                        onClick={() => triggerImageUpload((newUrl) => {
-                          setArrayDraft(prev => [...prev, newUrl]);
-                        }, 'modal_interior')}
+                        onClick={() => {
+                          const nextIdx = arrayDraft.length;
+                          const slotId = getClinicSlotId('interior', nextIdx);
+                          triggerImageUpload((newUrl) => {
+                            setArrayDraft(prev => [...prev, newUrl]);
+                          }, 'modal_interior', undefined, slotId);
+                        }}
                         className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer hover:bg-[#002627]"
                       >
                         + Add Image File
@@ -3630,11 +3790,12 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium">
                           <div className="flex items-center gap-2 truncate pr-2">
                             {modalType === 'interiorPhotos' && (
-                              <img 
-                                src={item} 
-                                alt={`Item ${idx + 1}`} 
-                                className="h-8 w-8 object-cover rounded bg-slate-200 shrink-0"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                              <AdminSlotThumbnail
+                                src={item}
+                                slotId={getClinicSlotId('interior', idx)}
+                                alt={`Item ${idx + 1}`}
+                                className="h-8 w-8 shrink-0"
+                                showStatusLabel={false}
                               />
                             )}
                             <span className="truncate">{item}</span>
@@ -3643,7 +3804,8 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                             {modalType === 'interiorPhotos' && (
                               <button
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
+                                  const slotId = getClinicSlotId('interior', idx);
                                   triggerImageUpload(
                                     (newUrl) => {
                                       setArrayDraft((prev) =>
@@ -3651,9 +3813,10 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                                       );
                                     },
                                     `modal_interior_${idx}`,
-                                    item
-                                  )
-                                }
+                                    item,
+                                    slotId
+                                  );
+                                }}
                                 className="text-[#003334] hover:underline font-bold uppercase text-[11px] px-1.5 py-0.5 rounded cursor-pointer"
                               >
                                 Replace

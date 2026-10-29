@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   PRICING_CATEGORIES,
   TREATMENT_CATEGORY_SUB_OPTIONS,
@@ -7,15 +7,12 @@ import {
   TreatmentPricingCardSummary,
   PricingCategory,
   PricingPackage,
-  TreatmentTaxonomyGroup,
 } from '../../data/treatmentPricing';
 import {
   getPaginatedTreatmentCards,
   fetchPaginatedTreatmentCards,
   getTreatmentPricingItemById,
   getTreatmentPackageDetailsById,
-  getTreatmentTaxonomy,
-  fetchRemoteTreatmentTaxonomy,
 } from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
@@ -41,45 +38,7 @@ export { TREATMENT_CATEGORY_SUB_OPTIONS };
 
 const PAGE_SIZE = 10;
 
-function resolveCategoryAndSubOptionFromFilter(
-  rawFilter: string | undefined,
-  taxonomy: TreatmentTaxonomyGroup[]
-): { category: string; subOptions: string[] } {
-  if (!rawFilter || rawFilter === 'All Procedures') {
-    return { category: 'All Procedures', subOptions: [] };
-  }
-  const lower = rawFilter.toLowerCase().trim();
-  const isIv =
-    lower === 'iv drips & wellness' ||
-    lower === 'iv drip lounge & wellness' ||
-    lower === 'iv-drips-wellness' ||
-    lower === 'iv-wellness';
 
-  // 1. Match parent branch directly
-  const branchMatch = taxonomy.find(
-    (b) =>
-      b.name.toLowerCase().trim() === lower ||
-      b.id.toLowerCase().trim() === lower ||
-      (isIv &&
-        (b.id.toLowerCase().includes('iv') ||
-          b.name.toLowerCase().includes('iv')))
-  );
-  if (branchMatch) {
-    return { category: branchMatch.name, subOptions: [] };
-  }
-
-  // 2. Match a sub-group inside a parent branch
-  for (const branch of taxonomy) {
-    const subMatch = (branch.subGroups || []).find(
-      (s) => s.id.toLowerCase().trim() === lower || s.name.toLowerCase().trim() === lower
-    );
-    if (subMatch) {
-      return { category: branch.name, subOptions: [subMatch.id] };
-    }
-  }
-
-  return { category: rawFilter, subOptions: [] };
-}
 
 const SORT_OPTIONS: Array<{ id: 'featured' | 'price-asc' | 'price-desc' | 'name-asc'; label: string }> = [
   { id: 'featured', label: 'Featured Order' },
@@ -105,16 +64,10 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     totalTreatmentCount,
   } = useTreatmentCart();
 
-  const [taxonomy, setTaxonomy] = useState<TreatmentTaxonomyGroup[]>(() => getTreatmentTaxonomy());
-
-  const initialResolved = useMemo(
-    () => resolveCategoryAndSubOptionFromFilter(initialCategoryFilter, taxonomy),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    initialCategoryFilter || 'All Procedures'
   );
-
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialResolved.category);
-  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>(initialResolved.subOptions);
+  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>([]);
   const [activeFloatingCategory, setActiveFloatingCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<'featured' | 'price-asc' | 'price-desc' | 'name-asc'>('featured');
@@ -125,15 +78,6 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Sync if initialCategoryFilter prop changes dynamically (e.g., from Header navigation)
-  useEffect(() => {
-    if (initialCategoryFilter !== undefined) {
-      const resolved = resolveCategoryAndSubOptionFromFilter(initialCategoryFilter, taxonomy);
-      setSelectedCategory(resolved.category);
-      setSelectedSubOptions(resolved.subOptions);
-    }
-  }, [initialCategoryFilter, taxonomy]);
-
   // Initial synchronous batch of 10 projected cards computed once for instant first paint
   const initialBatchRef = useRef<ReturnType<typeof getPaginatedTreatmentCards> | null>(null);
   if (!initialBatchRef.current) {
@@ -141,12 +85,11 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
       page: 1,
       offset: 0,
       limit: PAGE_SIZE,
-      category: initialResolved.category,
-      subOptions: initialResolved.subOptions,
+      category: initialCategoryFilter || 'All Procedures',
+      subOptions: [],
       search: '',
       sort: 'featured',
       fields: 'card',
-      taxonomy,
     });
   }
 
@@ -163,91 +106,58 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const activeQueryIdRef = useRef<number>(0);
 
-  // Reset cursor to first 10 items whenever category, subOptions, searchQuery, sortOption, or taxonomy changes
-  const resetAndFetchFirstBatch = useCallback(
-    (overrideTaxonomy?: TreatmentTaxonomyGroup[]) => {
-      const activeTax = overrideTaxonomy || taxonomy;
-      const queryId = ++activeQueryIdRef.current;
-      const syncFirstPage = getPaginatedTreatmentCards({
-        page: 1,
-        offset: 0,
-        limit: PAGE_SIZE,
-        category: selectedCategory,
-        subOptions: selectedSubOptions,
-        search: searchQuery,
-        sort: sortOption,
-        fields: 'card',
-        taxonomy: activeTax,
-      });
+  // Reset cursor to first 10 items whenever category, subOptions, searchQuery, or sortOption changes
+  const resetAndFetchFirstBatch = useCallback(() => {
+    const queryId = ++activeQueryIdRef.current;
+    const syncFirstPage = getPaginatedTreatmentCards({
+      page: 1,
+      offset: 0,
+      limit: PAGE_SIZE,
+      category: selectedCategory,
+      subOptions: selectedSubOptions,
+      search: searchQuery,
+      sort: sortOption,
+      fields: 'card',
+    });
 
-      setPage(1);
-      setOffset(0);
-      setVisibleTreatments(syncFirstPage.items);
-      setTotalCount(syncFirstPage.totalCount);
-      setHasMore(syncFirstPage.hasMore);
-      setIsLoadingMore(false);
+    setPage(1);
+    setOffset(0);
+    setVisibleTreatments(syncFirstPage.items);
+    setTotalCount(syncFirstPage.totalCount);
+    setHasMore(syncFirstPage.hasMore);
+    setIsLoadingMore(false);
 
-      // Also sync first 10 projected cards from remote endpoint
-      fetchPaginatedTreatmentCards({
-        page: 1,
-        offset: 0,
-        limit: PAGE_SIZE,
-        category: selectedCategory,
-        subOptions: selectedSubOptions,
-        search: searchQuery,
-        sort: sortOption,
-        fields: 'card',
-        taxonomy: activeTax,
+    // Also sync first 10 projected cards from remote endpoint
+    fetchPaginatedTreatmentCards({
+      page: 1,
+      offset: 0,
+      limit: PAGE_SIZE,
+      category: selectedCategory,
+      subOptions: selectedSubOptions,
+      search: searchQuery,
+      sort: sortOption,
+      fields: 'card',
+    })
+      .then((remoteBatch) => {
+        if (activeQueryIdRef.current !== queryId) return;
+        setVisibleTreatments(remoteBatch.items);
+        setTotalCount(remoteBatch.totalCount);
+        setHasMore(remoteBatch.hasMore);
       })
-        .then((remoteBatch) => {
-          if (activeQueryIdRef.current !== queryId) return;
-          setVisibleTreatments(remoteBatch.items);
-          setTotalCount(remoteBatch.totalCount);
-          setHasMore(remoteBatch.hasMore);
-        })
-        .catch(() => {});
-    },
-    [selectedCategory, selectedSubOptions, searchQuery, sortOption, taxonomy]
-  );
+      .catch(() => {});
+  }, [selectedCategory, selectedSubOptions, searchQuery, sortOption]);
 
   useEffect(() => {
     resetAndFetchFirstBatch();
   }, [resetAndFetchFirstBatch]);
 
   useEffect(() => {
-    fetchRemoteTreatmentTaxonomy()
-      .then((remoteTax) => {
-        if (remoteTax && remoteTax.length > 0) {
-          setTaxonomy(remoteTax);
-        }
-      })
-      .catch(() => {});
-
-    const handlePricingOrTaxonomyUpdate = () => {
-      const latestTax = getTreatmentTaxonomy();
-      setTaxonomy(latestTax);
-
-      // Reconcile selectedCategory if a branch was renamed or deleted
-      setSelectedCategory((prevCat) => {
-        if (prevCat === 'All Procedures') return prevCat;
-        const stillExists = latestTax.some(
-          (b) => b.name === prevCat || b.id === prevCat
-        );
-        return stillExists ? prevCat : 'All Procedures';
-      });
-
-      resetAndFetchFirstBatch(latestTax);
+    const handleAdminPricingUpdate = () => {
+      resetAndFetchFirstBatch();
     };
-
-    window.addEventListener('treatment_pricing_updated', handlePricingOrTaxonomyUpdate);
-    window.addEventListener('treatment_taxonomy_updated', handlePricingOrTaxonomyUpdate);
-    window.addEventListener('master_services_updated', handlePricingOrTaxonomyUpdate);
-    window.addEventListener('storage', handlePricingOrTaxonomyUpdate);
+    window.addEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
     return () => {
-      window.removeEventListener('treatment_pricing_updated', handlePricingOrTaxonomyUpdate);
-      window.removeEventListener('treatment_taxonomy_updated', handlePricingOrTaxonomyUpdate);
-      window.removeEventListener('master_services_updated', handlePricingOrTaxonomyUpdate);
-      window.removeEventListener('storage', handlePricingOrTaxonomyUpdate);
+      window.removeEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
     };
   }, [resetAndFetchFirstBatch]);
 
@@ -271,7 +181,6 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
         search: searchQuery,
         sort: sortOption,
         fields: 'card',
-        taxonomy,
       });
 
       if (activeQueryIdRef.current !== queryId) return;
@@ -299,7 +208,6 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     selectedSubOptions,
     searchQuery,
     sortOption,
-    taxonomy,
   ]);
 
   // Lightweight IntersectionObserver attached to sentinel at bottom of the cards grid
@@ -551,16 +459,16 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           </div>
         </div>
 
-        {/* 4. Category Filter Tabs & Floating Options Modal - Driven by Dynamic Taxonomy */}
+        {/* 4. Category Filter Tabs & Floating Options Modal - Sticky on All Screens when scrolled to top */}
         <div
           ref={floatingModalRef}
           style={{ top: `${headerHeight}px` }}
           className="sticky z-30 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 py-3 mb-6 sm:mb-8 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200/60 shadow-xs transition-shadow"
         >
-          {/* Main Category Tabs - Horizontal scrollable pills read directly from dynamic taxonomy */}
+          {/* Main Category Tabs - Horizontal scrollable pills */}
           <div className="overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-2 pb-1 md:pb-0 min-w-max">
-              {['All Procedures', ...taxonomy.map((b) => b.name)].map((cat) => {
+              {PRICING_CATEGORIES.map((cat) => {
                 const isActive = selectedCategory === cat;
                 const activeCount = isActive ? selectedSubOptions.length : 0;
 
@@ -590,74 +498,65 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
             </div>
           </div>
 
-          {/* Floating UI: Floats directly ABOVE the cards, reading sub-groups from dynamic taxonomy */}
+          {/* Floating UI: Floats directly ABOVE the cards without taking space below options */}
           <AnimatePresence>
-            {(() => {
-              if (!activeFloatingCategory) return null;
-              const activeFloatingBranch = taxonomy.find(
-                (b) => b.name === activeFloatingCategory || b.id === activeFloatingCategory
-              );
-              if (!activeFloatingBranch || !activeFloatingBranch.subGroups || activeFloatingBranch.subGroups.length === 0) {
-                return null;
-              }
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute left-4 right-4 sm:left-0 sm:right-auto z-40 mt-2 max-w-xl sm:w-full"
-                >
-                  <div className="bg-white/98 backdrop-blur-md rounded-2xl border border-stone-200/90 shadow-2xl shadow-stone-900/15 p-3.5 sm:p-4">
-                    <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-stone-100">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
-                        {activeFloatingBranch.name} Sub-Groups
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {selectedSubOptions.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedSubOptions([])}
-                            className="text-[11px] text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
-                          >
-                            Clear
-                          </button>
-                        )}
+            {activeFloatingCategory && TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory] && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-4 right-4 sm:left-0 sm:right-auto z-40 mt-2 max-w-xl sm:w-full"
+              >
+                <div className="bg-white/98 backdrop-blur-md rounded-2xl border border-stone-200/90 shadow-2xl shadow-stone-900/15 p-3.5 sm:p-4">
+                  <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-stone-100">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
+                      {activeFloatingCategory} Options
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {selectedSubOptions.length > 0 && (
                         <button
                           type="button"
-                          onClick={() => setActiveFloatingCategory(null)}
-                          className="p-1 text-stone-400 hover:text-stone-800 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
-                          aria-label="Close options"
+                          onClick={() => setSelectedSubOptions([])}
+                          className="text-[11px] text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          Clear
                         </button>
-                      </div>
-                    </div>
-
-                    {/* Dynamic Sub-Groups appear directly on the modal, multi-selectable */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {activeFloatingBranch.subGroups.map((sub) => {
-                        const isSelected = selectedSubOptions.includes(sub.id);
-                        return (
-                          <button
-                            key={sub.id}
-                            type="button"
-                            onClick={() => handleToggleSubOption(sub.id)}
-                            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap select-none ${
-                              isSelected
-                                ? 'bg-black text-white shadow-xs border border-black'
-                                : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80 hover:border-stone-400'
-                            }`}
-                          >
-                            {sub.name}
-                          </button>
-                        );
-                      })}
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveFloatingCategory(null)}
+                        className="p-1 text-stone-400 hover:text-stone-800 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                        aria-label="Close options"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })()}
+
+                  {/* Options appear directly on the modal, multi-selectable */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory].map((opt) => {
+                      const isSelected = selectedSubOptions.includes(opt.id);
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => handleToggleSubOption(opt.id)}
+                          className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap select-none ${
+                            isSelected
+                              ? 'bg-black text-white shadow-xs border border-black'
+                              : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80 hover:border-stone-400'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 

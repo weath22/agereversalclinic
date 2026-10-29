@@ -8,6 +8,7 @@ import { CLINIC_DATA, ClinicData } from '../data/clinicInfo';
 import ContactDrawerModal from './ContactDrawerModal';
 import AppointmentDatePicker from './AppointmentDatePicker';
 import { PackageSelectModal } from './pricing/PackageSelectModal';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 import type { TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
@@ -624,11 +625,22 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       {/* 1. Our Locations Section */}
       <section 
         id="locations"
-        className="py-20 relative overflow-hidden bg-cover bg-center border-b border-luxury-border/40 isolate bg-luxury-secondary/30"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.2)), url("${locationsConfig?.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw'}")`
-        }}
+        className="py-20 relative overflow-hidden border-b border-luxury-border/40 isolate bg-luxury-secondary/30 transform-gpu"
       >
+        {/* Hardware-Accelerated Isolated Background Texture Layer (Zero scroll lag or paint tearing) */}
+        <div className="absolute inset-0 z-0 pointer-events-none transform-gpu overflow-hidden">
+          <img
+            src={locationsConfig?.backgroundImage || 'https://lh3.googleusercontent.com/aida-public/AB6AXuASZKoKhij5mKIMYIaSVfVDbHCQQhOAHm8VMWFbq2S9QwpVP-JCdU5_c4F2CWomVS7s0nYacWblWSVAmRkM3JF7HYiH8YGA1tQYJ9P4_Wz36RmFZc5TRrU9zSh9sLum6Usm_7XuOGMK7KjFm1bhV-DZ_m8xWC2FrOkjqbzaH29MaU4j4NFRn3lufmvMKk_n5DbqDPwFUbfl7PVHFBiM4oZmy3SaXkVVSPxZPj-hJudGKMUQUMAwsSL-8yF78wwhmkFx6ryzzjEFtw'}
+            alt="Clinic Locations Background"
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            className="w-full h-full object-cover object-center transform-gpu"
+            style={{ transform: 'translateZ(0)' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/15 via-white/20 to-white/25 pointer-events-none" />
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 md:px-12 relative z-10">
           
           <div className="text-center mb-16">
@@ -646,32 +658,25 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
               const displayImage = loc.imageUrl;
 
               return (
-                <div key={loc.id} className="flex flex-col bg-luxury-card rounded-[24px] sm:rounded-[28px] overflow-hidden border border-luxury-border shadow-sm hover:border-luxury-gold/70 transition-all duration-500 animate-fade-in group">
+                <div key={loc.id} className="flex flex-col bg-luxury-card rounded-[24px] sm:rounded-[28px] overflow-hidden border border-luxury-border shadow-sm hover:border-luxury-gold/70 transition-all duration-500 animate-fade-in group transform-gpu will-change-transform">
                   
                   {/* Clinical Location Image with Overlayed Details (clinic name, location, opening time, telephone) */}
-                  <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden bg-luxury-secondary flex flex-col justify-between">
-                    <img
-                      src={displayImage}
-                      alt={loc.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement;
-                        const defaultImg = DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length] || LOCATION_FALLBACKS[0];
-                        if (target.src !== defaultImg) {
-                          target.src = defaultImg;
-                        }
-                      }}
-                    />
-
+                  <ClinicImageWithPlaceholder
+                    src={displayImage}
+                    alt={loc.name}
+                    slotId={`clinic-location-${loc.id}`}
+                    logoSize="lg"
+                    showBrandText={true}
+                    fallbackUrl={DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length]}
+                    containerClassName="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden bg-luxury-secondary flex flex-col justify-between"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106 transform-gpu"
+                  >
                     {/* Gradient scrim brought down so the upper architecture remains bright and clear */}
                     <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-black/95 via-black/55 via-50% to-transparent pointer-events-none" />
 
                     {/* Top pill badge */}
                     <div className="relative z-10 p-3.5 sm:p-4 md:p-5 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-sans font-semibold tracking-wider uppercase bg-white/95 backdrop-blur-md text-luxury-text border border-white/80 shadow-xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-sans font-semibold tracking-wider uppercase bg-white/95 sm:backdrop-blur-md text-luxury-text border border-white/80 shadow-xs">
                         <Building2 className="h-3 w-3 text-luxury-gold" />
                         <span>Clinical Facility</span>
                       </span>
@@ -703,7 +708,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </ClinicImageWithPlaceholder>
 
                   {/* Standalone Action Items (Message, Book Here, & Get Directions) */}
                   <div className="p-4 sm:p-5 px-5 sm:px-6 flex items-center justify-between bg-luxury-card border-t border-luxury-border/60">
@@ -759,14 +764,16 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       {/* 2. Book Consultation Form Section */}
       <section 
         id="preferred-consultation" 
-        className="py-24 bg-gradient-to-b from-[#fbf8f3] via-[#f6efe4] to-[#fbf9f5] text-stone-900 border-b border-[#D8C2A3]/40 relative overflow-hidden selection:bg-[#D8C2A3]/30"
+        className="py-24 bg-gradient-to-b from-[#fbf8f3] via-[#f6efe4] to-[#fbf9f5] text-stone-900 border-b border-[#D8C2A3]/40 relative overflow-hidden selection:bg-[#D8C2A3]/30 isolate transform-gpu"
       >
-        {/* Luxury Gold & Champagne Ambient Lighting (Matches Shop Page Background) */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[650px] bg-gradient-to-b from-[#D8C2A3]/50 via-[#ecdcc8]/30 to-transparent rounded-full blur-3xl opacity-90" />
-          <div className="absolute top-1/4 -right-40 w-[600px] h-[600px] bg-[#ecdcc8]/40 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 -left-40 w-[600px] h-[600px] bg-[#e4d2bc]/45 rounded-full blur-3xl" />
-        </div>
+        {/* Luxury Gold & Champagne Ambient Lighting (GPU-accelerated pre-computed radial gradients) */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-85 transform-gpu"
+          style={{
+            background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(216, 194, 163, 0.4) 0%, rgba(236, 220, 200, 0.2) 45%, transparent 75%), radial-gradient(circle 380px at 100% 25%, rgba(236, 220, 200, 0.3) 0%, transparent 70%), radial-gradient(circle 380px at 0% 80%, rgba(228, 210, 188, 0.35) 0%, transparent 70%)',
+            transform: 'translateZ(0)'
+          }}
+        />
 
         <div className="max-w-4xl mx-auto px-4 relative z-10">
           

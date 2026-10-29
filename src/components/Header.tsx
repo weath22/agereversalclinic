@@ -22,6 +22,7 @@ import {
 } from '../data/treatmentPricing';
 import { useCart } from '../context/CartContext';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 interface HeaderProps {
   onBookClick: (serviceName?: string) => void;
@@ -321,16 +322,20 @@ export default function Header({
       <div className="container mx-auto px-4 md:px-8 flex justify-between items-center">
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
-          <img
-            alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || clinicData.name}
-            className="h-10 sm:h-11 lg:h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-            src={
-              clinicData.logo?.icon ||
-              clinicData.logo?.full ||
-              headerConfig?.logoUrl ||
-              "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q"
-            }
-          />
+          <div className="h-10 sm:h-11 lg:h-12 w-10 sm:w-11 lg:w-12 shrink-0 flex items-center justify-center">
+            <ClinicImageWithPlaceholder
+              alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || clinicData.name}
+              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              containerClassName="h-full w-full relative flex items-center justify-center bg-transparent"
+              src={
+                clinicData.logo?.icon ||
+                clinicData.logo?.full ||
+                headerConfig?.logoUrl
+              }
+              slotId="clinic-logo-icon"
+              logoSize="sm"
+            />
+          </div>
           <div className="flex flex-col">
             <span className="text-lg lg:text-xl font-serif font-light tracking-tight text-luxury-text leading-none flex items-center gap-1">
               {headerConfig?.primaryName || clinicData.name || CLINIC_DATA.name}

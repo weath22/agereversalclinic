@@ -5,6 +5,7 @@ import { ArrowUpRight, X, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { FacilityRoom } from '../types';
 import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { ClinicData } from '../data/clinicInfo';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 export default function FacilityInteriors() {
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
@@ -138,18 +139,22 @@ export default function FacilityInteriors() {
             >
               {/* Image Box */}
               <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-silver-100 border border-silver-200/50 relative">
-                <img 
-                  alt={facility.imageAlt || facility.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                <ClinicImageWithPlaceholder 
                   src={facility.image}
-                />
-                
-                {/* Interactive Overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <span className="bg-white/95 text-silver-900 p-3 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                    <Eye className="h-5 w-5" />
-                  </span>
-                </div>
+                  slotId={`clinic-facility-${facility.id}`}
+                  alt={facility.imageAlt || facility.title} 
+                  logoSize="md"
+                  showBrandText={true}
+                  containerClassName="w-full h-full relative overflow-hidden bg-silver-100 flex items-center justify-center"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                >
+                  {/* Interactive Overlay */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                    <span className="bg-white/95 text-silver-900 p-3 rounded-full shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                      <Eye className="h-5 w-5" />
+                    </span>
+                  </div>
+                </ClinicImageWithPlaceholder>
               </div>
 
               {/* Text Meta */}
@@ -203,10 +208,14 @@ export default function FacilityInteriors() {
                 className="max-w-4xl w-full flex flex-col items-center relative z-10"
               >
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 max-h-[75vh] flex items-center justify-center">
-                  <img 
+                  <ClinicImageWithPlaceholder 
                     alt={facilityItems[activeLightboxIndex].imageAlt || facilityItems[activeLightboxIndex].title}
                     className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
                     src={facilityItems[activeLightboxIndex].image}
+                    slotId={`clinic-facility-${facilityItems[activeLightboxIndex].id}`}
+                    logoSize="xl"
+                    showBrandText={true}
+                    containerClassName="flex items-center justify-center min-w-[280px] min-h-[280px] bg-transparent"
                   />
                 </div>
                 

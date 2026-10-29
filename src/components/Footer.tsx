@@ -16,6 +16,7 @@ import { getFooterConfig, getClinicData, fetchRemoteClinicData } from "../lib/ad
 import { ClinicData } from "../data/clinicInfo";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { ClinicImageWithPlaceholder } from "./common/ClinicImageWithPlaceholder";
 
 export default function Footer() {
   const [config, setConfig] = useState(getFooterConfig());
@@ -104,13 +105,16 @@ export default function Footer() {
           {/* Logo brand centerpiece */}
           <div className="flex flex-col items-center">
             <div className="mb-6 text-center">
-              <img
-                alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || `${clinicData.name} Emblem`}
-                loading="lazy"
-                decoding="async"
-                className="h-16 w-auto mb-4 mx-auto transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
-                src={footerLogoSrc}
-              />
+              <div className="h-16 w-36 mb-4 mx-auto flex items-center justify-center">
+                <ClinicImageWithPlaceholder
+                  alt={(clinicData.logo as any)?.altText || clinicData.logo?.alt || `${clinicData.name} Emblem`}
+                  className="h-16 w-auto mx-auto object-contain transition-transform hover:scale-105 duration-500 brightness-110 drop-shadow-[0_2px_12px_rgba(216,194,163,0.25)]"
+                  containerClassName="h-full w-full relative flex items-center justify-center bg-transparent"
+                  src={footerLogoSrc}
+                  slotId="clinic-logo-full"
+                  logoSize="md"
+                />
+              </div>
               <div className="flex flex-col items-center">
                 <span className="text-[10px] tracking-[0.3em] uppercase font-sans font-medium text-[#D8C2A3]">
                   THE LONDON

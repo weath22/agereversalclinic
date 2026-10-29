@@ -220,14 +220,14 @@ export const CLINIC_DATA: ClinicData = {
   ],
   "ogImage": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=80",
   "logo": {
-    "icon": "/assets/1791726118331-Screenshot_2026-07-24_193158.png",
+    "icon": "/assets/clinic-logo-icon.webp",
     "alt": "Age Reversal Clinics Logo",
-    "full": "/assets/1791726190127-arc-logo__2_.webp"
+    "full": "/assets/clinic-logo-full.webp"
   },
   "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
   "interiorPhotos": [
-    "/assets/1793130890366-arcoutsideview.jpg",
-    "/assets/1793130908513-arctreatment.jpg"
+    "/assets/clinic-facility-1.webp",
+    "/assets/clinic-facility-2.webp"
   ],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",
@@ -279,7 +279,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "/assets/1791723050511-Screenshot_2026-07-24_193158.png",
+      "image": "/assets/clinic-location-1791722960928.webp",
       "imageAlt": ""
     },
     {
@@ -296,7 +296,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": false,
-      "image": "/assets/1791729403362-arc-logo__1___2_.webp",
+      "image": "/assets/clinic-location-1791728808656.webp",
       "imageAlt": ""
     }
   ],
@@ -355,14 +355,28 @@ export const CLINIC_DATA: ClinicData = {
         "title": "Dermatology Clinic of the Year",
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
-        "imageUrl": "/src/assets/images/clinic/awards/award_dermatology.jpg"
+        "iconName": "Trophy"
       },
       {
         "id": "aw-2",
         "title": "Best Non-Surgical Rejuvenation",
         "year": "2025",
         "organization": "Global Cosmetic Congress",
-        "imageUrl": "/src/assets/images/clinic/awards/award_rejuvenation.jpg"
+        "iconName": "Sparkles"
+      },
+      {
+        "id": "aw-3",
+        "title": "Patient Safety Excellence Award",
+        "year": "2024",
+        "organization": "British Health Standards",
+        "iconName": "ShieldCheck"
+      },
+      {
+        "id": "aw-4",
+        "title": "Best Laser Skin Clinic",
+        "year": "2024",
+        "organization": "International Laser Association",
+        "iconName": "Award"
       }
     ]
   },
@@ -373,10 +387,11 @@ export const CLINIC_DATA: ClinicData = {
     "doctors": [
       {
         "id": "dr-smith",
-        "name": "Med Faith Chris",
+        "name": "Dr. Alistair Smith (Lead Aesthetic Specialist)",
         "specialty": "Lead Aesthetic Specialist",
         "locationIds": [
-          "location-1791722960928"
+          "location-1791722960928",
+          "location-1791728808656"
         ],
         "availableDays": [
           1,
@@ -395,8 +410,28 @@ export const CLINIC_DATA: ClinicData = {
         ]
       },
       {
+        "id": "dr-jones",
+        "name": "Dr. Sarah Jones (Aesthetic Physician)",
+        "specialty": "Aesthetic Physician",
+        "locationIds": [
+          "location-1791722960928"
+        ],
+        "availableDays": [
+          1,
+          2,
+          4,
+          5
+        ],
+        "timeSlots": [
+          "10:00",
+          "11:30",
+          "14:00",
+          "16:00"
+        ]
+      },
+      {
         "id": "dr-jaipur",
-        "name": "Med Nuri",
+        "name": "Dr. Vikram Jaipur (Regenerative & Laser Specialist)",
         "specialty": "Regenerative & Laser Specialist",
         "locationIds": [
           "location-1791728808656"
@@ -404,7 +439,6 @@ export const CLINIC_DATA: ClinicData = {
         "availableDays": [
           2,
           3,
-          4,
           5,
           6
         ],
@@ -460,7 +494,7 @@ export const CLINIC_DATA: ClinicData = {
       {
         "id": "email",
         "label": "Email",
-        "enabled": false
+        "enabled": true
       },
       {
         "id": "phone",
@@ -512,24 +546,21 @@ export const CLINIC_DATA: ClinicData = {
   "facilityGallery": {
     "eyebrow": "Our Facility",
     "heading": "Clinic Gallery",
-    "seoKeywords": [
-      "medspa",
-      "london medspa"
-    ],
+    "seoKeywords": [],
     "rooms": [
       {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "/assets/1793130890366-arcoutsideview.jpg",
-        "imageAlt": "Medspa Consultation Suite"
+        "image": "/assets/clinic-facility-1.webp",
+        "imageAlt": "Consultation Suite at Age Reversal Clinics"
       },
       {
         "id": "room-2",
-        "title": "Age Reversal Treatment Area",
+        "title": "Treatment Room",
         "tag": "Clinical",
-        "image": "/assets/1793130908513-arctreatment.jpg",
-        "imageAlt": "Age Reversal Treatment Area"
+        "image": "/assets/clinic-facility-2.webp",
+        "imageAlt": "Treatment Room at Age Reversal Clinics"
       }
     ]
   },
