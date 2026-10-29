@@ -203,7 +203,48 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
   }
 ];
 
-export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [];
+export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
+  {
+    "id": "pair-1793264833765",
+    "title": "Eyebrow Wax Transformation",
+    "category": "Facial Rejuvenation",
+    "tag": "lash & eyebrow",
+    "patientInfo": "Eyebrow Wax",
+    "duration": "20 mins 3 Sessions",
+    "sessions": 3,
+    "concern": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793264989514.webp?v=1793264989600",
+    "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793265001438.webp?v=1793265001447",
+    "galleryImages": [
+      "/assets/transformations/ba-eyebrow-wax-before-1793264989514.webp?v=1793264989600",
+      "/assets/transformations/ba-eyebrow-wax-after-1793265001438.webp?v=1793265001447"
+    ],
+    "recommendedTreatmentIds": [
+      "eyebrow-wax"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "lash-eyebrow",
+    "linkedTreatmentId": "eyebrow-wax",
+    "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
+    "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
+    "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "seoKeywords": [
+      "before and after eyebrow wax london",
+      "eyebrow wax before and after",
+      "age reversal clinics eyebrow wax results",
+      "lash & eyebrow results london",
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments"
+    ],
+    "featured": false,
+    "updatedAt": 1793265005264
+  }
+];
 
 export function getRecommendedTreatmentsForCase(caseItem: TransformationCase): TreatmentPricingItem[] {
   return caseItem.recommendedTreatmentIds
