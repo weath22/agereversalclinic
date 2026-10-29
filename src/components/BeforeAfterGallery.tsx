@@ -7,6 +7,7 @@ import {
   getBeforeAfterGalleryConfig,
   fetchRemoteBeforeAfterGalleryConfig,
   getMasterServices,
+  loadSiteCustomizations,
 } from '../lib/adminStore';
 import {
   CLINICAL_TRANSFORMATION_CASES,
@@ -321,9 +322,13 @@ export default function BeforeAfterGallery() {
     setConfig(getBeforeAfterGalleryConfig());
     setMasterServices(getMasterServices());
 
-    // Always hydrate fresh remote data from server even if localStorage has an older cached copy
-    fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
-      if (remote) setConfig(remote);
+    // Hydrate siteCustomizations.json first, then fetch latest remote config from server
+    loadSiteCustomizations().then(() => {
+      setConfig(getBeforeAfterGalleryConfig());
+      setMasterServices(getMasterServices());
+      fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
+        if (remote) setConfig(remote);
+      });
     });
 
     const handleGalleryUpdate = (e: Event) => {
@@ -372,8 +377,13 @@ export default function BeforeAfterGallery() {
       if (c?.id && c?.name) groupLookup.set(c.id, c.name);
     });
 
-    // 1. Admin/config pairs
-    const configPairs: EnrichedBeforeAfterPair[] = (config?.categories || []).flatMap((cat) =>
+    const defaultPairMap = new Map<string, BeforeAfterPair>(
+      COMPREHENSIVE_GALLERY_PAIRS.map((p) => [p.id, p])
+    );
+    const defaultCaseIds = new Set<string>(CLINICAL_TRANSFORMATION_CASES.map((c) => c.id));
+
+    // 1. Admin/config pairs (split into custom/modified pairs first, unmodified default pairs after)
+    const allConfigPairs: EnrichedBeforeAfterPair[] = (config?.categories || []).flatMap((cat) =>
       (cat.pairs || [])
         .filter((p) => Boolean(p && !p.hidden && p.id))
         .map((p) => {
@@ -391,37 +401,52 @@ export default function BeforeAfterGallery() {
         })
     );
 
-    // 2. Synced & static transformation cases (matching TransformationsPageView)
-    const transformationCasesPairs: EnrichedBeforeAfterPair[] = [
-      ...ADMIN_SYNCED_TRANSFORMATION_CASES,
-      ...CLINICAL_TRANSFORMATION_CASES,
-    ]
-      .filter((c) => Boolean(c && !c.hidden && c.id && !hiddenIds.has(c.id)))
-      .map((c) => {
-        const resolvedCatId = c.treatmentGroupId || c.linkedTreatmentId || c.id;
-        const resolvedName = groupLookup.get(resolvedCatId) || c.tag || c.title;
-        return {
-          id: c.id,
-          categoryId: resolvedCatId,
-          categoryName: resolvedName,
-          treatmentGroupId: resolvedCatId,
-          linkedTreatmentId: c.linkedTreatmentId || resolvedCatId,
-          linkedTreatmentTitle: resolvedName,
-          title: resolvedName || c.title,
-          duration: c.duration,
-          sessions: c.sessions,
-          beforeImage: c.beforeImage,
-          afterImage: c.afterImage,
-          beforeAltText: c.beforeAltText,
-          afterAltText: c.afterAltText,
-          seoTitle: c.seoTitle,
-          seoKeywords: c.seoKeywords,
-          featured: c.featured,
-          updatedAt: c.updatedAt,
-        };
-      });
+    const isUnmodifiedDefaultPair = (p: EnrichedBeforeAfterPair): boolean => {
+      if (defaultCaseIds.has(p.id)) return true;
+      const def = defaultPairMap.get(p.id);
+      if (!def) return false;
+      if (p.updatedAt) return false;
+      return def.beforeImage === p.beforeImage && def.afterImage === p.afterImage;
+    };
 
-    // 3. Fallback comprehensive pairs
+    const customConfigPairs = allConfigPairs.filter((p) => !isUnmodifiedDefaultPair(p));
+    const defaultConfigPairs = allConfigPairs.filter((p) => isUnmodifiedDefaultPair(p));
+
+    const mapTransformationCaseToPair = (c: (typeof CLINICAL_TRANSFORMATION_CASES)[number]): EnrichedBeforeAfterPair => {
+      const resolvedCatId = c.treatmentGroupId || c.linkedTreatmentId || c.id;
+      const resolvedName = groupLookup.get(resolvedCatId) || c.tag || c.title;
+      return {
+        id: c.id,
+        categoryId: resolvedCatId,
+        categoryName: resolvedName,
+        treatmentGroupId: resolvedCatId,
+        linkedTreatmentId: c.linkedTreatmentId || resolvedCatId,
+        linkedTreatmentTitle: resolvedName,
+        title: resolvedName || c.title,
+        duration: c.duration,
+        sessions: c.sessions,
+        beforeImage: c.beforeImage,
+        afterImage: c.afterImage,
+        beforeAltText: c.beforeAltText,
+        afterAltText: c.afterAltText,
+        seoTitle: c.seoTitle,
+        seoKeywords: c.seoKeywords,
+        featured: c.featured,
+        updatedAt: c.updatedAt,
+      };
+    };
+
+    // 2. Synced admin transformation cases (placed before defaults, matching TransformationsPageView)
+    const syncedAdminPairs: EnrichedBeforeAfterPair[] = ADMIN_SYNCED_TRANSFORMATION_CASES
+      .filter((c) => Boolean(c && !c.hidden && c.id && !hiddenIds.has(c.id)))
+      .map(mapTransformationCaseToPair);
+
+    // 3. Static clinical transformation cases
+    const clinicalStaticPairs: EnrichedBeforeAfterPair[] = CLINICAL_TRANSFORMATION_CASES
+      .filter((c) => Boolean(c && !c.hidden && c.id && !hiddenIds.has(c.id)))
+      .map(mapTransformationCaseToPair);
+
+    // 4. Fallback comprehensive pairs
     const fallbackPairs: EnrichedBeforeAfterPair[] = COMPREHENSIVE_GALLERY_PAIRS.filter(
       (p) => Boolean(p && !p.hidden && p.id && !hiddenIds.has(p.id))
     ).map((p) => ({
@@ -429,7 +454,13 @@ export default function BeforeAfterGallery() {
       categoryName: groupLookup.get(p.categoryId) || p.linkedTreatmentTitle || p.title,
     }));
 
-    const combined = [...configPairs, ...transformationCasesPairs, ...fallbackPairs];
+    const combined = [
+      ...customConfigPairs,
+      ...syncedAdminPairs,
+      ...defaultConfigPairs,
+      ...clinicalStaticPairs,
+      ...fallbackPairs,
+    ];
     const seenIds = new Set<string>();
     const seenGroupSignature = new Set<string>();
 

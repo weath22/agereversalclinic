@@ -188,12 +188,22 @@ function syncTransformationsDataTs(galleryConfig: any): void {
   }
   try {
     const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+    const isUnmodifiedDefaultPair = (pair: any): boolean => {
+      if (!defaultPairIds.has(pair.id)) return false;
+      if (pair.updatedAt) return false;
+      const before = String(pair.beforeImage || '');
+      const after = String(pair.afterImage || '');
+      return (
+        before.startsWith('https://lh3.googleusercontent.com/aida') &&
+        after.startsWith('https://lh3.googleusercontent.com/aida')
+      );
+    };
     const syncedCases: any[] = [];
 
     for (const cat of galleryConfig.categories) {
       const mappedCategory = GROUP_TO_TRANSFORMATION_CATEGORY[cat.id] || 'Facial Rejuvenation';
       for (const pair of cat.pairs || []) {
-        if (!pair || pair.hidden || defaultPairIds.has(pair.id)) continue;
+        if (!pair || pair.hidden || isUnmodifiedDefaultPair(pair)) continue;
         syncedCases.push({
           id: pair.id,
           title: pair.title,

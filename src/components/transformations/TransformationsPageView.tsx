@@ -13,6 +13,7 @@ import {
   getBeforeAfterGalleryConfig,
   fetchRemoteBeforeAfterGalleryConfig,
   getMasterServices,
+  loadSiteCustomizations,
   normalizeMasterBranch,
   inferTransformationCategoryFromBranch,
 } from '../../lib/adminStore';
@@ -59,28 +60,37 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !window.localStorage.getItem('homepage_gallery_config_v6')) {
+    setGalleryConfig(getBeforeAfterGalleryConfig());
+    setMasterServices(getMasterServices());
+
+    loadSiteCustomizations().then(() => {
+      setGalleryConfig(getBeforeAfterGalleryConfig());
+      setMasterServices(getMasterServices());
       fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
         if (remote) setGalleryConfig(remote);
       });
-    }
+    });
+
     const handleGalleryUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<BeforeAfterGalleryConfig>;
-      if (customEvent.detail) {
+      if (customEvent.detail && customEvent.detail.categories) {
         setGalleryConfig(customEvent.detail);
       } else {
         setGalleryConfig(getBeforeAfterGalleryConfig());
       }
+      setMasterServices(getMasterServices());
     };
     const handleMasterServicesUpdate = () => {
       setMasterServices(getMasterServices());
       setGalleryConfig(getBeforeAfterGalleryConfig());
     };
     window.addEventListener('before_after_gallery_updated', handleGalleryUpdate);
+    window.addEventListener('clinic_before_after_updated', handleGalleryUpdate);
     window.addEventListener('master_services_updated', handleMasterServicesUpdate);
     window.addEventListener('storage', handleMasterServicesUpdate);
     return () => {
       window.removeEventListener('before_after_gallery_updated', handleGalleryUpdate);
+      window.removeEventListener('clinic_before_after_updated', handleGalleryUpdate);
       window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
       window.removeEventListener('storage', handleMasterServicesUpdate);
     };
@@ -110,13 +120,23 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const allCases = useMemo(() => {
     const defaultCaseIds = new Set(CLINICAL_TRANSFORMATION_CASES.map((c) => c.id));
     const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+    const isUnmodifiedDefaultPair = (pair: any): boolean => {
+      if (!defaultPairIds.has(pair.id)) return false;
+      if (pair.updatedAt) return false;
+      const before = String(pair.beforeImage || '');
+      const after = String(pair.afterImage || '');
+      return (
+        before.startsWith('https://lh3.googleusercontent.com/aida') &&
+        after.startsWith('https://lh3.googleusercontent.com/aida')
+      );
+    };
 
     const adminCases: TransformationCase[] = (galleryConfig?.categories || []).flatMap((cat) => {
       const groupMeta = liveTreatmentGroups.find((g) => g.id === cat.id);
       const mappedCategory = groupMeta?.transformationCategory || 'Facial Rejuvenation';
 
       return (cat.pairs || [])
-        .filter((p) => !p.hidden && !defaultCaseIds.has(p.id) && !defaultPairIds.has(p.id))
+        .filter((p) => !p.hidden && !defaultCaseIds.has(p.id) && !isUnmodifiedDefaultPair(p))
         .map((pair): TransformationCase => ({
           id: pair.id,
           title: groupMeta?.name || pair.title,

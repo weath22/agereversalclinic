@@ -3735,8 +3735,9 @@ export async function fetchRemoteBeforeAfterGalleryConfig(): Promise<BeforeAfter
     const res = await fetch('/api/admin/before-after-gallery');
     if (!res.ok) return null;
     const data = await res.json();
-    if (data?.config && Array.isArray(data.config.categories)) {
-      setStorageItem(GALLERY_CONFIG_KEY, data.config);
+    const remoteConfig = data?.config || data?.data;
+    if (remoteConfig && Array.isArray(remoteConfig.categories)) {
+      setStorageItem(GALLERY_CONFIG_KEY, remoteConfig);
       return getBeforeAfterGalleryConfig();
     }
   } catch (err) {
