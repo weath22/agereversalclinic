@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-10-29T19:31:23.915Z",
+  "lastSynced": "2026-10-29T20:09:28.924Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "/assets/clinic-logo-icon.webp",
@@ -1611,11 +1611,11 @@
         "pricingCategory": "Hair & Beauty",
         "transformationCategory": "Facial Rejuvenation",
         "description": "Bespoke brow architecture, precision tinting, lamination, and lash enhancement tailored to frame and elevate your natural facial features.",
-        "image": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+        "image": "/assets/treatments/ombr--brows-medspa-services-age-reversal-clinic-groove-park-london-uk-1793304133758.webp",
         "badge": "Bespoke Styling",
         "duration": "45 mins",
         "coverMedia": {
-          "url": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+          "url": "/assets/treatments/ombr--brows-medspa-services-age-reversal-clinic-groove-park-london-uk-1793304133758.webp",
           "mediaType": "image",
           "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
           "seoTitle": "lash & eyebrow - Specialist Care",
@@ -1643,11 +1643,11 @@
         "pricingCategory": "Hair & Beauty",
         "transformationCategory": "Skin Texture & Scars",
         "description": "Gentle, medical-grade hypoallergenic waxing protocols formulated for smooth, long-lasting hair removal and calm, conditioned skin.",
-        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+        "image": "/assets/body-waxing-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304543265.jpg",
         "badge": "Smooth Care",
         "duration": "30 - 60 mins",
         "coverMedia": {
-          "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+          "url": "/assets/body-waxing-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304543265.jpg",
           "mediaType": "image",
           "altText": "body waxing clinical aesthetic treatment at Age Reversal Clinic",
           "seoTitle": "body waxing - Specialist Care",
@@ -1675,11 +1675,11 @@
         "pricingCategory": "Hair & Beauty",
         "transformationCategory": "Hair Density",
         "description": "Artisanal hair cutting, dimensional colour formulation, and deep bond-repair conditioning treatments for luminous, healthy hair.",
-        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+        "image": "/assets/ladies---girls-cut-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304492428.jpg",
         "badge": "Salon Couture",
         "duration": "60 - 120 mins",
         "coverMedia": {
-          "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+          "url": "/assets/ladies---girls-cut-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304492428.jpg",
           "mediaType": "image",
           "altText": "Ladies & Girls Cut, Collors, Treatments clinical aesthetic treatment at Age Reversal Clinic",
           "seoTitle": "Ladies & Girls Cut, Collors, Treatments - Specialist Care",
@@ -2857,7 +2857,7 @@
             "title": "Eyebrow Wax Transformation",
             "treatmentGroupId": "lash-eyebrow",
             "linkedTreatmentId": "eyebrow-wax",
-            "linkedTreatmentTitle": "Eyebrow Wax",
+            "linkedTreatmentTitle": "lash & eyebrow",
             "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793264989514.webp?v=1793264989600",
             "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793265001438.webp?v=1793265001447",
             "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
@@ -6172,6 +6172,81 @@
   "clinical_treatment_details": null,
   "central_clinic_media_assets": [
     {
+      "id": "asset-1793304544463-479",
+      "name": "body waxing Medspa Services Age reversal clinilondn grove park uk.jpg",
+      "url": "/assets/body-waxing-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304543265.jpg",
+      "mediaType": "image",
+      "size": 66977,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "body waxing Medspa Services Age reversal clinilondn grove park uk - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-29T20:09:04.463Z"
+    },
+    {
+      "id": "asset-1793304517997-933",
+      "name": "897342294507256483.jpg",
+      "url": "/assets/897342294507256483-1793304517590.jpg",
+      "mediaType": "image",
+      "size": 66977,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "897342294507256483 - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-29T20:08:37.997Z"
+    },
+    {
+      "id": "asset-1793304494009-676",
+      "name": "Ladies & Girls Cut Medspa Services Age reversal clinilondn grove park uk.jpg",
+      "url": "/assets/ladies---girls-cut-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304492428.jpg",
+      "mediaType": "image",
+      "size": 81100,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Ladies & Girls Cut Medspa Services Age reversal clinilondn grove park uk - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-29T20:08:14.009Z"
+    },
+    {
+      "id": "asset-1793304398194-976",
+      "name": "download - 2026-10-29T130622.904.jpg",
+      "url": "/assets/download---2026-10-29t130622-904-1793304397306.jpg",
+      "mediaType": "image",
+      "size": 81100,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "download - 2026-10-29T130622.904 - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-29T20:06:38.194Z"
+    },
+    {
+      "id": "asset-1793304133939-103",
+      "name": "Ombré Brows medspa services Age reversal clinic groove park london uk.webp",
+      "url": "/assets/treatments/ombr--brows-medspa-services-age-reversal-clinic-groove-park-london-uk-1793304133758.webp",
+      "mediaType": "image",
+      "size": 19138,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "Ombré Brows medspa services Age reversal clinic groove park london uk - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-10-29T20:02:13.939Z"
+    },
+    {
       "id": "asset-1793283494714-662",
       "name": "clinic-location-1791728808656.webp",
       "url": "/assets/clinic-location-1791728808656.webp",
@@ -7630,11 +7705,11 @@
       "pricingCategory": "Hair & Beauty",
       "transformationCategory": "Facial Rejuvenation",
       "description": "Bespoke brow architecture, precision tinting, lamination, and lash enhancement tailored to frame and elevate your natural facial features.",
-      "image": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+      "image": "/assets/treatments/ombr--brows-medspa-services-age-reversal-clinic-groove-park-london-uk-1793304133758.webp",
       "badge": "Bespoke Styling",
       "duration": "45 mins",
       "coverMedia": {
-        "url": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+        "url": "/assets/treatments/ombr--brows-medspa-services-age-reversal-clinic-groove-park-london-uk-1793304133758.webp",
         "mediaType": "image",
         "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
         "seoTitle": "lash & eyebrow - Specialist Care",
@@ -7662,11 +7737,11 @@
       "pricingCategory": "Hair & Beauty",
       "transformationCategory": "Skin Texture & Scars",
       "description": "Gentle, medical-grade hypoallergenic waxing protocols formulated for smooth, long-lasting hair removal and calm, conditioned skin.",
-      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+      "image": "/assets/body-waxing-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304543265.jpg",
       "badge": "Smooth Care",
       "duration": "30 - 60 mins",
       "coverMedia": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
+        "url": "/assets/body-waxing-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304543265.jpg",
         "mediaType": "image",
         "altText": "body waxing clinical aesthetic treatment at Age Reversal Clinic",
         "seoTitle": "body waxing - Specialist Care",
@@ -7694,11 +7769,11 @@
       "pricingCategory": "Hair & Beauty",
       "transformationCategory": "Hair Density",
       "description": "Artisanal hair cutting, dimensional colour formulation, and deep bond-repair conditioning treatments for luminous, healthy hair.",
-      "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+      "image": "/assets/ladies---girls-cut-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304492428.jpg",
       "badge": "Salon Couture",
       "duration": "60 - 120 mins",
       "coverMedia": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+        "url": "/assets/ladies---girls-cut-medspa-services-age-reversal-clinilondn-grove-park-uk-1793304492428.jpg",
         "mediaType": "image",
         "altText": "Ladies & Girls Cut, Collors, Treatments clinical aesthetic treatment at Age Reversal Clinic",
         "seoTitle": "Ladies & Girls Cut, Collors, Treatments - Specialist Care",

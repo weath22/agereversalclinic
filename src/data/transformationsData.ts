@@ -209,7 +209,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "title": "Eyebrow Wax Transformation",
     "category": "Facial Rejuvenation",
     "tag": "lash & eyebrow",
-    "patientInfo": "Eyebrow Wax",
+    "patientInfo": "lash & eyebrow",
     "duration": "20 mins 3 Sessions",
     "sessions": 3,
     "concern": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
