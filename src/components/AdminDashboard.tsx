@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { 
   getConsultations, 
   updateConsultationStatus, 
@@ -101,35 +101,41 @@ import {
   Camera
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import GalleryEditor from './GalleryEditor';
-import WhyChooseUsEditor from './WhyChooseUsEditor';
-import AwardsEditor from './AwardsEditor';
-import LocationsEditor from './LocationsEditor';
-import TeamLeadershipEditor from './TeamLeadershipEditor';
-import ProcessEditor from './ProcessEditor';
-import FacilityInteriorsEditor from './FacilityInteriorsEditor';
-import TestimonialsEditor from './TestimonialsEditor';
-import SpecialOffersEditor from './SpecialOffersEditor';
-import SkincareCollectionEditor from './SkincareCollectionEditor';
-import TrustBrandsEditor from './TrustBrandsEditor';
-import AccreditationsEditor from './AccreditationsEditor';
-import LatestNewsEditor from './LatestNewsEditor';
-import FooterEditor from './FooterEditor';
-import FloatingMenuEditor from './FloatingMenuEditor';
-import ServiceViewDetailsEditor from './ServiceViewDetailsEditor';
-import ConsultationRequestsManager from './ConsultationRequestsManager';
-import DoctorAppointmentsManager from './DoctorAppointmentsManager';
-import ClinicInquiriesManager from './ClinicInquiriesManager';
-import ChatSupportManager from './ChatSupportManager';
-import ProfileDetailsEditor from './ProfileDetailsEditor';
-import AssetsMediaManager from './AssetsMediaManager';
-import ClinicDataManager from './ClinicDataManager';
-import TreatmentPricingEditor from './TreatmentPricingEditor';
-import TreatmentImageManager from './TreatmentImageManager';
-import TreatmentMediaStudio from './TreatmentMediaStudio';
-import ClinicalProtocolsEditor from './ClinicalProtocolsEditor';
-import { MasterServicesManager } from './MasterServicesManager';
-import HomepageTreatmentsEditor from './HomepageTreatmentsEditor';
+import ErrorBoundary from '../ErrorBoundary';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
+
+const GalleryEditor = lazyWithRetry(() => import('./GalleryEditor'), 'GalleryEditor');
+const WhyChooseUsEditor = lazyWithRetry(() => import('./WhyChooseUsEditor'), 'WhyChooseUsEditor');
+const AwardsEditor = lazyWithRetry(() => import('./AwardsEditor'), 'AwardsEditor');
+const LocationsEditor = lazyWithRetry(() => import('./LocationsEditor'), 'LocationsEditor');
+const TeamLeadershipEditor = lazyWithRetry(() => import('./TeamLeadershipEditor'), 'TeamLeadershipEditor');
+const ProcessEditor = lazyWithRetry(() => import('./ProcessEditor'), 'ProcessEditor');
+const FacilityInteriorsEditor = lazyWithRetry(() => import('./FacilityInteriorsEditor'), 'FacilityInteriorsEditor');
+const TestimonialsEditor = lazyWithRetry(() => import('./TestimonialsEditor'), 'TestimonialsEditor');
+const SpecialOffersEditor = lazyWithRetry(() => import('./SpecialOffersEditor'), 'SpecialOffersEditor');
+const SkincareCollectionEditor = lazyWithRetry(() => import('./SkincareCollectionEditor'), 'SkincareCollectionEditor');
+const TrustBrandsEditor = lazyWithRetry(() => import('./TrustBrandsEditor'), 'TrustBrandsEditor');
+const AccreditationsEditor = lazyWithRetry(() => import('./AccreditationsEditor'), 'AccreditationsEditor');
+const LatestNewsEditor = lazyWithRetry(() => import('./LatestNewsEditor'), 'LatestNewsEditor');
+const FooterEditor = lazyWithRetry(() => import('./FooterEditor'), 'FooterEditor');
+const FloatingMenuEditor = lazyWithRetry(() => import('./FloatingMenuEditor'), 'FloatingMenuEditor');
+const ServiceViewDetailsEditor = lazyWithRetry(() => import('./ServiceViewDetailsEditor'), 'ServiceViewDetailsEditor');
+const ConsultationRequestsManager = lazyWithRetry(() => import('./ConsultationRequestsManager'), 'ConsultationRequestsManager');
+const DoctorAppointmentsManager = lazyWithRetry(() => import('./DoctorAppointmentsManager'), 'DoctorAppointmentsManager');
+const ClinicInquiriesManager = lazyWithRetry(() => import('./ClinicInquiriesManager'), 'ClinicInquiriesManager');
+const ChatSupportManager = lazyWithRetry(() => import('./ChatSupportManager'), 'ChatSupportManager');
+const ProfileDetailsEditor = lazyWithRetry(() => import('./ProfileDetailsEditor'), 'ProfileDetailsEditor');
+const AssetsMediaManager = lazyWithRetry(() => import('./AssetsMediaManager'), 'AssetsMediaManager');
+const ClinicDataManager = lazyWithRetry(() => import('./ClinicDataManager'), 'ClinicDataManager');
+const TreatmentPricingEditor = lazyWithRetry(() => import('./TreatmentPricingEditor'), 'TreatmentPricingEditor');
+const TreatmentImageManager = lazyWithRetry(() => import('./TreatmentImageManager'), 'TreatmentImageManager');
+const TreatmentMediaStudio = lazyWithRetry(() => import('./TreatmentMediaStudio'), 'TreatmentMediaStudio');
+const ClinicalProtocolsEditor = lazyWithRetry(() => import('./ClinicalProtocolsEditor'), 'ClinicalProtocolsEditor');
+const MasterServicesManager = lazyWithRetry(
+  () => import('./MasterServicesManager').then((m) => ({ default: m.MasterServicesManager })),
+  'MasterServicesManager'
+);
+const HomepageTreatmentsEditor = lazyWithRetry(() => import('./HomepageTreatmentsEditor'), 'HomepageTreatmentsEditor');
 
 
 interface AdminDashboardProps {
@@ -1063,6 +1069,17 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
 
         {/* Dynamic Inner Tab Content Container */}
         <main className="flex-grow p-4 sm:p-6 md:p-8 overflow-y-auto">
+          <ErrorBoundary resetKey={activeTab} onReset={() => setActiveTab('overview')}>
+            <Suspense
+              fallback={
+                <div className="min-h-[45vh] flex items-center justify-center p-8">
+                  <div className="inline-flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs text-xs font-bold text-[#003334]">
+                    <RefreshCw className="h-4 w-4 text-[#c5a880] animate-spin" />
+                    <span>Loading editor module...</span>
+                  </div>
+                </div>
+              }
+            >
 
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {activeTab === 'overview' && (
@@ -1985,7 +2002,8 @@ CREATE TABLE inquiries (
         {/* TAB: EDIT SERVICE VIEW DETAILS COMPONENTS */}
         {activeTab === 'edit-service-details' && <ServiceViewDetailsEditor />}
         {activeTab === 'edit-profile-details' && <ProfileDetailsEditor />}
-
+            </Suspense>
+          </ErrorBoundary>
       </main>
     </div>
 

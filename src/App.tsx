@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import TopBar from './components/TopBar';
 import HotSaleBanner from './components/HotSaleBanner';
 import Header from './components/Header';
@@ -30,18 +30,20 @@ import { Article, HeaderConfig, HeroConfig, SpecialistAreasConfig, TreatmentsCon
 import { ShopProduct } from './types/shop';
 import { getHeaderConfig, getHeroConfig, getSpecialistAreasConfig, getTreatmentsConfig, getTreatmentDetailsConfig } from './lib/adminStore';
 import PageLoadingFallback from './components/common/PageLoadingFallback';
+import ErrorBoundary from './ErrorBoundary';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 
-// Task 1.1: Dynamic Lazy Imports for Heavy Route Views
-const ServicePageView = lazy(() => import('./components/ServicePageView'));
-const ExploreTreatmentsView = lazy(() => import('./components/ExploreTreatmentsView'));
-const NewsArticleView = lazy(() => import('./components/NewsArticleView'));
-const ProfilePage = lazy(() => import('./components/ProfilePage'));
-const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
-const AboutAgeReversal = lazy(() => import('./components/AboutAgeReversal'));
-const ShopPageView = lazy(() => import('./components/shop/ShopPageView'));
-const PricingPageView = lazy(() => import('./components/pricing/PricingPageView'));
-const TransformationsPageView = lazy(() => import('./components/transformations/TransformationsPageView'));
-const ReviewsPageView = lazy(() => import('./components/reviews/ReviewsPageView'));
+// Task 2: Resilient Lazy Imports for Heavy Secondary Route Views
+const ServicePageView = lazyWithRetry(() => import('./components/ServicePageView'), 'ServicePageView');
+const ExploreTreatmentsView = lazyWithRetry(() => import('./components/ExploreTreatmentsView'), 'ExploreTreatmentsView');
+const NewsArticleView = lazyWithRetry(() => import('./components/NewsArticleView'), 'NewsArticleView');
+const ProfilePage = lazyWithRetry(() => import('./components/ProfilePage'), 'ProfilePage');
+const AdminDashboard = lazyWithRetry(() => import('./components/AdminDashboard'), 'AdminDashboard');
+const AboutAgeReversal = lazyWithRetry(() => import('./components/AboutAgeReversal'), 'AboutAgeReversal');
+const ShopPageView = lazyWithRetry(() => import('./components/shop/ShopPageView'), 'ShopPageView');
+const PricingPageView = lazyWithRetry(() => import('./components/pricing/PricingPageView'), 'PricingPageView');
+const TransformationsPageView = lazyWithRetry(() => import('./components/transformations/TransformationsPageView'), 'TransformationsPageView');
+const ReviewsPageView = lazyWithRetry(() => import('./components/reviews/ReviewsPageView'), 'ReviewsPageView');
 
 export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -323,11 +325,35 @@ export default function App() {
     }
   }
 
+  const activeViewKey = isAdminOpen
+    ? 'admin'
+    : selectedConsultant
+    ? `consultant:${selectedConsultant}`
+    : isReviewsOpen
+    ? 'reviews'
+    : isTransformationsOpen
+    ? 'transformations'
+    : isExploreOpen
+    ? 'explore'
+    : selectedArticle
+    ? `article:${selectedArticle.id}`
+    : selectedTreatment
+    ? `treatment:${selectedTreatment}`
+    : isAboutOpen
+    ? 'about'
+    : isPricingOpen
+    ? `pricing:${pricingCategoryFilter || 'all'}`
+    : isShopOpen
+    ? `shop:${selectedShopProduct?.id || shopRangeFilter || 'all'}`
+    : `home:${activeSection}`;
+
   if (isAdminOpen) {
     return (
-      <Suspense fallback={<PageLoadingFallback message="Opening Clinical Management Studio..." subMessage="Loading content editors, treatment media assets, and clinic settings" />}>
-        <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />
-      </Suspense>
+      <ErrorBoundary resetKey="admin-portal" onReset={() => handleToggleAdmin(false)}>
+        <Suspense fallback={<PageLoadingFallback message="Opening Clinical Management Studio..." subMessage="Loading content editors, treatment media assets, and clinic settings" />}>
+          <AdminDashboard onBackToClinic={() => handleToggleAdmin(false)} />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -401,8 +427,9 @@ export default function App() {
       />
 
       <main className="flex-grow">
-        <Suspense fallback={<PageLoadingFallback />}>
-          {selectedConsultant ? (
+        <ErrorBoundary resetKey={activeViewKey} onReset={() => handleActiveSectionChange('home')}>
+          <Suspense fallback={<PageLoadingFallback />}>
+            {selectedConsultant ? (
           <ProfilePage
             authorName={selectedConsultant}
             onClose={() => setSelectedConsultant(null)}
@@ -622,7 +649,8 @@ export default function App() {
             </div>
           </>
         )}
-        </Suspense>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* 14. Stay Informed Newsletter Subscription */}

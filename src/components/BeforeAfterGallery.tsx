@@ -2,17 +2,33 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getBeforeAfterGalleryConfig, fetchRemoteBeforeAfterGalleryConfig } from '../lib/adminStore';
-import { BeforeAfterGalleryConfig, BeforeAfterPair } from '../types';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import {
+  getBeforeAfterGalleryConfig,
+  fetchRemoteBeforeAfterGalleryConfig,
+  getMasterServices,
+} from '../lib/adminStore';
+import {
+  CLINICAL_TRANSFORMATION_CASES,
+  ADMIN_SYNCED_TRANSFORMATION_CASES,
+  EXISTING_BEFORE_AFTER_TREATMENT_GROUPS,
+} from '../data/transformationsData';
+import { BeforeAfterGalleryConfig, BeforeAfterPair, SpecialistArea } from '../types';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 import Pagination from './Pagination';
 
+type EnrichedBeforeAfterPair = BeforeAfterPair & {
+  categoryId?: string;
+  categoryName?: string;
+};
+
 interface TreatmentServiceFrameComparisonProps {
-  pair: BeforeAfterPair;
+  pair: EnrichedBeforeAfterPair;
+  onSelect?: (pair: EnrichedBeforeAfterPair) => void;
 }
 
 // Exactly mirrors the Treatment Services Page before/after frame styling with Google Image SEO attributes
-function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparisonProps) {
+function TreatmentServiceFrameComparison({ pair, onSelect }: TreatmentServiceFrameComparisonProps) {
   const {
     title,
     beforeImage,
@@ -33,7 +49,10 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
     seoTitle || `${title} — Before & After Result | Age Reversal Clinics`;
 
   return (
-    <div className="flex flex-col items-center space-y-3 sm:space-y-4 w-full">
+    <div
+      onClick={() => onSelect?.(pair)}
+      className="flex flex-col items-center space-y-3 sm:space-y-4 w-full"
+    >
       {/* Title / Case label header */}
       <div className="flex flex-col items-center gap-1 px-2 text-center">
         <div className="text-xs sm:text-sm font-serif font-medium text-silver-900 tracking-wide">
@@ -69,15 +88,16 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
           className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_12px_32px_rgba(0,0,0,0.07)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-10 transform-gpu will-change-transform"
         >
           <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50 border border-neutral-200/50 rounded-xs">
-            <img 
-              src={beforeImage} 
+            <ClinicImageWithPlaceholder
+              src={beforeImage}
               alt={resolvedBeforeAlt}
               title={`${resolvedSeoTitle} (Before)`}
               loading="lazy"
-              decoding="async"
+              logoSize="sm"
+              showBrandText={false}
+              containerClassName="relative w-full h-full overflow-hidden bg-neutral-50 flex items-center justify-center"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 transform-gpu"
-              style={{ transform: 'translateZ(0)' }}
-              referrerPolicy="no-referrer"
+              imgStyle={{ transform: 'translateZ(0)' }}
             />
           </div>
           <div className="absolute bottom-[14px] sm:bottom-[20px] md:bottom-[24px] left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
@@ -97,15 +117,16 @@ function TreatmentServiceFrameComparison({ pair }: TreatmentServiceFrameComparis
           className="bg-white p-2.5 pb-9 sm:p-3.5 sm:pb-13 md:p-4 md:pb-14 rounded-xs shadow-[0_12px_32px_rgba(0,0,0,0.07)] border border-neutral-100/90 flex flex-col relative group cursor-pointer flex-1 max-w-[145px] sm:max-w-[210px] md:max-w-[230px] lg:max-w-[260px] z-20 transform-gpu will-change-transform"
         >
           <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-50 border border-neutral-200/50 rounded-xs">
-            <img 
-              src={afterImage} 
+            <ClinicImageWithPlaceholder
+              src={afterImage}
               alt={resolvedAfterAlt}
               title={`${resolvedSeoTitle} (After)`}
               loading="lazy"
-              decoding="async"
+              logoSize="sm"
+              showBrandText={false}
+              containerClassName="relative w-full h-full overflow-hidden bg-neutral-50 flex items-center justify-center"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 transform-gpu"
-              style={{ transform: 'translateZ(0)' }}
-              referrerPolicy="no-referrer"
+              imgStyle={{ transform: 'translateZ(0)' }}
             />
           </div>
           <div className="absolute bottom-[14px] sm:bottom-[20px] md:bottom-[24px] left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
@@ -251,31 +272,77 @@ const COMPREHENSIVE_GALLERY_PAIRS: Array<BeforeAfterPair & { categoryId: string 
   }
 ];
 
+function normalizeCategoryKey(val?: string): string {
+  return (val || '').trim().toLowerCase();
+}
+
+function doesPairMatchCategory(
+  pair: EnrichedBeforeAfterPair,
+  catId: string,
+  catName?: string
+): boolean {
+  if (!pair || !catId) return false;
+  if (catId === 'all') return true;
+
+  const targetId = normalizeCategoryKey(catId);
+  const targetName = normalizeCategoryKey(catName);
+
+  if (
+    normalizeCategoryKey(pair.categoryId) === targetId ||
+    normalizeCategoryKey(pair.treatmentGroupId) === targetId ||
+    normalizeCategoryKey(pair.linkedTreatmentId) === targetId
+  ) {
+    return true;
+  }
+
+  if (targetName) {
+    if (
+      normalizeCategoryKey(pair.title) === targetName ||
+      normalizeCategoryKey(pair.linkedTreatmentTitle) === targetName ||
+      normalizeCategoryKey(pair.categoryName) === targetName
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export default function BeforeAfterGallery() {
-  const [config, setConfig] = useState<BeforeAfterGalleryConfig | null>(null);
+  const [config, setConfig] = useState<BeforeAfterGalleryConfig | null>(() =>
+    getBeforeAfterGalleryConfig()
+  );
+  const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [activeCategory, setActiveCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedModalPair, setSelectedModalPair] = useState<EnrichedBeforeAfterPair | null>(null);
 
   useEffect(() => {
     setConfig(getBeforeAfterGalleryConfig());
-    if (typeof window !== 'undefined' && !window.localStorage.getItem('homepage_gallery_config_v6')) {
-      fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
-        if (remote) setConfig(remote);
-      });
-    }
+    setMasterServices(getMasterServices());
+
+    // Always hydrate fresh remote data from server even if localStorage has an older cached copy
+    fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
+      if (remote) setConfig(remote);
+    });
+
     const handleGalleryUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<BeforeAfterGalleryConfig>;
-      if (customEvent.detail) {
+      if (customEvent.detail && customEvent.detail.categories) {
         setConfig(customEvent.detail);
       } else {
         setConfig(getBeforeAfterGalleryConfig());
       }
+      setMasterServices(getMasterServices());
     };
+
     window.addEventListener('before_after_gallery_updated', handleGalleryUpdate);
+    window.addEventListener('clinic_before_after_updated', handleGalleryUpdate);
     window.addEventListener('master_services_updated', handleGalleryUpdate);
     window.addEventListener('storage', handleGalleryUpdate);
     return () => {
       window.removeEventListener('before_after_gallery_updated', handleGalleryUpdate);
+      window.removeEventListener('clinic_before_after_updated', handleGalleryUpdate);
       window.removeEventListener('master_services_updated', handleGalleryUpdate);
       window.removeEventListener('storage', handleGalleryUpdate);
     };
@@ -284,10 +351,141 @@ export default function BeforeAfterGallery() {
   const [pillsPage, setPillsPage] = useState(1);
   const measureContainerRef = useRef<HTMLDivElement>(null);
 
+  // Merge pairs from galleryConfig, ADMIN_SYNCED_TRANSFORMATION_CASES, CLINICAL_TRANSFORMATION_CASES, and COMPREHENSIVE_GALLERY_PAIRS
+  const allMergedVisiblePairs = useMemo<EnrichedBeforeAfterPair[]>(() => {
+    const hiddenIds = new Set<string>();
+    const hiddenGroupIds = new Set<string>();
+
+    (config?.categories || []).forEach((cat) => {
+      (cat.pairs || []).forEach((p) => {
+        if (p?.hidden && p.id) {
+          hiddenIds.add(p.id);
+          if (p.treatmentGroupId) hiddenGroupIds.add(`${p.treatmentGroupId}::${p.beforeImage}`);
+        }
+      });
+    });
+
+    const groupLookup = new Map<string, string>();
+    EXISTING_BEFORE_AFTER_TREATMENT_GROUPS.forEach((g) => groupLookup.set(g.id, g.name));
+    (masterServices || []).forEach((s) => groupLookup.set(s.id, s.title));
+    (config?.categories || []).forEach((c) => {
+      if (c?.id && c?.name) groupLookup.set(c.id, c.name);
+    });
+
+    // 1. Admin/config pairs
+    const configPairs: EnrichedBeforeAfterPair[] = (config?.categories || []).flatMap((cat) =>
+      (cat.pairs || [])
+        .filter((p) => Boolean(p && !p.hidden && p.id))
+        .map((p) => {
+          const resolvedCatId = p.treatmentGroupId || p.linkedTreatmentId || cat.id;
+          const resolvedName =
+            groupLookup.get(resolvedCatId) || cat.name || p.linkedTreatmentTitle || p.title;
+          return {
+            ...p,
+            categoryId: resolvedCatId,
+            categoryName: resolvedName,
+            treatmentGroupId: p.treatmentGroupId || resolvedCatId,
+            linkedTreatmentId: p.linkedTreatmentId || resolvedCatId,
+            linkedTreatmentTitle: p.linkedTreatmentTitle || resolvedName,
+          };
+        })
+    );
+
+    // 2. Synced & static transformation cases (matching TransformationsPageView)
+    const transformationCasesPairs: EnrichedBeforeAfterPair[] = [
+      ...ADMIN_SYNCED_TRANSFORMATION_CASES,
+      ...CLINICAL_TRANSFORMATION_CASES,
+    ]
+      .filter((c) => Boolean(c && !c.hidden && c.id && !hiddenIds.has(c.id)))
+      .map((c) => {
+        const resolvedCatId = c.treatmentGroupId || c.linkedTreatmentId || c.id;
+        const resolvedName = groupLookup.get(resolvedCatId) || c.tag || c.title;
+        return {
+          id: c.id,
+          categoryId: resolvedCatId,
+          categoryName: resolvedName,
+          treatmentGroupId: resolvedCatId,
+          linkedTreatmentId: c.linkedTreatmentId || resolvedCatId,
+          linkedTreatmentTitle: resolvedName,
+          title: resolvedName || c.title,
+          duration: c.duration,
+          sessions: c.sessions,
+          beforeImage: c.beforeImage,
+          afterImage: c.afterImage,
+          beforeAltText: c.beforeAltText,
+          afterAltText: c.afterAltText,
+          seoTitle: c.seoTitle,
+          seoKeywords: c.seoKeywords,
+          featured: c.featured,
+          updatedAt: c.updatedAt,
+        };
+      });
+
+    // 3. Fallback comprehensive pairs
+    const fallbackPairs: EnrichedBeforeAfterPair[] = COMPREHENSIVE_GALLERY_PAIRS.filter(
+      (p) => Boolean(p && !p.hidden && p.id && !hiddenIds.has(p.id))
+    ).map((p) => ({
+      ...p,
+      categoryName: groupLookup.get(p.categoryId) || p.linkedTreatmentTitle || p.title,
+    }));
+
+    const combined = [...configPairs, ...transformationCasesPairs, ...fallbackPairs];
+    const seenIds = new Set<string>();
+    const seenGroupSignature = new Set<string>();
+
+    return combined.filter((item) => {
+      if (!item || !item.id || hiddenIds.has(item.id)) return false;
+      const sig = `${item.treatmentGroupId || item.categoryId || ''}::${item.beforeImage || ''}::${item.afterImage || ''}`;
+      if (
+        item.treatmentGroupId &&
+        hiddenGroupIds.has(`${item.treatmentGroupId}::${item.beforeImage}`)
+      ) {
+        return false;
+      }
+      if (seenIds.has(item.id) || (item.beforeImage && seenGroupSignature.has(sig))) {
+        return false;
+      }
+      seenIds.add(item.id);
+      if (item.beforeImage) seenGroupSignature.add(sig);
+      return true;
+    });
+  }, [config, masterServices]);
+
+  // Filter category tabs so ONLY categories that contain at least 1 visible Before & After pair are shown
   const allCategories = useMemo(() => {
-    const valid = (config?.categories || []).filter((c) => Boolean(c && c.id && c.name));
-    return [{ id: 'all', name: 'All' }, ...valid];
-  }, [config]);
+    const candidateMap = new Map<string, { id: string; name: string }>();
+
+    (config?.categories || []).forEach((c) => {
+      if (c && c.id && c.name) {
+        candidateMap.set(c.id, { id: c.id, name: c.name });
+      }
+    });
+
+    allMergedVisiblePairs.forEach((p) => {
+      const catId = p.categoryId || p.treatmentGroupId || p.linkedTreatmentId;
+      const catName = p.categoryName || p.linkedTreatmentTitle || p.title;
+      if (catId && catName && !candidateMap.has(catId)) {
+        candidateMap.set(catId, { id: catId, name: catName });
+      }
+    });
+
+    const populatedCategories = Array.from(candidateMap.values()).filter((cat) =>
+      allMergedVisiblePairs.some((pair) => doesPairMatchCategory(pair, cat.id, cat.name))
+    );
+
+    return [{ id: 'all', name: 'All' }, ...populatedCategories];
+  }, [config, allMergedVisiblePairs]);
+
+  // Reset activeCategory to 'all' if the currently active category has no pairs
+  useEffect(() => {
+    if (
+      activeCategory !== 'all' &&
+      !allCategories.some((c) => c.id === activeCategory)
+    ) {
+      setActiveCategory('all');
+      setCurrentPage(1);
+    }
+  }, [allCategories, activeCategory]);
 
   const allCategoriesRef = useRef(allCategories);
   useEffect(() => {
@@ -402,20 +600,16 @@ export default function BeforeAfterGallery() {
     return { mobileRow1: r1, mobileRow2: r2 };
   }, [allCategories]);
 
-  // Render admin-configured pairs directly (all 8 default clinical pairs live in DEFAULT_GALLERY_CONFIG so edits, hiding, and deletions take effect immediately)
+  // Filter merged pairs using smart category matching
   const currentCategoryData = useMemo(() => {
-    if (config?.categories) {
-      const pairs =
-        activeCategory === 'all'
-          ? config.categories.flatMap((c) => c.pairs || [])
-          : config.categories.find((c) => c.id === activeCategory)?.pairs || [];
-      return (pairs || []).filter((p) => Boolean(p && !p.hidden && p.id));
+    if (activeCategory === 'all') {
+      return allMergedVisiblePairs;
     }
-
-    return activeCategory === 'all'
-      ? COMPREHENSIVE_GALLERY_PAIRS
-      : COMPREHENSIVE_GALLERY_PAIRS.filter((p) => Boolean(p && p.categoryId === activeCategory && p.id));
-  }, [config, activeCategory]);
+    const activeCatObj = allCategories.find((c) => c.id === activeCategory);
+    return allMergedVisiblePairs.filter((pair) =>
+      doesPairMatchCategory(pair, activeCategory, activeCatObj?.name)
+    );
+  }, [allMergedVisiblePairs, activeCategory, allCategories]);
 
   // Schema.org/ImageObject Structured Data for Google Image Search
   const structuredDataJson = useMemo(() => {
@@ -641,6 +835,7 @@ export default function BeforeAfterGallery() {
                   <TreatmentServiceFrameComparison
                     key={item.id}
                     pair={item}
+                    onSelect={setSelectedModalPair}
                   />
                 ))}
               </motion.div>
@@ -663,6 +858,103 @@ export default function BeforeAfterGallery() {
           </div>
         )}
       </div>
+
+      {/* Modal Viewer for Before & After Pair */}
+      <AnimatePresence>
+        {selectedModalPair && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedModalPair(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 sm:p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-3xl bg-white rounded-sm shadow-2xl border border-neutral-200 p-4 sm:p-6 md:p-8"
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedModalPair(null)}
+                aria-label="Close comparison viewer"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-slate-900 transition-colors cursor-pointer z-30"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="text-center mb-4 sm:mb-6 pr-8">
+                <h3 className="text-lg sm:text-2xl font-serif font-medium text-slate-950">
+                  {selectedModalPair.title}
+                </h3>
+                {(selectedModalPair.linkedTreatmentTitle ||
+                  selectedModalPair.duration ||
+                  selectedModalPair.sessions) && (
+                  <p className="text-xs sm:text-sm font-sans text-slate-600 mt-1">
+                    {[
+                      selectedModalPair.linkedTreatmentTitle,
+                      selectedModalPair.duration,
+                      selectedModalPair.sessions
+                        ? `${selectedModalPair.sessions} ${
+                            selectedModalPair.sessions === 1 ? 'Session' : 'Sessions'
+                          }`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' • ')}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:gap-6">
+                <div className="flex flex-col items-center">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xs border border-neutral-200 bg-neutral-50">
+                    <ClinicImageWithPlaceholder
+                      src={selectedModalPair.beforeImage}
+                      alt={
+                        selectedModalPair.beforeAltText ||
+                        `${selectedModalPair.title} Before Treatment at Age Reversal Clinics London`
+                      }
+                      title={`${selectedModalPair.seoTitle || selectedModalPair.title} (Before)`}
+                      logoSize="md"
+                      showBrandText={true}
+                      containerClassName="relative w-full h-full overflow-hidden bg-neutral-50 flex items-center justify-center"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="mt-2.5 bg-white px-4 py-1 rounded-full border border-neutral-200 text-silver-700 font-sans text-[10px] sm:text-xs font-bold tracking-wider uppercase">
+                    Before
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xs border border-neutral-200 bg-neutral-50">
+                    <ClinicImageWithPlaceholder
+                      src={selectedModalPair.afterImage}
+                      alt={
+                        selectedModalPair.afterAltText ||
+                        `${selectedModalPair.title} After Treatment Result at Age Reversal Clinics London`
+                      }
+                      title={`${selectedModalPair.seoTitle || selectedModalPair.title} (After)`}
+                      logoSize="md"
+                      showBrandText={true}
+                      containerClassName="relative w-full h-full overflow-hidden bg-neutral-50 flex items-center justify-center"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="mt-2.5 bg-[#003334] text-white px-4 py-1 rounded-full border border-[#003334] font-sans text-[10px] sm:text-xs font-bold tracking-wider uppercase">
+                    After
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
+

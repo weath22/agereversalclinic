@@ -71,7 +71,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   const seoTitle = treatment.coverMedia?.seoTitle || treatment.title;
 
   return (
-    <div className="group h-full">
+    <div className="group h-full transform-gpu will-change-transform">
       <div className="flex h-full flex-1 cursor-pointer flex-col rounded bg-transparent sm:bg-mist overflow-hidden transition-all duration-300 hover:shadow-lg">
         <div
           className="relative"
@@ -109,18 +109,18 @@ export const PricingCard: React.FC<PricingCardProps> = ({
                 height="800"
                 decoding="async"
                 data-nimg="1"
-                className={`h-full w-full object-cover transition-opacity duration-500 ${
+                className={`h-full w-full object-cover transition-opacity duration-500 transform-gpu ${
                   isLoaded ? 'opacity-90 group-hover:opacity-100' : 'opacity-0'
                 }`}
                 src={currentImageSrc}
                 onLoad={() => setIsLoaded(true)}
                 onError={handleImageError}
-                style={{ color: 'transparent' }}
+                style={{ color: 'transparent', transform: 'translateZ(0)' }}
                 referrerPolicy="no-referrer"
               />
             )}
           </div>
-          <div className="absolute bottom-0 left-0 w-full bg-noir-900/40 backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-20">
+          <div className="absolute bottom-0 left-0 w-full bg-noir-900/70 sm:bg-noir-900/40 sm:backdrop-blur-[1px] px-2.5 sm:px-3 py-2 z-20">
             <p className="no-margin text-xs sm:text-sm text-white md:text-lg font-medium">
               {treatment.title}
             </p>

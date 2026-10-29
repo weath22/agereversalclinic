@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   PRICING_CATEGORIES,
   TREATMENT_CATEGORY_SUB_OPTIONS,
@@ -7,12 +7,15 @@ import {
   TreatmentPricingCardSummary,
   PricingCategory,
   PricingPackage,
+  TreatmentTaxonomyGroup,
 } from '../../data/treatmentPricing';
 import {
   getPaginatedTreatmentCards,
   fetchPaginatedTreatmentCards,
   getTreatmentPricingItemById,
   getTreatmentPackageDetailsById,
+  getTreatmentTaxonomy,
+  fetchRemoteTreatmentTaxonomy,
 } from '../../lib/adminStore';
 import { PricingCard } from './PricingCard';
 import { PackageSelectModal } from './PackageSelectModal';
@@ -38,7 +41,45 @@ export { TREATMENT_CATEGORY_SUB_OPTIONS };
 
 const PAGE_SIZE = 10;
 
+function resolveCategoryAndSubOptionFromFilter(
+  rawFilter: string | undefined,
+  taxonomy: TreatmentTaxonomyGroup[]
+): { category: string; subOptions: string[] } {
+  if (!rawFilter || rawFilter === 'All Procedures') {
+    return { category: 'All Procedures', subOptions: [] };
+  }
+  const lower = rawFilter.toLowerCase().trim();
+  const isIv =
+    lower === 'iv drips & wellness' ||
+    lower === 'iv drip lounge & wellness' ||
+    lower === 'iv-drips-wellness' ||
+    lower === 'iv-wellness';
 
+  // 1. Match parent branch directly
+  const branchMatch = taxonomy.find(
+    (b) =>
+      b.name.toLowerCase().trim() === lower ||
+      b.id.toLowerCase().trim() === lower ||
+      (isIv &&
+        (b.id.toLowerCase().includes('iv') ||
+          b.name.toLowerCase().includes('iv')))
+  );
+  if (branchMatch) {
+    return { category: branchMatch.name, subOptions: [] };
+  }
+
+  // 2. Match a sub-group inside a parent branch
+  for (const branch of taxonomy) {
+    const subMatch = (branch.subGroups || []).find(
+      (s) => s.id.toLowerCase().trim() === lower || s.name.toLowerCase().trim() === lower
+    );
+    if (subMatch) {
+      return { category: branch.name, subOptions: [subMatch.id] };
+    }
+  }
+
+  return { category: rawFilter, subOptions: [] };
+}
 
 const SORT_OPTIONS: Array<{ id: 'featured' | 'price-asc' | 'price-desc' | 'name-asc'; label: string }> = [
   { id: 'featured', label: 'Featured Order' },
@@ -64,10 +105,16 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     totalTreatmentCount,
   } = useTreatmentCart();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    initialCategoryFilter || 'All Procedures'
+  const [taxonomy, setTaxonomy] = useState<TreatmentTaxonomyGroup[]>(() => getTreatmentTaxonomy());
+
+  const initialResolved = useMemo(
+    () => resolveCategoryAndSubOptionFromFilter(initialCategoryFilter, taxonomy),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
-  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>([]);
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialResolved.category);
+  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>(initialResolved.subOptions);
   const [activeFloatingCategory, setActiveFloatingCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState<'featured' | 'price-asc' | 'price-desc' | 'name-asc'>('featured');
@@ -78,6 +125,15 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [selectedPackageInitialId, setSelectedPackageInitialId] = useState<string | undefined>(undefined);
   const [notification, setNotification] = useState<string | null>(null);
 
+  // Sync if initialCategoryFilter prop changes dynamically (e.g., from Header navigation)
+  useEffect(() => {
+    if (initialCategoryFilter !== undefined) {
+      const resolved = resolveCategoryAndSubOptionFromFilter(initialCategoryFilter, taxonomy);
+      setSelectedCategory(resolved.category);
+      setSelectedSubOptions(resolved.subOptions);
+    }
+  }, [initialCategoryFilter, taxonomy]);
+
   // Initial synchronous batch of 10 projected cards computed once for instant first paint
   const initialBatchRef = useRef<ReturnType<typeof getPaginatedTreatmentCards> | null>(null);
   if (!initialBatchRef.current) {
@@ -85,15 +141,16 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
       page: 1,
       offset: 0,
       limit: PAGE_SIZE,
-      category: initialCategoryFilter || 'All Procedures',
-      subOptions: [],
+      category: initialResolved.category,
+      subOptions: initialResolved.subOptions,
       search: '',
       sort: 'featured',
       fields: 'card',
+      taxonomy,
     });
   }
 
-  // Paginated 10-Card Infinite Scroll State
+  // Paginated 10-Card Infinite Scroll State & Synchronous Tracking Refs
   const [visibleTreatments, setVisibleTreatments] = useState<TreatmentPricingCardSummary[]>(
     () => initialBatchRef.current!.items
   );
@@ -103,72 +160,147 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   const [hasMore, setHasMore] = useState<boolean>(() => initialBatchRef.current!.hasMore);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
+  const offsetRef = useRef<number>(0);
+  const pageRef = useRef<number>(1);
+  const isLoadingMoreRef = useRef<boolean>(false);
+  const hasMoreRef = useRef<boolean>(Boolean(initialBatchRef.current?.hasMore));
+  const isInitialMountRef = useRef<boolean>(true);
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const activeQueryIdRef = useRef<number>(0);
 
-  // Reset cursor to first 10 items whenever category, subOptions, searchQuery, or sortOption changes
-  const resetAndFetchFirstBatch = useCallback(() => {
-    const queryId = ++activeQueryIdRef.current;
-    const syncFirstPage = getPaginatedTreatmentCards({
-      page: 1,
-      offset: 0,
-      limit: PAGE_SIZE,
-      category: selectedCategory,
-      subOptions: selectedSubOptions,
-      search: searchQuery,
-      sort: sortOption,
-      fields: 'card',
-    });
+  // Reset cursor to first 10 items whenever category, subOptions, searchQuery, sortOption, or explicit taxonomy updates
+  const resetAndFetchFirstBatch = useCallback(
+    (overrideTaxonomy?: TreatmentTaxonomyGroup[]) => {
+      const activeTax = overrideTaxonomy || taxonomy;
+      const queryId = ++activeQueryIdRef.current;
 
-    setPage(1);
-    setOffset(0);
-    setVisibleTreatments(syncFirstPage.items);
-    setTotalCount(syncFirstPage.totalCount);
-    setHasMore(syncFirstPage.hasMore);
-    setIsLoadingMore(false);
+      // Synchronously reset cursors and locks
+      offsetRef.current = 0;
+      pageRef.current = 1;
+      isLoadingMoreRef.current = false;
 
-    // Also sync first 10 projected cards from remote endpoint
-    fetchPaginatedTreatmentCards({
-      page: 1,
-      offset: 0,
-      limit: PAGE_SIZE,
-      category: selectedCategory,
-      subOptions: selectedSubOptions,
-      search: searchQuery,
-      sort: sortOption,
-      fields: 'card',
-    })
-      .then((remoteBatch) => {
-        if (activeQueryIdRef.current !== queryId) return;
-        setVisibleTreatments(remoteBatch.items);
-        setTotalCount(remoteBatch.totalCount);
-        setHasMore(remoteBatch.hasMore);
+      const syncFirstPage = getPaginatedTreatmentCards({
+        page: 1,
+        offset: 0,
+        limit: PAGE_SIZE,
+        category: selectedCategory,
+        subOptions: selectedSubOptions,
+        search: searchQuery,
+        sort: sortOption,
+        fields: 'card',
+        taxonomy: activeTax,
+      });
+
+      hasMoreRef.current = syncFirstPage.hasMore;
+      setPage(1);
+      setOffset(0);
+      setVisibleTreatments(syncFirstPage.items);
+      setTotalCount(syncFirstPage.totalCount);
+      setHasMore(syncFirstPage.hasMore);
+      setIsLoadingMore(false);
+
+      // Background remote consistency check
+      fetchPaginatedTreatmentCards({
+        page: 1,
+        offset: 0,
+        limit: PAGE_SIZE,
+        category: selectedCategory,
+        subOptions: selectedSubOptions,
+        search: searchQuery,
+        sort: sortOption,
+        fields: 'card',
+        taxonomy: activeTax,
       })
-      .catch(() => {});
-  }, [selectedCategory, selectedSubOptions, searchQuery, sortOption]);
+        .then((remoteBatch) => {
+          if (activeQueryIdRef.current !== queryId) return;
 
+          setTotalCount(remoteBatch.totalCount);
+          hasMoreRef.current = remoteBatch.hasMore;
+          setHasMore(remoteBatch.hasMore);
+
+          setVisibleTreatments((prev) => {
+            // If still strictly on page 1 (no batch 2 loaded yet), replace with remote items
+            if (offsetRef.current === 0) {
+              return remoteBatch.items;
+            }
+            // If the user has already loaded batch 2+, preserve later batches without wiping them!
+            const remotePage1Ids = new Set(remoteBatch.items.map((item) => item.id));
+            const laterItems = prev.filter((item) => !remotePage1Ids.has(item.id));
+            return [...remoteBatch.items, ...laterItems];
+          });
+        })
+        .catch(() => {});
+    },
+    [selectedCategory, selectedSubOptions, searchQuery, sortOption, taxonomy]
+  );
+
+  // Only trigger reset when user interacts or dependencies change after initial render
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
     resetAndFetchFirstBatch();
   }, [resetAndFetchFirstBatch]);
 
+  // Sync taxonomy without triggering duplicate reset if taxonomy is unchanged
   useEffect(() => {
-    const handleAdminPricingUpdate = () => {
-      resetAndFetchFirstBatch();
+    fetchRemoteTreatmentTaxonomy()
+      .then((remoteTax) => {
+        if (remoteTax && remoteTax.length > 0) {
+          setTaxonomy((prev) => {
+            if (JSON.stringify(prev) === JSON.stringify(remoteTax)) {
+              return prev;
+            }
+            return remoteTax;
+          });
+        }
+      })
+      .catch(() => {});
+
+    const handlePricingOrTaxonomyUpdate = () => {
+      const latestTax = getTreatmentTaxonomy();
+      setTaxonomy((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(latestTax)) return prev;
+        return latestTax;
+      });
+
+      // Reconcile selectedCategory if a branch was renamed or deleted
+      setSelectedCategory((prevCat) => {
+        if (prevCat === 'All Procedures') return prevCat;
+        const stillExists = latestTax.some(
+          (b) => b.name === prevCat || b.id === prevCat
+        );
+        return stillExists ? prevCat : 'All Procedures';
+      });
+
+      resetAndFetchFirstBatch(latestTax);
     };
-    window.addEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
+
+    window.addEventListener('treatment_pricing_updated', handlePricingOrTaxonomyUpdate);
+    window.addEventListener('treatment_taxonomy_updated', handlePricingOrTaxonomyUpdate);
+    window.addEventListener('master_services_updated', handlePricingOrTaxonomyUpdate);
+    window.addEventListener('storage', handlePricingOrTaxonomyUpdate);
     return () => {
-      window.removeEventListener('treatment_pricing_updated', handleAdminPricingUpdate);
+      window.removeEventListener('treatment_pricing_updated', handlePricingOrTaxonomyUpdate);
+      window.removeEventListener('treatment_taxonomy_updated', handlePricingOrTaxonomyUpdate);
+      window.removeEventListener('master_services_updated', handlePricingOrTaxonomyUpdate);
+      window.removeEventListener('storage', handlePricingOrTaxonomyUpdate);
     };
   }, [resetAndFetchFirstBatch]);
 
-  // Load next batch of 10 essential card items on scroll
+  // Load next batch of 10 essential card items on scroll with atomic locking
   const loadNextBatch = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+    // Atomic check with synchronous ref prevents double-fetch and race conditions
+    if (isLoadingMoreRef.current || !hasMoreRef.current) return;
 
-    const nextOffset = offset + PAGE_SIZE;
-    const nextPage = page + 1;
-    const queryId = activeQueryIdRef.current;
+    const currentQueryId = activeQueryIdRef.current;
+    const currentOffset = offsetRef.current;
+    const currentPage = pageRef.current;
+    const nextOffset = currentOffset + PAGE_SIZE;
+    const nextPage = currentPage + 1;
 
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
 
     try {
@@ -181,51 +313,62 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
         search: searchQuery,
         sort: sortOption,
         fields: 'card',
+        taxonomy,
       });
 
-      if (activeQueryIdRef.current !== queryId) return;
+      if (activeQueryIdRef.current !== currentQueryId) return;
 
-      setVisibleTreatments((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id));
-        const uniqueNew = nextBatch.items.filter((item) => !existingIds.has(item.id));
-        return [...prev, ...uniqueNew];
-      });
-      setOffset(nextOffset);
-      setPage(nextPage);
-      setTotalCount(nextBatch.totalCount);
+      if (nextBatch.items && nextBatch.items.length > 0) {
+        offsetRef.current = nextOffset;
+        pageRef.current = nextPage;
+        setOffset(nextOffset);
+        setPage(nextPage);
+
+        setVisibleTreatments((prev) => {
+          const existingIds = new Set(prev.map((item) => item.id));
+          const uniqueNew = nextBatch.items.filter((item) => !existingIds.has(item.id));
+          return [...prev, ...uniqueNew];
+        });
+      }
+
+      hasMoreRef.current = nextBatch.hasMore;
       setHasMore(nextBatch.hasMore);
+      setTotalCount(nextBatch.totalCount);
+    } catch (err) {
+      console.warn('Could not load next batch:', err);
     } finally {
-      if (activeQueryIdRef.current === queryId) {
+      if (activeQueryIdRef.current === currentQueryId) {
+        isLoadingMoreRef.current = false;
         setIsLoadingMore(false);
       }
     }
   }, [
-    isLoadingMore,
-    hasMore,
-    offset,
-    page,
     selectedCategory,
     selectedSubOptions,
     searchQuery,
     sortOption,
+    taxonomy,
   ]);
 
-  // Lightweight IntersectionObserver attached to sentinel at bottom of the cards grid
+  const loadNextBatchRef = useRef(loadNextBatch);
+  loadNextBatchRef.current = loadNextBatch;
+
+  // Stable continuous IntersectionObserver attached to sentinel at bottom of the cards grid
   useEffect(() => {
     const sentinelEl = loadMoreSentinelRef.current;
-    if (!sentinelEl || !hasMore) return;
+    if (!sentinelEl) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const firstEntry = entries[0];
-        if (firstEntry && firstEntry.isIntersecting && !isLoadingMore && hasMore) {
-          loadNextBatch();
+        if (firstEntry && firstEntry.isIntersecting) {
+          loadNextBatchRef.current();
         }
       },
       {
         root: null,
-        rootMargin: '280px 0px',
-        threshold: 0.05,
+        rootMargin: '350px 0px',
+        threshold: 0,
       }
     );
 
@@ -233,7 +376,7 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, isLoadingMore, loadNextBatch]);
+  }, []);
 
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(57);
@@ -310,7 +453,7 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
   return (
     <div className="min-h-screen bg-[#faf8f5] text-luxury-text flex flex-col selection:bg-[#D8C2A3]/30">
       {/* 1. Sticky Clean Top Bar matching Shop page */}
-      <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-luxury-border shadow-2xs">
+      <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 sm:backdrop-blur-md border-b border-luxury-border shadow-2xs transform-gpu">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-3.5 flex items-center justify-between gap-4">
           {/* Back to Clinic Button */}
           <button
@@ -459,16 +602,16 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
           </div>
         </div>
 
-        {/* 4. Category Filter Tabs & Floating Options Modal - Sticky on All Screens when scrolled to top */}
+        {/* 4. Category Filter Tabs & Floating Options Modal - Driven by Dynamic Taxonomy */}
         <div
           ref={floatingModalRef}
           style={{ top: `${headerHeight}px` }}
-          className="sticky z-30 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 py-3 mb-6 sm:mb-8 bg-[#faf8f5]/95 backdrop-blur-md border-b border-stone-200/60 shadow-xs transition-shadow"
+          className="sticky z-30 -mx-4 sm:-mx-6 md:-mx-12 px-4 sm:px-6 md:px-12 py-3 mb-6 sm:mb-8 bg-[#faf8f5]/98 sm:bg-[#faf8f5]/95 sm:backdrop-blur-md border-b border-stone-200/60 shadow-xs transition-shadow transform-gpu"
         >
-          {/* Main Category Tabs - Horizontal scrollable pills */}
+          {/* Main Category Tabs - Horizontal scrollable pills read directly from dynamic taxonomy */}
           <div className="overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-2 pb-1 md:pb-0 min-w-max">
-              {PRICING_CATEGORIES.map((cat) => {
+              {['All Procedures', ...taxonomy.map((b) => b.name)].map((cat) => {
                 const isActive = selectedCategory === cat;
                 const activeCount = isActive ? selectedSubOptions.length : 0;
 
@@ -498,72 +641,81 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
             </div>
           </div>
 
-          {/* Floating UI: Floats directly ABOVE the cards without taking space below options */}
+          {/* Floating UI: Floats directly ABOVE the cards, reading sub-groups from dynamic taxonomy */}
           <AnimatePresence>
-            {activeFloatingCategory && TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory] && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute left-4 right-4 sm:left-0 sm:right-auto z-40 mt-2 max-w-xl sm:w-full"
-              >
-                <div className="bg-white/98 backdrop-blur-md rounded-2xl border border-stone-200/90 shadow-2xl shadow-stone-900/15 p-3.5 sm:p-4">
-                  <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-stone-100">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
-                      {activeFloatingCategory} Options
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {selectedSubOptions.length > 0 && (
+            {(() => {
+              if (!activeFloatingCategory) return null;
+              const activeFloatingBranch = taxonomy.find(
+                (b) => b.name === activeFloatingCategory || b.id === activeFloatingCategory
+              );
+              if (!activeFloatingBranch || !activeFloatingBranch.subGroups || activeFloatingBranch.subGroups.length === 0) {
+                return null;
+              }
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute left-4 right-4 sm:left-0 sm:right-auto z-40 mt-2 max-w-xl sm:w-full"
+                >
+                  <div className="bg-white/98 sm:backdrop-blur-md rounded-2xl border border-stone-200/90 shadow-2xl shadow-stone-900/15 p-3.5 sm:p-4 transform-gpu">
+                    <div className="flex items-center justify-between gap-3 mb-2.5 pb-2 border-b border-stone-100">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-800">
+                        {activeFloatingBranch.name} Sub-Groups
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {selectedSubOptions.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSubOptions([])}
+                            className="text-[11px] text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => setSelectedSubOptions([])}
-                          className="text-[11px] text-stone-400 hover:text-stone-800 transition-colors cursor-pointer"
+                          onClick={() => setActiveFloatingCategory(null)}
+                          className="p-1 text-stone-400 hover:text-stone-800 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
+                          aria-label="Close options"
                         >
-                          Clear
+                          <X className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setActiveFloatingCategory(null)}
-                        className="p-1 text-stone-400 hover:text-stone-800 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
-                        aria-label="Close options"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Sub-Groups appear directly on the modal, multi-selectable */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {activeFloatingBranch.subGroups.map((sub) => {
+                        const isSelected = selectedSubOptions.includes(sub.id);
+                        return (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => handleToggleSubOption(sub.id)}
+                            className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap select-none ${
+                              isSelected
+                                ? 'bg-black text-white shadow-xs border border-black'
+                                : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80 hover:border-stone-400'
+                            }`}
+                          >
+                            {sub.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  {/* Options appear directly on the modal, multi-selectable */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {TREATMENT_CATEGORY_SUB_OPTIONS[activeFloatingCategory].map((opt) => {
-                      const isSelected = selectedSubOptions.includes(opt.id);
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => handleToggleSubOption(opt.id)}
-                          className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap select-none ${
-                            isSelected
-                              ? 'bg-black text-white shadow-xs border border-black'
-                              : 'bg-stone-50 hover:bg-stone-100 text-stone-700 border border-stone-200/80 hover:border-stone-400'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
         </div>
 
         {/* 5. Pricing Cards Grid (2 per row on mobile screens, 10 cards per scroll batch) */}
         {visibleTreatments.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8 isolate transform-gpu">
               {visibleTreatments.map((treatment) => (
                 <PricingCard
                   key={treatment.id}
@@ -574,7 +726,7 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
 
               {/* Skeleton Placeholders while next batch of 10 cards is loading */}
               {isLoadingMore &&
-                Array.from({ length: Math.min(4, Math.max(2, totalCount - visibleTreatments.length)) }).map(
+                Array.from({ length: Math.min(2, Math.max(1, totalCount - visibleTreatments.length)) }).map(
                   (_, idx) => (
                     <div
                       key={`pricing-card-skeleton-${idx}`}
@@ -601,13 +753,18 @@ export const PricingPageView: React.FC<PricingPageViewProps> = ({
             {hasMore && (
               <div
                 ref={loadMoreSentinelRef}
-                className="w-full py-8 flex flex-col items-center justify-center gap-2"
+                className="w-full py-8 flex flex-col items-center justify-center gap-2 min-h-[64px]"
                 aria-hidden="true"
               >
-                <span className="text-xs text-stone-400 font-light tracking-wide">
-                  {isLoadingMore
-                    ? 'Loading more procedures...'
-                    : `Scroll to view more (${visibleTreatments.length} of ${totalCount})`}
+                <span className="text-xs text-stone-400 font-light tracking-wide flex items-center gap-2">
+                  {isLoadingMore ? (
+                    <>
+                      <span className="inline-block w-3.5 h-3.5 border-2 border-stone-300 border-t-[#bda380] rounded-full animate-spin" />
+                      <span>Loading additional procedures...</span>
+                    </>
+                  ) : (
+                    <span>Scroll to view more ({visibleTreatments.length} of {totalCount})</span>
+                  )}
                 </span>
               </div>
             )}

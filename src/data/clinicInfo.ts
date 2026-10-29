@@ -54,6 +54,7 @@ export interface ClinicAwardItem {
   year: string;
   organization: string;
   imageUrl?: string;
+  iconName?: string;
 }
 
 export interface ClinicAwardsSection {
@@ -226,8 +227,7 @@ export const CLINIC_DATA: ClinicData = {
   },
   "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
   "interiorPhotos": [
-    "/assets/clinic-facility-1.webp",
-    "/assets/clinic-facility-2.webp"
+    "/assets/clinic-interior-0.webp"
   ],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",
@@ -552,15 +552,13 @@ export const CLINIC_DATA: ClinicData = {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "/assets/clinic-facility-1.webp",
-        "imageAlt": "Consultation Suite at Age Reversal Clinics"
+        "image": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop"
       },
       {
         "id": "room-2",
         "title": "Treatment Room",
         "tag": "Clinical",
-        "image": "/assets/clinic-facility-2.webp",
-        "imageAlt": "Treatment Room at Age Reversal Clinics"
+        "image": "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop"
       }
     ]
   },
