@@ -75,7 +75,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "lash & eyebrow",
     "duration": "45 mins",
     "description": "Bespoke brow architecture, precision tinting, lamination, and lash enhancement tailored to frame and elevate your natural facial features.",
-    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX",
+    "image": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
     "imageAlt": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "lash & eyebrow - Specialist Care",
     "seoKeywords": [
@@ -189,7 +189,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "Aqualyx Course 3",
     "duration": "45 mins",
     "description": "Comprehensive 3-session deoxycholic acid lipolysis protocol engineered to dissolve stubborn localized fat pockets with lasting contour definition.",
-    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBpc9iwUPHl5YjJPUY9E95ThzCowbFO32u1yMI6QpZqPrQnBL7p9nmkyqw3JRkKKEl26-mJIFP0r8QNgHxIYxWnrIiagTCmDfr3L4TeyGpRJ4Ye8dwjLxT7kUVB0sTqVntaOcMm7700Jj3-8xh75QQkY3xOMGH04owJPA05JB3wRuKL7kUttqlyk-sOqZIwumYKh7VveixAFn2QXvlC7f8-S3zwQXujNvI0qHEwsxPonmj_-kRlbSiRVOcy67FFlTBCjBFzzvhYYOQ1",
+    "image": "/assets/treatments/aqualyx-course-3.webp?v=1793152243398",
     "imageAlt": "Aqualyx Course 3 clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "Aqualyx Course 3 - Specialist Care",
     "seoKeywords": [
@@ -246,7 +246,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "Slimming pen",
     "duration": "30 mins",
     "description": "Clinically supervised metabolic weight management and appetite regulation protocol supporting sustainable body slimming.",
-    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC",
+    "image": "/assets/treatments/slimming-pen.webp?v=1793132821363",
     "imageAlt": "Slimming pen clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "Slimming pen - Specialist Care",
     "seoKeywords": [

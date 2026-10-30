@@ -226,7 +226,8 @@ export const CLINIC_DATA: ClinicData = {
   },
   "exteriorPhoto": "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
   "interiorPhotos": [
-    "/assets/clinic-interior-0.webp"
+    "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop",
+    "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop"
   ],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",

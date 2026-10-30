@@ -203,7 +203,83 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
   }
 ];
 
-export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [];
+export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
+  {
+    "id": "pair-1793305820410",
+    "title": "Eyebrow Wax Transformation",
+    "category": "Facial Rejuvenation",
+    "tag": "lash & eyebrow",
+    "patientInfo": "Eyebrow Wax",
+    "duration": "6 Weeks • 3 Sessions",
+    "sessions": 3,
+    "concern": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793305834637.webp?v=1793305834764",
+    "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793305846507.webp?v=1793305846681",
+    "galleryImages": [
+      "/assets/transformations/ba-eyebrow-wax-before-1793305834637.webp?v=1793305834764",
+      "/assets/transformations/ba-eyebrow-wax-after-1793305846507.webp?v=1793305846681"
+    ],
+    "recommendedTreatmentIds": [
+      "eyebrow-wax"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "lash-eyebrow",
+    "linkedTreatmentId": "eyebrow-wax",
+    "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
+    "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
+    "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "seoKeywords": [
+      "before and after eyebrow wax london",
+      "eyebrow wax before and after",
+      "age reversal clinics eyebrow wax results",
+      "lash & eyebrow results london",
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments"
+    ],
+    "featured": false,
+    "updatedAt": 1793305848963
+  },
+  {
+    "id": "pair-4",
+    "title": "Vertical Comparison",
+    "category": "Facial Rejuvenation",
+    "tag": "Platelet-Rich Plasma (PRP)",
+    "patientInfo": "Platelet-Rich Plasma (PRP)",
+    "duration": "20 Weeks",
+    "sessions": 4,
+    "concern": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
+    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
+    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd",
+    "galleryImages": [
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd"
+    ],
+    "recommendedTreatmentIds": [
+      "platelet-rich-plasma-prp"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "platelet-rich-plasma-prp",
+    "linkedTreatmentId": "platelet-rich-plasma-prp",
+    "beforeAltText": "Vertical Comparison Before Clinical Hair Restoration Treatment at Age Reversal Clinics London",
+    "afterAltText": "Vertical Comparison After Clinical Hair Restoration Treatment Result at Age Reversal Clinics London",
+    "seoTitle": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
+    "seoKeywords": [
+      "vertical comparison before and after",
+      "clinical hair restoration london",
+      "age reversal clinics results"
+    ],
+    "featured": false,
+    "updatedAt": 1792683065640
+  }
+];
 
 export function getRecommendedTreatmentsForCase(caseItem: TransformationCase): TreatmentPricingItem[] {
   return caseItem.recommendedTreatmentIds
