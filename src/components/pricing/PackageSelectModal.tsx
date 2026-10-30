@@ -76,7 +76,17 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
       .then((fullDetails) => {
         if (cancelled) return;
         if (fullDetails) {
-          setResolvedTreatment(fullDetails);
+          setResolvedTreatment({
+            ...fullDetails,
+            image:
+              treatment.image && !treatment.image.includes('unsplash.com')
+                ? treatment.image
+                : fullDetails.image && !fullDetails.image.includes('unsplash.com')
+                ? fullDetails.image
+                : '',
+            coverMedia: treatment.coverMedia || fullDetails.coverMedia,
+            updatedAt: treatment.updatedAt || fullDetails.updatedAt,
+          });
         }
       })
       .finally(() => {

@@ -43,7 +43,14 @@ export function normalizeClinicSlotId(slotId: string): string {
     .replace(/\.webp$/i, '')
     .replace(/^(\/assets\/|assets\/)/, '')
     .replace(/[^a-zA-Z0-9_-]/g, '-')
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/^clinic-location-(?:location-|loc-)/, 'clinic-location-')
+    .replace(/^clinic-pillar-(?:pillar-|p-?)(?=\d)/, 'clinic-pillar-')
+    .replace(/^clinic-award-(?:award-|aw-)/, 'clinic-award-')
+    .replace(/^clinic-facility-(?:facility-room-|facility-|suite-|room-)/, 'clinic-facility-')
+    .replace(/^clinic-process-(?:process-step-|process-|step-)/, 'clinic-process-')
+    .replace(/^clinic-process-(\d)$/, 'clinic-process-0$1')
+    .replace(/^clinic-brand-(?:brand-|bp-)/, 'clinic-brand-');
 }
 
 /**
@@ -78,27 +85,31 @@ export function getClinicSlotId(category: ClinicSlotCategory, idOrIndex?: string
     case 'interior':
       return `clinic-interior-${idOrIndex !== undefined ? idOrIndex : 0}`;
     case 'location': {
-      const cleanLocId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^location-/, '');
+      const cleanLocId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-location-|location-|loc-)/, '');
       return `clinic-location-${cleanLocId}`;
     }
     case 'award': {
-      const cleanAwardId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(award-|aw-)/, '');
+      const cleanAwardId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-award-|award-|aw-)/, '');
       return `clinic-award-${cleanAwardId}`;
     }
     case 'pillar': {
-      const cleanPillarId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(pillar-|p-)/, '');
+      const cleanPillarId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-pillar-|pillar-|p-?)/, '');
       return `clinic-pillar-${cleanPillarId}`;
     }
     case 'process': {
-      const cleanStepId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(process-|step-)/, '');
+      const rawStep = normalizeClinicSlotId(String(idOrIndex || '01')).replace(
+        /^(clinic-process-|process-step-|process-|step-)/,
+        ''
+      );
+      const cleanStepId = /^\d$/.test(rawStep) ? rawStep.padStart(2, '0') : rawStep;
       return `clinic-process-${cleanStepId}`;
     }
     case 'facility': {
-      const cleanRoomId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(facility-room-|facility-|suite-|room-)/, '');
+      const cleanRoomId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-facility-|facility-room-|facility-|suite-|room-)/, '');
       return `clinic-facility-${cleanRoomId}`;
     }
     case 'brand': {
-      const cleanBrandId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^brand-/, '');
+      const cleanBrandId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-brand-|brand-|bp-)/, '');
       return `clinic-brand-${cleanBrandId}`;
     }
     default:
@@ -153,17 +164,32 @@ export function getBundledClinicFallback(slotId: string): string {
   // Locations
   if (cleanId.startsWith('clinic-location-')) {
     const rawLoc = cleanId.replace('clinic-location-', '');
-    const matched = CLINIC_LOCATION_IMAGES[rawLoc];
+    const matched = CLINIC_LOCATION_IMAGES[rawLoc] || CLINIC_LOCATION_IMAGES[`location-${rawLoc}`];
     if (matched?.primary) return matched.primary;
-    // Sequential fallback
-    return CLINIC_LOCATION_IMAGES['harley-street-flagship']?.primary || CLINIC_INTERIOR_PHOTOS[0];
+    return `/assets/${cleanId}.webp`;
+  }
+  // Why Choose Us Pillars
+  if (cleanId.startsWith('clinic-pillar-')) {
+    return `/assets/${cleanId}.webp`;
   }
   // Awards
   if (cleanId.startsWith('clinic-award-')) {
     const rawAward = cleanId.replace('clinic-award-', '');
-    const matched = CLINIC_AWARDS_MEDIA.find((a) => a.id === rawAward || cleanId.includes(a.id));
+    const matched = CLINIC_AWARDS_MEDIA.find((a) => a.id === rawAward);
     if (matched?.image) return matched.image;
-    return CLINIC_AWARDS_MEDIA[0]?.image || CLINIC_LOGOS.icon;
+    return `/assets/${cleanId}.webp`;
+  }
+  // Our Process Steps
+  if (cleanId.startsWith('clinic-process-')) {
+    return `/assets/${cleanId}.webp`;
+  }
+  // Facility Gallery Rooms
+  if (cleanId.startsWith('clinic-facility-')) {
+    return `/assets/${cleanId}.webp`;
+  }
+  // Trust Brands
+  if (cleanId.startsWith('clinic-brand-')) {
+    return `/assets/${cleanId}.webp`;
   }
 
   // Universal ultimate fallback: permanent high-res brand emblem
@@ -196,9 +222,9 @@ export function getClinicImagePath(
 
 /**
  * Resolves the primary image source for any clinic element:
- * 1. If given an external cloud CDN URL (Google usercontent, Cloudflare, etc.), returns it.
- * 2. If given a relative local path, maps it predictably to the standardized slot ID.
- * 3. If empty or missing, returns the predictable slot URL.
+ * 1. If empty or cleared ("", null, undefined), returns "" immediately so "Awaiting Upload" is shown.
+ * 2. If given an external cloud CDN URL (Google usercontent, Cloudflare, etc.), returns it.
+ * 3. If given a relative local path, maps it predictably to the standardized slot ID while preserving ?v= cache-busting timestamps.
  */
 export function resolveClinicImageSrc(
   slotId: string,
@@ -206,19 +232,53 @@ export function resolveClinicImageSrc(
   fallbackUrl?: string,
   version?: number | string
 ): string {
-  const cleanVal = (currentValue || '').trim();
+  const cleanVal = (currentValue ?? '').trim();
+  if (!cleanVal) {
+    return '';
+  }
+
+  if (cleanVal.startsWith('data:') || cleanVal.startsWith('blob:')) {
+    return cleanVal;
+  }
+
+  const cleanSlotId = normalizeClinicSlotId(slotId);
+  const inMemoryVersion = clinicVersionMap.get(cleanSlotId);
+  const embeddedVersionMatch = cleanVal.match(/[?&]v=([^&#]+)/);
+  const embeddedVersion = embeddedVersionMatch ? embeddedVersionMatch[1] : undefined;
+
+  let effectiveVersion: number | string | undefined = version;
+  if (!effectiveVersion) {
+    if (inMemoryVersion && embeddedVersion) {
+      const memNum = Number(inMemoryVersion);
+      const embNum = Number(embeddedVersion);
+      if (!isNaN(memNum) && !isNaN(embNum)) {
+        effectiveVersion = memNum >= embNum ? inMemoryVersion : embeddedVersion;
+      } else {
+        effectiveVersion = inMemoryVersion;
+      }
+    } else {
+      effectiveVersion = inMemoryVersion || embeddedVersion;
+    }
+  }
 
   // If already an external cloud URL, use it directly (e.g. permanent Google Cloud/Unsplash)
   if (cleanVal.startsWith('http://') || cleanVal.startsWith('https://')) {
     // If it's a generic Unsplash placeholder, prefer the predictable slot ID
     if (cleanVal.includes('images.unsplash.com')) {
-      return getClinicImagePath(slotId, cleanVal, version);
+      return getClinicImagePath(slotId, cleanVal, effectiveVersion);
     }
     return cleanVal;
   }
 
-  // Standardize to predictable slot ID path
-  return getClinicImagePath(slotId, fallbackUrl || cleanVal, version);
+  // If a custom local /assets/ path was provided that differs from the canonical slot path, preserve it
+  const canonicalPath = `/assets/${cleanSlotId}.webp`;
+  const cleanValNoQuery = cleanVal.split('?')[0].split('#')[0].trim();
+  if (cleanValNoQuery.startsWith('/assets/') && cleanValNoQuery !== canonicalPath) {
+    return effectiveVersion ? `${cleanValNoQuery}?v=${effectiveVersion}` : cleanVal;
+  }
+
+  // Standardize to predictable slot ID path while preserving the version parameter
+  return getClinicImagePath(slotId, fallbackUrl || cleanVal, effectiveVersion);
 }
 
 /**

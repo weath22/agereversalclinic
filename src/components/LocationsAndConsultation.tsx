@@ -1,6 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { saveConsultation, saveInquiry, getOurLocationsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
+import {
+  saveConsultation,
+  saveInquiry,
+  getOurLocationsConfig,
+  getClinicData,
+  fetchRemoteClinicData,
+  getTreatmentPricingData,
+  fetchRemoteTreatmentPricingData,
+  getTreatmentTaxonomy,
+  fetchRemoteTreatmentTaxonomy,
+} from '../lib/adminStore';
 import { MapPin, Clock, ExternalLink, Map, Building2, Send, Check, AlertCircle, Mail, Phone, PhoneCall, MessageCircle, MessageSquare, Sparkles, Search, DollarSign, Plus, Trash2, X, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { OurLocationsConfig, LocationItemConfig } from '../types';
@@ -9,11 +19,12 @@ import ContactDrawerModal from './ContactDrawerModal';
 import AppointmentDatePicker from './AppointmentDatePicker';
 import { PackageSelectModal } from './pricing/PackageSelectModal';
 import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
-import type { TreatmentPricingItem, PricingPackage } from '../data/treatmentPricing';
+import type { TreatmentPricingItem, PricingPackage, TreatmentTaxonomyGroup } from '../data/treatmentPricing';
 import { useTreatmentCart } from '../context/TreatmentCartContext';
 
 import { 
   CLINICAL_AREAS_DB, 
+  buildDynamicClinicalAreas,
   AreaItem, 
   CategoryItem, 
   TreatmentItem, 
@@ -26,6 +37,7 @@ import {
 export type { TreatmentItem, CategoryItem, AreaItem };
 export { 
   CLINICAL_AREAS_DB, 
+  buildDynamicClinicalAreas,
   findTreatmentInDB, 
   findTreatmentItemInDB, 
   resolveTreatmentToPricingItem,
@@ -33,6 +45,7 @@ export {
 };
 
 import { CLINIC_LOCATION_IMAGES } from '../data/clinicImages';
+import { getClinicSlotId } from '../utils/clinicImageHelper';
 import location1Img from '../assets/images/clinic/locations/location1_img.jpg';
 import location2Img from '../assets/images/clinic/locations/location2_img.jpg';
 
@@ -40,10 +53,10 @@ const clinicDevonshire = CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].prima
 const clinicHarleyStreet = CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary;
 
 const DEFAULT_LOCATION_IMAGES: Record<string, string> = {
-  'location-1791722960928': location1Img,
-  'location-1791728808656': location2Img,
-  'loc-1': location1Img,
-  'loc-2': location2Img,
+  'location-1791722960928': '/assets/clinic-location-1791722960928.webp',
+  'location-1791728808656': '/assets/clinic-location-1791728808656.webp',
+  'loc-1': '/assets/clinic-location-1791722960928.webp',
+  'loc-2': '/assets/clinic-location-1791728808656.webp',
 };
 
 const LOCATION_FALLBACKS = [location1Img, location2Img, clinicHarleyStreet, clinicDevonshire];
@@ -67,10 +80,31 @@ const FALLBACK_HEAR_ABOUT_US_OPTIONS = [
 ];
 
 export default function LocationsAndConsultation({ preselectedService, onTreatmentClick }: LocationsAndConsultationProps = {}) {
-  const { addTreatment: addGlobalTreatment } = useTreatmentCart();
+  const {
+    treatmentCart,
+    totalTreatmentCount,
+    treatmentSubtotal,
+    totalSessions,
+    currency: cartCurrency,
+    addTreatment: addGlobalTreatment,
+    openTreatmentCart,
+    clearTreatmentCart,
+  } = useTreatmentCart();
   const [mounted, setMounted] = useState<boolean>(false);
-  const [selectedAreaId, setSelectedAreaId] = useState<string>('face-injectables');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('anti-wrinkle');
+  const [pricingData, setPricingData] = useState<TreatmentPricingItem[]>(() => getTreatmentPricingData());
+  const [taxonomy, setTaxonomy] = useState<TreatmentTaxonomyGroup[]>(() => getTreatmentTaxonomy());
+
+  const clinicalAreas: AreaItem[] = useMemo(
+    () => buildDynamicClinicalAreas(pricingData, taxonomy),
+    [pricingData, taxonomy]
+  );
+
+  const [selectedAreaId, setSelectedAreaId] = useState<string>(
+    () => clinicalAreas[0]?.id || 'face-injectables'
+  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    () => clinicalAreas[0]?.categories[0]?.id || 'platelet-rich-plasma-prp'
+  );
   const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
   const [selectedTreatmentPackages, setSelectedTreatmentPackages] = useState<Record<string, PricingPackage>>({});
   const [activePricingModalTreatment, setActivePricingModalTreatment] = useState<TreatmentPricingItem | null>(null);
@@ -83,6 +117,19 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   const [menuDirection, setMenuDirection] = useState<'down' | 'up'>('down');
   const menuContainerRef = useRef<HTMLDivElement>(null);
   const consultMenuContainerRef = useRef<HTMLDivElement>(null);
+
+  // Keep selectedAreaId and selectedCategoryId valid whenever dynamic clinicalAreas updates
+  useEffect(() => {
+    if (clinicalAreas.length === 0) return;
+    const areaObj = clinicalAreas.find((a) => a.id === selectedAreaId) || clinicalAreas[0];
+    if (areaObj.id !== selectedAreaId) {
+      setSelectedAreaId(areaObj.id);
+    }
+    const catExists = areaObj.categories.some((c) => c.id === selectedCategoryId);
+    if (!catExists && areaObj.categories.length > 0) {
+      setSelectedCategoryId(areaObj.categories[0].id);
+    }
+  }, [clinicalAreas, selectedAreaId, selectedCategoryId]);
 
   useEffect(() => {
     setMounted(true);
@@ -113,9 +160,15 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       }
     };
 
+    const handleOpenTreatmentSelector = () => {
+      setIsDrawerOpen(true);
+    };
+
     window.addEventListener('arc_apply_treatment_plan', handleApplyTreatmentPlan);
+    window.addEventListener('arc_open_consultation_treatment_selector', handleOpenTreatmentSelector);
     return () => {
       window.removeEventListener('arc_apply_treatment_plan', handleApplyTreatmentPlan);
+      window.removeEventListener('arc_open_consultation_treatment_selector', handleOpenTreatmentSelector);
     };
   }, []);
 
@@ -136,15 +189,18 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     } else {
       const target = e.currentTarget;
       const rect = target.getBoundingClientRect();
-      const scrollContainer = target.closest('.overflow-y-auto');
-      const containerRect = scrollContainer ? scrollContainer.getBoundingClientRect() : null;
-      const spaceBelow = containerRect ? (containerRect.bottom - rect.bottom) : (window.innerHeight - rect.bottom);
-      const spaceAbove = containerRect ? (rect.top - containerRect.top) : rect.top;
+      const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
 
-      if (spaceBelow < 240 && spaceAbove > 140) {
-        setMenuDirection('up');
-      } else {
+      if (isDesktop) {
         setMenuDirection('down');
+      } else {
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        if (spaceBelow < 240 && spaceAbove > 180) {
+          setMenuDirection('up');
+        } else {
+          setMenuDirection('down');
+        }
       }
       setOpenMenu(menu);
     }
@@ -201,12 +257,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       ...prev,
       procedure: treatmentItem.id
     }));
-    // Sync with global treatment cart
-    addGlobalTreatment(treatmentItem, selectedPackage, 1, false);
 
     setActivePricingModalTreatment(null);
     setIsDrawerOpen(false);
     setPricingReturnToDrawer(false);
+
+    // Add to global Treatment Plan Cart and immediately open the Treatment Cart List Sidebar
+    addGlobalTreatment(treatmentItem, selectedPackage, 1, true);
   };
 
   const handleClosePricingModal = () => {
@@ -230,6 +287,20 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   };
 
   const getSelectedTreatmentsData = () => {
+    if (treatmentCart.length > 0) {
+      return treatmentCart.map((cartItem) => ({
+        areaName: cartItem.treatment.category || 'Clinical Procedure',
+        catName: cartItem.treatment.subCategory || cartItem.treatment.category || 'Specialist Treatment',
+        id: cartItem.treatment.id,
+        name: cartItem.treatment.title,
+        price: `${cartItem.treatment.currency || '£'}${cartItem.selectedPackage.price * (cartItem.quantity || 1)}`,
+        time: cartItem.selectedPackage.procedureTime || cartItem.treatment.procedureTime || '30 - 45 Mins',
+        desc: cartItem.selectedPackage.description || cartItem.treatment.description || '',
+        packageName: cartItem.selectedPackage.name,
+        sessions: cartItem.selectedPackage.sessions * (cartItem.quantity || 1),
+      }));
+    }
+
     const list: Array<{ 
       areaName: string; 
       catName: string; 
@@ -242,7 +313,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       sessions?: number;
     }> = [];
     selectedTreatments.forEach(tid => {
-      for (const area of CLINICAL_AREAS_DB) {
+      let matched = false;
+      for (const area of clinicalAreas) {
         for (const cat of area.categories) {
           const found = cat.items.find(i => i.id === tid);
           if (found) {
@@ -258,8 +330,27 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
               packageName: pkg ? pkg.name : undefined,
               sessions: pkg ? pkg.sessions : undefined,
             });
+            matched = true;
             break;
           }
+        }
+        if (matched) break;
+      }
+      if (!matched) {
+        const fallbackFound = findTreatmentInDB(tid, clinicalAreas);
+        if (fallbackFound) {
+          const pkg = selectedTreatmentPackages[tid];
+          list.push({
+            areaName: fallbackFound.area.name,
+            catName: fallbackFound.category.name,
+            id: fallbackFound.item.id,
+            name: fallbackFound.item.name,
+            price: pkg ? `£${pkg.price}` : fallbackFound.item.price,
+            time: fallbackFound.item.time,
+            desc: fallbackFound.item.desc,
+            packageName: pkg ? pkg.name : undefined,
+            sessions: pkg ? pkg.sessions : undefined,
+          });
         }
       }
     });
@@ -269,7 +360,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   // Handle Area Change
   const handleAreaChange = (areaId: string) => {
     setSelectedAreaId(areaId);
-    const area = CLINICAL_AREAS_DB.find(a => a.id === areaId);
+    const area = clinicalAreas.find(a => a.id === areaId);
     if (area && area.categories.length > 0) {
       const firstCat = area.categories[0];
       setSelectedCategoryId(firstCat.id);
@@ -287,8 +378,12 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
   // Listen to preselected service changes
   useEffect(() => {
+    const defaultArea = clinicalAreas[0];
+    const defaultAreaId = defaultArea?.id || 'face-injectables';
+    const defaultCatId = defaultArea?.categories[0]?.id || 'platelet-rich-plasma-prp';
+
     if (preselectedService) {
-      const found = findTreatmentInDB(preselectedService);
+      const found = findTreatmentInDB(preselectedService, clinicalAreas);
       if (found) {
         setSelectedAreaId(found.area.id);
         setSelectedCategoryId(found.category.id);
@@ -299,8 +394,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
         }));
         setSelectedTreatments([found.item.id]);
       } else {
-        setSelectedAreaId('face-injectables');
-        setSelectedCategoryId('anti-wrinkle');
+        setSelectedAreaId(defaultAreaId);
+        setSelectedCategoryId(defaultCatId);
         setBooking(prev => ({
           ...prev,
           procedure: '',
@@ -309,15 +404,15 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
         setSelectedTreatments([]);
       }
     } else {
-      setSelectedAreaId('face-injectables');
-      setSelectedCategoryId('anti-wrinkle');
+      setSelectedAreaId(defaultAreaId);
+      setSelectedCategoryId(defaultCatId);
       setBooking(prev => ({
         ...prev,
         procedure: ''
       }));
       setSelectedTreatments([]);
     }
-  }, [preselectedService]);
+  }, [preselectedService, clinicalAreas]);
 
   const [locationsConfig, setLocationsConfig] = useState<OurLocationsConfig | null>(null);
   const [activeDrawerLocation, setActiveDrawerLocation] = useState<LocationItemConfig | null>(null);
@@ -326,11 +421,23 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
   useEffect(() => {
     setLocationsConfig(getOurLocationsConfig());
     setClinicData(getClinicData());
+    setPricingData(getTreatmentPricingData());
+    setTaxonomy(getTreatmentTaxonomy());
 
-    // Fetch remote clinic data from server on mount to guarantee fresh server state across deployments
+    // Fetch remote clinic data and treatment catalog/taxonomy on mount
     fetchRemoteClinicData().then((remoteData) => {
       if (remoteData) {
         setClinicData(remoteData);
+      }
+    });
+    fetchRemoteTreatmentTaxonomy().then((remoteTax) => {
+      if (remoteTax && remoteTax.length > 0) {
+        setTaxonomy(remoteTax);
+      }
+    });
+    fetchRemoteTreatmentPricingData().then((remotePricing) => {
+      if (remotePricing && remotePricing.length > 0) {
+        setPricingData(remotePricing);
       }
     });
 
@@ -348,15 +455,28 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       }
     };
 
+    const handleTreatmentsAndTaxonomyUpdate = () => {
+      setPricingData(getTreatmentPricingData());
+      setTaxonomy(getTreatmentTaxonomy());
+    };
+
     window.addEventListener('clinic_data_changed', handleClinicDataChange);
     window.addEventListener('consultation_config_updated', handleClinicDataChange);
     window.addEventListener('locations_config_changed', handleLocationsConfigChange);
+    window.addEventListener('treatment_pricing_updated', handleTreatmentsAndTaxonomyUpdate);
+    window.addEventListener('treatment_taxonomy_updated', handleTreatmentsAndTaxonomyUpdate);
+    window.addEventListener('master_services_updated', handleTreatmentsAndTaxonomyUpdate);
     window.addEventListener('storage', handleClinicDataChange);
+    window.addEventListener('storage', handleTreatmentsAndTaxonomyUpdate);
     return () => {
       window.removeEventListener('clinic_data_changed', handleClinicDataChange);
       window.removeEventListener('consultation_config_updated', handleClinicDataChange);
       window.removeEventListener('locations_config_changed', handleLocationsConfigChange);
+      window.removeEventListener('treatment_pricing_updated', handleTreatmentsAndTaxonomyUpdate);
+      window.removeEventListener('treatment_taxonomy_updated', handleTreatmentsAndTaxonomyUpdate);
+      window.removeEventListener('master_services_updated', handleTreatmentsAndTaxonomyUpdate);
       window.removeEventListener('storage', handleClinicDataChange);
+      window.removeEventListener('storage', handleTreatmentsAndTaxonomyUpdate);
     };
   }, []);
 
@@ -382,7 +502,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       (al) => al.id === locId || al.id === `loc-${idx + 1}` || al.name.toLowerCase() === loc.name.toLowerCase()
     );
 
-    // Prioritize loc.image || loc.gallery?.[0] from reactive clinicData.locations, then admin config, then fallback
+    // Prioritize loc.image || loc.gallery?.[0] from reactive clinicData.locations, then admin config
     const primaryLocAsset =
       (loc.image && loc.image.trim().length > 0 ? loc.image.trim() : '') ||
       (Array.isArray(loc.gallery) && loc.gallery[0] && loc.gallery[0].trim().length > 0
@@ -393,7 +513,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
       ? primaryLocAsset
       : (adminLoc?.imageUrl && !adminLoc.imageUrl.includes('Interactive'))
       ? adminLoc.imageUrl
-      : fallbackImg;
+      : '';
 
     return {
       id: locId,
@@ -618,6 +738,93 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
     });
 
     setSubmittedBooking(true);
+
+    requestAnimationFrame(() => {
+      const sectionEl = document.getElementById('preferred-consultation');
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  };
+
+  const buildConsultationWhatsAppUrl = (): string => {
+    const rawLocations =
+      clinicData.locations && clinicData.locations.length > 0
+        ? clinicData.locations
+        : CLINIC_DATA.locations;
+    const rawSelectedLoc = rawLocations.find(
+      (loc) =>
+        loc.name === booking.preferredLocation ||
+        loc.id === booking.preferredLocation
+    );
+
+    const rawCandidate =
+      (rawSelectedLoc as any)?.whatsapp ||
+      clinicData.whatsapp ||
+      selectedLocationObj?.phone ||
+      clinicData.phone ||
+      CLINIC_DATA.whatsapp ||
+      CLINIC_DATA.phone ||
+      '44207984159517';
+
+    const cleanedCandidate = String(rawCandidate)
+      .replace(/\(0\)/g, '')
+      .replace(/^https?:\/\/(api\.)?wa(tsapp)?\.(me|com)\/(send\?phone=)?/i, '');
+    let digits = cleanedCandidate.replace(/[^0-9]/g, '');
+    if (digits.startsWith('0')) {
+      digits = `44${digits.slice(1)}`;
+    }
+    if (!digits) {
+      digits = '44207984159517';
+    }
+
+    const selectedItems = getSelectedTreatmentsData();
+    const totalEst = selectedItems.reduce((sum, item) => sum + parsePrice(item.price), 0);
+    const bestTimeLabel =
+      bestTimeOptions.find((t) => t.value === booking.bestTime)?.label || booking.bestTime;
+    const formattedDate = booking.date
+      ? new Date(booking.date + 'T00:00:00').toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+      : 'Flexible';
+
+    const lines: string[] = [
+      `*Consultation Request — ${clinicData.name || CLINIC_DATA.name}*`,
+      '',
+      `*Client:* ${`${booking.firstName} ${booking.lastName}`.trim()}`,
+      `*Phone:* ${booking.phone}`,
+      `*Email:* ${booking.email}`,
+      `*Clinic Location:* ${booking.preferredLocation || activeLocations[0]?.name || 'Any Location'}`,
+    ];
+
+    if (selectedDoctorObj) {
+      lines.push(`*${specialistLabel}:* ${selectedDoctorObj.name}`);
+    }
+    lines.push(
+      `*Preferred Date/Time:* ${formattedDate}${booking.appointmentTime ? ` at ${booking.appointmentTime}` : ` (${bestTimeLabel})`}`
+    );
+
+    if (selectedItems.length > 0) {
+      lines.push('', '*Selected Treatments:*');
+      selectedItems.forEach((item, idx) => {
+        lines.push(
+          `${idx + 1}. ${item.name}${item.packageName ? ` (${item.packageName})` : ''} — ${item.price}`
+        );
+      });
+      lines.push(`*Estimated Total:* £${totalEst.toLocaleString()}`);
+    }
+
+    if (booking.improvement?.trim()) {
+      lines.push('', `*Area to Improve:* ${booking.improvement.trim()}`);
+    }
+    if (booking.notes?.trim()) {
+      lines.push(`*Notes:* ${booking.notes.trim()}`);
+    }
+
+    return `https://wa.me/${digits}?text=${encodeURIComponent(lines.join('\n'))}`;
   };
 
   return (
@@ -664,10 +871,9 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   <ClinicImageWithPlaceholder
                     src={displayImage}
                     alt={loc.name}
-                    slotId={`clinic-location-${loc.id}`}
+                    slotId={getClinicSlotId('location', loc.id || (idx + 1))}
                     logoSize="lg"
                     showBrandText={true}
-                    fallbackUrl={DEFAULT_LOCATION_IMAGES[loc.id] || LOCATION_FALLBACKS[idx % LOCATION_FALLBACKS.length]}
                     containerClassName="relative aspect-[4/3] sm:aspect-[16/10] w-full overflow-hidden bg-luxury-secondary flex flex-col justify-between"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106 transform-gpu"
                   >
@@ -787,11 +993,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
             <div className="w-12 h-[1px] bg-[#a88d6b] mx-auto mt-8" />
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false}>
             {!submittedBooking ? (
               <motion.form 
-                initial={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                key="consultation-form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
                 onSubmit={handleBookingSubmit} 
                 className="space-y-6"
               >
@@ -855,8 +1063,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                     </label>
                   </div>
 
-                  {/* When no treatment is added, display clean Add Treatment UI */}
-                  {selectedTreatments.length === 0 ? (
+                  {/* Connected to Global Treatment Pricing Cart Sidebar — No inline selected treatment cards */}
+                  {treatmentCart.length === 0 ? (
                     <button
                       type="button"
                       onClick={() => setIsDrawerOpen(true)}
@@ -883,111 +1091,38 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                     </button>
                   ) : (
                     <div className="space-y-3">
-                      {/* List of Added Treatments */}
-                      <div className="space-y-2.5">
-                        {getSelectedTreatmentsData().map((item) => (
-                          <div
-                            key={item.id}
-                            className="bg-white hover:bg-slate-50/80 border border-luxury-border/80 hover:border-luxury-gold/50 rounded-2xl p-4 transition-all duration-200 shadow-xs flex items-center justify-between gap-3 group"
-                          >
-                            <div 
-                              onClick={() => {
-                                setBooking(prev => ({ ...prev, procedure: item.id }));
-                                const foundItem = findTreatmentItemInDB(item.id);
-                                if (foundItem) {
-                                  const pricingItem = resolveTreatmentToPricingItem(foundItem, item.catName);
-                                  setPricingReturnToDrawer(false);
-                                  setActivePricingModalTreatment(pricingItem);
-                                }
-                              }}
-                              className="min-w-0 flex-1 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-gold bg-luxury-gold/10 px-2.5 py-0.5 rounded">
-                                  {item.areaName} • {item.catName}
-                                </span>
-                                {item.packageName && (
-                                  <span className="text-[9px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full">
-                                    {item.packageName}
-                                  </span>
-                                )}
-                              </div>
-                              <h4 className="font-serif font-bold text-sm sm:text-base text-luxury-text mt-1 truncate group-hover:text-luxury-subtext transition-colors">
-                                {item.name}
-                              </h4>
-                              <div className="flex items-center gap-3 mt-1 text-xs text-luxury-subtext">
-                                <span className="font-serif font-bold text-luxury-text">{item.price}</span>
-                                <span className="text-slate-300">•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3 text-luxury-muted" /> {item.time}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setBooking(prev => ({ ...prev, procedure: item.id }));
-                                  const foundItem = findTreatmentItemInDB(item.id);
-                                  if (foundItem) {
-                                    const pricingItem = resolveTreatmentToPricingItem(foundItem, item.catName);
-                                    setPricingReturnToDrawer(false);
-                                    setActivePricingModalTreatment(pricingItem);
-                                  }
-                                }}
-                                title="Select package & session options"
-                                className="text-xs font-bold text-luxury-text bg-luxury-secondary/80 hover:bg-luxury-secondary px-3 py-1.5 rounded-xl border border-luxury-border/50 transition-colors cursor-pointer hidden sm:inline-block"
-                              >
-                                {item.packageName ? 'Change Package' : 'Select Package'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeTreatment(item.id);
-                                }}
-                                title="Remove treatment"
-                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
                       {/* Add Another Treatment Button */}
                       <button
                         type="button"
                         onClick={() => setIsDrawerOpen(true)}
-                        className="w-full bg-slate-50/80 hover:bg-slate-100 border border-dashed border-luxury-border hover:border-luxury-gold/60 rounded-xl py-3 px-4 text-xs font-bold text-luxury-text flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        className="w-full bg-white hover:bg-slate-50/90 border-2 border-dashed border-luxury-border hover:border-luxury-gold/70 rounded-2xl py-3.5 px-5 text-xs font-bold text-luxury-text flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
                       >
                         <Plus className="h-4 w-4 text-luxury-gold" />
                         <span>Add Another Treatment</span>
                       </button>
 
-                      {/* Consultation Plan Summary Bar */}
+                      {/* Connected Treatment Plan Summary Bar — Opens Treatment Pricing Cart List Sidebar */}
                       <div 
-                        onClick={() => setIsDrawerOpen(true)}
+                        onClick={() => openTreatmentCart()}
                         className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md hover:shadow-lg transition-all cursor-pointer border border-luxury-text/20 group"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {/* Clean minimal circular badge for mobile screen only */}
                           <div className="sm:hidden flex items-center justify-center w-6 h-6 rounded-full bg-luxury-gold text-luxury-text text-[11px] font-black shrink-0 shadow-sm">
-                            {selectedTreatments.length}
+                            {totalTreatmentCount}
                           </div>
                           {/* Desktop badge with Sparkles */}
                           <div className="hidden sm:block relative p-2.5 bg-luxury-gold/20 rounded-xl text-luxury-gold shrink-0 group-hover:scale-105 transition-transform">
                             <Sparkles className="h-5 w-5" />
                             <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-text text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-luxury-text">
-                              {selectedTreatments.length}
+                              {totalTreatmentCount}
                             </span>
                           </div>
                           <div className="text-left min-w-0">
-                            <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Consultation Plan</span>
+                            <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Treatment Plan</span>
                             <span className="text-xs font-bold text-white block truncate">
-                              {selectedTreatments.length} Procedure{selectedTreatments.length > 1 ? 's' : ''} Selected
+                              {totalTreatmentCount} Procedure{totalTreatmentCount > 1 ? 's' : ''} Selected
+                              {totalSessions > 0 ? ` • ${totalSessions} Session${totalSessions > 1 ? 's' : ''}` : ''}
                             </span>
                           </div>
                         </div>
@@ -995,11 +1130,11 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                           <div className="text-right">
                             <span className="text-[9px] uppercase tracking-wider text-luxury-gold/90 block font-extrabold">Total Est.</span>
                             <span className="text-sm font-bold font-serif text-luxury-gold">
-                              ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                              {cartCurrency || '£'}{treatmentSubtotal.toLocaleString()}
                             </span>
                           </div>
                           <span className="hidden sm:inline-block bg-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold hover:bg-white/15 transition-all text-white border border-white/5 uppercase tracking-wide shrink-0">
-                            Review
+                            View Cart
                           </span>
                         </div>
                       </div>
@@ -1010,7 +1145,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   {mounted && typeof document !== 'undefined' && createPortal(
                     <AnimatePresence>
                       {isDrawerOpen && (
-                        <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center">
+                        <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center md:p-6">
                           {/* Backdrop Overlay */}
                           <motion.div
                             initial={{ opacity: 0 }}
@@ -1029,15 +1164,15 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
                             transition={{ duration: 0.22, ease: "easeOut" }}
-                            className="relative w-full md:max-w-2xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[88vh] overflow-hidden"
+                            className="relative w-full md:max-w-3xl lg:max-w-4xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[88vh] overflow-visible"
                           >
                           
                           
                           {/* Header */}
-                          <div className="px-5 sm:px-6 pt-4 pb-1 border-b border-slate-100 flex items-center justify-between shrink-0">
+                          <div className="px-5 sm:px-7 pt-5 pb-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div>
-                              <h4 className="font-serif font-bold text-lg text-luxury-text">Choose Specialist Treatment</h4>
-                              <p className="text-xs text-slate-500">Select clinical preferred treatment</p>
+                              <h4 className="font-serif font-bold text-lg sm:text-xl text-luxury-text">Choose Specialist Treatment</h4>
+                              <p className="text-xs text-slate-500 mt-0.5">Select clinical preferred treatment</p>
                             </div>
                             <button
                               type="button"
@@ -1052,12 +1187,12 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                           </div>
 
                           {/* Content */}
-                          <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                          <div className="p-5 sm:p-7 overflow-visible space-y-5 flex-1">
                             {/* 3-Step Selection Flow inside Drawer */}
-                            <div ref={menuContainerRef} className="grid grid-cols-1 md:grid-cols-3 gap-3.5 relative">
+                            <div ref={menuContainerRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
                               {/* Step 1: Area */}
                               {(() => {
-                                const currentArea = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId) || CLINICAL_AREAS_DB[0];
+                                const currentArea = clinicalAreas.find(a => a.id === selectedAreaId) || clinicalAreas[0];
                                 return (
                                   <div className="space-y-1.5 relative">
                                     <span className="text-[10px] font-bold text-luxury-muted uppercase tracking-wider block">
@@ -1066,7 +1201,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                     <button
                                       type="button"
                                       onClick={(e) => toggleMenu('area', e)}
-                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                      className={`w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
                                         openMenu === 'area' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
                                       }`}
                                     >
@@ -1081,11 +1216,11 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                           animate={{ opacity: 1, y: 0 }}
                                           exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
                                           transition={{ duration: 0.12 }}
-                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-56 overflow-y-auto py-1.5 ${
+                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-64 overflow-y-auto py-1.5 ${
                                             menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                                           }`}
                                         >
-                                          {CLINICAL_AREAS_DB.map(area => {
+                                          {clinicalAreas.map(area => {
                                             const isSelected = area.id === selectedAreaId;
                                             return (
                                               <button
@@ -1115,7 +1250,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
                               {/* Step 2: Category */}
                               {(() => {
-                                const currentCategories = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId)?.categories || [];
+                                const currentCategories = (clinicalAreas.find(a => a.id === selectedAreaId) || clinicalAreas[0])?.categories || [];
                                 const currentCategory = currentCategories.find(c => c.id === selectedCategoryId) || currentCategories[0];
                                 return (
                                   <div className="space-y-1.5 relative">
@@ -1125,7 +1260,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                     <button
                                       type="button"
                                       onClick={(e) => toggleMenu('category', e)}
-                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                      className={`w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
                                         openMenu === 'category' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
                                       }`}
                                     >
@@ -1140,7 +1275,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                           animate={{ opacity: 1, y: 0 }}
                                           exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
                                           transition={{ duration: 0.12 }}
-                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-56 overflow-y-auto py-1.5 ${
+                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-64 overflow-y-auto py-1.5 ${
                                             menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                                           }`}
                                         >
@@ -1178,8 +1313,8 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
 
                                {/* Step 3: Specific Treatment */}
                               {(() => {
-                                const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-                                const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
+                                const areaObj = clinicalAreas.find(a => a.id === selectedAreaId) || clinicalAreas[0];
+                                const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId) || areaObj?.categories[0];
                                 const currentItems = catObj?.items || [];
                                 const currentItem = booking.procedure ? currentItems.find(i => i.id === booking.procedure) : null;
                                 return (
@@ -1196,7 +1331,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                             setOpenMenu(null);
                                             setPricingReturnToDrawer(true);
                                             setIsDrawerOpen(false);
-                                            const pricingItem = resolveTreatmentToPricingItem(currentItem, catObj?.name);
+                                            const pricingItem = resolveTreatmentToPricingItem(currentItem, catObj?.name, pricingData);
                                             setActivePricingModalTreatment(pricingItem);
                                           }}
                                           className="text-[10px] font-bold text-luxury-gold hover:underline cursor-pointer flex items-center gap-1"
@@ -1214,13 +1349,13 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                           setOpenMenu(null);
                                           setPricingReturnToDrawer(true);
                                           setIsDrawerOpen(false);
-                                          const pricingItem = resolveTreatmentToPricingItem(singleItem, catObj?.name);
+                                          const pricingItem = resolveTreatmentToPricingItem(singleItem, catObj?.name, pricingData);
                                           setActivePricingModalTreatment(pricingItem);
                                           return;
                                         }
                                         toggleMenu('treatment', e);
                                       }}
-                                      className={`w-full px-4 py-3 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
+                                      className={`w-full px-4 py-3.5 rounded-xl border bg-white text-sm text-luxury-text font-semibold flex items-center justify-between transition-all duration-200 cursor-pointer shadow-xs ${
                                         openMenu === 'treatment' ? 'border-luxury-gold ring-1 ring-luxury-gold/50 shadow-md' : 'border-luxury-border hover:border-luxury-gold/60'
                                       }`}
                                     >
@@ -1244,7 +1379,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                           animate={{ opacity: 1, y: 0 }}
                                           exit={{ opacity: 0, y: menuDirection === 'up' ? 4 : -4 }}
                                           transition={{ duration: 0.12 }}
-                                          className={`absolute left-0 right-0 z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-60 overflow-y-auto py-1.5 divide-y divide-luxury-border/30 ${
+                                          className={`absolute left-0 right-0 md:left-auto md:right-0 md:w-[360px] z-50 bg-white rounded-2xl border border-luxury-border shadow-2xl overflow-hidden max-h-64 overflow-y-auto py-1.5 divide-y divide-luxury-border/30 ${
                                             menuDirection === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                                           }`}
                                         >
@@ -1262,7 +1397,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                                     setOpenMenu(null);
                                                     setPricingReturnToDrawer(true);
                                                     setIsDrawerOpen(false);
-                                                    const pricingItem = resolveTreatmentToPricingItem(item, catObj?.name);
+                                                    const pricingItem = resolveTreatmentToPricingItem(item, catObj?.name, pricingData);
                                                     setActivePricingModalTreatment(pricingItem);
                                                   }}
                                                   className={`w-full px-4 py-2.5 text-left transition-colors cursor-pointer flex items-center justify-between gap-3 ${
@@ -1299,30 +1434,31 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                               })()}
                             </div>
 
-                            {/* Consultation Plan item placed with/below the select treatment selections */}
-                            {selectedTreatments.length > 0 && (
+                            {/* Connected Treatment Plan item inside 3-step selector drawer */}
+                            {treatmentCart.length > 0 && (
                               <div 
                                 onClick={() => {
-                                  if (booking.procedure) {
-                                    setIsTreatmentCardOpen(true);
-                                  }
+                                  setOpenMenu(null);
+                                  setIsDrawerOpen(false);
+                                  openTreatmentCart();
                                 }}
-                                className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md border border-luxury-text/20 cursor-pointer"
+                                className="bg-black p-4 sm:p-4.5 rounded-2xl flex items-center justify-between shadow-md border border-luxury-text/20 cursor-pointer hover:bg-neutral-900 transition-colors"
                               >
                                 <div className="flex items-center gap-3 min-w-0">
                                   <div className="sm:hidden flex items-center justify-center w-6 h-6 rounded-full bg-luxury-gold text-luxury-text text-[11px] font-black shrink-0 shadow-sm">
-                                    {selectedTreatments.length}
+                                    {totalTreatmentCount}
                                   </div>
                                   <div className="hidden sm:block relative p-2.5 bg-luxury-gold/20 rounded-xl text-luxury-gold shrink-0">
                                     <Sparkles className="h-5 w-5" />
                                     <span className="absolute -top-1 -right-1 bg-luxury-gold text-luxury-text text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-luxury-text">
-                                      {selectedTreatments.length}
+                                      {totalTreatmentCount}
                                     </span>
                                   </div>
                                   <div className="text-left min-w-0">
-                                    <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Consultation Plan</span>
+                                    <span className="text-[9px] uppercase tracking-wider text-slate-300 font-extrabold block">Treatment Plan</span>
                                     <span className="text-xs font-bold text-white block truncate">
-                                      {selectedTreatments.length} Procedure{selectedTreatments.length > 1 ? 's' : ''} Selected
+                                      {totalTreatmentCount} Procedure{totalTreatmentCount > 1 ? 's' : ''} Selected
+                                      {totalSessions > 0 ? ` • ${totalSessions} Session${totalSessions > 1 ? 's' : ''}` : ''}
                                     </span>
                                   </div>
                                 </div>
@@ -1330,9 +1466,12 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                                   <div className="text-right">
                                     <span className="text-[9px] uppercase tracking-wider text-luxury-gold/90 block font-extrabold">Total Est.</span>
                                     <span className="text-sm font-bold font-serif text-luxury-gold">
-                                      ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                                      {cartCurrency || '£'}{treatmentSubtotal.toLocaleString()}
                                     </span>
                                   </div>
+                                  <span className="hidden sm:inline-block bg-white/10 px-3 py-1.5 rounded-xl text-[10px] font-bold text-white border border-white/5 uppercase tracking-wide shrink-0">
+                                    View Cart
+                                  </span>
                                 </div>
                               </div>
                             )}
@@ -1340,148 +1479,6 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         </motion.div>
                       </div>
                     )}
-                  </AnimatePresence>,
-                  document.body
-                )}
-
-                  {/* Clean Mobile Drawer Sheet for Selected Treatment Card Details (Without a header) */}
-                  {mounted && typeof document !== 'undefined' && createPortal(
-                    <AnimatePresence>
-                      {isTreatmentCardOpen && booking.procedure && (() => {
-                        const areaObj = CLINICAL_AREAS_DB.find(a => a.id === selectedAreaId);
-                        const catObj = areaObj?.categories.find(c => c.id === selectedCategoryId);
-                        const currentTreatment = catObj?.items.find(i => i.id === booking.procedure);
-                        if (!currentTreatment || !catObj) return null;
-
-                        return (
-                          <div className="fixed inset-0 z-[10000] flex items-end md:items-center justify-center">
-                            {/* Backdrop Overlay */}
-                            <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.18 }}
-                              onClick={() => setIsTreatmentCardOpen(false)}
-                              className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
-                            />
-
-                            {/* Clean Mobile Drawer Sheet without Header - Details render directly on modal */}
-                            <motion.div
-                              initial={{ opacity: 0, y: 28 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 20 }}
-                              transition={{ duration: 0.22, ease: "easeOut" }}
-                              className="relative w-full md:max-w-xl bg-white rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col font-sans z-10 max-h-[85vh] overflow-y-auto p-5 sm:p-6 space-y-4"
-                            >
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
-                              {/* Title & Category */}
-                              <div className="space-y-1.5">
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-luxury-subtext bg-black/10 px-2.5 py-0.5 rounded-full w-fit inline-block">
-                                  {catObj.name}
-                                </span>
-                                <h4 
-                                  onClick={() => {
-                                    setIsTreatmentCardOpen(false);
-                                    setIsDrawerOpen(false);
-                                    onTreatmentClick?.(currentTreatment.name);
-                                  }}
-                                  className="text-base sm:text-lg font-serif font-bold text-luxury-text hover:text-luxury-subtext transition-colors leading-snug cursor-pointer block hover:underline decoration-rose-gold decoration-2 underline-offset-4"
-                                  title="Click to view full clinical details"
-                                >
-                                  {currentTreatment.name}
-                                </h4>
-                                <p className="text-xs text-luxury-subtext leading-relaxed max-w-xl">
-                                  {currentTreatment.desc}
-                                </p>
-                              </div>
-
-                              {/* Info Badges (Time & Price) */}
-                              <div className="flex flex-col sm:flex-row md:flex-col items-stretch gap-2.5 shrink-0 w-full md:w-auto">
-                                {/* Price Card */}
-                                <div 
-                                  onClick={() => {
-                                    setIsTreatmentCardOpen(false);
-                                    setIsDrawerOpen(false);
-                                    onTreatmentClick?.(currentTreatment.name);
-                                  }}
-                                  title="Click to view treatment details"
-                                  className="flex-1 md:flex-none flex items-center gap-2.5 bg-luxury-secondary/30 border border-luxury-border/40 hover:border-luxury-text/60 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-sm min-w-0 sm:min-w-[140px] cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
-                                >
-                                  <div className="p-1.5 bg-black text-luxury-gold rounded-lg shrink-0">
-                                    <DollarSign className="h-3.5 w-3.5" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <span className="text-[8.5px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Investment</span>
-                                    <span className="text-xs sm:text-sm font-bold text-luxury-text font-serif block truncate">{currentTreatment.price}</span>
-                                  </div>
-                                </div>
-
-                                {/* Duration Card */}
-                                <div 
-                                  onClick={() => {
-                                    setIsTreatmentCardOpen(false);
-                                    setIsDrawerOpen(false);
-                                    onTreatmentClick?.(currentTreatment.name);
-                                  }}
-                                  title="Click to view treatment details"
-                                  className="flex-1 md:flex-none flex items-center gap-2.5 bg-luxury-secondary/30 border border-luxury-border/40 hover:border-luxury-text/60 px-3.5 py-2 rounded-xl shadow-xs hover:shadow-sm min-w-0 sm:min-w-[140px] cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]"
-                                >
-                                  <div className="p-1.5 bg-black text-luxury-gold rounded-lg shrink-0">
-                                    <Clock className="h-3.5 w-3.5" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <span className="text-[8.5px] uppercase tracking-wider text-luxury-subtext/60 block font-bold truncate">Duration</span>
-                                    <span className="text-xs sm:text-sm font-bold text-luxury-text block truncate">{currentTreatment.time}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Toggle Add to Selection Button */}
-                            <div className="pt-3 border-t border-luxury-text/10 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                              <p className="text-xs text-slate-500 font-sans">
-                                {selectedTreatments.includes(currentTreatment.id)
-                                  ? "✓ This treatment is in your consultation plan."
-                                  : "Would you like to add this treatment to your consultation?"}
-                              </p>
-                              {selectedTreatments.includes(currentTreatment.id) ? (
-                                <button
-                                  type="button"
-                                  disabled={selectedTreatments.length <= 1}
-                                  onClick={() => removeTreatment(currentTreatment.id)}
-                                  className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                                    selectedTreatments.length <= 1
-                                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent"
-                                      : "bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-150 cursor-pointer"
-                                  }`}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" /> Remove from Plan
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => addTreatment(currentTreatment.id)}
-                                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-black hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                >
-                                  <Plus className="h-3.5 w-3.5" /> Add to Plan
-                                </button>
-                              )}
-                            </div>
-
-                            {/* Clean action button at bottom of sheet */}
-                            <div className="pt-1">
-                              <button
-                                type="button"
-                                onClick={() => setIsTreatmentCardOpen(false)}
-                                className="w-full py-2.5 bg-black hover:bg-black/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                              >
-                                Done
-                              </button>
-                            </div>
-                          </motion.div>
-                        </div>
-                      );
-                    })()}
                   </AnimatePresence>,
                   document.body
                 )}
@@ -1897,9 +1894,10 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
               </motion.form>
             ) : (
               <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: "spring", damping: 25, stiffness: 180 }}
+                key="consultation-success"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
                 className="bg-luxury-secondary border border-luxury-border/40 p-4 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl text-center max-w-2xl mx-auto shadow-sm"
               >
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/10 flex items-center justify-center mx-auto mb-4 text-luxury-text">
@@ -1915,13 +1913,15 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                 {/* Selected Treatments Summary inside success view - highly responsive and clean */}
                 <div className="my-5 sm:my-6 bg-white border border-luxury-border/30 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 text-left max-w-md mx-auto space-y-3.5 shadow-sm">
                   <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block border-b border-luxury-border/20 pb-2">
-                    Consultation Request Summary ({selectedTreatments.length})
+                    Consultation Request Summary ({getSelectedTreatmentsData().length})
                   </span>
                   <div className="space-y-2.5 max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
                     {getSelectedTreatmentsData().map((item) => (
                       <div key={item.id} className="flex justify-between items-start gap-3 text-xs">
                         <div className="min-w-0 flex-1">
-                          <span className="font-bold text-luxury-text block truncate text-xs">{item.name}</span>
+                          <span className="font-bold text-luxury-text block truncate text-xs">
+                            {item.name}{item.packageName ? ` (${item.packageName})` : ''}
+                          </span>
                           <span className="text-[9px] text-luxury-subtext/60 font-mono tracking-wider uppercase block">{item.areaName} • {item.time}</span>
                         </div>
                         <span className="font-serif font-bold text-luxury-gold shrink-0 text-right text-xs sm:text-sm">{item.price}</span>
@@ -1931,7 +1931,7 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   <div className="border-t border-luxury-border/20 pt-3 flex justify-between items-center text-xs font-bold text-luxury-text">
                     <span>Total Estimated Investment:</span>
                     <span className="font-serif text-sm sm:text-base text-luxury-gold">
-                      ${getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
+                      £{getSelectedTreatmentsData().reduce((sum, item) => sum + parsePrice(item.price), 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -1983,17 +1983,29 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                   )}
                 </div>
 
-                <div className="flex justify-center w-full px-1 sm:px-0 pt-2">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full px-1 sm:px-0 pt-2">
+                  <a
+                    href={buildConsultationWhatsAppUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#1F8A4C] hover:bg-[#19733E] text-white px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+                  >
+                    <MessageCircle className="h-4 w-4 shrink-0" />
+                    <span>Send to Clinic's WhatsApp</span>
+                  </a>
+
                   <button 
                     onClick={() => {
                       setSubmittedBooking(false);
-                      setSelectedTreatments(['exosome']);
+                      setSelectedTreatments([]);
+                      setSelectedTreatmentPackages({});
+                      clearTreatmentCart();
                       setBooking({
                         firstName: '',
                         lastName: '',
                         email: '',
                         phone: '',
-                        procedure: 'exosome',
+                        procedure: '',
                         improvement: '',
                         doctor: '',
                         preferredLocation: '',
@@ -2006,8 +2018,14 @@ export default function LocationsAndConsultation({ preselectedService, onTreatme
                         agreePrivacy: false,
                         agreeOffers: false
                       });
+                      requestAnimationFrame(() => {
+                        const sectionEl = document.getElementById('preferred-consultation');
+                        if (sectionEl) {
+                          sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      });
                     }}
-                    className="w-full sm:w-auto bg-black hover:bg-black text-white px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+                    className="w-full sm:w-auto bg-black hover:bg-neutral-900 text-white px-6 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-[0.98] cursor-pointer"
                   >
                     Book Another Consultation
                   </button>

@@ -1,8 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Calendar, Sparkles, Trash2, ArrowRight, ShieldCheck, Clock, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTreatmentCart } from '../../context/TreatmentCartContext';
-import { PricingPackage } from '../../data/treatmentPricing';
+import { PricingPackage, TreatmentPricingItem } from '../../data/treatmentPricing';
+import { getTreatmentPricingData } from '../../lib/adminStore';
+import { getTreatmentImagePath } from '../../utils/treatmentImageHelper';
+import { LogoOutlineSkeleton } from '../common/LogoOutlineSkeleton';
+
+function getInitialCardImageSrc(item: {
+  id: string;
+  image?: string;
+  updatedAt?: number | string;
+  coverMedia?: { url?: string };
+}): string {
+  const customImg = (item.image || item.coverMedia?.url || '').trim();
+  const hasCustomNonUnsplash = Boolean(customImg && !customImg.includes('unsplash.com'));
+
+  if (hasCustomNonUnsplash && !customImg.startsWith('/assets/treatments/')) {
+    return customImg;
+  }
+
+  return getTreatmentImagePath(item.id, item.image, item.updatedAt);
+}
+
+const CartItemThumbnail: React.FC<{
+  treatment: {
+    id: string;
+    title: string;
+    image?: string;
+    badge?: string;
+    updatedAt?: number | string;
+    coverMedia?: { url?: string; altText?: string; seoTitle?: string };
+  };
+}> = ({ treatment }) => {
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>(() =>
+    getInitialCardImageSrc(treatment)
+  );
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const imgRef = React.useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    const nextSrc = getInitialCardImageSrc(treatment);
+    setCurrentImageSrc(nextSrc);
+    setIsLoaded(false);
+    setHasError(false);
+  }, [treatment.id, treatment.image, treatment.coverMedia?.url, treatment.updatedAt]);
+
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  }, [currentImageSrc]);
+
+  const handleImageError = () => {
+    const predictablePath = getTreatmentImagePath(treatment.id, treatment.image, treatment.updatedAt);
+    const customFallback = (treatment.image || treatment.coverMedia?.url || '').trim();
+    const isValidCustomFallback =
+      Boolean(customFallback) &&
+      !customFallback.includes('unsplash.com') &&
+      !customFallback.startsWith('/assets/treatments/');
+
+    if (currentImageSrc !== predictablePath && !currentImageSrc.startsWith('/assets/treatments/')) {
+      setCurrentImageSrc(predictablePath);
+      return;
+    }
+
+    if (isValidCustomFallback && currentImageSrc !== customFallback) {
+      setCurrentImageSrc(customFallback);
+      return;
+    }
+
+    setHasError(true);
+  };
+
+  return (
+    <div className="relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] border border-luxury-border/50 shrink-0 overflow-hidden flex items-center justify-center">
+      {(!isLoaded || hasError) && (
+        <div className="absolute inset-0 flex items-center justify-center p-1.5 z-0">
+          <LogoOutlineSkeleton
+            size="sm"
+            variant="gold"
+            animate={!hasError}
+            showText={false}
+          />
+        </div>
+      )}
+
+      {!hasError && (
+        <img
+          ref={imgRef}
+          src={currentImageSrc}
+          alt={treatment.coverMedia?.altText || treatment.title}
+          title={treatment.coverMedia?.seoTitle || treatment.title}
+          loading="lazy"
+          decoding="async"
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setIsLoaded(true)}
+          onError={handleImageError}
+          referrerPolicy="no-referrer"
+        />
+      )}
+
+      {treatment.badge && (
+        <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 z-10 bg-[#EA014A] text-white text-[7px] sm:text-[8px] font-bold px-1 sm:px-1.5 py-0.2 rounded-full uppercase leading-tight">
+          {treatment.badge}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface TreatmentCartDrawerProps {
   onBookTreatmentPlan?: (serviceNames: string[]) => void;
@@ -27,6 +136,51 @@ export const TreatmentCartDrawer: React.FC<TreatmentCartDrawerProps> = ({
 
   // State to toggle mobile tier switcher dropdown per item
   const [expandedMobileTierItem, setExpandedMobileTierItem] = useState<string | null>(null);
+  const [isOnConsultationSection, setIsOnConsultationSection] = useState<boolean>(false);
+  const [livePricingCatalog, setLivePricingCatalog] = useState<TreatmentPricingItem[]>(() =>
+    getTreatmentPricingData()
+  );
+
+  useEffect(() => {
+    const syncPricing = () => {
+      setLivePricingCatalog(getTreatmentPricingData());
+    };
+    window.addEventListener('treatment_pricing_updated', syncPricing);
+    window.addEventListener('storage', syncPricing);
+    return () => {
+      window.removeEventListener('treatment_pricing_updated', syncPricing);
+      window.removeEventListener('storage', syncPricing);
+    };
+  }, []);
+
+  const catalogById = useMemo(
+    () => new Map(livePricingCatalog.map((t) => [t.id, t])),
+    [livePricingCatalog]
+  );
+
+  useEffect(() => {
+    if (!isTreatmentCartOpen || typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+    const updateConsultationVisibility = () => {
+      const el = document.getElementById('preferred-consultation');
+      if (!el) {
+        setIsOnConsultationSection(false);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const inView = rect.top < window.innerHeight * 0.85 && rect.bottom > 120;
+      setIsOnConsultationSection(inView);
+    };
+
+    updateConsultationVisibility();
+    window.addEventListener('scroll', updateConsultationVisibility, { passive: true });
+    window.addEventListener('resize', updateConsultationVisibility);
+    return () => {
+      window.removeEventListener('scroll', updateConsultationVisibility);
+      window.removeEventListener('resize', updateConsultationVisibility);
+    };
+  }, [isTreatmentCartOpen]);
 
   const toggleMobileTier = (itemId: string) => {
     setExpandedMobileTierItem((prev) => (prev === itemId ? null : itemId));
@@ -41,29 +195,31 @@ export const TreatmentCartDrawer: React.FC<TreatmentCartDrawerProps> = ({
 
     if (onBookTreatmentPlan) {
       onBookTreatmentPlan(summaryServices);
-      return;
     }
 
-    // Default: Smooth scroll to consultation booking element and prefill
-    const element =
-      document.getElementById('preferred-consultation') ||
-      document.getElementById('contact') ||
-      document.getElementById('appointment-booking');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    const scrollAndBroadcast = () => {
+      const element =
+        document.getElementById('preferred-consultation') ||
+        document.getElementById('contact') ||
+        document.getElementById('appointment-booking');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
 
-    // Broadcast event so consultation widget can populate selected treatments
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('arc_apply_treatment_plan', {
-          detail: {
-            treatmentPlan: treatmentCart,
-            servicesSummary: summaryServices.join(', '),
-          },
-        })
-      );
-    }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('arc_apply_treatment_plan', {
+            detail: {
+              treatmentPlan: treatmentCart,
+              servicesSummary: summaryServices.join(', '),
+            },
+          })
+        );
+      }
+    };
+
+    scrollAndBroadcast();
+    setTimeout(scrollAndBroadcast, 200);
   };
 
   return (
@@ -152,6 +308,15 @@ export const TreatmentCartDrawer: React.FC<TreatmentCartDrawerProps> = ({
                   treatmentCart.map((item, idx) => {
                     const availablePackages = item.treatment.packages || [];
                     const isMobileTierOpen = expandedMobileTierItem === item.id;
+                    const latestCardMeta = catalogById.get(item.treatment.id);
+                    const mergedTreatmentForThumb = latestCardMeta
+                      ? {
+                          ...item.treatment,
+                          image: latestCardMeta.image || item.treatment.image,
+                          coverMedia: latestCardMeta.coverMedia || item.treatment.coverMedia,
+                          updatedAt: latestCardMeta.updatedAt || item.treatment.updatedAt,
+                        }
+                      : item.treatment;
 
                     return (
                       <div
@@ -161,23 +326,8 @@ export const TreatmentCartDrawer: React.FC<TreatmentCartDrawerProps> = ({
                         {/* Compact, Clean Card Container on Mobile / Rich details on Desktop */}
                         <div className="rounded-xl bg-white sm:bg-transparent border border-luxury-border/40 sm:border-0 p-3 sm:p-0 shadow-2xs sm:shadow-none">
                           <div className="flex items-start gap-3 sm:gap-4">
-                            {/* Image preview */}
-                            <div className="relative w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-[#FAF7F2] border border-luxury-border/50 shrink-0 overflow-hidden">
-                              <img
-                                src={item.treatment.image}
-                                alt={item.treatment.title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).src =
-                                    'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=400&q=80';
-                                }}
-                              />
-                              {item.treatment.badge && (
-                                <div className="absolute top-0.5 left-0.5 sm:top-1 sm:left-1 bg-[#EA014A] text-white text-[7px] sm:text-[8px] font-bold px-1 sm:px-1.5 py-0.2 rounded-full uppercase leading-tight">
-                                  {item.treatment.badge}
-                                </div>
-                              )}
-                            </div>
+                            {/* Image preview with brand logo placeholder */}
+                            <CartItemThumbnail treatment={mergedTreatmentForThumb} />
 
                             {/* Info & Price */}
                             <div className="flex-1 min-w-0">
@@ -406,13 +556,15 @@ export const TreatmentCartDrawer: React.FC<TreatmentCartDrawerProps> = ({
                     <span>No upfront charge required — fee settled upon clinical consultation</span>
                   </div>
 
-                  <button
-                    onClick={handleProceedToBooking}
-                    className="w-full bg-black hover:bg-neutral-900 active:scale-[0.99] text-white py-3 sm:py-3.5 rounded-full font-sans font-medium tracking-wider transition-all shadow-md hover:shadow-lg text-xs sm:text-sm uppercase flex items-center justify-center gap-2 cursor-pointer border border-luxury-gold/50"
-                  >
-                    <span>Book Treatment Plan</span>
-                    <ArrowRight className="h-4 w-4 text-luxury-gold" />
-                  </button>
+                  {!isOnConsultationSection && (
+                    <button
+                      onClick={handleProceedToBooking}
+                      className="w-full bg-black hover:bg-neutral-900 active:scale-[0.99] text-white py-3 sm:py-3.5 rounded-full font-sans font-medium tracking-wider transition-all shadow-md hover:shadow-lg text-xs sm:text-sm uppercase flex items-center justify-center gap-2 cursor-pointer border border-luxury-gold/50"
+                    >
+                      <span>Book Treatment Plan</span>
+                      <ArrowRight className="h-4 w-4 text-luxury-gold" />
+                    </button>
+                  )}
 
                   <button
                     onClick={clearTreatmentCart}

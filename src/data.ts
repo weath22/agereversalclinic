@@ -535,49 +535,55 @@ export const TREATMENT_IMAGES: string[] = [
 
 export const PROCESS_STEPS: ProcessStep[] = [
   {
-    id: '1',
+    id: 'step-1',
     stepNumber: '01',
-    title: 'Consultation',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDM4gEBGdyFtz-HxER-7Drrk9cLUdAuFPLy9wL9O6k-1_W9PNavk4d2zixzveXN5FfVK2kNvhRlDK3OZ21DLN47_vavlvtfZxrBUnE8lSqx1hREUDfYAa6RPy-CSKXT_lH5fTZ9XzDhPSZAVc7bPGwuRNyHZifjesgAzqDx4Bdh4AXS3AYJskMQmpP6Gm9wt9YO7QQBAN7_gJlMzXqWJqcvj0BC5ga98XxZtTVfC2CQq8RBFi6E6Vx0JqFIS2HIqfVKeuiO4mhhkUyI'
+    title: 'Comprehensive Consultation & Assessment',
+    image: '/assets/clinic-process-01.webp'
   },
   {
-    id: '2',
+    id: 'step-2',
     stepNumber: '02',
-    title: 'Treatment',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpc9iwUPHl5YjJPUY9E95ThzCowbFO32u1yMI6QpZqPrQnBL7p9nmkyqw3JRkKKEl26-mJIFP0r8QNgHxIYxWnrIiagTCmDfr3L4TeyGpRJ4Ye8dwjLxT7kUVB0sTqVntaOcMm7700Jj3-8xh75QQkY3xOMGH04owJPA05JB3wRuKL7kUttqlyk-sOqZIwumYKh7VveixAFn2QXvlC7f8-S3zwQXujNvI0qHEwsxPonmj_-kRlbSiRVOcy67FFlTBCjBFzzvhYYOQ1'
+    title: 'Bespoke Treatment Plan',
+    image: '/assets/clinic-process-02.webp'
   },
   {
-    id: '3',
+    id: 'step-3',
     stepNumber: '03',
-    title: 'Care & Follow-up',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww'
+    title: 'Precision Clinical Procedure',
+    image: '/assets/clinic-process-03.webp'
+  },
+  {
+    id: 'step-4',
+    stepNumber: '04',
+    title: 'Regenerative Aftercare & Follow-Up',
+    image: '/assets/clinic-process-04.webp'
   }
 ];
 
 export const FACILITIES: FacilityRoom[] = [
   {
-    id: 'facility-1',
-    title: 'Reception Lounge',
-    tag: 'Main Entrance',
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY'
+    id: 'room-1',
+    title: 'Consultation Suite',
+    tag: 'Private',
+    image: '/assets/clinic-facility-1.webp'
   },
   {
-    id: 'facility-2',
-    title: 'Advanced Therapy',
-    tag: 'Clinical Suite',
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLvbGkim0rHF7Ruf3smBfq7BlZDg7FTbjFo3KTx21CJ86qX2T7gThqEfQmaS69rYUNtNQrnGPXJIOJTcoIOz_hCdUGzS-Cyeio7-DWxIyZZVQH95grNa2bbhnLGjt5IANWtQWycAC7JKxw6K1syY9H1W4ty0-Mpc3D-dH4coJR0zr5IaxigQ7G2BRK9YnWheyv8CjvRuSu4fbTW4fj4AP8QhZU3p2G1Rg0ztNQS13w1SZT_7bU3qioomJ9_f'
+    id: 'room-2',
+    title: 'Treatment Room',
+    tag: 'Clinical',
+    image: '/assets/clinic-facility-2.webp'
   },
   {
-    id: 'facility-3',
+    id: 'room-3',
     title: 'Private Consultation',
     tag: 'Expert Advice',
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLsFtpFDuaNJSlvtgV5ykI3LUHSXc0rzKFYXGGNqkYq6ujIGrmaVAI-UUZWBC9h6l95unMnlba0hL6OSt_W08ItQlzC4HTVhrV4H7Itfm0m7scTAtpBiomP9SY89c7Uj0Q5mgYXMjovpZuGcczZeQepLx4ye1bw1emHNdm8GxyKyt8TftVi79q1QOO0MHef213jXO6KWOkNL6ufVfwZSrPS20twzy3Jy2_MEVCz9mR9pJVAW24L2KhOTQP9P'
+    image: '/assets/clinic-facility-3.webp'
   },
   {
-    id: 'facility-4',
+    id: 'room-4',
     title: 'Wellness Sanctuary',
     tag: 'Patient Comfort',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r'
+    image: '/assets/clinic-facility-4.webp'
   }
 ];
 
@@ -843,11 +849,11 @@ export const TEAM_MEMBERS: TeamMember[] = [
 ];
 
 export const BRAND_PARTNERS: BrandPartner[] = [
-  { id: 'bp-1', name: 'Lumina', iconType: 'circle' },
-  { id: 'bp-2', name: 'Aether', iconType: 'layers' },
-  { id: 'bp-3', name: 'Vera', iconType: 'pill' },
-  { id: 'bp-4', name: 'Zenith', iconType: 'shield' },
-  { id: 'bp-5', name: 'Nexus', iconType: 'instagram' }
+  { id: 'bp-1', name: 'Lumina', iconType: 'circle', imageUrl: '/assets/clinic-brand-1.webp' },
+  { id: 'bp-2', name: 'Aether', iconType: 'layers', imageUrl: '/assets/clinic-brand-2.webp' },
+  { id: 'bp-3', name: 'Vera', iconType: 'pill', imageUrl: '/assets/clinic-brand-3.webp' },
+  { id: 'bp-4', name: 'Zenith', iconType: 'shield', imageUrl: '/assets/clinic-brand-4.webp' },
+  { id: 'bp-5', name: 'Nexus', iconType: 'instagram', imageUrl: '/assets/clinic-brand-5.webp' }
 ];
 
 export const NEWS_ARTICLES: Article[] = [

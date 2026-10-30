@@ -6,6 +6,7 @@ import { FacilityRoom } from '../types';
 import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { ClinicData } from '../data/clinicInfo';
 import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
+import { getClinicSlotId } from '../utils/clinicImageHelper';
 
 export default function FacilityInteriors() {
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
@@ -141,7 +142,7 @@ export default function FacilityInteriors() {
               <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-silver-100 border border-silver-200/50 relative">
                 <ClinicImageWithPlaceholder 
                   src={facility.image}
-                  slotId={`clinic-facility-${facility.id}`}
+                  slotId={getClinicSlotId('facility', facility.id || index + 1)}
                   alt={facility.imageAlt || facility.title} 
                   logoSize="md"
                   showBrandText={true}
@@ -212,7 +213,7 @@ export default function FacilityInteriors() {
                     alt={facilityItems[activeLightboxIndex].imageAlt || facilityItems[activeLightboxIndex].title}
                     className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
                     src={facilityItems[activeLightboxIndex].image}
-                    slotId={`clinic-facility-${facilityItems[activeLightboxIndex].id}`}
+                    slotId={getClinicSlotId('facility', facilityItems[activeLightboxIndex].id || activeLightboxIndex + 1)}
                     logoSize="xl"
                     showBrandText={true}
                     containerClassName="flex items-center justify-center min-w-[280px] min-h-[280px] bg-transparent"

@@ -6,24 +6,33 @@ import { AwardsConfig } from '../types';
 import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 import { CLINIC_AWARDS_MEDIA } from '../data/clinicImages';
+import { getClinicSlotId } from '../utils/clinicImageHelper';
 
-const awardDermatology = CLINIC_AWARDS_MEDIA[0].image;
-const awardRejuvenation = CLINIC_AWARDS_MEDIA[3].image;
-const awardPatientSafety = CLINIC_AWARDS_MEDIA[2].image;
-const awardLaserClinic = CLINIC_AWARDS_MEDIA[1].image;
+const awardDermatology = '/assets/clinic-award-1.webp';
+const awardRejuvenation = '/assets/clinic-award-2.webp';
+const awardPatientSafety = '/assets/clinic-award-3.webp';
+const awardLaserClinic = '/assets/clinic-award-4.webp';
+const awardInnovation = '/assets/clinic-award-5.webp';
 
 const DEFAULT_AWARD_IMAGES: Record<string, string> = {
+  'award-1': awardDermatology,
+  'award-2': awardRejuvenation,
+  'award-3': awardPatientSafety,
+  'award-4': awardLaserClinic,
+  'award-5': awardInnovation,
   'aw-1': awardDermatology,
   'aw-2': awardRejuvenation,
   'aw-3': awardPatientSafety,
   'aw-4': awardLaserClinic,
+  'aw-5': awardInnovation,
 };
 
 const FALLBACK_LIST = [
-  awardDermatology,
-  awardRejuvenation,
-  awardPatientSafety,
-  awardLaserClinic
+  CLINIC_AWARDS_MEDIA[0]?.image || awardDermatology,
+  CLINIC_AWARDS_MEDIA[3]?.image || awardRejuvenation,
+  CLINIC_AWARDS_MEDIA[2]?.image || awardPatientSafety,
+  CLINIC_AWARDS_MEDIA[1]?.image || awardLaserClinic,
+  CLINIC_AWARDS_MEDIA[0]?.image || awardInnovation
 ];
 
 export default function AwardsShowcase() {
@@ -157,8 +166,9 @@ export default function AwardsShowcase() {
           }`}
         >
           {scrollingAwards.map((award, index) => {
-            const fallbackImg = DEFAULT_AWARD_IMAGES[award.id] || FALLBACK_LIST[index % FALLBACK_LIST.length];
-            const imageUrl = award.imageUrl || fallbackImg;
+            const origIdx = index % config.awards.length;
+            const slotId = getClinicSlotId('award', award.id || origIdx + 1);
+            const imageUrl = award.imageUrl ?? '';
 
             return (
               <div
@@ -168,12 +178,11 @@ export default function AwardsShowcase() {
                 {/* 1. Award Image on top */}
                 <ClinicImageWithPlaceholder
                   src={imageUrl}
-                  slotId={`clinic-award-${award.id}`}
+                  slotId={slotId}
                   alt={award.title}
                   logoSize="md"
                   showBrandText={true}
                   brandSubtext={`${award.year} Honors`}
-                  fallbackUrl={fallbackImg}
                   containerClassName="relative aspect-[16/10] sm:aspect-[4/3] w-full overflow-hidden bg-luxury-secondary flex items-center justify-center"
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-106 transform-gpu"
                 >

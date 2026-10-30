@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogoOutlineSkeleton, LogoSkeletonSize } from './LogoOutlineSkeleton';
 import { getClinicData } from '../../lib/adminStore';
 import { CLINIC_LOGOS } from '../../data/clinicImages';
-import { getClinicImagePath } from '../../utils/clinicImageHelper';
+import { resolveClinicImageSrc } from '../../utils/clinicImageHelper';
 
 export interface ClinicImageWithPlaceholderProps {
   /**
@@ -105,20 +105,16 @@ export const ClinicImageWithPlaceholder: React.FC<ClinicImageWithPlaceholderProp
   fetchPriority = 'auto',
   children,
 }) => {
-  // Compute initial resolved image path
+  // Compute initial resolved image path: if rawSrc is empty/cleared, return "" immediately
   const resolveTargetSrc = (rawSrc?: string, targetSlotId?: string): string => {
-    const cleanSrc = (rawSrc || '').trim();
-    if (cleanSrc) {
-      // If external unsplash placeholder was provided in legacy data, prefer permanent slot path
-      if (cleanSrc.includes('images.unsplash.com') && targetSlotId) {
-        return getClinicImagePath(targetSlotId);
-      }
-      return cleanSrc;
+    const cleanSrc = (rawSrc ?? '').trim();
+    if (!cleanSrc) {
+      return '';
     }
     if (targetSlotId) {
-      return getClinicImagePath(targetSlotId);
+      return resolveClinicImageSrc(targetSlotId, cleanSrc);
     }
-    return '';
+    return cleanSrc;
   };
 
   const initialSrc = resolveTargetSrc(src, slotId);

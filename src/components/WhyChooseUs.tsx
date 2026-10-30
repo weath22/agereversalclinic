@@ -6,23 +6,24 @@ import { motion } from 'motion/react';
 import { getWhyChooseUsConfig, getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { WhyChooseUsConfig } from '../types';
 import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
+import { getClinicSlotId } from '../utils/clinicImageHelper';
 
 // Fallback high-aesthetic UI images and badges for Why Choose Us pillars
 const PILLAR_IMAGES_FALLBACK: Record<string, { image: string; badge: string }> = {
   p1: {
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY',
+    image: '/assets/clinic-pillar-1.webp',
     badge: 'Harley St Flagship'
   },
   p2: {
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww',
+    image: '/assets/clinic-pillar-2.webp',
     badge: '4.9/5 ★ (2,000+ Reviews)'
   },
   p3: {
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLvbGkim0rHF7Ruf3smBfq7BlZDg7FTbjFo3KTx21CJ86qX2T7gThqEfQmaS69rYUNtNQrnGPXJIOJTcoIOz_hCdUGzS-Cyeio7-DWxIyZZVQH95grNa2bbhnLGjt5IANWtQWycAC7JKxw6K1syY9H1W4ty0-Mpc3D-dH4coJR0zr5IaxigQ7G2BRK9YnWheyv8CjvRuSu4fbTW4fj4AP8QhZU3p2G1Rg0ztNQS13w1SZT_7bU3qioomJ9_f',
+    image: '/assets/clinic-pillar-3.webp',
     badge: 'FDA-Cleared Tech'
   },
   p4: {
-    image: 'https://lh3.googleusercontent.com/aida/AP1WRLsFtpFDuaNJSlvtgV5ykI3LUHSXc0rzKFYXGGNqkYq6ujIGrmaVAI-UUZWBC9h6l95unMnlba0hL6OSt_W08ItQlzC4HTVhrV4H7Itfm0m7scTAtpBiomP9SY89c7Uj0Q5mgYXMjovpZuGcczZeQepLx4ye1bw1emHNdm8GxyKyt8TftVi79q1QOO0MHef213jXO6KWOkNL6ufVfwZSrPS20twzy3Jy2_MEVCz9mR9pJVAW24L2KhOTQP9P',
+    image: '/assets/clinic-pillar-4.webp',
     badge: 'GMC Registered'
   }
 };
@@ -231,12 +232,13 @@ export default function WhyChooseUs() {
               // Resolve icon dynamically
               const IconComponent = (Icons as any)[pillar.iconName] || Icons.Building;
               
-              // Resolve image & badge (from pillar config, with fallback)
+              // Resolve image & badge (from pillar config)
+              const pillarSlotId = getClinicSlotId('pillar', pillar.id || (idx + 1));
               const fallback = PILLAR_IMAGES_FALLBACK[pillar.id] || {
-                image: 'https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY',
+                image: '',
                 badge: 'Aesthetic Standard'
               };
-              const imageUrl = pillar.imageUrl || fallback.image;
+              const imageUrl = pillar.imageUrl ?? '';
               const badgeText = pillar.badge || fallback.badge;
               const isFocusedCard = activeScrollIndex === idx;
 
@@ -269,11 +271,10 @@ export default function WhyChooseUs() {
                   {/* Full-bleed background image with smooth zoom */}
                   <ClinicImageWithPlaceholder
                     src={imageUrl}
-                    slotId={`clinic-pillar-${pillar.id}`}
+                    slotId={pillarSlotId}
                     alt={pillar.title}
                     logoSize="lg"
                     showBrandText={true}
-                    fallbackUrl={fallback.image}
                     containerClassName="absolute inset-0 w-full h-full overflow-hidden bg-luxury-secondary flex items-center justify-center pointer-events-none"
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108 pointer-events-none transform-gpu"
                   />

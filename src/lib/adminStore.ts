@@ -415,17 +415,19 @@ function getStorageItem<T>(key: string, initialValue: T): T {
   }
 }
 
-function setStorageItem<T>(key: string, value: T): void {
+function setStorageItem<T>(key: string, value: T, skipFileSync: boolean = false): void {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
     // Asynchronously write changes directly to project source files on server disk
     if (
-      key.startsWith('homepage_') ||
-      key.startsWith('profile_') ||
-      key.startsWith('clinical_') ||
-      key.startsWith('master_') ||
-      key.startsWith('treatment_')
+      !skipFileSync &&
+      (key === CLINIC_INFO_DATA_KEY ||
+        key.startsWith('homepage_') ||
+        key.startsWith('profile_') ||
+        key.startsWith('clinical_') ||
+        key.startsWith('master_') ||
+        key.startsWith('treatment_'))
     ) {
       syncConfigToFile(key, value);
     }
@@ -936,7 +938,7 @@ export async function syncAllConfigsToFiles(): Promise<{ success: boolean; messa
 
 // Default configs
 const DEFAULT_HEADER_CONFIG: HeaderConfig = {
-  logoUrl: CLINIC_DATA.logo?.icon || CLINIC_DATA.logo?.full || "https://lh3.googleusercontent.com/aida-public/AB6AXuDesjN_a9T_c5ApVXtUbu_ZXToYSdPJkIyWoDOPkSuBoQRUyOhQp9l6Db9Wj4GBiuknLiRRmpxvA8iVUDtgyK1RWmkj17T-q0e-wv--cxohuK0XmXvrJN6DnkzK2gFmAprNxac_5EvIby0Pz6lyQGXQN8mXvvvWzRMdLtFeNDOnDO771chO4DAAYKRhLj_xguQkL4cWu1mf8hIz8RmRWNBhRLYOnOER31n5Ivd-7gbMKNxOExOBolE15qJO37x9C8cAZLSbx_RCy48Q",
+  logoUrl: CLINIC_DATA.logo?.icon ?? CLINIC_DATA.logo?.full ?? "",
   primaryName: "Age Reversal",
   secondaryName: "Clinic"
 };
@@ -1181,7 +1183,7 @@ const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
       description: "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
       iconName: "Building",
       badge: "Harley St Flagship",
-      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLvP3DFx2If1DMSMz3JKM0HPzM540kXV5qx4ncam1B_CstR80gJfBU5AgVz_YsPJ7u8V1nICj4IKO0ho2mOZo1vuUDFZEw-Ayq4p14_4qW8gAEOq6vYJFfmXi02IYti-uAUEojYV7cVHRx8-IjuVyoJ6AdGSCYT0VhPznGkC--nZZbr2vqIbtzvJQaOoTpF7vm4dZGfUyfQgXnhGm3ra1mjdJAGKWeB3fhbxho_WV4iW-9ZUAe7bRastfXY"
+      imageUrl: ""
     },
     {
       id: 'p2',
@@ -1189,7 +1191,7 @@ const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
       description: "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
       iconName: "Star",
       badge: "4.9/5 ★ (2,000+ Reviews)",
-      imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww"
+      imageUrl: ""
     },
     {
       id: 'p3',
@@ -1197,7 +1199,7 @@ const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
       description: "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
       iconName: "Sparkles",
       badge: "FDA-Cleared Tech",
-      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLvbGkim0rHF7Ruf3smBfq7BlZDg7FTbjFo3KTx21CJ86qX2T7gThqEfQmaS69rYUNtNQrnGPXJIOJTcoIOz_hCdUGzS-Cyeio7-DWxIyZZVQH95grNa2bbhnLGjt5IANWtQWycAC7JKxw6K1syY9H1W4ty0-Mpc3D-dH4coJR0zr5IaxigQ7G2BRK9YnWheyv8CjvRuSu4fbTW4fj4AP8QhZU3p2G1Rg0ztNQS13w1SZT_7bU3qioomJ9_f"
+      imageUrl: ""
     },
     {
       id: 'p4',
@@ -1205,7 +1207,7 @@ const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
       description: "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
       iconName: "Medal",
       badge: "GMC Registered",
-      imageUrl: "https://lh3.googleusercontent.com/aida/AP1WRLsFtpFDuaNJSlvtgV5ykI3LUHSXc0rzKFYXGGNqkYq6ujIGrmaVAI-UUZWBC9h6l95unMnlba0hL6OSt_W08ItQlzC4HTVhrV4H7Itfm0m7scTAtpBiomP9SY89c7Uj0Q5mgYXMjovpZuGcczZeQepLx4ye1bw1emHNdm8GxyKyt8TftVi79q1QOO0MHef213jXO6KWOkNL6ufVfwZSrPS20twzy3Jy2_MEVCz9mR9pJVAW24L2KhOTQP9P"
+      imageUrl: ""
     }
   ]
 };
@@ -1215,32 +1217,39 @@ const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
   subheading: "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
   awards: [
     {
-      id: 'aw-1',
+      id: 'award-1',
       title: 'Dermatology Clinic of the Year',
       year: '2025',
       organization: 'Aesthetic Medicine Awards',
-      imageUrl: '/src/assets/images/clinic/awards/award_dermatology.jpg'
+      imageUrl: ''
     },
     {
-      id: 'aw-2',
+      id: 'award-2',
       title: 'Best Non-Surgical Rejuvenation',
       year: '2025',
       organization: 'Global Cosmetic Congress',
-      imageUrl: '/src/assets/images/clinic/awards/award_rejuvenation.jpg'
+      imageUrl: ''
     },
     {
-      id: 'aw-3',
+      id: 'award-3',
       title: 'Patient Safety Excellence Award',
       year: '2024',
       organization: 'British Health Standards',
-      imageUrl: '/src/assets/images/clinic/awards/award_patient_safety.jpg'
+      imageUrl: ''
     },
     {
-      id: 'aw-4',
+      id: 'award-4',
       title: 'Best Laser Skin Clinic',
       year: '2024',
       organization: 'International Laser Association',
-      imageUrl: '/src/assets/images/clinic/awards/award_laser.jpg'
+      imageUrl: ''
+    },
+    {
+      id: 'award-5',
+      title: 'Excellence in Aesthetic Innovation',
+      year: '2024',
+      organization: 'UK Clinical Dermatology Board',
+      imageUrl: ''
     }
   ]
 };
@@ -1262,9 +1271,7 @@ const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
       phone: loc.phone || CLINIC_DATA.phone,
       mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
       bannerType: "Clinic",
-      imageUrl: loc.image || (idx === 0 
-        ? "/assets/1791723050511-Screenshot_2026-07-24_193158.png" 
-        : "/assets/1791729403362-arc-logo__1___2_.webp")
+      imageUrl: loc.image ?? ""
     };
   })
 };
@@ -1305,13 +1312,25 @@ const DEFAULT_PROCESS_CONFIG: ProcessConfig = {
             id: "step-1",
             stepNumber: "01",
             title: "Comprehensive Consultation & Assessment",
-            image: "https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=400&fit=crop",
+            image: "",
           },
           {
             id: "step-2",
             stepNumber: "02",
             title: "Bespoke Treatment Plan",
-            image: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=400&h=400&fit=crop",
+            image: "",
+          },
+          {
+            id: "step-3",
+            stepNumber: "03",
+            title: "Precision Clinical Procedure",
+            image: "",
+          },
+          {
+            id: "step-4",
+            stepNumber: "04",
+            title: "Regenerative Aftercare & Follow-Up",
+            image: "",
           },
         ],
 };
@@ -1329,13 +1348,13 @@ const DEFAULT_FACILITY_INTERIORS_CONFIG: FacilityInteriorsConfig = {
             id: "room-1",
             title: "Consultation Suite",
             tag: "Private",
-            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=400&h=400&fit=crop",
+            image: "",
           },
           {
             id: "room-2",
             title: "Treatment Room",
             tag: "Clinical",
-            image: "https://images.unsplash.com/photo-1584982751601-97d8c2420086?w=400&h=400&fit=crop",
+            image: "",
           },
         ],
 };
@@ -1392,11 +1411,11 @@ const DEFAULT_TRUST_BRANDS_CONFIG: TrustBrandsConfig = {
     CLINIC_DATA.trustBrandsSection?.brands && CLINIC_DATA.trustBrandsSection.brands.length > 0
       ? CLINIC_DATA.trustBrandsSection.brands
       : [
-          { id: 'bp-1', name: 'Lumina', iconType: 'circle' },
-          { id: 'bp-2', name: 'Aether', iconType: 'layers' },
-          { id: 'bp-3', name: 'Vera', iconType: 'pill' },
-          { id: 'bp-4', name: 'Zenith', iconType: 'shield' },
-          { id: 'bp-5', name: 'Nexus', iconType: 'instagram' },
+          { id: 'bp-1', name: 'Lumina', iconType: 'circle', imageUrl: '' },
+          { id: 'bp-2', name: 'Aether', iconType: 'layers', imageUrl: '' },
+          { id: 'bp-3', name: 'Vera', iconType: 'pill', imageUrl: '' },
+          { id: 'bp-4', name: 'Zenith', iconType: 'shield', imageUrl: '' },
+          { id: 'bp-5', name: 'Nexus', iconType: 'instagram', imageUrl: '' },
         ],
 };
 
@@ -4350,39 +4369,52 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
   const base: ClinicData = {
     ...CLINIC_DATA,
     ...(fileDefault || {}),
+    ogImage: fileDefault?.ogImage ?? CLINIC_DATA.ogImage,
+    exteriorPhoto: fileDefault?.exteriorPhoto ?? CLINIC_DATA.exteriorPhoto,
     logo: {
       ...CLINIC_DATA.logo,
       ...(fileDefault?.logo || {}),
-      icon: fileDefault?.logo?.icon || CLINIC_DATA.logo.icon,
-      full: fileDefault?.logo?.full || CLINIC_DATA.logo.full,
+      icon: fileDefault?.logo?.icon ?? CLINIC_DATA.logo.icon,
+      full: fileDefault?.logo?.full ?? CLINIC_DATA.logo.full,
     },
     socials: {
       ...CLINIC_DATA.socials,
       ...(fileDefault?.socials || {}),
     },
-    interiorPhotos:
-      Array.isArray(fileDefault?.interiorPhotos) && fileDefault.interiorPhotos.length > 0
-        ? fileDefault.interiorPhotos
-        : CLINIC_DATA.interiorPhotos,
-    locations:
+    interiorPhotos: Array.isArray(fileDefault?.interiorPhotos)
+      ? fileDefault.interiorPhotos
+      : CLINIC_DATA.interiorPhotos || [],
+    locations: (
       Array.isArray(fileDefault?.locations) && fileDefault.locations.length > 0
         ? fileDefault.locations
-        : CLINIC_DATA.locations,
+        : CLINIC_DATA.locations
+    ).map((loc, idx) => ({
+      ...loc,
+      image: loc.image ?? CLINIC_DATA.locations?.[idx]?.image ?? '',
+    })),
     whyChooseUs: {
       heading: resolvedFileWhyChooseUs?.heading || defaultWhyChooseUs.heading,
       subheading: resolvedFileWhyChooseUs?.subheading || defaultWhyChooseUs.subheading,
-      pillars:
+      pillars: (
         Array.isArray(resolvedFileWhyChooseUs?.pillars) && resolvedFileWhyChooseUs.pillars.length > 0
           ? resolvedFileWhyChooseUs.pillars
-          : defaultWhyChooseUs.pillars,
+          : defaultWhyChooseUs.pillars
+      ).map((pillar, idx) => ({
+        ...pillar,
+        imageUrl: pillar.imageUrl ?? defaultWhyChooseUs.pillars?.[idx]?.imageUrl ?? '',
+      })),
     },
     awardsShowcase: {
       heading: resolvedFileAwards?.heading || defaultAwardsShowcase.heading,
       subheading: resolvedFileAwards?.subheading || defaultAwardsShowcase.subheading,
-      awards:
+      awards: (
         Array.isArray(resolvedFileAwards?.awards) && resolvedFileAwards.awards.length > 0
           ? resolvedFileAwards.awards
-          : defaultAwardsShowcase.awards,
+          : defaultAwardsShowcase.awards
+      ).map((award, idx) => ({
+        ...award,
+        imageUrl: award.imageUrl ?? defaultAwardsShowcase.awards?.[idx]?.imageUrl ?? '',
+      })),
     },
     consultationConfig: {
       heading: resolvedFileConsultation?.heading || defaultConsultationConfig.heading,
@@ -4417,10 +4449,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(resolvedFileProcess?.seoKeywords) && resolvedFileProcess.seoKeywords.length > 0
           ? resolvedFileProcess.seoKeywords
           : defaultProcessSection.seoKeywords,
-      steps:
+      steps: (
         Array.isArray(resolvedFileProcess?.steps) && resolvedFileProcess.steps.length > 0
           ? resolvedFileProcess.steps
-          : defaultProcessSection.steps,
+          : defaultProcessSection.steps
+      ).map((step, idx) => ({
+        ...step,
+        image: step.image ?? defaultProcessSection.steps?.[idx]?.image ?? '',
+      })),
     },
     facilityGallery: {
       eyebrow: resolvedFileFacility?.eyebrow || defaultFacilityGallery.eyebrow,
@@ -4429,10 +4465,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(resolvedFileFacility?.seoKeywords) && resolvedFileFacility.seoKeywords.length > 0
           ? resolvedFileFacility.seoKeywords
           : defaultFacilityGallery.seoKeywords,
-      rooms:
+      rooms: (
         Array.isArray(resolvedFileFacility?.rooms) && resolvedFileFacility.rooms.length > 0
           ? resolvedFileFacility.rooms
-          : defaultFacilityGallery.rooms,
+          : defaultFacilityGallery.rooms
+      ).map((room, idx) => ({
+        ...room,
+        image: room.image ?? defaultFacilityGallery.rooms?.[idx]?.image ?? '',
+      })),
     },
     trustBrandsSection: {
       heading: resolvedFileTrustBrands?.heading || defaultTrustBrandsSection.heading,
@@ -4440,10 +4480,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(resolvedFileTrustBrands?.seoKeywords) && resolvedFileTrustBrands.seoKeywords.length > 0
           ? resolvedFileTrustBrands.seoKeywords
           : defaultTrustBrandsSection.seoKeywords,
-      brands:
+      brands: (
         Array.isArray(resolvedFileTrustBrands?.brands) && resolvedFileTrustBrands.brands.length > 0
           ? resolvedFileTrustBrands.brands
-          : defaultTrustBrandsSection.brands,
+          : defaultTrustBrandsSection.brands
+      ).map((brand, idx) => ({
+        ...brand,
+        imageUrl: brand.imageUrl ?? defaultTrustBrandsSection.brands?.[idx]?.imageUrl ?? '',
+      })),
     },
     accreditationsSection: {
       eyebrow: resolvedFileAccreditations?.eyebrow || defaultAccreditationsSection.eyebrow,
@@ -4463,40 +4507,53 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
   return {
     ...base,
     ...candidate,
+    ogImage: candidate.ogImage ?? base.ogImage,
+    exteriorPhoto: candidate.exteriorPhoto ?? base.exteriorPhoto,
     logo: {
       ...base.logo,
       ...(candidate.logo || {}),
-      icon: candidate.logo?.icon || base.logo.icon,
-      full: candidate.logo?.full || base.logo.full,
+      icon: candidate.logo?.icon ?? base.logo.icon,
+      full: candidate.logo?.full ?? base.logo.full,
       alt: candidate.logo?.alt || base.logo.alt,
     },
     socials: {
       ...base.socials,
       ...(candidate.socials || {}),
     },
-    interiorPhotos:
-      Array.isArray(candidate.interiorPhotos) && candidate.interiorPhotos.length > 0
-        ? candidate.interiorPhotos
-        : base.interiorPhotos,
-    locations:
+    interiorPhotos: Array.isArray(candidate.interiorPhotos)
+      ? candidate.interiorPhotos
+      : base.interiorPhotos || [],
+    locations: (
       Array.isArray(candidate.locations) && candidate.locations.length > 0
         ? candidate.locations
-        : base.locations,
+        : base.locations
+    ).map((loc, idx) => ({
+      ...loc,
+      image: loc.image ?? base.locations?.[idx]?.image ?? '',
+    })),
     whyChooseUs: {
       heading: candidate.whyChooseUs?.heading || base.whyChooseUs?.heading || defaultWhyChooseUs.heading,
       subheading: candidate.whyChooseUs?.subheading || base.whyChooseUs?.subheading || defaultWhyChooseUs.subheading,
-      pillars:
+      pillars: (
         Array.isArray(candidate.whyChooseUs?.pillars) && candidate.whyChooseUs.pillars.length > 0
           ? candidate.whyChooseUs.pillars
-          : (base.whyChooseUs?.pillars || defaultWhyChooseUs.pillars),
+          : (base.whyChooseUs?.pillars || defaultWhyChooseUs.pillars)
+      ).map((pillar, idx) => ({
+        ...pillar,
+        imageUrl: pillar.imageUrl ?? base.whyChooseUs?.pillars?.[idx]?.imageUrl ?? '',
+      })),
     },
     awardsShowcase: {
       heading: candidate.awardsShowcase?.heading || base.awardsShowcase?.heading || defaultAwardsShowcase.heading,
       subheading: candidate.awardsShowcase?.subheading || base.awardsShowcase?.subheading || defaultAwardsShowcase.subheading,
-      awards:
+      awards: (
         Array.isArray(candidate.awardsShowcase?.awards) && candidate.awardsShowcase.awards.length > 0
           ? candidate.awardsShowcase.awards
-          : (base.awardsShowcase?.awards || defaultAwardsShowcase.awards),
+          : (base.awardsShowcase?.awards || defaultAwardsShowcase.awards)
+      ).map((award, idx) => ({
+        ...award,
+        imageUrl: award.imageUrl ?? base.awardsShowcase?.awards?.[idx]?.imageUrl ?? '',
+      })),
     },
     consultationConfig: {
       heading:
@@ -4550,10 +4607,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.processSection?.seoKeywords)
           ? candidate.processSection.seoKeywords
           : (base.processSection?.seoKeywords || defaultProcessSection.seoKeywords),
-      steps:
+      steps: (
         Array.isArray(candidate.processSection?.steps) && candidate.processSection.steps.length > 0
           ? candidate.processSection.steps
-          : (base.processSection?.steps || defaultProcessSection.steps),
+          : (base.processSection?.steps || defaultProcessSection.steps)
+      ).map((step, idx) => ({
+        ...step,
+        image: step.image ?? base.processSection?.steps?.[idx]?.image ?? '',
+      })),
     },
     facilityGallery: {
       eyebrow:
@@ -4568,10 +4629,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.facilityGallery?.seoKeywords)
           ? candidate.facilityGallery.seoKeywords
           : (base.facilityGallery?.seoKeywords || defaultFacilityGallery.seoKeywords),
-      rooms:
+      rooms: (
         Array.isArray(candidate.facilityGallery?.rooms) && candidate.facilityGallery.rooms.length > 0
           ? candidate.facilityGallery.rooms
-          : (base.facilityGallery?.rooms || defaultFacilityGallery.rooms),
+          : (base.facilityGallery?.rooms || defaultFacilityGallery.rooms)
+      ).map((room, idx) => ({
+        ...room,
+        image: room.image ?? base.facilityGallery?.rooms?.[idx]?.image ?? '',
+      })),
     },
     trustBrandsSection: {
       heading:
@@ -4582,10 +4647,14 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.trustBrandsSection?.seoKeywords)
           ? candidate.trustBrandsSection.seoKeywords
           : (base.trustBrandsSection?.seoKeywords || defaultTrustBrandsSection.seoKeywords),
-      brands:
+      brands: (
         Array.isArray(candidate.trustBrandsSection?.brands) && candidate.trustBrandsSection.brands.length > 0
           ? candidate.trustBrandsSection.brands
-          : (base.trustBrandsSection?.brands || defaultTrustBrandsSection.brands),
+          : (base.trustBrandsSection?.brands || defaultTrustBrandsSection.brands)
+      ).map((brand, idx) => ({
+        ...brand,
+        imageUrl: brand.imageUrl ?? base.trustBrandsSection?.brands?.[idx]?.imageUrl ?? '',
+      })),
     },
     accreditationsSection: {
       eyebrow:
@@ -4627,30 +4696,21 @@ export function getClinicDataConfig(): ClinicData {
 }
 
 export function updateClinicData(data: ClinicData): ClinicData {
-  // Keep interiorPhotos synced if facilityGallery.rooms has images
-  if (data.facilityGallery && Array.isArray(data.facilityGallery.rooms) && data.facilityGallery.rooms.length > 0) {
-    const roomImages = data.facilityGallery.rooms.map((r) => r.image).filter(Boolean);
-    if (roomImages.length > 0) {
-      data = {
-        ...data,
-        interiorPhotos: roomImages,
-      };
-    }
-  }
-
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem(CLINIC_INFO_DATA_KEY, JSON.stringify(data));
+    // Skip individual background /api/admin/save-to-files calls here because
+    // POST /api/admin/clinic-data persists clinicInfo.ts and all synced section configs in siteCustomizations.json atomically.
+    setStorageItem(CLINIC_INFO_DATA_KEY, data, true);
 
     // Automatically synchronize header config when logo.icon or logo.full changes
-    const resolvedHeaderLogo = data.logo?.icon || data.logo?.full;
-    if (resolvedHeaderLogo) {
+    if (data.logo && typeof data.logo === 'object') {
+      const resolvedHeaderLogo = (data.logo.icon || data.logo.full) ?? '';
       const currentHeaderConfig = getHeaderConfig();
       if (currentHeaderConfig.logoUrl !== resolvedHeaderLogo) {
         const updatedHeaderConfig: HeaderConfig = {
           ...currentHeaderConfig,
           logoUrl: resolvedHeaderLogo,
         };
-        setStorageItem(HEADER_CONFIG_KEY, updatedHeaderConfig);
+        setStorageItem(HEADER_CONFIG_KEY, updatedHeaderConfig, true);
         window.dispatchEvent(new CustomEvent('header_config_changed', { detail: updatedHeaderConfig }));
       }
     }
@@ -4674,11 +4734,11 @@ export function updateClinicData(data: ClinicData): ClinicData {
             phone: loc.phone || data.phone || CLINIC_DATA.phone,
             mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
             bannerType: "Clinic",
-            imageUrl: loc.image || ""
+            imageUrl: loc.image ?? ""
           };
         })
       };
-      setStorageItem(LOCATIONS_CONFIG_KEY, updatedLocConfig);
+      setStorageItem(LOCATIONS_CONFIG_KEY, updatedLocConfig, true);
       window.dispatchEvent(new CustomEvent('locations_config_changed', { detail: updatedLocConfig }));
     }
 
@@ -4690,7 +4750,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
         description: data.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
         pillars: data.whyChooseUs.pillars,
       };
-      setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, updatedWhyChooseUs);
+      setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, updatedWhyChooseUs, true);
       window.dispatchEvent(new CustomEvent('why_choose_us_updated', { detail: updatedWhyChooseUs }));
     }
 
@@ -4701,13 +4761,13 @@ export function updateClinicData(data: ClinicData): ClinicData {
         subheading: data.awardsShowcase.subheading || DEFAULT_AWARDS_CONFIG.subheading,
         awards: data.awardsShowcase.awards,
       };
-      setStorageItem(AWARDS_CONFIG_KEY, updatedAwards);
+      setStorageItem(AWARDS_CONFIG_KEY, updatedAwards, true);
       window.dispatchEvent(new CustomEvent('awards_config_updated', { detail: updatedAwards }));
     }
 
     // Automatically synchronize homepage_consultation_config and dispatch consultation_config_updated
     if (data.consultationConfig && typeof data.consultationConfig === 'object') {
-      setStorageItem(CONSULTATION_CONFIG_KEY, data.consultationConfig);
+      setStorageItem(CONSULTATION_CONFIG_KEY, data.consultationConfig, true);
       window.dispatchEvent(new CustomEvent('consultation_config_updated', { detail: data.consultationConfig }));
     }
 
@@ -4724,7 +4784,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
           ? data.processSection.steps
           : DEFAULT_PROCESS_CONFIG.steps,
       };
-      setStorageItem(PROCESS_CONFIG_KEY, updatedProcess);
+      setStorageItem(PROCESS_CONFIG_KEY, updatedProcess, true);
       window.dispatchEvent(new CustomEvent('process_config_updated', { detail: updatedProcess }));
     }
 
@@ -4741,7 +4801,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
           ? data.facilityGallery.rooms
           : DEFAULT_FACILITY_INTERIORS_CONFIG.rooms,
       };
-      setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, updatedFacility);
+      setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, updatedFacility, true);
       window.dispatchEvent(new CustomEvent('facility_interiors_updated', { detail: updatedFacility }));
     }
 
@@ -4756,7 +4816,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
           ? data.trustBrandsSection.brands
           : DEFAULT_TRUST_BRANDS_CONFIG.brands,
       };
-      setStorageItem(TRUST_BRANDS_CONFIG_KEY, updatedTrustBrands);
+      setStorageItem(TRUST_BRANDS_CONFIG_KEY, updatedTrustBrands, true);
       window.dispatchEvent(new CustomEvent('trust_brands_updated', { detail: updatedTrustBrands }));
     }
 
@@ -4781,7 +4841,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
         items: accList,
         accreditations: accList.map((text, idx) => ({ id: `acc-${idx + 1}`, text })),
       };
-      setStorageItem(ACCREDITATIONS_CONFIG_KEY, updatedAccreditations);
+      setStorageItem(ACCREDITATIONS_CONFIG_KEY, updatedAccreditations, true);
       window.dispatchEvent(new CustomEvent('accreditations_updated', { detail: updatedAccreditations }));
     }
 

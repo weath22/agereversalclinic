@@ -158,8 +158,14 @@ const CANONICAL_SYNONYMS: Record<string, string> = {
  */
 export const getHybridTreatmentPricing = (
   input: TreatmentItem | string,
-  catName?: string
+  catName?: string,
+  livePricingItems?: TreatmentPricingItem[]
 ): TreatmentPricingItem => {
+  const pricingCatalog =
+    Array.isArray(livePricingItems) && livePricingItems.length > 0
+      ? livePricingItems
+      : TREATMENT_PRICING_DATA;
+
   // 1. Normalize input into a treatment object
   let item: TreatmentItem;
   if (typeof input === 'string') {
@@ -207,13 +213,13 @@ export const getHybridTreatmentPricing = (
   };
 
   // 2. Check: Exact match on TreatmentPricingItem.id
-  const directIdMatch = TREATMENT_PRICING_DATA.find(
+  const directIdMatch = pricingCatalog.find(
     (pricing) => pricing.id.toLowerCase() === rawId
   );
   if (directIdMatch) return directIdMatch;
 
-  // 3. Check: Exact match on a Package ID in TREATMENT_PRICING_DATA
-  for (const parent of TREATMENT_PRICING_DATA) {
+  // 3. Check: Exact match on a Package ID in pricingCatalog
+  for (const parent of pricingCatalog) {
     const pkgMatch = parent.packages.find(
       (pkg) => pkg.id.toLowerCase() === rawId
     );
@@ -222,14 +228,14 @@ export const getHybridTreatmentPricing = (
     }
   }
 
-  // 4. Check: Direct Title match in TREATMENT_PRICING_DATA
-  const directTitleMatch = TREATMENT_PRICING_DATA.find(
+  // 4. Check: Direct Title match in pricingCatalog
+  const directTitleMatch = pricingCatalog.find(
     (pricing) => pricing.title.toLowerCase() === rawName
   );
   if (directTitleMatch) return directTitleMatch;
 
-  // 5. Check: Match on a Package Name in TREATMENT_PRICING_DATA
-  for (const parent of TREATMENT_PRICING_DATA) {
+  // 5. Check: Match on a Package Name in pricingCatalog
+  for (const parent of pricingCatalog) {
     const pkgNameMatch = parent.packages.find(
       (pkg) => pkg.name.toLowerCase() === rawName
     );
@@ -242,13 +248,13 @@ export const getHybridTreatmentPricing = (
   for (const [synonym, targetId] of Object.entries(CANONICAL_SYNONYMS)) {
     if (rawName.includes(synonym) || rawId.includes(synonym)) {
       // Check if targetId is a main treatment
-      const canonicalMatch = TREATMENT_PRICING_DATA.find(
+      const canonicalMatch = pricingCatalog.find(
         (pricing) => pricing.id.toLowerCase() === targetId
       );
       if (canonicalMatch) return canonicalMatch;
 
       // Check if targetId is a package inside a main treatment
-      for (const parent of TREATMENT_PRICING_DATA) {
+      for (const parent of pricingCatalog) {
         const pkgMatch = parent.packages.find(
           (pkg) => pkg.id.toLowerCase() === targetId
         );
@@ -260,7 +266,7 @@ export const getHybridTreatmentPricing = (
   }
 
   // 7. Broad Substring Keyword Match in TreatmentPricingItem
-  const keywordMatch = TREATMENT_PRICING_DATA.find(
+  const keywordMatch = pricingCatalog.find(
     (pricing) =>
       rawName.includes(pricing.id.toLowerCase()) ||
       pricing.id.toLowerCase().includes(rawId) ||
@@ -270,7 +276,7 @@ export const getHybridTreatmentPricing = (
   if (keywordMatch) return keywordMatch;
 
   // 8. Broad Substring Keyword Match in Packages
-  for (const parent of TREATMENT_PRICING_DATA) {
+  for (const parent of pricingCatalog) {
     const pkgSubMatch = parent.packages.find(
       (pkg) =>
         rawName.includes(pkg.id.toLowerCase()) ||
@@ -349,7 +355,7 @@ export const getHybridTreatmentPricing = (
     title: item.name,
     category: resolvedCategory,
     description: item.desc || 'Harley Street clinical procedure calibrated to your individual anatomy and aesthetic goals.',
-    image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=800&q=80',
+    image: '',
     startingPrice: cleanPrice,
     currency: '£',
     procedureTime: item.time || '30 - 45 Mins',

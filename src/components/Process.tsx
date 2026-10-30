@@ -3,6 +3,8 @@ import { PROCESS_STEPS } from '../data';
 import { motion } from 'motion/react';
 import { getClinicData, fetchRemoteClinicData } from '../lib/adminStore';
 import { ClinicData } from '../data/clinicInfo';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
+import { getClinicSlotId } from '../utils/clinicImageHelper';
 
 export default function Process() {
   const [clinicData, setClinicData] = useState<ClinicData>(() => getClinicData());
@@ -129,13 +131,16 @@ export default function Process() {
             >
               {/* Image box with overlay */}
               <div className="aspect-[4/3] rounded-[24px] overflow-hidden mb-8 bg-luxury-secondary border border-luxury-border/50 relative">
-                <img 
-                  alt={step.imageAlt || `${step.title} — ${clinicData.name || 'Age Reversal Clinics'}`} 
-                  itemProp="image"
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]" 
+                <ClinicImageWithPlaceholder
                   src={step.image}
+                  slotId={getClinicSlotId('process', step.stepNumber || step.id || idx + 1)}
+                  alt={step.imageAlt || `${step.title} — ${clinicData.name || 'Age Reversal Clinics'}`}
+                  containerClassName="w-full h-full relative overflow-hidden bg-luxury-secondary flex items-center justify-center"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  logoSize="md"
+                  showBrandText={true}
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500 pointer-events-none" />
               </div>
 
               {/* Step info row */}

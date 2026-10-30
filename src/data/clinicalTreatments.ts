@@ -1,4 +1,12 @@
-import { TreatmentPricingItem } from './treatmentPricing';
+import {
+  TREATMENT_PRICING_DATA,
+  DEFAULT_TREATMENT_TAXONOMY,
+  TreatmentPricingItem,
+  TreatmentTaxonomyGroup,
+  projectTreatmentCardSummary,
+  doesTreatmentMatchBranch,
+  doesTreatmentMatchSubOptions,
+} from './treatmentPricing';
 import { getHybridTreatmentPricing } from '../lib/treatmentResolver';
 
 export interface TreatmentItem {
@@ -23,14 +31,166 @@ export interface AreaItem {
 }
 
 /**
- * Authentic Clinical Areas & Consultation Hierarchy
- * Strictly aligned with the official clinic brochure:
- * 1. face-injectables (Anti-Wrinkle, Dermal Fillers, Skin Boosters, Lifting)
- * 2. body-sculpting (Fat Dissolving, EMSCULPT, Cryo, Slimming Pen)
- * 3. advanced-facials (Medical Facials, Mon & Fri Specials, Light Therapy)
- * 4. hair-beauty (Hair Salon, Lashes & Brows, SPMU, Laser Hair Removal, IV Lounge & PRP)
+ * Dynamically constructs the 3-step Clinical Areas hierarchy
+ * (Step 1: Anatomical Area / Branch -> Step 2: Treatment Category / Sub-Group -> Step 3: Specific Treatment)
+ * directly from the Treatment Pricing data file (`treatmentPricing.ts`) and active Taxonomy.
  */
-export const CLINICAL_AREAS_DB: AreaItem[] = [
+export function buildDynamicClinicalAreas(
+  pricingItems: TreatmentPricingItem[] = TREATMENT_PRICING_DATA,
+  taxonomy: TreatmentTaxonomyGroup[] = DEFAULT_TREATMENT_TAXONOMY
+): AreaItem[] {
+  const sourceList =
+    Array.isArray(pricingItems) && pricingItems.length > 0
+      ? pricingItems
+      : TREATMENT_PRICING_DATA;
+  const activeTaxonomy =
+    Array.isArray(taxonomy) && taxonomy.length > 0
+      ? taxonomy
+      : DEFAULT_TREATMENT_TAXONOMY;
+
+  const activeTreatments = sourceList.filter(
+    (item) => !item.hidden && item.isActive !== false
+  );
+
+  const fullById = new Map<string, TreatmentPricingItem>();
+  for (const item of activeTreatments) {
+    fullById.set(item.id, item);
+  }
+
+  const projectedTreatments = activeTreatments.map(projectTreatmentCardSummary);
+  const globallyAssignedIds = new Set<string>();
+
+  const toTreatmentItem = (id: string): TreatmentItem | null => {
+    const full = fullById.get(id);
+    if (!full) return null;
+    const currency = full.currency || '£';
+    return {
+      id: full.id,
+      name: full.title,
+      price: `${currency}${full.startingPrice}`,
+      time: full.procedureTime || '30 - 45 Mins',
+      desc: full.description || '',
+      badge: full.badge,
+    };
+  };
+
+  const areas: AreaItem[] = [];
+
+  for (const branch of activeTaxonomy) {
+    const branchTreatments = projectedTreatments.filter((t) =>
+      doesTreatmentMatchBranch(t, branch.name, activeTaxonomy)
+    );
+    const branchAssignedIds = new Set<string>();
+    const categories: CategoryItem[] = [];
+
+    for (const sub of branch.subGroups || []) {
+      const matched = branchTreatments.filter((t) =>
+        doesTreatmentMatchSubOptions(t, [sub.id, sub.name], branch.name, activeTaxonomy)
+      );
+      const items: TreatmentItem[] = [];
+      for (const m of matched) {
+        const ti = toTreatmentItem(m.id);
+        if (ti) {
+          items.push(ti);
+          branchAssignedIds.add(m.id);
+          globallyAssignedIds.add(m.id);
+        }
+      }
+      if (items.length > 0) {
+        categories.push({
+          id: sub.id,
+          name: sub.name,
+          items,
+        });
+      }
+    }
+
+    // Include any active treatments in this branch that weren't matched to a predefined subGroup
+    const unassignedInBranch = branchTreatments.filter(
+      (t) => !branchAssignedIds.has(t.id)
+    );
+    if (unassignedInBranch.length > 0) {
+      const dynamicSubMap = new Map<string, { name: string; items: TreatmentItem[] }>();
+      for (const u of unassignedInBranch) {
+        const subId = (u.subGroupId || 'specialist-procedures').toLowerCase().trim();
+        const subName = u.subCategory || branch.name;
+        const ti = toTreatmentItem(u.id);
+        if (!ti) continue;
+        if (!dynamicSubMap.has(subId)) {
+          dynamicSubMap.set(subId, { name: subName, items: [] });
+        }
+        dynamicSubMap.get(subId)!.items.push(ti);
+        globallyAssignedIds.add(u.id);
+      }
+      for (const [subId, group] of dynamicSubMap.entries()) {
+        if (group.items.length > 0) {
+          categories.push({
+            id: subId,
+            name: group.name,
+            items: group.items,
+          });
+        }
+      }
+    }
+
+    if (categories.length > 0) {
+      areas.push({
+        id: branch.id,
+        name: branch.name,
+        categories,
+      });
+    }
+  }
+
+  // Also include any custom branches present on active treatments that aren't in activeTaxonomy
+  const remainingTreatments = projectedTreatments.filter(
+    (t) => !globallyAssignedIds.has(t.id)
+  );
+  if (remainingTreatments.length > 0) {
+    const customBranchMap = new Map<
+      string,
+      { name: string; subMap: Map<string, { name: string; items: TreatmentItem[] }> }
+    >();
+    for (const r of remainingTreatments) {
+      const branchName = r.category || 'Specialist Treatments';
+      const branchId = branchName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const subId = (r.subGroupId || 'general').toLowerCase().trim();
+      const subName = r.subCategory || branchName;
+      const ti = toTreatmentItem(r.id);
+      if (!ti) continue;
+      if (!customBranchMap.has(branchId)) {
+        customBranchMap.set(branchId, { name: branchName, subMap: new Map() });
+      }
+      const bEntry = customBranchMap.get(branchId)!;
+      if (!bEntry.subMap.has(subId)) {
+        bEntry.subMap.set(subId, { name: subName, items: [] });
+      }
+      bEntry.subMap.get(subId)!.items.push(ti);
+    }
+    for (const [branchId, bEntry] of customBranchMap.entries()) {
+      const categories: CategoryItem[] = [];
+      for (const [subId, sEntry] of bEntry.subMap.entries()) {
+        if (sEntry.items.length > 0) {
+          categories.push({ id: subId, name: sEntry.name, items: sEntry.items });
+        }
+      }
+      if (categories.length > 0) {
+        areas.push({
+          id: branchId,
+          name: bEntry.name,
+          categories,
+        });
+      }
+    }
+  }
+
+  return areas.length > 0 ? areas : LEGACY_CLINICAL_AREAS_DB;
+}
+
+/**
+ * Legacy brochure fallback hierarchy (used only for synonym/legacy ID lookups)
+ */
+const LEGACY_CLINICAL_AREAS_DB: AreaItem[] = [
   // =========================================================================
   // 1. FACE & INJECTABLES
   // =========================================================================
@@ -761,33 +921,62 @@ export const CLINICAL_AREAS_DB: AreaItem[] = [
 ];
 
 /**
+ * Dynamic Clinical Areas Database built directly from TREATMENT_PRICING_DATA & DEFAULT_TREATMENT_TAXONOMY
+ */
+export const CLINICAL_AREAS_DB: AreaItem[] = buildDynamicClinicalAreas(
+  TREATMENT_PRICING_DATA,
+  DEFAULT_TREATMENT_TAXONOMY
+);
+
+/**
  * Helper to search the clinical catalog by ID or keyword
  */
-export const findTreatmentInDB = (searchKey: string) => {
+export const findTreatmentInDB = (
+  searchKey: string,
+  areas: AreaItem[] = CLINICAL_AREAS_DB
+) => {
   const searchLower = searchKey.toLowerCase().trim();
-  for (const area of CLINICAL_AREAS_DB) {
-    for (const cat of area.categories) {
-      for (const item of cat.items) {
-        if (
-          item.id === searchLower || 
-          item.name.toLowerCase() === searchLower ||
-          item.name.toLowerCase().includes(searchLower) || 
-          searchLower.includes(item.id)
-        ) {
-          return { area, category: cat, item };
+  const cleanSearch = searchLower.replace(/\s*\([£$€]\d+.*$/, '').trim();
+
+  const searchInAreas = (targetAreas: AreaItem[]) => {
+    for (const area of targetAreas) {
+      for (const cat of area.categories) {
+        for (const item of cat.items) {
+          const itemNameLower = item.name.toLowerCase();
+          if (
+            item.id.toLowerCase() === cleanSearch ||
+            item.id.toLowerCase() === searchLower ||
+            itemNameLower === cleanSearch ||
+            itemNameLower === searchLower ||
+            itemNameLower.includes(cleanSearch) ||
+            cleanSearch.includes(item.id.toLowerCase())
+          ) {
+            return { area, category: cat, item };
+          }
         }
       }
     }
-  }
-  return null;
+    return null;
+  };
+
+  return searchInAreas(areas) || searchInAreas(LEGACY_CLINICAL_AREAS_DB);
 };
 
 /**
  * Helper to find a specific TreatmentItem by ID
  */
-export const findTreatmentItemInDB = (id: string): TreatmentItem | null => {
+export const findTreatmentItemInDB = (
+  id: string,
+  areas: AreaItem[] = CLINICAL_AREAS_DB
+): TreatmentItem | null => {
   const cleanId = id.toLowerCase().trim();
-  for (const area of CLINICAL_AREAS_DB) {
+  for (const area of areas) {
+    for (const cat of area.categories) {
+      const found = cat.items.find((i) => i.id.toLowerCase() === cleanId);
+      if (found) return found;
+    }
+  }
+  for (const area of LEGACY_CLINICAL_AREAS_DB) {
     for (const cat of area.categories) {
       const found = cat.items.find((i) => i.id.toLowerCase() === cleanId);
       if (found) return found;
@@ -799,9 +988,11 @@ export const findTreatmentItemInDB = (id: string): TreatmentItem | null => {
 /**
  * Returns a flat list of all treatments across all clinical areas
  */
-export const getAllClinicalTreatments = (): TreatmentItem[] => {
+export const getAllClinicalTreatments = (
+  areas: AreaItem[] = CLINICAL_AREAS_DB
+): TreatmentItem[] => {
   const treatments: TreatmentItem[] = [];
-  for (const area of CLINICAL_AREAS_DB) {
+  for (const area of areas) {
     for (const cat of area.categories) {
       treatments.push(...cat.items);
     }
@@ -815,9 +1006,10 @@ export const getAllClinicalTreatments = (): TreatmentItem[] => {
  */
 export const resolveTreatmentToPricingItem = (
   treatmentItem: TreatmentItem,
-  catName?: string
+  catName?: string,
+  livePricingItems?: TreatmentPricingItem[]
 ): TreatmentPricingItem => {
-  return getHybridTreatmentPricing(treatmentItem, catName);
+  return getHybridTreatmentPricing(treatmentItem, catName, livePricingItems);
 };
 
 export { getHybridTreatmentPricing };

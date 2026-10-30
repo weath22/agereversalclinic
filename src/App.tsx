@@ -128,16 +128,23 @@ export default function App() {
     setIsPricingOpen(false);
     setIsTransformationsOpen(false);
     setIsReviewsOpen(false);
+    setIsAboutOpen(false);
+    setIsShopOpen(false);
+    setSelectedShopProduct(null);
+    setReturnArticle(null);
+    setReturnToTransformations(false);
     setSelectedArticle(null);
     setSelectedConsultant(null);
+    setSelectedTreatment(null);
     if (serviceName) {
       setPreferredService(serviceName);
     }
+    setActiveSection('preferred-consultation');
+    setScrollTrigger(prev => prev + 1);
     const element = document.getElementById('preferred-consultation') || document.getElementById('contact');
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    setActiveSection('preferred-consultation');
   };
 
   const handleClaimOffer = (offerTitle: string) => {
@@ -256,7 +263,7 @@ export default function App() {
       }, 150);
       return () => clearTimeout(scrollTimer);
     }
-  }, [activeSection, scrollTrigger, selectedTreatment, selectedArticle, selectedConsultant, isExploreOpen, isShopOpen]);
+  }, [activeSection, scrollTrigger, selectedTreatment, selectedArticle, selectedConsultant, isExploreOpen, isShopOpen, isPricingOpen, isAboutOpen, isTransformationsOpen, isReviewsOpen]);
 
 
   // Dynamic SEO metadata based on current active view
@@ -677,7 +684,9 @@ export default function App() {
       <UniversalCartDrawer />
 
       {/* 18. Universal Clinical Treatment Plan Drawer (Mounted at Root) */}
-      <TreatmentCartDrawer />
+      <TreatmentCartDrawer
+        onBookTreatmentPlan={(services) => handleScrollToBooking(services[0])}
+      />
 
     </div>
   );

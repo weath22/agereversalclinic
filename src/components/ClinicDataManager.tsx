@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   getClinicData, 
+  updateClinicData,
   saveClinicDataToFile, 
   resetClinicDataToDefault,
   uploadAssetFile,
@@ -40,8 +41,173 @@ const DAY_LABELS: { day: number; short: string }[] = [
   { day: 0, short: 'Sun' },
 ];
 
+export interface AdminSlotThumbnailProps {
+  src?: string;
+  slotId?: string;
+  alt: string;
+  className?: string;
+  imgClassName?: string;
+  showStatusLabel?: boolean;
+  onStatusChange?: (status: 'active' | 'awaiting') => void;
+}
+
+/**
+ * Module-scoped Admin Thumbnail Component with immediate LogoOutlineSkeleton fallback.
+ * Defined at module top-level so parent state updates never unmount/remount thumbnails.
+ */
+export const AdminSlotThumbnail: React.FC<AdminSlotThumbnailProps> = ({
+  src,
+  slotId,
+  alt,
+  className = 'h-14 w-14 shrink-0',
+  imgClassName = 'w-full h-full object-cover',
+  showStatusLabel = false,
+  onStatusChange,
+}) => {
+  const targetUrl = slotId ? resolveClinicImageSrc(slotId, src) : (src || '').trim();
+  const [hasError, setHasError] = useState<boolean>(!targetUrl);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const onStatusChangeRef = useRef(onStatusChange);
+  onStatusChangeRef.current = onStatusChange;
+  const lastReportedStatusRef = useRef<'active' | 'awaiting' | null>(null);
+
+  const reportStatus = (nextStatus: 'active' | 'awaiting') => {
+    if (lastReportedStatusRef.current !== nextStatus) {
+      lastReportedStatusRef.current = nextStatus;
+      onStatusChangeRef.current?.(nextStatus);
+    }
+  };
+
+  useEffect(() => {
+    const isBlank = !targetUrl || targetUrl.trim() === '';
+    if (isBlank) {
+      setHasError(true);
+      setIsLoaded(false);
+      reportStatus('awaiting');
+      return;
+    }
+
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setHasError(false);
+      setIsLoaded(true);
+      reportStatus('active');
+    } else {
+      setHasError(false);
+      setIsLoaded(false);
+    }
+  }, [targetUrl]);
+
+  const handleError = () => {
+    setHasError(true);
+    setIsLoaded(false);
+    reportStatus('awaiting');
+  };
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-lg border flex items-center justify-center select-none ${
+        hasError
+          ? 'border-amber-400/80 bg-gradient-to-b from-[#141b24] to-[#0a0e13]'
+          : 'border-slate-200 bg-slate-100'
+      } ${className}`}
+    >
+      {hasError ? (
+        <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-[#141b24] to-[#0a0e13] relative z-0">
+          <LogoOutlineSkeleton size="xs" variant="gold" animate={false} />
+          {showStatusLabel && (
+            <span className="text-[7px] sm:text-[8px] font-bold tracking-wider text-amber-300 uppercase leading-none mt-1">
+              Awaiting Upload
+            </span>
+          )}
+        </div>
+      ) : (
+        <>
+          {!isLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-900/90 z-0">
+              <LogoOutlineSkeleton size="xs" variant="gold" animate={true} />
+            </div>
+          )}
+          <img
+            ref={imgRef}
+            src={targetUrl}
+            alt={alt}
+            className={`${imgClassName} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+            onLoad={() => {
+              setIsLoaded(true);
+              setHasError(false);
+              reportStatus('active');
+            }}
+            onError={handleError}
+          />
+        </>
+      )}
+    </div>
+  );
+};
+
+export interface AdminSlotImageFieldPreviewProps {
+  value?: string;
+  slotId?: string;
+  label: string;
+}
+
+export const AdminSlotImageFieldPreview: React.FC<AdminSlotImageFieldPreviewProps> = ({
+  value,
+  slotId,
+  label,
+}) => {
+  const hasValue = Boolean(value && value.trim());
+  const [status, setStatus] = useState<'active' | 'awaiting'>(hasValue ? 'active' : 'awaiting');
+
+  useEffect(() => {
+    if (!hasValue) {
+      setStatus('awaiting');
+    }
+  }, [hasValue]);
+
+  return (
+    <div className="mt-1.5 flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+      <AdminSlotThumbnail
+        src={value}
+        slotId={slotId}
+        alt={label}
+        className="h-14 w-14 shrink-0"
+        showStatusLabel={false}
+        onStatusChange={setStatus}
+      />
+      <div className="flex-1 min-w-0 text-xs">
+        <span className="font-mono text-slate-700 font-bold block truncate">
+          {hasValue ? value : (slotId ? `No file uploaded for ${slotId}.webp` : 'No file chosen')}
+        </span>
+        {slotId && (
+          <span className="font-mono text-[10px] text-slate-500 block truncate">
+            Permanent Slot: /assets/{slotId}.webp
+          </span>
+        )}
+        <div className="mt-1">
+          {status === 'active' && hasValue ? (
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              Asset Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 font-bold uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+              Awaiting Upload
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ClinicDataManager() {
   const [data, setData] = useState<ClinicData>(getClinicData());
+  const dataRef = useRef<ClinicData>(data);
+  dataRef.current = data;
+
   const [activeMenuOption, setActiveMenuOption] = useState<
     | 'all'
     | 'brand'
@@ -67,13 +233,45 @@ export default function ClinicDataManager() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
+  const uploadCallbackRef = useRef<((url: string, fileName?: string) => void | Promise<void>) | null>(null);
   const uploadPreviousUrlRef = useRef<string | undefined>(undefined);
   const uploadSlotIdRef = useRef<string | undefined>(undefined);
 
+  /**
+   * Immediately updates React state, localStorage/adminStore, and persists to src/data/clinicInfo.ts & siteCustomizations.json
+   */
+  const persistClinicDataImmediately = async (nextData: ClinicData, customSuccessMsg?: string) => {
+    dataRef.current = nextData;
+    setData(nextData);
+    updateClinicData(nextData);
+    setSaveStatus({ state: 'saving', message: 'Saving changes to src/data/clinicInfo.ts...' });
+    try {
+      const res = await saveClinicDataToFile(nextData);
+      if (res.success) {
+        setHasUnsavedChanges(false);
+        setSaveStatus({
+          state: 'saved',
+          message: customSuccessMsg || 'Saved & persisted to src/data/clinicInfo.ts and siteCustomizations.json!',
+        });
+      } else {
+        setHasUnsavedChanges(true);
+        setSaveStatus({
+          state: 'error',
+          message: res.error || 'Updated local store, but failed to write to clinicInfo.ts on disk',
+        });
+      }
+    } catch (err) {
+      setHasUnsavedChanges(true);
+      setSaveStatus({
+        state: 'error',
+        message: `Save error: ${String(err)}`,
+      });
+    }
+  };
+
   // Trigger file upload and callback (passing slotId and previousUrl when replacing an existing image)
   const triggerImageUpload = (
-    callback: (url: string) => void,
+    callback: (url: string, fileName?: string) => void | Promise<void>,
     targetName: string,
     previousUrl?: string,
     slotId?: string
@@ -101,12 +299,7 @@ export default function ClinicDataManager() {
         convertToWebp: true,
       });
       if (res.success && res.url) {
-        uploadCallbackRef.current(res.url);
-        setHasUnsavedChanges(true);
-        setSaveStatus({ 
-          state: 'saved', 
-          message: `Uploaded "${file.name}" successfully! Saved to permanent slot ${res.url}` 
-        });
+        await Promise.resolve(uploadCallbackRef.current(res.url, file.name));
       } else {
         setSaveStatus({ state: 'error', message: res.error || 'Failed to upload image file' });
       }
@@ -174,51 +367,69 @@ export default function ClinicDataManager() {
 
   // Initial load
   useEffect(() => {
-    setData(getClinicData());
+    const initial = getClinicData();
+    dataRef.current = initial;
+    setData(initial);
   }, []);
 
   const updateField = <K extends keyof ClinicData>(key: K, value: ClinicData[K]) => {
-    setData(prev => ({ ...prev, [key]: value }));
+    setData(prev => {
+      const next = { ...prev, [key]: value };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
 
   const updateNestedField = (parent: 'logo' | 'socials', field: string, value: string) => {
-    setData(prev => ({
-      ...prev,
-      [parent]: {
-        ...(prev[parent] as any),
-        [field]: value
-      }
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        [parent]: {
+          ...(prev[parent] as any),
+          [field]: value
+        }
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
 
   const updateWhyChooseUsHeader = (field: 'heading' | 'subheading', value: string) => {
-    setData(prev => ({
-      ...prev,
-      whyChooseUs: {
-        heading: prev.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
-        subheading: prev.whyChooseUs?.subheading || '',
-        pillars: prev.whyChooseUs?.pillars || [],
-        [field]: value
-      }
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        whyChooseUs: {
+          heading: prev.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+          subheading: prev.whyChooseUs?.subheading || '',
+          pillars: prev.whyChooseUs?.pillars || [],
+          [field]: value
+        }
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
 
   const updateAwardsHeader = (field: 'heading' | 'subheading', value: string) => {
-    setData(prev => ({
-      ...prev,
-      awardsShowcase: {
-        heading: prev.awardsShowcase?.heading || 'Awards & Recognition',
-        subheading: prev.awardsShowcase?.subheading || '',
-        awards: prev.awardsShowcase?.awards || [],
-        [field]: value
-      }
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        awardsShowcase: {
+          heading: prev.awardsShowcase?.heading || 'Awards & Recognition',
+          subheading: prev.awardsShowcase?.subheading || '',
+          awards: prev.awardsShowcase?.awards || [],
+          [field]: value
+        }
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
@@ -237,10 +448,12 @@ export default function ClinicDataManager() {
   const updateConsultationConfig = (updater: (curr: ClinicConsultationConfig) => ClinicConsultationConfig) => {
     setData(prev => {
       const nextConfig = updater(getSafeConsultationConfig(prev.consultationConfig));
-      return {
+      const next = {
         ...prev,
         consultationConfig: nextConfig
       };
+      dataRef.current = next;
+      return next;
     });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
@@ -269,12 +482,12 @@ export default function ClinicDataManager() {
   const updateFacilityGallery = (updater: (curr: ClinicFacilityGallerySection) => ClinicFacilityGallerySection) => {
     setData(prev => {
       const nextGallery = updater(getSafeFacilityGallery(prev.facilityGallery, prev.interiorPhotos));
-      const syncedPhotos = nextGallery.rooms.map(r => r.image).filter(Boolean);
-      return {
+      const next = {
         ...prev,
         facilityGallery: nextGallery,
-        interiorPhotos: syncedPhotos,
       };
+      dataRef.current = next;
+      return next;
     });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
@@ -291,10 +504,14 @@ export default function ClinicDataManager() {
   });
 
   const updateAccreditationsSection = (updater: (curr: ClinicAccreditationsSection) => ClinicAccreditationsSection) => {
-    setData(prev => ({
-      ...prev,
-      accreditationsSection: updater(getSafeAccreditationsSection(prev.accreditationsSection)),
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        accreditationsSection: updater(getSafeAccreditationsSection(prev.accreditationsSection)),
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
@@ -311,10 +528,14 @@ export default function ClinicDataManager() {
   });
 
   const updateProcessSection = (updater: (curr: ClinicProcessSection) => ClinicProcessSection) => {
-    setData(prev => ({
-      ...prev,
-      processSection: updater(getSafeProcessSection(prev.processSection)),
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        processSection: updater(getSafeProcessSection(prev.processSection)),
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
@@ -327,30 +548,23 @@ export default function ClinicDataManager() {
   });
 
   const updateTrustBrandsSection = (updater: (curr: ClinicTrustBrandsSection) => ClinicTrustBrandsSection) => {
-    setData(prev => ({
-      ...prev,
-      trustBrandsSection: updater(getSafeTrustBrandsSection(prev.trustBrandsSection)),
-    }));
+    setData(prev => {
+      const next = {
+        ...prev,
+        trustBrandsSection: updater(getSafeTrustBrandsSection(prev.trustBrandsSection)),
+      };
+      dataRef.current = next;
+      return next;
+    });
     setHasUnsavedChanges(true);
     setSaveStatus({ state: 'idle' });
   };
 
   const handleSaveToFile = async () => {
-    setSaveStatus({ state: 'saving', message: 'Writing directly to src/data/clinicInfo.ts on disk...' });
-    try {
-      const res = await saveClinicDataToFile(data);
-      if (res.success) {
-        setSaveStatus({ 
-          state: 'saved', 
-          message: 'Saved to src/data/clinicInfo.ts & siteCustomizations.json successfully!' 
-        });
-        setHasUnsavedChanges(false);
-      } else {
-        setSaveStatus({ state: 'error', message: res.error || 'Failed to save to disk' });
-      }
-    } catch (e) {
-      setSaveStatus({ state: 'error', message: String(e) });
-    }
+    await persistClinicDataImmediately(
+      dataRef.current,
+      'Saved to src/data/clinicInfo.ts & siteCustomizations.json successfully!'
+    );
   };
 
   const handleResetToDefault = () => {
@@ -360,10 +574,8 @@ export default function ClinicDataManager() {
       message: 'Are you sure you want to restore all clinic data to default original settings? This will clear custom clinic locations, contacts, and assets.',
       onConfirm: () => {
         const def = resetClinicDataToDefault();
-        setData(def);
-        setHasUnsavedChanges(true);
-        setSaveStatus({ state: 'idle' });
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(def, 'Restored clinic data to factory defaults!');
       }
     });
   };
@@ -376,9 +588,10 @@ export default function ClinicDataManager() {
   };
 
   const openNewLocationModal = () => {
+    const newLocId = `location-${Date.now()}`;
     setEditingLocationIndex(null);
     setLocationDraft({
-      id: `location-${Date.now()}`,
+      id: newLocId,
       name: '',
       address: '',
       city: 'London',
@@ -399,15 +612,28 @@ export default function ClinicDataManager() {
 
   const saveLocationDraft = () => {
     if (!locationDraft) return;
-    const currentLocations = [...(data.locations || [])];
+    const currentLocations = [...(dataRef.current.locations || [])];
+    const locId = locationDraft.id || `location-${Date.now()}`;
+    const normalizedDraft: ClinicLocation = {
+      ...locationDraft,
+      id: locId,
+      image: (locationDraft.image ?? '').trim(),
+    };
     if (editingLocationIndex !== null && editingLocationIndex >= 0) {
-      currentLocations[editingLocationIndex] = locationDraft;
+      currentLocations[editingLocationIndex] = normalizedDraft;
     } else {
-      currentLocations.push(locationDraft);
+      currentLocations.push(normalizedDraft);
     }
-    updateField('locations', currentLocations);
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      locations: currentLocations,
+    };
     setModalType(null);
     setLocationDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved location "${normalizedDraft.name || 'Clinic Location'}" to clinicInfo.ts!`
+    );
   };
 
   const deleteLocation = (index: number) => {
@@ -419,9 +645,13 @@ export default function ClinicDataManager() {
       title: 'Delete Clinic Location',
       message: `Are you sure you want to delete "${locName}"? Click "Confirm Delete" below to confirm.`,
       onConfirm: () => {
-        const currentLocations = [...(data.locations || [])].filter((_, idx) => idx !== index);
-        updateField('locations', currentLocations);
+        const currentLocations = [...(dataRef.current.locations || [])].filter((_, idx) => idx !== index);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          locations: currentLocations,
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted location "${locName}" and updated clinicInfo.ts!`);
       }
     });
   };
@@ -436,9 +666,11 @@ export default function ClinicDataManager() {
   };
 
   const openNewPillarModal = () => {
+    const nextNum = (data.whyChooseUs?.pillars?.length || 0) + 1;
+    const newPillarId = `p${nextNum}`;
     setEditingPillarIndex(null);
     setPillarDraft({
-      id: `pillar-${Date.now()}`,
+      id: newPillarId,
       title: '',
       description: '',
       iconName: 'Building',
@@ -450,19 +682,33 @@ export default function ClinicDataManager() {
 
   const savePillarDraft = () => {
     if (!pillarDraft) return;
-    const currentPillars = [...(data.whyChooseUs?.pillars || [])];
+    const currentPillars = [...(dataRef.current.whyChooseUs?.pillars || [])];
+    const pillarIdx = editingPillarIndex !== null && editingPillarIndex >= 0 ? editingPillarIndex : currentPillars.length;
+    const pillarId = pillarDraft.id || `p${pillarIdx + 1}`;
+    const normalizedPillar: ClinicWhyChooseUsPillar = {
+      ...pillarDraft,
+      id: pillarId,
+      imageUrl: (pillarDraft.imageUrl ?? '').trim(),
+    };
     if (editingPillarIndex !== null && editingPillarIndex >= 0) {
-      currentPillars[editingPillarIndex] = pillarDraft;
+      currentPillars[editingPillarIndex] = normalizedPillar;
     } else {
-      currentPillars.push(pillarDraft);
+      currentPillars.push(normalizedPillar);
     }
-    updateField('whyChooseUs', {
-      heading: data.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
-      subheading: data.whyChooseUs?.subheading || '',
-      pillars: currentPillars
-    });
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      whyChooseUs: {
+        heading: dataRef.current.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+        subheading: dataRef.current.whyChooseUs?.subheading || '',
+        pillars: currentPillars,
+      },
+    };
     setModalType(null);
     setPillarDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved pillar "${normalizedPillar.title || 'Why Choose Us Pillar'}" to clinicInfo.ts!`
+    );
   };
 
   const deletePillar = (index: number) => {
@@ -473,13 +719,17 @@ export default function ClinicDataManager() {
       title: 'Delete Pillar',
       message: `Are you sure you want to delete "${itemName}"?`,
       onConfirm: () => {
-        const nextPillars = (data.whyChooseUs?.pillars || []).filter((_, idx) => idx !== index);
-        updateField('whyChooseUs', {
-          heading: data.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
-          subheading: data.whyChooseUs?.subheading || '',
-          pillars: nextPillars
-        });
+        const nextPillars = (dataRef.current.whyChooseUs?.pillars || []).filter((_, idx) => idx !== index);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          whyChooseUs: {
+            heading: dataRef.current.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+            subheading: dataRef.current.whyChooseUs?.subheading || '',
+            pillars: nextPillars,
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted pillar "${itemName}" and updated clinicInfo.ts!`);
       }
     });
   };
@@ -488,15 +738,22 @@ export default function ClinicDataManager() {
   const openEditAwardModal = (index: number) => {
     const target = data.awardsShowcase?.awards?.[index];
     if (!target) return;
+    const awardId = target.id || `award-${index + 1}`;
     setEditingAwardIndex(index);
-    setAwardDraft({ ...target });
+    setAwardDraft({
+      ...target,
+      id: awardId,
+      imageUrl: target.imageUrl ?? '',
+    });
     setModalType('award');
   };
 
   const openNewAwardModal = () => {
+    const nextIdx = (data.awardsShowcase?.awards?.length || 0) + 1;
+    const awardId = `award-${nextIdx}`;
     setEditingAwardIndex(null);
     setAwardDraft({
-      id: `aw-${Date.now()}`,
+      id: awardId,
       title: '',
       organization: '',
       year: new Date().getFullYear().toString(),
@@ -507,19 +764,36 @@ export default function ClinicDataManager() {
 
   const saveAwardDraft = () => {
     if (!awardDraft) return;
-    const currentAwards = [...(data.awardsShowcase?.awards || [])];
+    const currentAwards = [...(dataRef.current.awardsShowcase?.awards || [])];
+    const targetIdx =
+      editingAwardIndex !== null && editingAwardIndex >= 0
+        ? editingAwardIndex
+        : currentAwards.length;
+    const awardId = awardDraft.id || `award-${targetIdx + 1}`;
+    const normalizedAward: ClinicAwardItem = {
+      ...awardDraft,
+      id: awardId,
+      imageUrl: (awardDraft.imageUrl ?? '').trim(),
+    };
     if (editingAwardIndex !== null && editingAwardIndex >= 0) {
-      currentAwards[editingAwardIndex] = awardDraft;
+      currentAwards[editingAwardIndex] = normalizedAward;
     } else {
-      currentAwards.push(awardDraft);
+      currentAwards.push(normalizedAward);
     }
-    updateField('awardsShowcase', {
-      heading: data.awardsShowcase?.heading || 'Awards & Recognition',
-      subheading: data.awardsShowcase?.subheading || '',
-      awards: currentAwards
-    });
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      awardsShowcase: {
+        heading: dataRef.current.awardsShowcase?.heading || 'Awards & Recognition',
+        subheading: dataRef.current.awardsShowcase?.subheading || '',
+        awards: currentAwards,
+      },
+    };
     setModalType(null);
     setAwardDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved award "${normalizedAward.title || 'Award'}" to clinicInfo.ts!`
+    );
   };
 
   const deleteAward = (index: number) => {
@@ -530,13 +804,17 @@ export default function ClinicDataManager() {
       title: 'Delete Award',
       message: `Are you sure you want to delete "${itemName}"?`,
       onConfirm: () => {
-        const nextAwards = (data.awardsShowcase?.awards || []).filter((_, idx) => idx !== index);
-        updateField('awardsShowcase', {
-          heading: data.awardsShowcase?.heading || 'Awards & Recognition',
-          subheading: data.awardsShowcase?.subheading || '',
-          awards: nextAwards
-        });
+        const nextAwards = (dataRef.current.awardsShowcase?.awards || []).filter((_, idx) => idx !== index);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          awardsShowcase: {
+            heading: dataRef.current.awardsShowcase?.heading || 'Awards & Recognition',
+            subheading: dataRef.current.awardsShowcase?.subheading || '',
+            awards: nextAwards,
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted award "${itemName}" and updated clinicInfo.ts!`);
       }
     });
   };
@@ -572,25 +850,31 @@ export default function ClinicDataManager() {
 
   const saveDoctorDraft = () => {
     if (!doctorDraft || !doctorDraft.name.trim()) return;
-    updateConsultationConfig(curr => {
-      const nextDoctors = [...(curr.doctors || [])];
-      const normalizedDraft: ClinicConsultationDoctor = {
-        ...doctorDraft,
-        name: doctorDraft.name.trim(),
-        specialty: doctorDraft.specialty?.trim() || '',
-      };
-      if (editingDoctorIndex !== null && editingDoctorIndex >= 0) {
-        nextDoctors[editingDoctorIndex] = normalizedDraft;
-      } else {
-        nextDoctors.push(normalizedDraft);
-      }
-      return {
+    const curr = getSafeConsultationConfig(dataRef.current.consultationConfig);
+    const nextDoctors = [...(curr.doctors || [])];
+    const normalizedDraft: ClinicConsultationDoctor = {
+      ...doctorDraft,
+      name: doctorDraft.name.trim(),
+      specialty: doctorDraft.specialty?.trim() || '',
+    };
+    if (editingDoctorIndex !== null && editingDoctorIndex >= 0) {
+      nextDoctors[editingDoctorIndex] = normalizedDraft;
+    } else {
+      nextDoctors.push(normalizedDraft);
+    }
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      consultationConfig: {
         ...curr,
         doctors: nextDoctors,
-      };
-    });
+      },
+    };
     setModalType(null);
     setDoctorDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved specialist "${normalizedDraft.name}" to clinicInfo.ts!`
+    );
   };
 
   const deleteDoctor = (index: number) => {
@@ -601,11 +885,16 @@ export default function ClinicDataManager() {
       title: 'Delete Specialist',
       message: `Are you sure you want to remove "${itemName}" from Book Consultation?`,
       onConfirm: () => {
-        updateConsultationConfig(curr => ({
-          ...curr,
-          doctors: (curr.doctors || []).filter((_, idx) => idx !== index),
-        }));
+        const curr = getSafeConsultationConfig(dataRef.current.consultationConfig);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          consultationConfig: {
+            ...curr,
+            doctors: (curr.doctors || []).filter((_, idx) => idx !== index),
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted specialist "${itemName}" and updated clinicInfo.ts!`);
       }
     });
   };
@@ -621,9 +910,11 @@ export default function ClinicDataManager() {
   };
 
   const openNewRoomModal = () => {
+    const nextIdx = (data.facilityGallery?.rooms?.length || 0) + 1;
+    const newRoomId = `room-${nextIdx}`;
     setEditingRoomIndex(null);
     setRoomDraft({
-      id: `facility-room-${Date.now()}`,
+      id: newRoomId,
       title: '',
       tag: 'CLINIC SUITE',
       image: '',
@@ -633,27 +924,40 @@ export default function ClinicDataManager() {
   };
 
   const saveRoomDraft = () => {
-    if (!roomDraft || !roomDraft.title.trim()) return;
-    updateFacilityGallery(curr => {
-      const nextRooms = [...(curr.rooms || [])];
-      const normalized: ClinicFacilityRoomItem = {
-        ...roomDraft,
-        title: roomDraft.title.trim(),
-        tag: roomDraft.tag.trim() || 'CLINIC SUITE',
-        imageAlt: roomDraft.imageAlt?.trim() || `${roomDraft.title.trim()} at ${data.name || 'Age Reversal Clinics'}`,
-      };
-      if (editingRoomIndex !== null && editingRoomIndex >= 0) {
-        nextRooms[editingRoomIndex] = normalized;
-      } else {
-        nextRooms.push(normalized);
-      }
-      return {
-        ...curr,
-        rooms: nextRooms,
-      };
-    });
+    if (!roomDraft) return;
+    const curr = getSafeFacilityGallery(dataRef.current.facilityGallery, dataRef.current.interiorPhotos);
+    const nextRooms = [...(curr.rooms || [])];
+    const roomIdx = editingRoomIndex !== null && editingRoomIndex >= 0 ? editingRoomIndex : nextRooms.length;
+    const roomId = roomDraft.id || `room-${roomIdx + 1}`;
+    const resolvedTitle =
+      roomDraft.title.trim() || `Clinical Suite ${roomIdx + 1}`;
+    const normalized: ClinicFacilityRoomItem = {
+      ...roomDraft,
+      id: roomId,
+      title: resolvedTitle,
+      tag: roomDraft.tag.trim() || 'CLINIC SUITE',
+      image: (roomDraft.image ?? '').trim(),
+      imageAlt: roomDraft.imageAlt?.trim() || `${resolvedTitle} at ${dataRef.current.name || 'Age Reversal Clinics'}`,
+    };
+    if (editingRoomIndex !== null && editingRoomIndex >= 0) {
+      nextRooms[editingRoomIndex] = normalized;
+    } else {
+      nextRooms.push(normalized);
+    }
+    const nextGallery: ClinicFacilityGallerySection = {
+      ...curr,
+      rooms: nextRooms,
+    };
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      facilityGallery: nextGallery,
+    };
     setModalType(null);
     setRoomDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved facility suite "${normalized.title}" to clinicInfo.ts!`
+    );
   };
 
   const deleteRoom = (index: number) => {
@@ -665,11 +969,17 @@ export default function ClinicDataManager() {
       title: 'Delete Facility Room',
       message: `Are you sure you want to remove "${itemName}" from the Clinic Gallery?`,
       onConfirm: () => {
-        updateFacilityGallery(curr => ({
-          ...curr,
-          rooms: (curr.rooms || []).filter((_, idx) => idx !== index),
-        }));
+        const curr = getSafeFacilityGallery(dataRef.current.facilityGallery, dataRef.current.interiorPhotos);
+        const nextRooms = (curr.rooms || []).filter((_, idx) => idx !== index);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          facilityGallery: {
+            ...curr,
+            rooms: nextRooms,
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted facility suite "${itemName}" and updated clinicInfo.ts!`);
       },
     });
   };
@@ -688,10 +998,12 @@ export default function ClinicDataManager() {
   };
 
   const openNewStepModal = () => {
-    const nextNum = String((data.processSection?.steps?.length || 0) + 1).padStart(2, '0');
+    const nextIdx = (data.processSection?.steps?.length || 0) + 1;
+    const nextNum = String(nextIdx).padStart(2, '0');
+    const newStepId = `step-${nextIdx}`;
     setEditingStepIndex(null);
     setStepDraft({
-      id: `process-step-${Date.now()}`,
+      id: newStepId,
       stepNumber: nextNum,
       title: '',
       image: '',
@@ -703,27 +1015,39 @@ export default function ClinicDataManager() {
   };
 
   const saveStepDraft = () => {
-    if (!stepDraft || !stepDraft.title.trim()) return;
-    updateProcessSection(curr => {
-      const nextSteps = [...(curr.steps || [])];
-      const normalized: ClinicProcessStep = {
-        ...stepDraft,
-        stepNumber: stepDraft.stepNumber.trim() || '01',
-        title: stepDraft.title.trim(),
-        imageAlt: stepDraft.imageAlt?.trim() || `${stepDraft.title.trim()} — ${data.name || 'Age Reversal Clinics'}`,
-      };
-      if (editingStepIndex !== null && editingStepIndex >= 0) {
-        nextSteps[editingStepIndex] = normalized;
-      } else {
-        nextSteps.push(normalized);
-      }
-      return {
+    if (!stepDraft) return;
+    const curr = getSafeProcessSection(dataRef.current.processSection);
+    const nextSteps = [...(curr.steps || [])];
+    const stepIdx = editingStepIndex !== null && editingStepIndex >= 0 ? editingStepIndex : nextSteps.length;
+    const resolvedStepNum = stepDraft.stepNumber.trim() || String(stepIdx + 1).padStart(2, '0');
+    const resolvedStepId = stepDraft.id || `step-${stepIdx + 1}`;
+    const resolvedTitle = stepDraft.title.trim() || `Process Step ${resolvedStepNum}`;
+    const normalized: ClinicProcessStep = {
+      ...stepDraft,
+      id: resolvedStepId,
+      stepNumber: resolvedStepNum,
+      title: resolvedTitle,
+      image: (stepDraft.image ?? '').trim(),
+      imageAlt: stepDraft.imageAlt?.trim() || `${resolvedTitle} — ${dataRef.current.name || 'Age Reversal Clinics'}`,
+    };
+    if (editingStepIndex !== null && editingStepIndex >= 0) {
+      nextSteps[editingStepIndex] = normalized;
+    } else {
+      nextSteps.push(normalized);
+    }
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      processSection: {
         ...curr,
         steps: nextSteps,
-      };
-    });
+      },
+    };
     setModalType(null);
     setStepDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved process step "${normalized.title}" to clinicInfo.ts!`
+    );
   };
 
   const deleteStep = (index: number) => {
@@ -734,11 +1058,16 @@ export default function ClinicDataManager() {
       title: 'Delete Process Step',
       message: `Are you sure you want to delete "${itemName}"?`,
       onConfirm: () => {
-        updateProcessSection(curr => ({
-          ...curr,
-          steps: (curr.steps || []).filter((_, idx) => idx !== index),
-        }));
+        const curr = getSafeProcessSection(dataRef.current.processSection);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          processSection: {
+            ...curr,
+            steps: (curr.steps || []).filter((_, idx) => idx !== index),
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted process step "${itemName}" and updated clinicInfo.ts!`);
       },
     });
   };
@@ -747,15 +1076,23 @@ export default function ClinicDataManager() {
   const openEditBrandModal = (index: number) => {
     const target = data.trustBrandsSection?.brands?.[index];
     if (!target) return;
+    const brandId = target.id || `bp-${index + 1}`;
     setEditingBrandIndex(index);
-    setBrandDraft({ ...target });
+    setBrandDraft({
+      ...target,
+      id: brandId,
+      imageUrl: target.imageUrl ?? '',
+    });
     setModalType('trustBrand');
   };
 
   const openNewBrandModal = () => {
+    const curr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+    const nextIdx = (curr.brands?.length || 0) + 1;
+    const brandId = `bp-${nextIdx}`;
     setEditingBrandIndex(null);
     setBrandDraft({
-      id: `brand-${Date.now()}`,
+      id: brandId,
       name: '',
       iconType: 'shield',
       imageUrl: '',
@@ -764,26 +1101,38 @@ export default function ClinicDataManager() {
   };
 
   const saveBrandDraft = () => {
-    if (!brandDraft || !brandDraft.name.trim()) return;
-    updateTrustBrandsSection(curr => {
-      const nextBrands = [...(curr.brands || [])];
-      const normalized: ClinicTrustBrandItem = {
-        ...brandDraft,
-        name: brandDraft.name.trim(),
-        iconType: brandDraft.iconType || 'shield',
-      };
-      if (editingBrandIndex !== null && editingBrandIndex >= 0) {
-        nextBrands[editingBrandIndex] = normalized;
-      } else {
-        nextBrands.push(normalized);
-      }
-      return {
+    if (!brandDraft) return;
+    const curr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+    const nextBrands = [...(curr.brands || [])];
+    const targetIdx = editingBrandIndex !== null && editingBrandIndex >= 0 ? editingBrandIndex : nextBrands.length;
+    const brandId = brandDraft.id || `bp-${targetIdx + 1}`;
+    const resolvedName =
+      brandDraft.name.trim() || `Partner Brand ${targetIdx + 1}`;
+    const normalized: ClinicTrustBrandItem = {
+      ...brandDraft,
+      id: brandId,
+      name: resolvedName,
+      iconType: brandDraft.iconType || 'shield',
+      imageUrl: (brandDraft.imageUrl ?? '').trim(),
+    };
+    if (editingBrandIndex !== null && editingBrandIndex >= 0) {
+      nextBrands[editingBrandIndex] = normalized;
+    } else {
+      nextBrands.push(normalized);
+    }
+    const nextData: ClinicData = {
+      ...dataRef.current,
+      trustBrandsSection: {
         ...curr,
         brands: nextBrands,
-      };
-    });
+      },
+    };
     setModalType(null);
     setBrandDraft(null);
+    void persistClinicDataImmediately(
+      nextData,
+      `Saved brand partner "${normalized.name}" to clinicInfo.ts!`
+    );
   };
 
   const deleteBrand = (index: number) => {
@@ -794,11 +1143,16 @@ export default function ClinicDataManager() {
       title: 'Delete Brand Partner',
       message: `Are you sure you want to remove "${itemName}"?`,
       onConfirm: () => {
-        updateTrustBrandsSection(curr => ({
-          ...curr,
-          brands: (curr.brands || []).filter((_, idx) => idx !== index),
-        }));
+        const curr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          trustBrandsSection: {
+            ...curr,
+            brands: (curr.brands || []).filter((_, idx) => idx !== index),
+          },
+        };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(nextData, `Deleted brand partner "${itemName}" and updated clinicInfo.ts!`);
       },
     });
   };
@@ -830,146 +1184,15 @@ export default function ClinicDataManager() {
 
   const saveArrayDraft = () => {
     if (!modalType) return;
-    if (modalType === 'keywords') updateField('brandKeywords', arrayDraft);
-    if (modalType === 'accreditations') updateField('accreditations', arrayDraft);
-    if (modalType === 'payments') updateField('acceptedPayments', arrayDraft);
-    if (modalType === 'specialties') updateField('medicalSpecialties', arrayDraft);
-    if (modalType === 'languages') updateField('languagesSpoken', arrayDraft);
-    if (modalType === 'interiorPhotos') updateField('interiorPhotos', arrayDraft);
+    let nextData: ClinicData = { ...dataRef.current };
+    if (modalType === 'keywords') nextData = { ...nextData, brandKeywords: arrayDraft };
+    if (modalType === 'accreditations') nextData = { ...nextData, accreditations: arrayDraft };
+    if (modalType === 'payments') nextData = { ...nextData, acceptedPayments: arrayDraft };
+    if (modalType === 'specialties') nextData = { ...nextData, medicalSpecialties: arrayDraft };
+    if (modalType === 'languages') nextData = { ...nextData, languagesSpoken: arrayDraft };
+    if (modalType === 'interiorPhotos') nextData = { ...nextData, interiorPhotos: arrayDraft };
     setModalType(null);
-  };
-
-  /**
-   * Admin Thumbnail Component with immediate LogoOutlineSkeleton 404 fallback
-   */
-  const AdminSlotThumbnail: React.FC<{
-    src?: string;
-    slotId?: string;
-    alt: string;
-    className?: string;
-    imgClassName?: string;
-    showStatusLabel?: boolean;
-    onStatusChange?: (status: 'active' | 'awaiting') => void;
-  }> = ({
-    src,
-    slotId,
-    alt,
-    className = 'h-14 w-14 shrink-0',
-    imgClassName = 'w-full h-full object-cover',
-    showStatusLabel = false,
-    onStatusChange,
-  }) => {
-    const targetUrl = slotId ? resolveClinicImageSrc(slotId, src) : (src || '');
-    const [hasError, setHasError] = useState<boolean>(!targetUrl);
-    const [isLoaded, setIsLoaded] = useState<boolean>(false);
-    const imgRef = useRef<HTMLImageElement | null>(null);
-
-    useEffect(() => {
-      const nextUrl = slotId ? resolveClinicImageSrc(slotId, src) : (src || '');
-      const isBlank = !nextUrl || nextUrl.trim() === '';
-      setHasError(isBlank);
-      setIsLoaded(false);
-      onStatusChange?.(isBlank ? 'awaiting' : 'active');
-    }, [src, slotId]);
-
-    useEffect(() => {
-      if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
-        setIsLoaded(true);
-        setHasError(false);
-        onStatusChange?.('active');
-      }
-    }, [targetUrl]);
-
-    const handleError = () => {
-      setHasError(true);
-      setIsLoaded(false);
-      onStatusChange?.('awaiting');
-    };
-
-    return (
-      <div
-        className={`relative overflow-hidden rounded-lg border flex items-center justify-center select-none ${
-          hasError
-            ? 'border-amber-400/80 bg-gradient-to-b from-[#141b24] to-[#0a0e13]'
-            : 'border-slate-200 bg-slate-100'
-        } ${className}`}
-      >
-        {hasError ? (
-          <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center bg-gradient-to-b from-[#141b24] to-[#0a0e13] relative z-0">
-            <LogoOutlineSkeleton size="xs" variant="gold" animate={false} />
-            {showStatusLabel && (
-              <span className="text-[7px] sm:text-[8px] font-bold tracking-wider text-amber-300 uppercase leading-none mt-1">
-                Awaiting Upload
-              </span>
-            )}
-          </div>
-        ) : (
-          <>
-            {!isLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-stone-900/90 z-0">
-                <LogoOutlineSkeleton size="xs" variant="gold" animate={true} />
-              </div>
-            )}
-            <img
-              ref={imgRef}
-              src={targetUrl}
-              alt={alt}
-              className={`${imgClassName} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-              onLoad={() => {
-                setIsLoaded(true);
-                setHasError(false);
-                onStatusChange?.('active');
-              }}
-              onError={handleError}
-            />
-          </>
-        )}
-      </div>
-    );
-  };
-
-  const AdminSlotImageFieldPreview: React.FC<{
-    value?: string;
-    slotId?: string;
-    label: string;
-  }> = ({ value, slotId, label }) => {
-    const [status, setStatus] = useState<'active' | 'awaiting'>('active');
-
-    return (
-      <div className="mt-1.5 flex items-center gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
-        <AdminSlotThumbnail
-          src={value}
-          slotId={slotId}
-          alt={label}
-          className="h-14 w-14 shrink-0"
-          showStatusLabel={false}
-          onStatusChange={setStatus}
-        />
-        <div className="flex-1 min-w-0 text-xs">
-          <span className="font-mono text-slate-700 font-bold block truncate">
-            {value || (slotId ? `No file uploaded for ${slotId}.webp` : 'No file chosen')}
-          </span>
-          {slotId && (
-            <span className="font-mono text-[10px] text-slate-500 block truncate">
-              Permanent Slot: /assets/{slotId}.webp
-            </span>
-          )}
-          <div className="mt-1">
-            {status === 'active' && value ? (
-              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                Asset Active
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 font-bold uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-                Awaiting Upload
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+    void persistClinicDataImmediately(nextData, `Saved ${modalType} list to clinicInfo.ts!`);
   };
 
   /**
@@ -995,13 +1218,44 @@ export default function ClinicDataManager() {
       undefined
     );
 
+    const buildNextDataForTarget = (newUrl: string): ClinicData => {
+      const curr = dataRef.current;
+      if (targetKey === 'logo_icon') {
+        return { ...curr, logo: { ...(curr.logo as any), icon: newUrl } };
+      }
+      if (targetKey === 'logo_full') {
+        return { ...curr, logo: { ...(curr.logo as any), full: newUrl } };
+      }
+      if (targetKey === 'ogImage') {
+        return { ...curr, ogImage: newUrl };
+      }
+      if (targetKey === 'exteriorPhoto') {
+        return { ...curr, exteriorPhoto: newUrl };
+      }
+      return curr;
+    };
+
     return (
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold uppercase text-slate-700">{label}</label>
           <button
             type="button"
-            onClick={() => triggerImageUpload((newUrl) => onChange(newUrl), targetKey, value, effectiveSlotId)}
+            onClick={() =>
+              triggerImageUpload(
+                async (newUrl, fileName) => {
+                  onChange(newUrl);
+                  const nextData = buildNextDataForTarget(newUrl);
+                  await persistClinicDataImmediately(
+                    nextData,
+                    `Uploaded "${fileName || label}" & saved permanently to ${newUrl}!`
+                  );
+                },
+                targetKey,
+                value,
+                effectiveSlotId
+              )
+            }
             disabled={uploadingTarget === targetKey}
             className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer transition-colors disabled:opacity-50"
           >
@@ -1020,7 +1274,11 @@ export default function ClinicDataManager() {
           {value && (
             <button
               type="button"
-              onClick={() => onChange('')}
+              onClick={() => {
+                onChange('');
+                const nextData = buildNextDataForTarget('');
+                void persistClinicDataImmediately(nextData, `Cleared ${label} and updated clinicInfo.ts!`);
+              }}
               className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg cursor-pointer"
               title="Clear Image"
             >
@@ -1354,7 +1612,7 @@ export default function ClinicDataManager() {
                   />
                 </div>
 
-                <div className="col-span-full md:col-span-2">
+                <div className="col-span-full md:col-span-1">
                   {renderImageField(
                     'Clinic Exterior Photo',
                     data.exteriorPhoto || '',
@@ -1363,6 +1621,146 @@ export default function ClinicDataManager() {
                     '/assets/clinic-exterior.webp or image URL',
                     'clinic-exterior'
                   )}
+                </div>
+
+                <div className="col-span-full md:col-span-2">
+                  {renderImageField(
+                    'Social Share Image (OG Image)',
+                    data.ogImage || '',
+                    (val) => updateField('ogImage', val),
+                    'ogImage',
+                    '/assets/clinic-og-image.webp or image URL',
+                    'clinic-og-image'
+                  )}
+                </div>
+
+                {/* Clinic Interior Photos (CLINIC_DATA.interiorPhotos) */}
+                <div className="col-span-full pt-4 border-t border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                        Canonical Interior Slots (/assets/clinic-interior-*.webp)
+                      </span>
+                      <h3 className="text-sm font-bold text-[#003334]">
+                        Clinic Interior Photos ({(data.interiorPhotos || []).length})
+                      </h3>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openArrayModal('interiorPhotos')}
+                        className="px-3 py-1.5 text-xs font-bold uppercase bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg cursor-pointer"
+                      >
+                        Manage List
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentList = dataRef.current.interiorPhotos || [];
+                          const nextIdx = currentList.length;
+                          const slotId = getClinicSlotId('interior', nextIdx);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const nextPhotos = [...(dataRef.current.interiorPhotos || []), newUrl];
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                interiorPhotos: nextPhotos,
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded interior photo "${fileName || `#${nextIdx + 1}`}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            `interior_photo_add_${nextIdx}`,
+                            undefined,
+                            slotId
+                          );
+                        }}
+                        disabled={uploadingTarget?.startsWith('interior_photo_')}
+                        className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#003334] hover:bg-[#002627] text-white rounded-lg cursor-pointer disabled:opacity-50"
+                      >
+                        + Add Interior Photo
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {(data.interiorPhotos || []).map((photoUrl, idx) => {
+                      const slotId = getClinicSlotId('interior', idx);
+                      return (
+                        <div
+                          key={`${slotId}-${idx}`}
+                          className="border border-slate-200 bg-white rounded-xl p-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                        >
+                          <div>
+                            <div className="relative mb-2">
+                              <AdminSlotThumbnail
+                                src={photoUrl}
+                                slotId={slotId}
+                                alt={`Clinic Interior ${idx + 1}`}
+                                className="w-full h-28"
+                                showStatusLabel={true}
+                              />
+                              <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-slate-900/75 text-white text-[9px] font-bold uppercase tracking-wider">
+                                INTERIOR #{idx + 1}
+                              </span>
+                            </div>
+                            <div className="font-mono font-bold text-slate-800 text-[11px] truncate">
+                              /assets/{slotId}.webp
+                            </div>
+                            <div className="text-[10px] text-slate-500 truncate mt-0.5" title={photoUrl}>
+                              {photoUrl}
+                            </div>
+                          </div>
+
+                          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                triggerImageUpload(
+                                  async (newUrl, fileName) => {
+                                    const currentPhotos = [...(dataRef.current.interiorPhotos || [])];
+                                    currentPhotos[idx] = newUrl;
+                                    const nextData: ClinicData = {
+                                      ...dataRef.current,
+                                      interiorPhotos: currentPhotos,
+                                    };
+                                    await persistClinicDataImmediately(
+                                      nextData,
+                                      `Replaced interior photo #${idx + 1} ("${fileName || slotId}") & saved permanently to ${newUrl}!`
+                                    );
+                                  },
+                                  `interior_photo_${idx}`,
+                                  photoUrl,
+                                  slotId
+                                );
+                              }}
+                              className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
+                            >
+                              Replace Img
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextPhotos = (dataRef.current.interiorPhotos || []).filter((_, i) => i !== idx);
+                                const nextData: ClinicData = {
+                                  ...dataRef.current,
+                                  interiorPhotos: nextPhotos,
+                                };
+                                void persistClinicDataImmediately(
+                                  nextData,
+                                  `Removed interior photo #${idx + 1} and updated clinicInfo.ts!`
+                                );
+                              }}
+                              className="text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Our Facility — Clinic Gallery Header & SEO */}
@@ -1458,16 +1856,28 @@ export default function ClinicDataManager() {
                             <button
                               type="button"
                               onClick={() => {
-                                const roomId = room.id || `suite-${i + 1}`;
+                                const roomId = room.id || `room-${i + 1}`;
                                 const slotId = getClinicSlotId('facility', roomId);
                                 triggerImageUpload(
-                                  (newUrl) => {
-                                    updateFacilityGallery(curr => ({
-                                      ...curr,
-                                      rooms: curr.rooms.map((r, idx) =>
-                                        idx === i ? { ...r, image: newUrl } : r
-                                      ),
-                                    }));
+                                  async (newUrl, fileName) => {
+                                    const curr = getSafeFacilityGallery(
+                                      dataRef.current.facilityGallery,
+                                      dataRef.current.interiorPhotos
+                                    );
+                                    const nextRooms = curr.rooms.map((r, idx) =>
+                                      idx === i ? { ...r, id: roomId, image: newUrl } : r
+                                    );
+                                    const nextData: ClinicData = {
+                                      ...dataRef.current,
+                                      facilityGallery: {
+                                        ...curr,
+                                        rooms: nextRooms,
+                                      },
+                                    };
+                                    await persistClinicDataImmediately(
+                                      nextData,
+                                      `Uploaded "${fileName || room.title}" & saved permanently to ${newUrl}!`
+                                    );
                                   },
                                   `facility_room_${i}`,
                                   room.image,
@@ -1821,6 +2231,33 @@ export default function ClinicDataManager() {
 
                     <div className="flex items-center gap-2 self-end sm:self-auto pt-1 sm:pt-0">
                       <button
+                        type="button"
+                        onClick={() => {
+                          const locId = loc.id || `location-${idx + 1}`;
+                          const slotId = getClinicSlotId('location', locId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const currentLocations = [...(dataRef.current.locations || [])];
+                              currentLocations[idx] = { ...currentLocations[idx], id: locId, image: newUrl };
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                locations: currentLocations,
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded location image "${fileName || loc.name}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            `location_card_${idx}`,
+                            loc.image,
+                            slotId
+                          );
+                        }}
+                        className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold uppercase bg-teal-50 hover:bg-teal-100 text-[#003334] rounded-lg cursor-pointer"
+                      >
+                        Replace Img
+                      </button>
+                      <button
                         onClick={() => openEditLocationModal(idx)}
                         className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
                       >
@@ -2012,6 +2449,37 @@ export default function ClinicDataManager() {
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
+                      type="button"
+                      onClick={() => {
+                        const pillarId = pillar.id || `p${idx + 1}`;
+                        const slotId = getClinicSlotId('pillar', pillarId);
+                        triggerImageUpload(
+                          async (newUrl, fileName) => {
+                            const currentPillars = [...(dataRef.current.whyChooseUs?.pillars || [])];
+                            currentPillars[idx] = { ...currentPillars[idx], id: pillarId, imageUrl: newUrl };
+                            const nextData: ClinicData = {
+                              ...dataRef.current,
+                              whyChooseUs: {
+                                heading: dataRef.current.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+                                subheading: dataRef.current.whyChooseUs?.subheading || '',
+                                pillars: currentPillars,
+                              },
+                            };
+                            await persistClinicDataImmediately(
+                              nextData,
+                              `Uploaded pillar image "${fileName || pillar.title}" & saved permanently to ${newUrl}!`
+                            );
+                          },
+                          `pillar_card_${idx}`,
+                          pillar.imageUrl,
+                          slotId
+                        );
+                      }}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-teal-50 hover:bg-teal-100 text-[#003334] rounded-lg cursor-pointer"
+                    >
+                      Replace Img
+                    </button>
+                    <button
                       onClick={() => openEditPillarModal(idx)}
                       className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
                     >
@@ -2096,6 +2564,37 @@ export default function ClinicDataManager() {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const awardId = award.id || `award-${idx + 1}`;
+                        const slotId = getClinicSlotId('award', awardId);
+                        triggerImageUpload(
+                          async (newUrl, fileName) => {
+                            const currentAwards = [...(dataRef.current.awardsShowcase?.awards || [])];
+                            currentAwards[idx] = { ...currentAwards[idx], id: awardId, imageUrl: newUrl };
+                            const nextData: ClinicData = {
+                              ...dataRef.current,
+                              awardsShowcase: {
+                                heading: dataRef.current.awardsShowcase?.heading || 'Awards & Recognition',
+                                subheading: dataRef.current.awardsShowcase?.subheading || '',
+                                awards: currentAwards,
+                              },
+                            };
+                            await persistClinicDataImmediately(
+                              nextData,
+                              `Uploaded award image "${fileName || award.title}" & saved permanently to ${newUrl}!`
+                            );
+                          },
+                          `award_card_${idx}`,
+                          award.imageUrl,
+                          slotId
+                        );
+                      }}
+                      className="px-2.5 py-1 text-xs font-bold uppercase bg-teal-50 hover:bg-teal-100 text-[#003334] rounded-lg cursor-pointer"
+                    >
+                      Replace Img
+                    </button>
                     <button
                       onClick={() => openEditAwardModal(idx)}
                       className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
@@ -2619,7 +3118,7 @@ export default function ClinicDataManager() {
                     <div className="flex items-start gap-3">
                       <AdminSlotThumbnail
                         src={step.image}
-                        slotId={getClinicSlotId('process', step.id || step.stepNumber || idx + 1)}
+                        slotId={getClinicSlotId('process', step.stepNumber || step.id || idx + 1)}
                         alt={step.imageAlt || step.title}
                         className="h-14 w-14"
                         showStatusLabel={true}
@@ -2644,6 +3143,39 @@ export default function ClinicDataManager() {
                         {(step.seoKeywords || []).length} SEO tags
                       </span>
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const stepNum = step.stepNumber || String(idx + 1).padStart(2, '0');
+                            const stepId = step.id || `step-${idx + 1}`;
+                            const slotId = getClinicSlotId('process', stepNum || stepId);
+                            triggerImageUpload(
+                              async (newUrl, fileName) => {
+                                const curr = getSafeProcessSection(dataRef.current.processSection);
+                                const nextSteps = curr.steps.map((s, sIdx) =>
+                                  sIdx === idx ? { ...s, id: stepId, stepNumber: stepNum, image: newUrl } : s
+                                );
+                                const nextData: ClinicData = {
+                                  ...dataRef.current,
+                                  processSection: {
+                                    ...curr,
+                                    steps: nextSteps,
+                                  },
+                                };
+                                await persistClinicDataImmediately(
+                                  nextData,
+                                  `Uploaded step image "${fileName || step.title}" & saved permanently to ${newUrl}!`
+                                );
+                              },
+                              `process_step_${idx}`,
+                              step.image,
+                              slotId
+                            );
+                          }}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-teal-50 hover:bg-teal-100 text-[#003334] rounded-lg cursor-pointer"
+                        >
+                          Upload Image
+                        </button>
                         <button
                           onClick={() => openEditStepModal(idx)}
                           className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
@@ -2709,49 +3241,80 @@ export default function ClinicDataManager() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {activeTrustBrands.brands.map((brand, idx) => (
-                  <div
-                    key={brand.id || idx}
-                    className="border border-slate-200 bg-white rounded-xl p-3 flex flex-col justify-between gap-2.5 hover:border-slate-300 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {brand.imageUrl ? (
+                {activeTrustBrands.brands.map((brand, idx) => {
+                  const brandId = brand.id || `bp-${idx + 1}`;
+                  const slotId = getClinicSlotId('brand', brandId);
+                  return (
+                    <div
+                      key={brandId}
+                      className="border border-slate-200 bg-white rounded-xl p-3 flex flex-col justify-between gap-2.5 hover:border-slate-300 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <AdminSlotThumbnail
                           src={brand.imageUrl}
-                          slotId={getClinicSlotId('brand', brand.id || idx + 1)}
+                          slotId={slotId}
                           alt={brand.name}
                           className="h-10 w-10 shrink-0"
                           imgClassName="w-full h-full object-contain p-1"
+                          showStatusLabel={true}
                         />
-                      ) : (
-                        <div className="h-10 w-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-mono font-bold uppercase text-[#003334] shrink-0">
-                          {brand.iconType || 'icon'}
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
+                            {brand.imageUrl ? 'Logo Asset' : `Icon: ${brand.iconType}`}
+                          </div>
+                          <h3 className="text-sm font-bold text-slate-900 truncate">{brand.name}</h3>
                         </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-mono font-bold text-[#c5a880] uppercase truncate">
-                          {brand.imageUrl ? 'Logo Asset' : `Icon: ${brand.iconType}`}
-                        </div>
-                        <h3 className="text-sm font-bold text-slate-900 truncate">{brand.name}</h3>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5 flex-wrap">
+                        <button
+                          onClick={() => {
+                            triggerImageUpload(
+                              async (newUrl, fileName) => {
+                                const curr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+                                const nextBrands = [...(curr.brands || [])];
+                                nextBrands[idx] = {
+                                  ...nextBrands[idx],
+                                  id: brandId,
+                                  imageUrl: newUrl,
+                                };
+                                const nextData: ClinicData = {
+                                  ...dataRef.current,
+                                  trustBrandsSection: {
+                                    ...curr,
+                                    brands: nextBrands,
+                                  },
+                                };
+                                await persistClinicDataImmediately(
+                                  nextData,
+                                  `Uploaded "${fileName || brand.name}" logo & saved permanently to ${newUrl}!`
+                                );
+                              },
+                              'trust_brand_card',
+                              brand.imageUrl,
+                              slotId
+                            );
+                          }}
+                          className="px-2 py-1 text-[11px] font-bold uppercase bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg cursor-pointer"
+                        >
+                          Replace Img
+                        </button>
+                        <button
+                          onClick={() => openEditBrandModal(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteBrand(idx)}
+                          className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => openEditBrandModal(idx)}
-                        className="px-2.5 py-1 text-xs font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteBrand(idx)}
-                        className="px-2.5 py-1 text-xs font-bold uppercase bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );
@@ -2940,9 +3503,30 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         onClick={() => {
                           const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
                           const slotId = getClinicSlotId('location', locId);
-                          triggerImageUpload((newUrl) => {
-                            setLocationDraft({ ...locationDraft, image: newUrl });
-                          }, 'loc_image', locationDraft.image, slotId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const updatedDraft: ClinicLocation = { ...locationDraft, image: newUrl };
+                              setLocationDraft(updatedDraft);
+                              const currentLocations = [...(dataRef.current.locations || [])];
+                              if (editingLocationIndex !== null && editingLocationIndex >= 0) {
+                                currentLocations[editingLocationIndex] = updatedDraft;
+                              } else {
+                                currentLocations.push(updatedDraft);
+                                setEditingLocationIndex(currentLocations.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                locations: currentLocations,
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Location Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            'loc_image',
+                            locationDraft.image,
+                            slotId
+                          );
                         }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
@@ -2954,7 +3538,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="text"
                         value={locationDraft.image || ''}
                         onChange={e => setLocationDraft({ ...locationDraft, image: e.target.value })}
-                        placeholder="/assets/clinic.jpg or image URL"
+                        placeholder="/assets/clinic-location-1.webp or image URL"
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {locationDraft.image && (
@@ -2967,13 +3551,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {locationDraft.image && (
-                      <AdminSlotImageFieldPreview
-                        value={locationDraft.image}
-                        slotId={getClinicSlotId('location', locationDraft.id || 'new')}
-                        label="Location Preview"
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={locationDraft.image}
+                      slotId={getClinicSlotId('location', locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new'))}
+                      label="Location Preview"
+                    />
                   </div>
 
                   {/* Location Gallery Images (locations[i].gallery[i]) */}
@@ -2988,10 +3570,31 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                           const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
                           const galleryIdx = (locationDraft.gallery?.length || 0);
                           const slotId = `${getClinicSlotId('location', locId)}-gallery-${galleryIdx}`;
-                          triggerImageUpload((newUrl) => {
-                            const nextGallery = [...(locationDraft.gallery || []), newUrl];
-                            setLocationDraft({ ...locationDraft, gallery: nextGallery });
-                          }, 'loc_gallery_add', undefined, slotId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const nextGallery = [...(locationDraft.gallery || []), newUrl];
+                              const updatedDraft: ClinicLocation = { ...locationDraft, gallery: nextGallery };
+                              setLocationDraft(updatedDraft);
+                              const currentLocations = [...(dataRef.current.locations || [])];
+                              if (editingLocationIndex !== null && editingLocationIndex >= 0) {
+                                currentLocations[editingLocationIndex] = updatedDraft;
+                              } else {
+                                currentLocations.push(updatedDraft);
+                                setEditingLocationIndex(currentLocations.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                locations: currentLocations,
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Gallery Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            'loc_gallery_add',
+                            undefined,
+                            slotId
+                          );
                         }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-slate-200 text-slate-800 hover:bg-slate-300 rounded cursor-pointer"
                       >
@@ -3022,10 +3625,26 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                                   const locId = locationDraft.id || (editingLocationIndex !== null ? `loc-${editingLocationIndex + 1}` : 'new');
                                   const slotId = `${getClinicSlotId('location', locId)}-gallery-${gIdx}`;
                                   triggerImageUpload(
-                                    (newUrl) => {
+                                    async (newUrl, fileName) => {
                                       const nextGallery = [...(locationDraft.gallery || [])];
                                       nextGallery[gIdx] = newUrl;
-                                      setLocationDraft({ ...locationDraft, gallery: nextGallery });
+                                      const updatedDraft: ClinicLocation = { ...locationDraft, gallery: nextGallery };
+                                      setLocationDraft(updatedDraft);
+                                      const currentLocations = [...(dataRef.current.locations || [])];
+                                      if (editingLocationIndex !== null && editingLocationIndex >= 0) {
+                                        currentLocations[editingLocationIndex] = updatedDraft;
+                                      } else {
+                                        currentLocations.push(updatedDraft);
+                                        setEditingLocationIndex(currentLocations.length - 1);
+                                      }
+                                      const nextData: ClinicData = {
+                                        ...dataRef.current,
+                                        locations: currentLocations,
+                                      };
+                                      await persistClinicDataImmediately(
+                                        nextData,
+                                        `Replaced gallery image "${fileName || gIdx + 1}" & saved to ${newUrl}!`
+                                      );
                                     },
                                     `loc_gallery_${gIdx}`,
                                     gUrl,
@@ -3139,9 +3758,34 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         onClick={() => {
                           const pillarId = pillarDraft.id || (editingPillarIndex !== null ? `pillar-${editingPillarIndex + 1}` : 'new');
                           const slotId = getClinicSlotId('pillar', pillarId);
-                          triggerImageUpload((newUrl) => {
-                            setPillarDraft({ ...pillarDraft, imageUrl: newUrl });
-                          }, 'pillar_image', pillarDraft.imageUrl, slotId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const updatedDraft: ClinicWhyChooseUsPillar = { ...pillarDraft, imageUrl: newUrl };
+                              setPillarDraft(updatedDraft);
+                              const currentPillars = [...(dataRef.current.whyChooseUs?.pillars || [])];
+                              if (editingPillarIndex !== null && editingPillarIndex >= 0) {
+                                currentPillars[editingPillarIndex] = updatedDraft;
+                              } else {
+                                currentPillars.push(updatedDraft);
+                                setEditingPillarIndex(currentPillars.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                whyChooseUs: {
+                                  heading: dataRef.current.whyChooseUs?.heading || 'Why choose Age Reversal Clinic London?',
+                                  subheading: dataRef.current.whyChooseUs?.subheading || '',
+                                  pillars: currentPillars,
+                                },
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Pillar Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            'pillar_image',
+                            pillarDraft.imageUrl,
+                            slotId
+                          );
                         }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
@@ -3153,7 +3797,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="text"
                         value={pillarDraft.imageUrl || ''}
                         onChange={e => setPillarDraft({ ...pillarDraft, imageUrl: e.target.value })}
-                        placeholder="/assets/pillar.jpg or image URL"
+                        placeholder="/assets/clinic-pillar-1.webp or image URL"
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {pillarDraft.imageUrl && (
@@ -3166,13 +3810,11 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {pillarDraft.imageUrl && (
-                      <AdminSlotImageFieldPreview
-                        value={pillarDraft.imageUrl}
-                        slotId={getClinicSlotId('pillar', pillarDraft.id || (editingPillarIndex !== null ? `pillar-${editingPillarIndex + 1}` : 'new'))}
-                        label="Pillar Preview"
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={pillarDraft.imageUrl}
+                      slotId={getClinicSlotId('pillar', pillarDraft.id || (editingPillarIndex !== null ? `pillar-${editingPillarIndex + 1}` : 'new'))}
+                      label="Pillar Preview"
+                    />
                   </div>
                 </div>
               )}
@@ -3222,9 +3864,34 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         onClick={() => {
                           const awardId = awardDraft.id || (editingAwardIndex !== null ? `award-${editingAwardIndex + 1}` : 'new');
                           const slotId = getClinicSlotId('award', awardId);
-                          triggerImageUpload((newUrl) => {
-                            setAwardDraft({ ...awardDraft, imageUrl: newUrl });
-                          }, 'award_image', awardDraft.imageUrl, slotId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const updatedDraft: ClinicAwardItem = { ...awardDraft, imageUrl: newUrl };
+                              setAwardDraft(updatedDraft);
+                              const currentAwards = [...(dataRef.current.awardsShowcase?.awards || [])];
+                              if (editingAwardIndex !== null && editingAwardIndex >= 0) {
+                                currentAwards[editingAwardIndex] = updatedDraft;
+                              } else {
+                                currentAwards.push(updatedDraft);
+                                setEditingAwardIndex(currentAwards.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                awardsShowcase: {
+                                  heading: dataRef.current.awardsShowcase?.heading || 'Awards & Recognition',
+                                  subheading: dataRef.current.awardsShowcase?.subheading || '',
+                                  awards: currentAwards,
+                                },
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Award Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            'award_image',
+                            awardDraft.imageUrl,
+                            slotId
+                          );
                         }}
                         className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
                       >
@@ -3249,13 +3916,17 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {awardDraft.imageUrl && (
-                      <AdminSlotImageFieldPreview
-                        value={awardDraft.imageUrl}
-                        slotId={getClinicSlotId('award', awardDraft.id || (editingAwardIndex !== null ? `award-${editingAwardIndex + 1}` : 'new'))}
-                        label="Award Preview"
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={awardDraft.imageUrl}
+                      slotId={getClinicSlotId(
+                        'award',
+                        awardDraft.id ||
+                          (editingAwardIndex !== null
+                            ? `award-${editingAwardIndex + 1}`
+                            : `award-${(data.awardsShowcase?.awards?.length || 0) + 1}`)
+                      )}
+                      label="Award Preview"
+                    />
                   </div>
                 </div>
               )}
@@ -3463,10 +4134,51 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <button
                         type="button"
                         onClick={() => {
-                          const roomId = roomDraft.id || (editingRoomIndex !== null ? `suite-${editingRoomIndex + 1}` : 'new');
+                          const roomId =
+                            roomDraft.id ||
+                            (editingRoomIndex !== null
+                              ? `room-${editingRoomIndex + 1}`
+                              : `room-${(data.facilityGallery?.rooms?.length || 0) + 1}`);
                           const slotId = getClinicSlotId('facility', roomId);
                           triggerImageUpload(
-                            (newUrl) => setRoomDraft({ ...roomDraft, image: newUrl }),
+                            async (newUrl, fileName) => {
+                              const curr = getSafeFacilityGallery(
+                                dataRef.current.facilityGallery,
+                                dataRef.current.interiorPhotos
+                              );
+                              const nextRooms = [...(curr.rooms || [])];
+                              const resolvedTitle =
+                                roomDraft.title.trim() ||
+                                `Clinical Suite ${(editingRoomIndex !== null ? editingRoomIndex : nextRooms.length) + 1}`;
+                              const updatedDraft: ClinicFacilityRoomItem = {
+                                ...roomDraft,
+                                id: roomId,
+                                title: resolvedTitle,
+                                tag: roomDraft.tag.trim() || 'CLINIC SUITE',
+                                image: newUrl,
+                                imageAlt:
+                                  roomDraft.imageAlt?.trim() ||
+                                  `${resolvedTitle} at ${dataRef.current.name || 'Age Reversal Clinics'}`,
+                              };
+                              setRoomDraft(updatedDraft);
+                              if (editingRoomIndex !== null && editingRoomIndex >= 0) {
+                                nextRooms[editingRoomIndex] = updatedDraft;
+                              } else {
+                                nextRooms.push(updatedDraft);
+                                setEditingRoomIndex(nextRooms.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                facilityGallery: {
+                                  ...curr,
+                                  rooms: nextRooms,
+                                },
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Suite Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
                             'facility_room_modal',
                             roomDraft.image,
                             slotId
@@ -3482,7 +4194,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="text"
                         value={roomDraft.image || ''}
                         onChange={e => setRoomDraft({ ...roomDraft, image: e.target.value })}
-                        placeholder="/assets/suite.jpg or image URL"
+                        placeholder="/assets/clinic-facility-1.webp or image URL"
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {roomDraft.image && (
@@ -3495,13 +4207,17 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {roomDraft.image && (
-                      <AdminSlotImageFieldPreview
-                        value={roomDraft.image}
-                        slotId={getClinicSlotId('facility', roomDraft.id || (editingRoomIndex !== null ? `suite-${editingRoomIndex + 1}` : 'new'))}
-                        label={roomDraft.imageAlt || 'Suite Preview'}
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={roomDraft.image}
+                      slotId={getClinicSlotId(
+                        'facility',
+                        roomDraft.id ||
+                          (editingRoomIndex !== null
+                            ? `room-${editingRoomIndex + 1}`
+                            : `room-${(data.facilityGallery?.rooms?.length || 0) + 1}`)
+                      )}
+                      label={roomDraft.imageAlt || 'Suite Preview'}
+                    />
                   </div>
                 </div>
               )}
@@ -3549,10 +4265,50 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <button
                         type="button"
                         onClick={() => {
-                          const stepId = stepDraft.id || stepDraft.stepNumber || (editingStepIndex !== null ? `step-${editingStepIndex + 1}` : 'new');
-                          const slotId = getClinicSlotId('process', stepId);
+                          const stepIdx =
+                            editingStepIndex !== null
+                              ? editingStepIndex
+                              : (data.processSection?.steps?.length || 0);
+                          const stepNum = stepDraft.stepNumber || String(stepIdx + 1).padStart(2, '0');
+                          const stepId = stepDraft.id || `step-${stepIdx + 1}`;
+                          const slotId = getClinicSlotId('process', stepNum || stepId);
                           triggerImageUpload(
-                            (newUrl) => setStepDraft({ ...stepDraft, image: newUrl }),
+                            async (newUrl, fileName) => {
+                              const curr = getSafeProcessSection(dataRef.current.processSection);
+                              const nextSteps = [...(curr.steps || [])];
+                              const resolvedStepNum =
+                                stepDraft.stepNumber.trim() ||
+                                String((editingStepIndex ?? nextSteps.length) + 1).padStart(2, '0');
+                              const resolvedTitle = stepDraft.title.trim() || `Process Step ${resolvedStepNum}`;
+                              const updatedDraft: ClinicProcessStep = {
+                                ...stepDraft,
+                                id: stepId,
+                                stepNumber: resolvedStepNum,
+                                title: resolvedTitle,
+                                image: newUrl,
+                                imageAlt:
+                                  stepDraft.imageAlt?.trim() ||
+                                  `${resolvedTitle} — ${dataRef.current.name || 'Age Reversal Clinics'}`,
+                              };
+                              setStepDraft(updatedDraft);
+                              if (editingStepIndex !== null && editingStepIndex >= 0) {
+                                nextSteps[editingStepIndex] = updatedDraft;
+                              } else {
+                                nextSteps.push(updatedDraft);
+                                setEditingStepIndex(nextSteps.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                processSection: {
+                                  ...curr,
+                                  steps: nextSteps,
+                                },
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Process Step Image'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
                             'process_step_modal',
                             stepDraft.image,
                             slotId
@@ -3568,7 +4324,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="text"
                         value={stepDraft.image || ''}
                         onChange={e => setStepDraft({ ...stepDraft, image: e.target.value })}
-                        placeholder="/assets/step.jpg or image URL"
+                        placeholder="/assets/clinic-process-01.webp or image URL"
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {stepDraft.image && (
@@ -3581,13 +4337,18 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {stepDraft.image && (
-                      <AdminSlotImageFieldPreview
-                        value={stepDraft.image}
-                        slotId={getClinicSlotId('process', stepDraft.id || stepDraft.stepNumber || (editingStepIndex !== null ? `step-${editingStepIndex + 1}` : 'new'))}
-                        label={stepDraft.imageAlt || 'Step Preview'}
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={stepDraft.image}
+                      slotId={getClinicSlotId(
+                        'process',
+                        stepDraft.stepNumber ||
+                          stepDraft.id ||
+                          (editingStepIndex !== null
+                            ? String(editingStepIndex + 1).padStart(2, '0')
+                            : String((data.processSection?.steps?.length || 0) + 1).padStart(2, '0'))
+                      )}
+                      label={stepDraft.imageAlt || 'Step Preview'}
+                    />
                   </div>
 
                   {/* Step SEO Keywords */}
@@ -3692,10 +4453,46 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       <button
                         type="button"
                         onClick={() => {
-                          const brandId = brandDraft.id || (editingBrandIndex !== null ? `brand-${editingBrandIndex + 1}` : 'new');
+                          const curr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+                          const targetIdx =
+                            editingBrandIndex !== null && editingBrandIndex >= 0
+                              ? editingBrandIndex
+                              : curr.brands?.length || 0;
+                          const brandId = brandDraft.id || `bp-${targetIdx + 1}`;
                           const slotId = getClinicSlotId('brand', brandId);
                           triggerImageUpload(
-                            (newUrl) => setBrandDraft({ ...brandDraft, imageUrl: newUrl }),
+                            async (newUrl, fileName) => {
+                              const latestCurr = getSafeTrustBrandsSection(dataRef.current.trustBrandsSection);
+                              const nextBrands = [...(latestCurr.brands || [])];
+                              const resolvedName =
+                                brandDraft.name.trim() ||
+                                `Partner Brand ${(editingBrandIndex !== null ? editingBrandIndex : nextBrands.length) + 1}`;
+                              const updatedDraft: ClinicTrustBrandItem = {
+                                ...brandDraft,
+                                id: brandId,
+                                name: resolvedName,
+                                iconType: brandDraft.iconType || 'shield',
+                                imageUrl: newUrl,
+                              };
+                              setBrandDraft(updatedDraft);
+                              if (editingBrandIndex !== null && editingBrandIndex >= 0) {
+                                nextBrands[editingBrandIndex] = updatedDraft;
+                              } else {
+                                nextBrands.push(updatedDraft);
+                                setEditingBrandIndex(nextBrands.length - 1);
+                              }
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                trustBrandsSection: {
+                                  ...latestCurr,
+                                  brands: nextBrands,
+                                },
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Brand Logo'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
                             'trust_brand_modal',
                             brandDraft.imageUrl,
                             slotId
@@ -3711,7 +4508,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         type="text"
                         value={brandDraft.imageUrl || ''}
                         onChange={e => setBrandDraft({ ...brandDraft, imageUrl: e.target.value })}
-                        placeholder="/assets/brand-logo.svg or leave empty to use Vector Icon"
+                        placeholder="/assets/clinic-brand-1.webp or leave empty to use Vector Icon"
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {brandDraft.imageUrl && (
@@ -3724,13 +4521,14 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    {brandDraft.imageUrl && (
-                      <AdminSlotImageFieldPreview
-                        value={brandDraft.imageUrl}
-                        slotId={getClinicSlotId('brand', brandDraft.id || (editingBrandIndex !== null ? `brand-${editingBrandIndex + 1}` : 'new'))}
-                        label={brandDraft.name || 'Brand Logo Preview'}
-                      />
-                    )}
+                    <AdminSlotImageFieldPreview
+                      value={brandDraft.imageUrl}
+                      slotId={getClinicSlotId(
+                        'brand',
+                        brandDraft.id || (editingBrandIndex !== null ? `bp-${editingBrandIndex + 1}` : 'new')
+                      )}
+                      label={brandDraft.name || 'Brand Logo Preview'}
+                    />
                   </div>
                 </div>
               )}
@@ -3754,9 +4552,23 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         onClick={() => {
                           const nextIdx = arrayDraft.length;
                           const slotId = getClinicSlotId('interior', nextIdx);
-                          triggerImageUpload((newUrl) => {
-                            setArrayDraft(prev => [...prev, newUrl]);
-                          }, 'modal_interior', undefined, slotId);
+                          triggerImageUpload(
+                            async (newUrl, fileName) => {
+                              const nextArray = [...arrayDraft, newUrl];
+                              setArrayDraft(nextArray);
+                              const nextData: ClinicData = {
+                                ...dataRef.current,
+                                interiorPhotos: nextArray,
+                              };
+                              await persistClinicDataImmediately(
+                                nextData,
+                                `Uploaded "${fileName || 'Interior Photo'}" & saved permanently to ${newUrl}!`
+                              );
+                            },
+                            'modal_interior',
+                            undefined,
+                            slotId
+                          );
                         }}
                         className="px-3 py-1.5 bg-[#003334] text-white text-xs font-bold uppercase rounded-lg cursor-pointer hover:bg-[#002627]"
                       >
@@ -3807,9 +4619,16 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                                 onClick={() => {
                                   const slotId = getClinicSlotId('interior', idx);
                                   triggerImageUpload(
-                                    (newUrl) => {
-                                      setArrayDraft((prev) =>
-                                        prev.map((val, i) => (i === idx ? newUrl : val))
+                                    async (newUrl, fileName) => {
+                                      const nextArray = arrayDraft.map((val, i) => (i === idx ? newUrl : val));
+                                      setArrayDraft(nextArray);
+                                      const nextData: ClinicData = {
+                                        ...dataRef.current,
+                                        interiorPhotos: nextArray,
+                                      };
+                                      await persistClinicDataImmediately(
+                                        nextData,
+                                        `Replaced interior photo "${fileName || idx + 1}" & saved to ${newUrl}!`
                                       );
                                     },
                                     `modal_interior_${idx}`,

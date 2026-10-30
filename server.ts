@@ -865,14 +865,28 @@ const parseClinicDataFromTsFile = (): Record<string, any> | null => {
   }
 };
 
+const writeFileAtomicallySync = (targetPath: string, content: string): void => {
+  const dir = path.dirname(targetPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  const tempPath = `${targetPath}.${process.pid}.${Date.now()}-${Math.random().toString(36).slice(2, 8)}.tmp`;
+  fs.writeFileSync(tempPath, content, 'utf-8');
+  fs.renameSync(tempPath, targetPath);
+};
+
 const getMergedClinicData = () => {
   const diskTsClinicData = parseClinicDataFromTsFile();
   const baseClinicData: Record<string, any> = {
     ...CLINIC_DATA,
     ...(diskTsClinicData || {}),
+    ogImage: diskTsClinicData?.ogImage ?? CLINIC_DATA.ogImage,
+    exteriorPhoto: diskTsClinicData?.exteriorPhoto ?? CLINIC_DATA.exteriorPhoto,
     logo: {
       ...(CLINIC_DATA.logo || {}),
       ...(diskTsClinicData?.logo || {}),
+      icon: diskTsClinicData?.logo?.icon ?? CLINIC_DATA.logo?.icon,
+      full: diskTsClinicData?.logo?.full ?? CLINIC_DATA.logo?.full,
     },
     socials: {
       ...(CLINIC_DATA.socials || {}),
@@ -912,36 +926,46 @@ const getMergedClinicData = () => {
     }
   }
 
-      const merged = customClinicData
+  const merged = customClinicData
     ? {
         ...baseClinicData,
         ...customClinicData,
+        ogImage: customClinicData.ogImage ?? baseClinicData.ogImage,
+        exteriorPhoto: customClinicData.exteriorPhoto ?? baseClinicData.exteriorPhoto,
         logo: {
           ...baseClinicData.logo,
           ...(customClinicData.logo || {}),
-          icon: customClinicData.logo?.icon || baseClinicData.logo?.icon,
-          full: customClinicData.logo?.full || baseClinicData.logo?.full,
+          icon: customClinicData.logo?.icon ?? baseClinicData.logo?.icon,
+          full: customClinicData.logo?.full ?? baseClinicData.logo?.full,
         },
         socials: {
           ...baseClinicData.socials,
           ...(customClinicData.socials || {}),
         },
-        interiorPhotos:
-          Array.isArray(customClinicData.interiorPhotos) && customClinicData.interiorPhotos.length > 0
-            ? customClinicData.interiorPhotos
-            : baseClinicData.interiorPhotos,
-        locations:
+        interiorPhotos: Array.isArray(customClinicData.interiorPhotos)
+          ? customClinicData.interiorPhotos
+          : baseClinicData.interiorPhotos || [],
+        locations: (
           Array.isArray(customClinicData.locations) && customClinicData.locations.length > 0
             ? customClinicData.locations
-            : baseClinicData.locations,
+            : baseClinicData.locations || []
+        ).map((loc: any, idx: number) => ({
+          ...loc,
+          image: loc.image ?? baseClinicData.locations?.[idx]?.image ?? '',
+        })),
         whyChooseUs:
           customClinicData.whyChooseUs && typeof customClinicData.whyChooseUs === 'object'
             ? {
                 ...(baseClinicData.whyChooseUs || {}),
                 ...customClinicData.whyChooseUs,
-                pillars: Array.isArray(customClinicData.whyChooseUs.pillars)
-                  ? customClinicData.whyChooseUs.pillars
-                  : baseClinicData.whyChooseUs?.pillars || [],
+                pillars: (
+                  Array.isArray(customClinicData.whyChooseUs.pillars)
+                    ? customClinicData.whyChooseUs.pillars
+                    : baseClinicData.whyChooseUs?.pillars || []
+                ).map((pillar: any, idx: number) => ({
+                  ...pillar,
+                  imageUrl: pillar.imageUrl ?? baseClinicData.whyChooseUs?.pillars?.[idx]?.imageUrl ?? '',
+                })),
               }
             : baseClinicData.whyChooseUs,
         awardsShowcase:
@@ -949,9 +973,14 @@ const getMergedClinicData = () => {
             ? {
                 ...(baseClinicData.awardsShowcase || {}),
                 ...customClinicData.awardsShowcase,
-                awards: Array.isArray(customClinicData.awardsShowcase.awards)
-                  ? customClinicData.awardsShowcase.awards
-                  : baseClinicData.awardsShowcase?.awards || [],
+                awards: (
+                  Array.isArray(customClinicData.awardsShowcase.awards)
+                    ? customClinicData.awardsShowcase.awards
+                    : baseClinicData.awardsShowcase?.awards || []
+                ).map((award: any, idx: number) => ({
+                  ...award,
+                  imageUrl: award.imageUrl ?? baseClinicData.awardsShowcase?.awards?.[idx]?.imageUrl ?? '',
+                })),
               }
             : baseClinicData.awardsShowcase,
         consultationConfig:
@@ -984,9 +1013,14 @@ const getMergedClinicData = () => {
                 seoKeywords: Array.isArray(customClinicData.processSection.seoKeywords)
                   ? customClinicData.processSection.seoKeywords
                   : baseClinicData.processSection?.seoKeywords || [],
-                steps: Array.isArray(customClinicData.processSection.steps)
-                  ? customClinicData.processSection.steps
-                  : baseClinicData.processSection?.steps || [],
+                steps: (
+                  Array.isArray(customClinicData.processSection.steps)
+                    ? customClinicData.processSection.steps
+                    : baseClinicData.processSection?.steps || []
+                ).map((step: any, idx: number) => ({
+                  ...step,
+                  image: step.image ?? baseClinicData.processSection?.steps?.[idx]?.image ?? '',
+                })),
               }
             : baseClinicData.processSection,
         facilityGallery:
@@ -997,9 +1031,14 @@ const getMergedClinicData = () => {
                 seoKeywords: Array.isArray(customClinicData.facilityGallery.seoKeywords)
                   ? customClinicData.facilityGallery.seoKeywords
                   : baseClinicData.facilityGallery?.seoKeywords || [],
-                rooms: Array.isArray(customClinicData.facilityGallery.rooms)
-                  ? customClinicData.facilityGallery.rooms
-                  : baseClinicData.facilityGallery?.rooms || [],
+                rooms: (
+                  Array.isArray(customClinicData.facilityGallery.rooms)
+                    ? customClinicData.facilityGallery.rooms
+                    : baseClinicData.facilityGallery?.rooms || []
+                ).map((room: any, idx: number) => ({
+                  ...room,
+                  image: room.image ?? baseClinicData.facilityGallery?.rooms?.[idx]?.image ?? '',
+                })),
               }
             : baseClinicData.facilityGallery,
         trustBrandsSection:
@@ -1010,9 +1049,14 @@ const getMergedClinicData = () => {
                 seoKeywords: Array.isArray(customClinicData.trustBrandsSection.seoKeywords)
                   ? customClinicData.trustBrandsSection.seoKeywords
                   : baseClinicData.trustBrandsSection?.seoKeywords || [],
-                brands: Array.isArray(customClinicData.trustBrandsSection.brands)
-                  ? customClinicData.trustBrandsSection.brands
-                  : baseClinicData.trustBrandsSection?.brands || [],
+                brands: (
+                  Array.isArray(customClinicData.trustBrandsSection.brands)
+                    ? customClinicData.trustBrandsSection.brands
+                    : baseClinicData.trustBrandsSection?.brands || []
+                ).map((brand: any, idx: number) => ({
+                  ...brand,
+                  imageUrl: brand.imageUrl ?? baseClinicData.trustBrandsSection?.brands?.[idx]?.imageUrl ?? '',
+                })),
               }
             : baseClinicData.trustBrandsSection,
         accreditationsSection:
@@ -1122,6 +1166,11 @@ const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string
 
   const fileName = path.basename(cleanPath);
   if (!fileName) return false;
+
+  // Never delete canonical /assets/clinic-*.webp permanent slot files
+  if (/^clinic-.+\.webp$/i.test(fileName)) {
+    return false;
+  }
 
   // Ensure the file is not still referenced by another slot in clinicInfo.ts
   for (const activeUrl of activeUrlsSet) {
@@ -1247,7 +1296,142 @@ const verifyAndRepairClinicDataAssets = (clinicData?: any): number => {
   return repairedCount;
 };
 
-// Handler for saving clinic data
+// Helper: Synchronize clinicData and its derived homepage section configs into a customizations object
+const applyClinicDataToCustomizationsObject = (existing: Record<string, any>, clinicData: any): void => {
+  existing.clinic_info_data = clinicData;
+  if (clinicData.logo && typeof clinicData.logo === 'object') {
+    const resolvedLogoUrl = (clinicData.logo.icon || clinicData.logo.full) ?? '';
+    existing.homepage_header_config = {
+      ...(existing.homepage_header_config || { primaryName: 'Age Reversal', secondaryName: 'Clinic' }),
+      logoUrl: resolvedLogoUrl,
+    };
+  }
+  if (Array.isArray(clinicData.locations)) {
+    if (!existing.homepage_locations_config) {
+      existing.homepage_locations_config = {
+        heading: "Our Locations",
+        description: "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
+        locations: []
+      };
+    }
+    existing.homepage_locations_config.locations = clinicData.locations.map((loc: any, idx: number) => {
+      const fullAddress = [
+        loc.address?.trim(),
+        (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
+        loc.postalCode?.trim() || null
+      ].filter(Boolean).join(', ');
+      return {
+        id: loc.id || `loc-${idx + 1}`,
+        name: loc.name,
+        address: fullAddress,
+        hours: loc.hours,
+        phone: loc.phone || clinicData.phone,
+        mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
+        bannerType: "Clinic",
+        imageUrl: loc.image ?? ""
+      };
+    });
+  }
+
+  if (clinicData.whyChooseUs && typeof clinicData.whyChooseUs === 'object') {
+    existing.homepage_why_choose_us_config_v3 = {
+      heading: clinicData.whyChooseUs.heading || "Why Choose Age Reversal Clinic",
+      subheading: clinicData.whyChooseUs.subheading || "",
+      description:
+        clinicData.whyChooseUs.subheading ||
+        "We combine medical excellence with state-of-the-art technology to deliver safe, natural-looking results.",
+      pillars: Array.isArray(clinicData.whyChooseUs.pillars) ? clinicData.whyChooseUs.pillars : []
+    };
+  }
+
+  if (clinicData.awardsShowcase && typeof clinicData.awardsShowcase === 'object') {
+    existing.homepage_awards_config = {
+      heading: clinicData.awardsShowcase.heading || "Awards & Clinical Recognition",
+      subheading:
+        clinicData.awardsShowcase.subheading ||
+        "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
+      awards: Array.isArray(clinicData.awardsShowcase.awards) ? clinicData.awardsShowcase.awards : []
+    };
+  }
+
+  if (clinicData.consultationConfig && typeof clinicData.consultationConfig === 'object') {
+    existing.homepage_consultation_config = {
+      heading: clinicData.consultationConfig.heading || "Book a Preferred Consultation",
+      subheading:
+        clinicData.consultationConfig.subheading ||
+        "Schedule your bespoke clinical assessment with our aesthetic specialists.",
+      specialistLabel: clinicData.consultationConfig.specialistLabel || "Preferred Specialist",
+      doctors: Array.isArray(clinicData.consultationConfig.doctors)
+        ? clinicData.consultationConfig.doctors
+        : [],
+      defaultTimeSlots: Array.isArray(clinicData.consultationConfig.defaultTimeSlots)
+        ? clinicData.consultationConfig.defaultTimeSlots
+        : [],
+      bestTimeOptions: Array.isArray(clinicData.consultationConfig.bestTimeOptions)
+        ? clinicData.consultationConfig.bestTimeOptions
+        : [],
+      hearAboutUsOptions: Array.isArray(clinicData.consultationConfig.hearAboutUsOptions)
+        ? clinicData.consultationConfig.hearAboutUsOptions
+        : [],
+      stayInTouchChannels: Array.isArray(clinicData.consultationConfig.stayInTouchChannels)
+        ? clinicData.consultationConfig.stayInTouchChannels
+        : [],
+    };
+  }
+
+  if (clinicData.processSection && typeof clinicData.processSection === 'object') {
+    existing.homepage_process_config = {
+      eyebrow: clinicData.processSection.eyebrow || "Our Process",
+      heading: clinicData.processSection.heading || "The Journey to Radiance",
+      subheading:
+        clinicData.processSection.subheading ||
+        "From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.",
+      seoKeywords: Array.isArray(clinicData.processSection.seoKeywords)
+        ? clinicData.processSection.seoKeywords
+        : [],
+      steps: Array.isArray(clinicData.processSection.steps) ? clinicData.processSection.steps : [],
+    };
+  }
+
+  if (clinicData.facilityGallery && typeof clinicData.facilityGallery === 'object') {
+    existing.homepage_facility_interiors_config = {
+      eyebrow: clinicData.facilityGallery.eyebrow || "Our Facility",
+      heading: clinicData.facilityGallery.heading || "Clinic Gallery",
+      seoKeywords: Array.isArray(clinicData.facilityGallery.seoKeywords)
+        ? clinicData.facilityGallery.seoKeywords
+        : [],
+      rooms: Array.isArray(clinicData.facilityGallery.rooms) ? clinicData.facilityGallery.rooms : [],
+    };
+  }
+
+  if (clinicData.trustBrandsSection && typeof clinicData.trustBrandsSection === 'object') {
+    existing.homepage_trust_brands_config = {
+      heading: clinicData.trustBrandsSection.heading || "Over 1,000+ Brands & Laboratories Trust Us",
+      seoKeywords: Array.isArray(clinicData.trustBrandsSection.seoKeywords)
+        ? clinicData.trustBrandsSection.seoKeywords
+        : [],
+      brands: Array.isArray(clinicData.trustBrandsSection.brands)
+        ? clinicData.trustBrandsSection.brands
+        : [],
+    };
+  }
+
+  if (clinicData.accreditationsSection && typeof clinicData.accreditationsSection === 'object') {
+    existing.homepage_accreditations_config = {
+      eyebrow: clinicData.accreditationsSection.eyebrow || "Accreditations & Certifications",
+      heading: clinicData.accreditationsSection.heading || "Excellence guaranteed. Trusted globally.",
+      description:
+        clinicData.accreditationsSection.description ||
+        "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
+      seoKeywords: Array.isArray(clinicData.accreditationsSection.seoKeywords)
+        ? clinicData.accreditationsSection.seoKeywords
+        : [],
+      items: Array.isArray(clinicData.accreditations) ? clinicData.accreditations : [],
+    };
+  }
+};
+
+// Handler for saving clinic data atomically to both src/data/clinicInfo.ts and src/data/siteCustomizations.json
 const handleSaveClinicData = (req: any, res: any) => {
   try {
     const clinicData = req.body.clinicData || req.body;
@@ -1285,139 +1469,15 @@ const handleSaveClinicData = (req: any, res: any) => {
       }
     }
 
-    // 1. Generate clean TypeScript code and write directly to src/data/clinicInfo.ts on disk
+    // 1. Prepare both clinicInfo.ts TypeScript code and siteCustomizations.json payload, then write atomically
     const tsCode = generateClinicInfoTs(clinicData);
-    fs.writeFileSync(clinicInfoPath, tsCode, 'utf-8');
-    console.log(`[Admin] Successfully wrote updated code to ${clinicInfoPath}`);
-
-    // 2. Also persist / cache to siteCustomizations.json under clinic_info_data key
-    existing.clinic_info_data = clinicData;
-    if (Array.isArray(clinicData.locations)) {
-      if (!existing.homepage_locations_config) {
-        existing.homepage_locations_config = {
-          heading: "Our Locations",
-          description: "Conveniently located across London, providing world-class aesthetic dermatology, diagnostic consultations, and personalized care.",
-          locations: []
-        };
-      }
-      existing.homepage_locations_config.locations = clinicData.locations.map((loc: any, idx: number) => {
-        const fullAddress = [
-          loc.address?.trim(),
-          (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
-          loc.postalCode?.trim() || null
-        ].filter(Boolean).join(', ');
-        return {
-          id: loc.id || `loc-${idx + 1}`,
-          name: loc.name,
-          address: fullAddress,
-          hours: loc.hours,
-          phone: loc.phone || clinicData.phone,
-          mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
-          bannerType: "Clinic",
-          imageUrl: loc.image || ""
-        };
-      });
-    }
-
-    if (clinicData.whyChooseUs && typeof clinicData.whyChooseUs === 'object') {
-      existing.homepage_why_choose_us_config_v3 = {
-        heading: clinicData.whyChooseUs.heading || "Why Choose Age Reversal Clinic",
-        subheading: clinicData.whyChooseUs.subheading || "",
-        description:
-          clinicData.whyChooseUs.subheading ||
-          "We combine medical excellence with state-of-the-art technology to deliver safe, natural-looking results.",
-        pillars: Array.isArray(clinicData.whyChooseUs.pillars) ? clinicData.whyChooseUs.pillars : []
-      };
-    }
-
-    if (clinicData.awardsShowcase && typeof clinicData.awardsShowcase === 'object') {
-      existing.homepage_awards_config = {
-        heading: clinicData.awardsShowcase.heading || "Awards & Clinical Recognition",
-        subheading:
-          clinicData.awardsShowcase.subheading ||
-          "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
-        awards: Array.isArray(clinicData.awardsShowcase.awards) ? clinicData.awardsShowcase.awards : []
-      };
-    }
-
-    if (clinicData.consultationConfig && typeof clinicData.consultationConfig === 'object') {
-      existing.homepage_consultation_config = {
-        heading: clinicData.consultationConfig.heading || "Book a Preferred Consultation",
-        subheading:
-          clinicData.consultationConfig.subheading ||
-          "Schedule your bespoke clinical assessment with our aesthetic specialists.",
-        specialistLabel: clinicData.consultationConfig.specialistLabel || "Preferred Specialist",
-        doctors: Array.isArray(clinicData.consultationConfig.doctors)
-          ? clinicData.consultationConfig.doctors
-          : [],
-        defaultTimeSlots: Array.isArray(clinicData.consultationConfig.defaultTimeSlots)
-          ? clinicData.consultationConfig.defaultTimeSlots
-          : [],
-        bestTimeOptions: Array.isArray(clinicData.consultationConfig.bestTimeOptions)
-          ? clinicData.consultationConfig.bestTimeOptions
-          : [],
-        hearAboutUsOptions: Array.isArray(clinicData.consultationConfig.hearAboutUsOptions)
-          ? clinicData.consultationConfig.hearAboutUsOptions
-          : [],
-        stayInTouchChannels: Array.isArray(clinicData.consultationConfig.stayInTouchChannels)
-          ? clinicData.consultationConfig.stayInTouchChannels
-          : [],
-      };
-    }
-
-    if (clinicData.processSection && typeof clinicData.processSection === 'object') {
-      existing.homepage_process_config = {
-        eyebrow: clinicData.processSection.eyebrow || "Our Process",
-        heading: clinicData.processSection.heading || "The Journey to Radiance",
-        subheading:
-          clinicData.processSection.subheading ||
-          "From initial diagnostic skin mapping to bespoke clinical protocols and ongoing regenerative care.",
-        seoKeywords: Array.isArray(clinicData.processSection.seoKeywords)
-          ? clinicData.processSection.seoKeywords
-          : [],
-        steps: Array.isArray(clinicData.processSection.steps) ? clinicData.processSection.steps : [],
-      };
-    }
-
-    if (clinicData.facilityGallery && typeof clinicData.facilityGallery === 'object') {
-      existing.homepage_facility_interiors_config = {
-        eyebrow: clinicData.facilityGallery.eyebrow || "Our Facility",
-        heading: clinicData.facilityGallery.heading || "Clinic Gallery",
-        seoKeywords: Array.isArray(clinicData.facilityGallery.seoKeywords)
-          ? clinicData.facilityGallery.seoKeywords
-          : [],
-        rooms: Array.isArray(clinicData.facilityGallery.rooms) ? clinicData.facilityGallery.rooms : [],
-      };
-    }
-
-    if (clinicData.trustBrandsSection && typeof clinicData.trustBrandsSection === 'object') {
-      existing.homepage_trust_brands_config = {
-        heading: clinicData.trustBrandsSection.heading || "Over 1,000+ Brands & Laboratories Trust Us",
-        seoKeywords: Array.isArray(clinicData.trustBrandsSection.seoKeywords)
-          ? clinicData.trustBrandsSection.seoKeywords
-          : [],
-        brands: Array.isArray(clinicData.trustBrandsSection.brands)
-          ? clinicData.trustBrandsSection.brands
-          : [],
-      };
-    }
-
-    if (clinicData.accreditationsSection && typeof clinicData.accreditationsSection === 'object') {
-      existing.homepage_accreditations_config = {
-        eyebrow: clinicData.accreditationsSection.eyebrow || "Accreditations & Certifications",
-        heading: clinicData.accreditationsSection.heading || "Excellence guaranteed. Trusted globally.",
-        description:
-          clinicData.accreditationsSection.description ||
-          "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
-        seoKeywords: Array.isArray(clinicData.accreditationsSection.seoKeywords)
-          ? clinicData.accreditationsSection.seoKeywords
-          : [],
-        items: Array.isArray(clinicData.accreditations) ? clinicData.accreditations : [],
-      };
-    }
-
+    applyClinicDataToCustomizationsObject(existing, clinicData);
     existing.lastSynced = new Date().toISOString();
-    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    const jsonPayload = JSON.stringify(existing, null, 2);
+
+    writeFileAtomicallySync(clinicInfoPath, tsCode);
+    writeFileAtomicallySync(customizationsPath, jsonPayload);
+    console.log(`[Admin] Atomically persisted updated clinicData to ${clinicInfoPath} and ${customizationsPath}`);
 
     return res.json({
       success: true,
@@ -1822,11 +1882,18 @@ app.post('/api/admin/save-to-files', (req, res) => {
       syncHomepageTreatmentsDataTs(existing.homepage_treatments_config);
     }
 
-    // If clinic_info_data is part of this save, also bake directly into src/data/clinicInfo.ts
-    if (existing.clinic_info_data && typeof existing.clinic_info_data === 'object') {
+    // If clinic_info_data is part of this save (e.g. via allConfigs or direct key), also bake into src/data/clinicInfo.ts
+    // Only do this when clinic_info_data was explicitly provided in this request to avoid overwriting clinicInfo.ts during unrelated section saves
+    if (
+      (key === 'clinic_info_data' || (allConfigs && allConfigs.clinic_info_data)) &&
+      existing.clinic_info_data &&
+      typeof existing.clinic_info_data === 'object'
+    ) {
       try {
+        verifyAndRepairClinicDataAssets(existing.clinic_info_data);
+        applyClinicDataToCustomizationsObject(existing, existing.clinic_info_data);
         const tsCode = generateClinicInfoTs(existing.clinic_info_data);
-        fs.writeFileSync(clinicInfoPath, tsCode, 'utf-8');
+        writeFileAtomicallySync(clinicInfoPath, tsCode);
         console.log(`[Admin] Also synced clinicInfo.ts via save-to-files`);
       } catch (err) {
         console.error('[Admin] Error baking clinicInfo.ts during save-to-files:', err);
@@ -1857,7 +1924,7 @@ app.post('/api/admin/save-to-files', (req, res) => {
 
     existing.lastSynced = new Date().toISOString();
 
-    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
     console.log(`[Admin] Wrote updated customizations directly to disk at ${customizationsPath}`);
 
     return res.json({

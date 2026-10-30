@@ -194,9 +194,17 @@ export default function Header({
         branch.id === 'iv-wellness' ||
         branch.name.toLowerCase().includes('iv drip');
 
+      const lowerBranchName = branch.name.toLowerCase().trim();
+      let desktopName = branch.name;
+      if (branch.id === 'body-sculpting' || lowerBranchName === 'body sculpting') {
+        desktopName = 'Body';
+      } else if (branch.id === 'hair-beauty' || lowerBranchName === 'hair & beauty') {
+        desktopName = 'Beauty';
+      }
+
       return {
         name: branch.name,
-        desktopName: branch.name,
+        desktopName,
         mobileName: branch.name,
         id: branch.id,
         branchCategory: branch.name as MasterBranchCategory,
@@ -347,7 +355,7 @@ export default function Header({
         </a>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-3 lg:space-x-4 xl:space-x-5">
+        <nav className="hidden lg:flex items-center space-x-3 lg:space-x-3.5 xl:space-x-4.5">
           {navItems
             .filter((item) => !item.hideOnDesktop)
             .map((item) => {
@@ -369,7 +377,7 @@ export default function Header({
                         e.preventDefault();
                         handleNavClick(item.id);
                       }}
-                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-sans font-medium tracking-wider uppercase transition-colors py-1 ${
+                      className={`group relative inline-flex items-center text-[11.5px] lg:text-[12.5px] xl:text-[13px] font-sans font-medium tracking-wider uppercase transition-colors py-1 whitespace-nowrap ${
                         isActive ? 'text-luxury-text font-semibold' : 'text-luxury-subtext hover:text-luxury-text'
                       }`}
                     >
@@ -396,7 +404,7 @@ export default function Header({
                           onShopClick();
                         }
                       }}
-                      className={`group relative inline-flex items-center text-[12px] lg:text-[13px] xl:text-sm font-sans font-medium tracking-wider uppercase transition-colors py-1 gap-1.5 cursor-pointer ${
+                      className={`group relative inline-flex items-center text-[11.5px] lg:text-[12.5px] xl:text-[13px] font-sans font-medium tracking-wider uppercase transition-colors py-1 gap-1 cursor-pointer whitespace-nowrap ${
                         isActive || isHovered ? 'text-luxury-text font-semibold' : 'text-luxury-subtext hover:text-luxury-text'
                       }`}
                     >
@@ -409,7 +417,7 @@ export default function Header({
                           }`}
                         />
                       </span>
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isHovered ? 'rotate-180 text-luxury-gold' : 'text-luxury-muted group-hover:text-luxury-gold'}`} />
+                      <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isHovered ? 'rotate-180 text-luxury-gold' : 'text-luxury-muted group-hover:text-luxury-gold'}`} />
                     </button>
                   )}
 
