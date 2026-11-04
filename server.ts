@@ -50,6 +50,7 @@ const clinicInfoPath = path.resolve(__dirname, 'src/data/clinicInfo.ts');
 const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.ts');
 const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
 const specialistTreatmentsPath = path.resolve(__dirname, 'src/data/specialistTreatments.ts');
+const treatmentCoversDataPath = path.resolve(__dirname, 'src/data/treatmentCoversData.ts');
 const dataTsPath = path.resolve(__dirname, 'src/data.ts');
 
 // Serve uploaded and static assets from public/assets (and dist/assets in production)
@@ -1189,13 +1190,75 @@ function scoreTreatmentCoverCompleteness(item: any): number {
   return score;
 }
 
+function isUnmodifiedDefaultCoverObj(item: any): boolean {
+  if (!item) return true;
+  const id = String(item.id || '');
+  if (!id.startsWith('cover-seed-')) return false;
+  if (item.updatedAt) return false;
+  const img = String(item.imageUrl || '');
+  if (img.startsWith('/assets/treatments/cover-') || img.startsWith('/assets/treatments/')) {
+    return false;
+  }
+  return true;
+}
+
+function readTreatmentCoversFromTsDisk(): any[] {
+  try {
+    if (fs.existsSync(treatmentCoversDataPath)) {
+      const content = fs.readFileSync(treatmentCoversDataPath, 'utf-8');
+      const marker = 'export const ADMIN_SYNCED_TREATMENT_COVERS: HomepageTreatmentCoverImage[] = ';
+      const idx = content.indexOf(marker);
+      if (idx !== -1) {
+        let jsonPart = content.slice(idx + marker.length).trim();
+        if (jsonPart.endsWith(';')) {
+          jsonPart = jsonPart.slice(0, -1).trim();
+        }
+        const parsed = JSON.parse(jsonPart);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not parse src/data/treatmentCoversData.ts:', err);
+  }
+  return [];
+}
+
+function syncTreatmentCoversDataTs(reconciledConfig: any): void {
+  if (!reconciledConfig || !Array.isArray(reconciledConfig.items)) return;
+  try {
+    const cleanItems = reconciledConfig.items.map((item: any, idx: number) =>
+      projectServerHomepageTreatmentCover(item, idx)
+    );
+    const tsFileContent = `import { HomepageTreatmentCoverImage } from '../types';
+
+/**
+ * Persistent Homepage Treatment Cover Images
+ * Automatically synchronized by the Admin Studio and server reconciliation.
+ */
+export const ADMIN_SYNCED_TREATMENT_COVERS: HomepageTreatmentCoverImage[] = ${JSON.stringify(
+      cleanItems,
+      null,
+      2
+    )};
+`;
+    writeFileAtomicallySync(treatmentCoversDataPath, tsFileContent);
+    writeTreatmentCoversManifestToDisk({
+      items: cleanItems,
+      updatedAt: reconciledConfig.updatedAt || new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('[Admin] Failed to sync src/data/treatmentCoversData.ts:', err);
+  }
+}
+
 /**
  * Reconciles Homepage Treatment Cover Images across:
  * 1) incomingConfig
  * 2) existingJsonConfig (siteCustomizations.json -> homepage_treatment_cover_images_v1)
  * 3) manifestConfig (/public/assets/treatments/_treatment_covers_manifest.json)
- * 4) physical `cover-*.webp` files in /public/assets/treatments/
- * 5) default seed items
+ * 4) tsItems (src/data/treatmentCoversData.ts -> ADMIN_SYNCED_TREATMENT_COVERS)
+ * 5) physical `cover-*.webp` files in /public/assets/treatments/
+ * 6) default seed items
  */
 function reconcileHomepageTreatmentCoversConfig(
   incomingConfig: any,
@@ -1213,11 +1276,12 @@ function reconcileHomepageTreatmentCoversConfig(
       items: defaults,
       updatedAt: new Date().toISOString(),
     };
-    writeTreatmentCoversManifestToDisk(restoredPayload);
+    syncTreatmentCoversDataTs(restoredPayload);
     return restoredPayload;
   }
 
   const manifestConfig = readTreatmentCoversManifestFromDisk();
+  const tsItems = readTreatmentCoversFromTsDisk();
   const defaultSeeds = getDefaultHomepageTreatmentCovers();
   const seedById = new Map<string, any>(defaultSeeds.map((s) => [String(s.id), s]));
 
@@ -1260,6 +1324,15 @@ function reconcileHomepageTreatmentCoversConfig(
     }
   }
 
+  const tsById = new Map<string, any>();
+  for (const item of tsItems) {
+    if (!item || !item.id) continue;
+    const id = String(item.id).trim();
+    if (!explicitDeletedIds.has(id)) {
+      tsById.set(id, item);
+    }
+  }
+
   // Scan /public/assets/treatments/ for any orphaned `cover-<subCatId>-<coverId>.webp` files
   const diskOrphansById = new Map<string, any>();
   if (fs.existsSync(publicTreatmentsDir)) {
@@ -1296,7 +1369,12 @@ function reconcileHomepageTreatmentCoversConfig(
 
         // Check if any known item already references this file or ID
         const cleanFileUrl = `/assets/treatments/${f}`;
-        const alreadyReferenced = [...incomingById.values(), ...existingById.values(), ...manifestById.values()].some(
+        const alreadyReferenced = [
+          ...incomingById.values(),
+          ...existingById.values(),
+          ...manifestById.values(),
+          ...tsById.values(),
+        ].some(
           (it: any) =>
             String(it?.id) === extractedId ||
             String(it?.id) === stem ||
@@ -1318,7 +1396,7 @@ function reconcileHomepageTreatmentCoversConfig(
             imageUrl: `${cleanFileUrl}?v=${mtime}`,
             title: matchedTreatment?.name || matchedSubCat,
             caption: matchedTreatment?.duration || '45 - 60 Mins',
-            showInDefaultGrid: false,
+            showInDefaultGrid: true,
             hidden: false,
             order: 999,
             updatedAt: mtime,
@@ -1334,16 +1412,16 @@ function reconcileHomepageTreatmentCoversConfig(
   incomingById.forEach((_, id) => allIds.add(id));
   existingById.forEach((_, id) => allIds.add(id));
   manifestById.forEach((_, id) => allIds.add(id));
+  tsById.forEach((_, id) => allIds.add(id));
   diskOrphansById.forEach((_, id) => allIds.add(id));
 
-  // If no custom or manifest items exist yet, seed with the 24 default subcategories
-  if (allIds.size === 0) {
-    defaultSeeds.forEach((seed) => {
-      if (!explicitDeletedIds.has(String(seed.id))) {
-        allIds.add(String(seed.id));
-      }
-    });
-  }
+  // Ensure all non-deleted default subcategory seeds remain present
+  defaultSeeds.forEach((seed) => {
+    const sId = String(seed.id);
+    if (!explicitDeletedIds.has(sId)) {
+      allIds.add(sId);
+    }
+  });
 
   const mergedItems: any[] = [];
   let idxCounter = 0;
@@ -1354,21 +1432,37 @@ function reconcileHomepageTreatmentCoversConfig(
     const inc = incomingById.get(id);
     const ex = existingById.get(id);
     const mf = manifestById.get(id);
+    const ts = tsById.get(id);
     const orphan = diskOrphansById.get(id);
     const seed = seedById.get(id);
 
-    // Choose metadata from incoming if present, otherwise existing, manifest, orphan, or seed
-    let chosen = inc || ex || mf || orphan || seed;
-    if (!chosen) continue;
+    const allCandidates = [inc, ex, mf, ts, orphan, seed].filter(Boolean);
+    if (allCandidates.length === 0) continue;
 
-    // Never allow a stale payload to overwrite a custom uploaded /assets/treatments/cover-*.webp image
-    const candidates = [inc, ex, mf, orphan].filter(Boolean);
-    let bestImageCandidate = chosen;
-    let bestScore = scoreTreatmentCoverCompleteness(chosen);
+    // Separate modified/custom candidates from unmodified default seed objects
+    const modifiedCandidates = allCandidates.filter((c) => !isUnmodifiedDefaultCoverObj(c));
+    const pool = modifiedCandidates.length > 0 ? modifiedCandidates : allCandidates;
 
-    for (const cand of candidates) {
+    // Pick the winning metadata candidate (preferring newest updatedAt, then highest completeness score, then incoming)
+    let winner = pool[0];
+    for (const cand of pool) {
+      const wTime = Number(winner?.updatedAt || 0);
+      const cTime = Number(cand?.updatedAt || 0);
+      const wScore = scoreTreatmentCoverCompleteness(winner);
+      const cScore = scoreTreatmentCoverCompleteness(cand);
+      if (cTime > wTime) {
+        winner = cand;
+      } else if (cTime === wTime && cScore > wScore) {
+        winner = cand;
+      }
+    }
+
+    // Pick best image candidate so custom /assets/treatments/cover-*.webp is never lost
+    let bestImageCandidate = winner;
+    let bestScore = scoreTreatmentCoverCompleteness(winner);
+    for (const cand of pool) {
       const s = scoreTreatmentCoverCompleteness(cand);
-      const candTime = Number(cand.updatedAt || 0);
+      const candTime = Number(cand?.updatedAt || 0);
       const bestTime = Number(bestImageCandidate?.updatedAt || 0);
       if (s > bestScore || (s === bestScore && candTime > bestTime)) {
         bestImageCandidate = cand;
@@ -1379,17 +1473,21 @@ function reconcileHomepageTreatmentCoversConfig(
     const rawCombined = {
       ...(seed || {}),
       ...(orphan || {}),
-      ...(mf || {}),
-      ...(ex || {}),
-      ...(inc || {}),
-      id: chosen.id || id,
+      ...(ts && !isUnmodifiedDefaultCoverObj(ts) ? ts : {}),
+      ...(mf && !isUnmodifiedDefaultCoverObj(mf) ? mf : {}),
+      ...(ex && !isUnmodifiedDefaultCoverObj(ex) ? ex : {}),
+      ...(inc && !isUnmodifiedDefaultCoverObj(inc) ? inc : {}),
+      ...(winner || {}),
+      id: winner.id || id,
       imageUrl:
-        (inc?.imageUrl && String(inc.imageUrl).startsWith('/assets/treatments/cover-')
+        (inc?.imageUrl && String(inc.imageUrl).startsWith('/assets/treatments/')
           ? inc.imageUrl
           : bestImageCandidate?.imageUrl) ||
+        winner?.imageUrl ||
         inc?.imageUrl ||
         ex?.imageUrl ||
         mf?.imageUrl ||
+        ts?.imageUrl ||
         orphan?.imageUrl ||
         seed?.imageUrl,
       updatedAt:
@@ -1397,6 +1495,7 @@ function reconcileHomepageTreatmentCoversConfig(
           Number(inc?.updatedAt || 0),
           Number(ex?.updatedAt || 0),
           Number(mf?.updatedAt || 0),
+          Number(ts?.updatedAt || 0),
           Number(orphan?.updatedAt || 0)
         ) || undefined,
     };
@@ -1422,7 +1521,7 @@ function reconcileHomepageTreatmentCoversConfig(
     updatedAt: new Date().toISOString(),
   };
 
-  writeTreatmentCoversManifestToDisk(reconciledConfig);
+  syncTreatmentCoversDataTs(reconciledConfig);
   return reconciledConfig;
 }
 
@@ -4002,17 +4101,20 @@ app.get('/api/admin/homepage-treatments', (req, res) => {
       }
     }
 
-    // Project strictly the required card columns for every subcategory treatment card
-    const allProjected = TREATMENTS.map((baseItem: any, idx: number) => {
+    // Project strictly the required card columns for every subcategory treatment card + any custom added cards
+    const seenCardIds = new Set<string>();
+    const allProjected: any[] = TREATMENTS.map((baseItem: any, idx: number) => {
+      const lowerId = String(baseItem.id || '').toLowerCase();
+      seenCardIds.add(lowerId);
       const saved =
-        savedById.get(String(baseItem.id || '').toLowerCase()) ||
+        savedById.get(lowerId) ||
         savedById.get(String(baseItem.subGroupId || '').toLowerCase());
       return projectServerHomepageTreatmentCard(
         {
           ...baseItem,
-          ...(saved && saved.id === baseItem.id ? saved : {}),
+          ...(saved && String(saved.id || '').toLowerCase() === lowerId ? saved : {}),
           image:
-            (saved && saved.id === baseItem.id && saved.image) ||
+            (saved && String(saved.id || '').toLowerCase() === lowerId && saved.image) ||
             (saved && saved.image && String(saved.image).startsWith('/assets/treatments/')
               ? saved.image
               : baseItem.image),
@@ -4020,6 +4122,16 @@ app.get('/api/admin/homepage-treatments', (req, res) => {
         idx
       );
     });
+
+    if (rawConfig && Array.isArray(rawConfig.treatments)) {
+      for (const customItem of rawConfig.treatments) {
+        const cId = String(customItem?.id || '').trim().toLowerCase();
+        if (cId && !seenCardIds.has(cId)) {
+          seenCardIds.add(cId);
+          allProjected.push(projectServerHomepageTreatmentCard(customItem, allProjected.length));
+        }
+      }
+    }
 
     const tagFilter = req.query.tag || req.query.category ? String(req.query.tag || req.query.category).trim() : '';
     const subGroupFilter =
@@ -4264,11 +4376,9 @@ app.get('/api/admin/homepage-treatment-covers', (req, res) => {
     const totalPages = Math.max(1, Math.ceil(totalCount / limit));
     const hasMore = offset + paginatedItems.length < totalCount;
 
-    const isPaginatedQuery = req.query.limit !== undefined || req.query.page !== undefined || req.query.offset !== undefined;
-
     return res.json({
       success: true,
-      ...(isPaginatedQuery ? {} : { config: reconciled }),
+      config: reconciled,
       data: paginatedItems,
       items: paginatedItems,
       totalCount,
@@ -6064,6 +6174,7 @@ if (!isProd) {
                 '**/src/data/siteCustomizations.json',
                 '**/src/data/clinicInfo.ts*',
                 '**/src/data/transformationsData.ts*',
+                '**/src/data/treatmentCoversData.ts*',
                 '**/src/data/specialistTreatments.ts*',
                 '**/src/data/treatmentPricing.ts*',
                 '**/src/data.ts*',

@@ -481,6 +481,27 @@
       "order": 24
     },
     {
+      "id": "cover-platelet-rich-plasma-prp-1793787439413-1",
+      "subCategoryId": "platelet-rich-plasma-prp",
+      "subCategoryName": "Platelet-Rich Plasma (PRP)",
+      "branchCategory": "Face & Injectables",
+      "imageUrl": "/assets/treatments/cover-platelet-rich-plasma-prp-1793787439413-1.webp?v=1793787442073",
+      "title": "Platelet-Rich Plasma (PRP)",
+      "caption": "60 mins",
+      "altText": "Platelet-Rich Plasma (PRP) clinical aesthetic treatment at Age Reversal Clinic",
+      "seoTitle": "Platelet-Rich Plasma (PRP) - Specialist Care",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "face & injectables",
+        "platelet-rich plasma (prp)",
+        "clinical aesthetic treatments"
+      ],
+      "showInDefaultGrid": false,
+      "hidden": false,
+      "order": 25,
+      "updatedAt": 1793787442073
+    },
+    {
       "id": "cover-lash-eyebrow-1793789332130-1",
       "subCategoryId": "lash-eyebrow",
       "subCategoryName": "lash & eyebrow",
@@ -498,7 +519,7 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 25,
+      "order": 26,
       "updatedAt": 1793789332354
     },
     {
@@ -519,9 +540,9 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 26,
+      "order": 27,
       "updatedAt": 1793789299937
     }
   ],
-  "updatedAt": "2026-11-04T11:21:08.851Z"
+  "updatedAt": "2026-11-04T11:38:37.971Z"
 }

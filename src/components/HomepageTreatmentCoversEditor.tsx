@@ -11,6 +11,7 @@ import {
   resetHomepageTreatmentCoversToDefaults,
   getTreatmentTaxonomy,
   listProjectAssets,
+  loadSiteCustomizations,
 } from '../lib/adminStore';
 import { HomepageTreatmentCoverImage } from '../types';
 import { TreatmentTaxonomyGroup } from '../data/treatmentPricing';
@@ -133,6 +134,7 @@ export default function HomepageTreatmentCoversEditor() {
   const [isUploadingImages, setIsUploadingImages] = useState<boolean>(false);
   const [uploadProgressText, setUploadProgressText] = useState<string>('');
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [uploadedModalCoverIds, setUploadedModalCoverIds] = useState<Record<string, string>>({});
 
   // Asset Library Picker Sub-Modal
   const [isAssetPickerOpen, setIsAssetPickerOpen] = useState<boolean>(false);
@@ -187,11 +189,12 @@ export default function HomepageTreatmentCoversEditor() {
     );
   }, [subcategoryOptions, selectedBranch]);
 
-  // Hydrate from remote server on mount
+  // Hydrate from remote server & siteCustomizations.json on mount
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    fetchRemoteHomepageTreatmentCoversConfig()
+    loadSiteCustomizations()
+      .then(() => fetchRemoteHomepageTreatmentCoversConfig())
       .then((reconciled) => {
         if (!mounted) return;
         setAllItems(reconciled.items || []);
@@ -374,6 +377,7 @@ export default function HomepageTreatmentCoversEditor() {
     setFormHidden(false);
     setFormImageUrl('');
     setFormAdditionalUrls([]);
+    setUploadedModalCoverIds({});
     setFormAltText(seo.altText);
     setFormSeoTitle(seo.seoTitle);
     setFormSeoKeywords(seo.seoKeywords);
@@ -393,6 +397,7 @@ export default function HomepageTreatmentCoversEditor() {
     setFormHidden(Boolean(cover.hidden));
     setFormImageUrl(cover.imageUrl || '');
     setFormAdditionalUrls([]);
+    setUploadedModalCoverIds({});
     setFormAltText(cover.altText || '');
     setFormSeoTitle(cover.seoTitle || '');
     setFormSeoKeywords(Array.isArray(cover.seoKeywords) ? cover.seoKeywords : []);
@@ -480,7 +485,13 @@ export default function HomepageTreatmentCoversEditor() {
 
         if (res.success && (res.versionedUrl || res.url)) {
           const finalUrl = res.versionedUrl || res.url!;
+          const cleanUrl = finalUrl.split('?')[0];
           uploadedUrls.push(finalUrl);
+          setUploadedModalCoverIds((prev) => ({
+            ...prev,
+            [finalUrl]: res.id || targetCoverId,
+            [cleanUrl]: res.id || targetCoverId,
+          }));
           if (res.updatedConfig?.items) {
             latestItems = res.updatedConfig.items;
           }
@@ -569,16 +580,24 @@ export default function HomepageTreatmentCoversEditor() {
 
     for (let i = 0; i < allUploadedUrls.length; i++) {
       const url = allUploadedUrls[i];
-      const existingIdx = nextItems.findIndex(
-        (it) => it.imageUrl === url || it.imageUrl.split('?')[0] === url.split('?')[0]
-      );
+      const cleanUrl = url.split('?')[0];
+      const trackedUploadId = uploadedModalCoverIds[url] || uploadedModalCoverIds[cleanUrl];
 
-      if (existingIdx !== -1 && nextItems[existingIdx].subCategoryId === subId) {
+      const existingIdx = trackedUploadId
+        ? nextItems.findIndex((it) => it.id === trackedUploadId)
+        : nextItems.findIndex(
+            (it) =>
+              !String(it.id).startsWith('cover-seed-') &&
+              (it.imageUrl === url || it.imageUrl.split('?')[0] === cleanUrl)
+          );
+
+      if (existingIdx !== -1) {
         nextItems[existingIdx] = {
           ...nextItems[existingIdx],
           subCategoryId: subId,
           subCategoryName: subName,
           branchCategory: branch,
+          imageUrl: url,
           title: (formTitle || subName).trim(),
           caption: formCaption.trim(),
           altText: (formAltText || autoSeo.altText).trim(),
@@ -589,7 +608,9 @@ export default function HomepageTreatmentCoversEditor() {
           updatedAt: now,
         };
       } else {
-        const newId = `cover-${subId.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-${now}-${i + 1}`;
+        const newId =
+          trackedUploadId ||
+          `cover-${subId.toLowerCase().replace(/[^a-z0-9_-]+/g, '-')}-${now}-${i + 1}`;
         nextItems.push({
           id: newId,
           subCategoryId: subId,
@@ -609,6 +630,7 @@ export default function HomepageTreatmentCoversEditor() {
       }
     }
 
+    setUploadedModalCoverIds({});
     setIsFormModalOpen(false);
     await persistItemsList(nextItems, {
       toast:

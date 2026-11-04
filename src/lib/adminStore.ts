@@ -43,7 +43,7 @@ import {
   HomepageTreatmentCoverImage,
   HomepageTreatmentCoversConfig
 } from '../types';
-import { NEWS_ARTICLES, STORY_ARTICLES } from '../data';
+import { TREATMENTS, NEWS_ARTICLES, STORY_ARTICLES } from '../data';
 import {
   CLINIC_DATA,
   ClinicData,
@@ -79,6 +79,7 @@ import {
 import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
 import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
 import { ADMIN_SYNCED_TRANSFORMATION_CASES } from '../data/transformationsData';
+import { ADMIN_SYNCED_TREATMENT_COVERS } from '../data/treatmentCoversData';
 // Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
 let _siteCustomizationsCache: Record<string, any> | null = null;
 let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
@@ -908,6 +909,7 @@ export async function syncAllConfigsToFiles(): Promise<{ success: boolean; messa
       [HERO_CONFIG_KEY]: getHeroConfig(),
       [SPECIALIST_AREAS_CONFIG_KEY]: getSpecialistAreasConfig(),
       [TREATMENTS_CONFIG_KEY]: getTreatmentsConfig(),
+      [HOMEPAGE_TREATMENT_COVERS_KEY]: getHomepageTreatmentCoversConfig(),
       [GALLERY_CONFIG_KEY]: getBeforeAfterGalleryConfig(),
       [WHY_CHOOSE_US_CONFIG_KEY]: getWhyChooseUsConfig(),
       [AWARDS_CONFIG_KEY]: getAwardsConfig(),
@@ -987,6 +989,10 @@ const DEFAULT_SPECIALIST_BY_ID = new Map(
   ALL_SPECIALIST_TREATMENTS.map((item) => [item.id, item])
 );
 
+const SYNCED_TREATMENTS_BY_ID = new Map(
+  (Array.isArray(TREATMENTS) ? TREATMENTS : []).map((t) => [String(t.id).toLowerCase(), t])
+);
+
 export const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
   editorialHeading: "rejuvenation",
   editorialSub: "Begin your transformation",
@@ -999,15 +1005,21 @@ export const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
     "clinical dermatology procedures"
   ],
   treatments: ALL_SPECIALIST_TREATMENTS.map((item, idx) => {
-    const cleanTitle = (item.title || '').trim();
-    const rawParent = item.pricingCategory || item.category || 'Face & Injectables';
+    const synced = SYNCED_TREATMENTS_BY_ID.get(String(item.id).toLowerCase());
+    const cleanTitle = (synced?.name || item.title || '').trim();
+    const rawParent = synced?.tag || item.pricingCategory || item.category || 'Face & Injectables';
     const categoryLabel =
       rawParent === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawParent;
     const cleanImage =
-      item.image || '/assets/images/treatments/specialist-profhilo.jpg';
+      (synced?.image && synced.image.startsWith('/assets/treatments/') ? synced.image : '') ||
+      item.image ||
+      synced?.image ||
+      '/assets/images/treatments/specialist-profhilo.jpg';
 
     const defaultKeywords =
-      item.seoKeywords && item.seoKeywords.length > 0
+      synced?.seoKeywords && synced.seoKeywords.length > 0
+        ? synced.seoKeywords
+        : item.seoKeywords && item.seoKeywords.length > 0
         ? item.seoKeywords
         : [
             cleanTitle.toLowerCase(),
@@ -1021,19 +1033,21 @@ export const DEFAULT_TREATMENTS_CONFIG: TreatmentsConfig = {
       id: item.id,
       name: cleanTitle,
       stepNumber: String(idx + 1).padStart(2, '0'),
-      description: item.description || '',
+      description: synced?.description || item.description || '',
       tag: categoryLabel,
-      subGroupId: item.id,
-      subCategory: cleanTitle,
+      subGroupId: synced?.subGroupId || item.id,
+      subCategory: synced?.subCategory || cleanTitle,
       image: cleanImage,
       imageAlt:
+        synced?.imageAlt ||
         item.coverMedia?.altText ||
         `${cleanTitle} (${categoryLabel}) at Age Reversal Clinic London`,
       seoTitle:
+        synced?.seoTitle ||
         item.coverMedia?.seoTitle ||
         `${cleanTitle} | Age Reversal Clinic London`,
       seoKeywords: defaultKeywords,
-      duration: item.duration || '45 Mins'
+      duration: synced?.duration || item.duration || '45 Mins'
     };
   })
 };
@@ -3237,9 +3251,10 @@ export function projectHomepageTreatmentCard(
 
 export function getTreatmentsConfig(): TreatmentsConfig {
   initializeAdminStore();
+  const fileSaved = getFileDefault<TreatmentsConfig | null>(TREATMENTS_CONFIG_KEY, null);
   const stored = getStorageItem<TreatmentsConfig>(
     TREATMENTS_CONFIG_KEY,
-    getFileDefault(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG)
+    fileSaved || DEFAULT_TREATMENTS_CONFIG
   );
 
   // Dynamically load active taxonomy for parent branch metadata
@@ -3256,59 +3271,112 @@ export function getTreatmentsConfig(): TreatmentsConfig {
 
   // Base source cards are strictly the standalone visual image cards (completely decoupled from treatment pricing)
   const defaultCards = DEFAULT_TREATMENTS_CONFIG.treatments || [];
+  const syncedDataCards = Array.isArray(TREATMENTS) ? TREATMENTS : [];
+  const fileTreatments = Array.isArray(fileSaved?.treatments) ? fileSaved!.treatments : [];
   const storedTreatments = Array.isArray(stored?.treatments) ? stored.treatments : [];
 
+  const syncedById = new Map<string, Treatment>();
+  for (const t of syncedDataCards) {
+    if (t && t.id) syncedById.set(String(t.id).trim().toLowerCase(), t);
+  }
+  const fileById = new Map<string, Treatment>();
+  for (const t of fileTreatments) {
+    if (t && t.id) fileById.set(String(t.id).trim().toLowerCase(), t);
+  }
   const storedById = new Map<string, Treatment>();
   for (const t of storedTreatments) {
-    if (t && t.id) {
-      storedById.set(String(t.id).trim().toLowerCase(), t);
-    }
+    if (t && t.id) storedById.set(String(t.id).trim().toLowerCase(), t);
   }
+
+  const seenCardIds = new Set<string>();
 
   // Build the standalone image cards, merging any custom WebP images & SEO metadata saved by admin
   const standaloneCards: HomepageTreatmentCardItem[] = defaultCards.map((baseItem, idx) => {
     const cleanId = String(baseItem.id).trim().toLowerCase();
-    const saved = storedById.get(cleanId);
+    seenCardIds.add(cleanId);
+    const tsSaved = syncedById.get(cleanId);
+    const fSaved = fileById.get(cleanId);
+    const locSaved = storedById.get(cleanId);
+
+    // Prefer custom /assets/treatments/ image across locSaved, fSaved, tsSaved
+    const bestCustomImage =
+      (locSaved?.image && locSaved.image.startsWith('/assets/treatments/') ? locSaved.image : '') ||
+      (fSaved?.image && fSaved.image.startsWith('/assets/treatments/') ? fSaved.image : '') ||
+      (tsSaved?.image && tsSaved.image.startsWith('/assets/treatments/') ? tsSaved.image : '') ||
+      locSaved?.image ||
+      fSaved?.image ||
+      tsSaved?.image ||
+      baseItem.image;
+
+    const saved = fSaved || locSaved || tsSaved;
     const taxMeta =
       subGroupMetaById.get(cleanId) ||
       (baseItem.subGroupId ? subGroupMetaById.get(baseItem.subGroupId.toLowerCase()) : undefined);
 
     const resolvedParentTag =
-      saved?.tag ||
+      locSaved?.tag ||
+      fSaved?.tag ||
+      tsSaved?.tag ||
       taxMeta?.parentBranch ||
       normalizeMasterBranch(baseItem.tag || 'Face & Injectables', baseItem.name);
     const resolvedSubName =
-      saved?.subCategory || taxMeta?.subCategory || baseItem.subCategory || baseItem.name;
+      locSaved?.subCategory ||
+      fSaved?.subCategory ||
+      tsSaved?.subCategory ||
+      taxMeta?.subCategory ||
+      baseItem.subCategory ||
+      baseItem.name;
 
     return projectHomepageTreatmentCard(
       {
         id: baseItem.id,
-        name: saved?.name || baseItem.name,
+        name: locSaved?.name || fSaved?.name || tsSaved?.name || baseItem.name,
         stepNumber: String(idx + 1).padStart(2, '0'),
         tag: resolvedParentTag,
-        subGroupId: baseItem.subGroupId || baseItem.id,
+        subGroupId: saved?.subGroupId || baseItem.subGroupId || baseItem.id,
         subCategory: resolvedSubName,
-        duration: saved?.duration || baseItem.duration || '45 Mins',
-        description: saved?.description || baseItem.description || '',
-        image: saved?.image || baseItem.image,
-        imageAlt: saved?.imageAlt || baseItem.imageAlt,
-        seoTitle: saved?.seoTitle || baseItem.seoTitle,
+        duration: locSaved?.duration || fSaved?.duration || tsSaved?.duration || baseItem.duration || '45 Mins',
+        description: locSaved?.description || fSaved?.description || tsSaved?.description || baseItem.description || '',
+        image: bestCustomImage,
+        imageAlt: locSaved?.imageAlt || fSaved?.imageAlt || tsSaved?.imageAlt || baseItem.imageAlt,
+        seoTitle: locSaved?.seoTitle || fSaved?.seoTitle || tsSaved?.seoTitle || baseItem.seoTitle,
         seoKeywords:
-          saved?.seoKeywords && saved.seoKeywords.length > 0
-            ? saved.seoKeywords
+          locSaved?.seoKeywords && locSaved.seoKeywords.length > 0
+            ? locSaved.seoKeywords
+            : fSaved?.seoKeywords && fSaved.seoKeywords.length > 0
+            ? fSaved.seoKeywords
+            : tsSaved?.seoKeywords && tsSaved.seoKeywords.length > 0
+            ? tsSaved.seoKeywords
             : baseItem.seoKeywords,
       },
       idx
     );
   });
 
+  // Also append any custom added treatment cards beyond the 24 default IDs
+  for (const extraSource of [storedTreatments, fileTreatments, syncedDataCards]) {
+    for (const extra of extraSource) {
+      if (!extra || !extra.id) continue;
+      const cleanId = String(extra.id).trim().toLowerCase();
+      if (!seenCardIds.has(cleanId)) {
+        seenCardIds.add(cleanId);
+        standaloneCards.push(projectHomepageTreatmentCard(extra, standaloneCards.length));
+      }
+    }
+  }
+
   return {
-    editorialHeading: stored?.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
-    editorialSub: stored?.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
-    description: stored?.description || DEFAULT_TREATMENTS_CONFIG.description,
+    editorialHeading:
+      stored?.editorialHeading || fileSaved?.editorialHeading || DEFAULT_TREATMENTS_CONFIG.editorialHeading,
+    editorialSub:
+      stored?.editorialSub || fileSaved?.editorialSub || DEFAULT_TREATMENTS_CONFIG.editorialSub,
+    description:
+      stored?.description || fileSaved?.description || DEFAULT_TREATMENTS_CONFIG.description,
     seoKeywords:
       Array.isArray(stored?.seoKeywords) && stored.seoKeywords.length > 0
         ? stored.seoKeywords
+        : Array.isArray(fileSaved?.seoKeywords) && fileSaved!.seoKeywords.length > 0
+        ? fileSaved!.seoKeywords
         : DEFAULT_TREATMENTS_CONFIG.seoKeywords || [],
     treatments: standaloneCards,
   };
@@ -3449,10 +3517,6 @@ export function getPaginatedHomepageTreatments(
 export async function fetchPaginatedHomepageTreatments(
   params: HomepageTreatmentsQueryParams = {}
 ): Promise<PaginatedHomepageTreatmentsResponse> {
-  if (typeof window !== 'undefined' && window.localStorage.getItem(TREATMENTS_CONFIG_KEY)) {
-    return getPaginatedHomepageTreatments(params);
-  }
-
   const limit = params.limit !== undefined ? Math.max(1, params.limit) : 6;
   const page = params.page !== undefined ? Math.max(1, params.page) : 1;
   const offset = params.offset !== undefined ? Math.max(0, params.offset) : (page - 1) * limit;
@@ -3715,6 +3779,18 @@ function scoreClientCoverCompleteness(item?: Partial<HomepageTreatmentCoverImage
   return score;
 }
 
+function isUnmodifiedDefaultClientCover(item?: Partial<HomepageTreatmentCoverImage> | null): boolean {
+  if (!item) return true;
+  const id = String(item.id || '');
+  if (!id.startsWith('cover-seed-')) return false;
+  if (item.updatedAt) return false;
+  const img = String(item.imageUrl || '');
+  if (img.startsWith('/assets/treatments/cover-') || img.startsWith('/assets/treatments/')) {
+    return false;
+  }
+  return true;
+}
+
 export function getHomepageTreatmentCoversConfig(
   remoteOverride?: HomepageTreatmentCoversConfig | null
 ): HomepageTreatmentCoversConfig {
@@ -3729,6 +3805,9 @@ export function getHomepageTreatmentCoversConfig(
     HOMEPAGE_TREATMENT_COVERS_KEY,
     null
   );
+  const tsSynced = Array.isArray(ADMIN_SYNCED_TREATMENT_COVERS)
+    ? ADMIN_SYNCED_TREATMENT_COVERS
+    : [];
   const defaults = getDefaultHomepageTreatmentCovers();
   const seedById = new Map<string, HomepageTreatmentCoverImage>(
     defaults.map((d) => [d.id, d])
@@ -3755,18 +3834,23 @@ export function getHomepageTreatmentCoversConfig(
     }
   }
 
+  const tsById = new Map<string, HomepageTreatmentCoverImage>();
+  for (const item of tsSynced) {
+    if (item && item.id && !deletedIds.has(String(item.id))) {
+      tsById.set(String(item.id), item);
+    }
+  }
+
   const allIds = new Set<string>();
   remoteById.forEach((_, id) => allIds.add(id));
   localById.forEach((_, id) => allIds.add(id));
   fileById.forEach((_, id) => allIds.add(id));
-
-  if (allIds.size === 0) {
-    defaults.forEach((d) => {
-      if (!deletedIds.has(d.id)) {
-        allIds.add(d.id);
-      }
-    });
-  }
+  tsById.forEach((_, id) => allIds.add(id));
+  defaults.forEach((d) => {
+    if (!deletedIds.has(d.id)) {
+      allIds.add(d.id);
+    }
+  });
 
   const merged: HomepageTreatmentCoverImage[] = [];
   let idx = 0;
@@ -3776,16 +3860,33 @@ export function getHomepageTreatmentCoversConfig(
     const rem = remoteById.get(id);
     const loc = localById.get(id);
     const fil = fileById.get(id);
+    const ts = tsById.get(id);
     const seed = seedById.get(id);
 
-    const primary = rem || loc || fil || seed;
-    if (!primary) continue;
+    const allCandidates = [rem, loc, fil, ts, seed].filter(Boolean) as HomepageTreatmentCoverImage[];
+    if (allCandidates.length === 0) continue;
+
+    // Never allow an unmodified default seed in localStorage to clobber a modified card in tsSynced/fileSaved/remote
+    const modifiedCandidates = allCandidates.filter((c) => !isUnmodifiedDefaultClientCover(c));
+    const pool = modifiedCandidates.length > 0 ? modifiedCandidates : allCandidates;
+
+    let winner = pool[0];
+    for (const c of pool) {
+      const wTime = Number(winner?.updatedAt || 0);
+      const cTime = Number(c?.updatedAt || 0);
+      const wScore = scoreClientCoverCompleteness(winner);
+      const cScore = scoreClientCoverCompleteness(c);
+      if (cTime > wTime) {
+        winner = c;
+      } else if (cTime === wTime && cScore > wScore) {
+        winner = c;
+      }
+    }
 
     // Pick best image candidate so custom /assets/treatments/cover-*.webp is never lost
-    const candidates = [rem, loc, fil].filter(Boolean) as HomepageTreatmentCoverImage[];
-    let bestImgCandidate = primary;
-    let bestScore = scoreClientCoverCompleteness(primary);
-    for (const c of candidates) {
+    let bestImgCandidate = winner;
+    let bestScore = scoreClientCoverCompleteness(winner);
+    for (const c of pool) {
       const s = scoreClientCoverCompleteness(c);
       const cTime = Number(c.updatedAt || 0);
       const bTime = Number(bestImgCandidate?.updatedAt || 0);
@@ -3797,23 +3898,26 @@ export function getHomepageTreatmentCoversConfig(
 
     const combined = {
       ...(seed || {}),
-      ...(fil || {}),
-      ...(loc || {}),
-      ...(rem || {}),
-      // If local has newer edits than remote, prefer local metadata unless remoteOverride was explicitly passed
-      ...(!remoteOverride && loc ? loc : {}),
+      ...(ts && !isUnmodifiedDefaultClientCover(ts) ? ts : {}),
+      ...(fil && !isUnmodifiedDefaultClientCover(fil) ? fil : {}),
+      ...(loc && !isUnmodifiedDefaultClientCover(loc) ? loc : {}),
+      ...(rem && !isUnmodifiedDefaultClientCover(rem) ? rem : {}),
+      ...(winner || {}),
       imageUrl:
         bestImgCandidate?.imageUrl ||
-        loc?.imageUrl ||
+        winner?.imageUrl ||
         rem?.imageUrl ||
+        loc?.imageUrl ||
         fil?.imageUrl ||
+        ts?.imageUrl ||
         seed?.imageUrl ||
         '',
       updatedAt:
         Math.max(
           Number(rem?.updatedAt || 0),
           Number(loc?.updatedAt || 0),
-          Number(fil?.updatedAt || 0)
+          Number(fil?.updatedAt || 0),
+          Number(ts?.updatedAt || 0)
         ) || undefined,
     };
 
