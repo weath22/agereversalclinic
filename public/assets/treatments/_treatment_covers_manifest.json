@@ -5,7 +5,7 @@
       "subCategoryId": "lash-eyebrow",
       "subCategoryName": "lash & eyebrow",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-lash-eyebrow.webp?v=1793789247873",
+      "imageUrl": "/assets/treatments/cover-seed-lash-eyebrow.webp?v=1793789247413",
       "title": "lash & eyebrow",
       "caption": "45 mins",
       "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
@@ -18,7 +18,8 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 1
+      "order": 1,
+      "updatedAt": 1793789277151
     },
     {
       "id": "cover-seed-body-waxing",
@@ -38,14 +39,15 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 2
+      "order": 2,
+      "updatedAt": 1793789392101
     },
     {
       "id": "cover-seed-ladies-girls-cut-collors-treatments",
       "subCategoryId": "ladies-girls-cut-collors-treatments",
       "subCategoryName": "Ladies & Girls Cut, Collors, Treatments",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
+      "imageUrl": "/assets/treatments/cover-seed-ladies-girls-cut-collors-treatments.webp?v=1793793435335",
       "title": "Ladies & Girls Cut, Collors, Treatments",
       "caption": "60 - 120 mins",
       "altText": "Ladies & Girls Cut, Collors, Treatments clinical aesthetic treatment at Age Reversal Clinic",
@@ -56,9 +58,10 @@
         "ladies & girls cut, collors, treatments",
         "clinical aesthetic treatments"
       ],
-      "showInDefaultGrid": true,
+      "showInDefaultGrid": false,
       "hidden": false,
-      "order": 3
+      "order": 3,
+      "updatedAt": 1793793588500
     },
     {
       "id": "cover-seed-men-and-kids",
@@ -138,7 +141,8 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 7
+      "order": 7,
+      "updatedAt": 1793789368442
     },
     {
       "id": "cover-seed-deso-face-and-body-course-of-1",
@@ -158,7 +162,8 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 8
+      "order": 8,
+      "updatedAt": 1793789372677
     },
     {
       "id": "cover-seed-deso-face-and-body-course-of-3",
@@ -506,7 +511,7 @@
       "subCategoryId": "lash-eyebrow",
       "subCategoryName": "lash & eyebrow",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789332130-1.webp?v=1793789332354",
+      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789332130-1.webp?v=1793789332281",
       "title": "lash & eyebrow",
       "caption": "45 mins",
       "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
@@ -520,14 +525,14 @@
       "showInDefaultGrid": false,
       "hidden": false,
       "order": 26,
-      "updatedAt": 1793789332354
+      "updatedAt": 1793789347309
     },
     {
       "id": "cover-lash-eyebrow-1793789299701-1",
       "subCategoryId": "lash-eyebrow",
       "subCategoryName": "lash & eyebrow",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789299701-1.webp?v=1793789299937",
+      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789299701-1.webp?v=1793789299856",
       "title": "lash & eyebrow",
       "caption": "45 mins",
       "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
@@ -541,8 +546,30 @@
       "showInDefaultGrid": false,
       "hidden": false,
       "order": 27,
-      "updatedAt": 1793789299937
+      "updatedAt": 1793789345461
+    },
+    {
+      "id": "cover-ladies-girls-cut-collors-treatments-1793793450085-1",
+      "subCategoryId": "ladies-girls-cut-collors-treatments",
+      "subCategoryName": "Ladies & Girls Cut, Collors, Treatments",
+      "branchCategory": "Hair & Beauty",
+      "imageUrl": "/assets/treatments/cover-ladies-girls-cut-collors-treatments-1793793450085-1.webp?v=1793793450349",
+      "title": "Ladies & Girls Cut, Collors, Treatments",
+      "caption": "45 - 60 Mins",
+      "altText": "Ladies & Girls Cut, Collors, Treatments — Ladies & Girls Cut, Collors, Treatments (Hair & Beauty) at Age Reversal Clinic London",
+      "seoTitle": "Ladies & Girls Cut, Collors, Treatments | Ladies & Girls Cut, Collors, Treatments — Age Reversal Clinic",
+      "seoKeywords": [
+        "ladies & girls cut, collors, treatments",
+        "hair & beauty",
+        "ladies & girls cut, collors, treatments london",
+        "age reversal clinic treatment",
+        "medical aesthetics london"
+      ],
+      "showInDefaultGrid": true,
+      "hidden": false,
+      "order": 28,
+      "updatedAt": 1793793570217
     }
   ],
-  "updatedAt": "2026-11-04T11:38:37.971Z"
+  "updatedAt": "2026-11-04T12:00:28.286Z"
 }

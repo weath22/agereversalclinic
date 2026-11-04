@@ -207,6 +207,123 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
 
 export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
   {
+    "id": "pair-1793724383033",
+    "title": "Clinical Transformation",
+    "category": "Skin Texture & Scars",
+    "tag": "Facial skin care",
+    "patientInfo": "Facial skin care",
+    "duration": "8 Weeks",
+    "sessions": 1,
+    "concern": "Clinical Transformation clinical transformation at Age Reversal Clinics.",
+    "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793670395086.webp?v=1793670395089",
+    "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793670407456.webp?v=1793670407457",
+    "singleFrameImage": "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928",
+    "galleryImages": [
+      "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928"
+    ],
+    "recommendedTreatmentIds": [
+      "facial-skin-care"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "facial-skin-care",
+    "linkedTreatmentId": "facial-skin-care",
+    "linkedTreatmentTitle": "Facial skin care",
+    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
+    "seoKeywords": [],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1793791646178
+  },
+  {
+    "id": "pair-1793724538573",
+    "title": "Clinical Transformation",
+    "category": "Skin Texture & Scars",
+    "tag": "Facial skin care",
+    "patientInfo": "Facial skin care",
+    "duration": "8 Weeks",
+    "sessions": 1,
+    "concern": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "beforeImage": "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
+    "afterImage": "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773",
+    "galleryImages": [
+      "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
+      "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773"
+    ],
+    "recommendedTreatmentIds": [
+      "facial-skin-care"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "facial-skin-care",
+    "linkedTreatmentId": "facial-skin-care",
+    "linkedTreatmentTitle": "Facial skin care",
+    "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
+    "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
+    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
+    "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "seoKeywords": [
+      "before and after eyebrow wax london",
+      "eyebrow wax before and after",
+      "age reversal clinics eyebrow wax results",
+      "lash & eyebrow results london",
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments"
+    ],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1793791646179
+  },
+  {
+    "id": "pair-1793719815460",
+    "title": "Clinical Transformation",
+    "category": "Skin Texture & Scars",
+    "tag": "Facial skin care",
+    "patientInfo": "Facial skin care",
+    "duration": "8 Weeks",
+    "sessions": 1,
+    "concern": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "beforeImage": "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
+    "afterImage": "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247",
+    "galleryImages": [
+      "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
+      "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247"
+    ],
+    "recommendedTreatmentIds": [
+      "facial-skin-care"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "facial-skin-care",
+    "linkedTreatmentId": "facial-skin-care",
+    "linkedTreatmentTitle": "Facial skin care",
+    "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
+    "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
+    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
+    "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "seoKeywords": [
+      "before and after eyebrow wax london",
+      "eyebrow wax before and after",
+      "age reversal clinics eyebrow wax results",
+      "lash & eyebrow results london",
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments"
+    ],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1793791646178
+  },
+  {
     "id": "pair-1",
     "title": "Facial skin care",
     "category": "Skin Texture & Scars",
@@ -243,99 +360,6 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "featured": false,
     "hidden": false,
     "updatedAt": 1793722234602
-  },
-  {
-    "id": "pair-1793719815460",
-    "title": "Clinical Transformation",
-    "category": "Skin Texture & Scars",
-    "tag": "Facial skin care",
-    "patientInfo": "Facial skin care",
-    "duration": "8 Weeks",
-    "sessions": 1,
-    "concern": "Clinical Transformation clinical transformation at Age Reversal Clinics.",
-    "beforeImage": "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
-    "afterImage": "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247",
-    "galleryImages": [
-      "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
-      "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247"
-    ],
-    "recommendedTreatmentIds": [
-      "facial-skin-care"
-    ],
-    "recommendedProductIds": [
-      "st-antioxidant-soothing-serum",
-      "st-antioxidant-matte-day-cream"
-    ],
-    "treatmentGroupId": "facial-skin-care",
-    "linkedTreatmentId": "facial-skin-care",
-    "linkedTreatmentTitle": "Facial skin care",
-    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-    "seoKeywords": [],
-    "featured": false,
-    "hidden": false,
-    "updatedAt": 1793791646178
-  },
-  {
-    "id": "pair-1793724383033",
-    "title": "Clinical Transformation",
-    "category": "Skin Texture & Scars",
-    "tag": "Facial skin care",
-    "patientInfo": "Facial skin care",
-    "duration": "8 Weeks",
-    "sessions": 1,
-    "concern": "Clinical Transformation clinical transformation at Age Reversal Clinics.",
-    "beforeImage": "",
-    "afterImage": "",
-    "singleFrameImage": "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928",
-    "galleryImages": [
-      "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928"
-    ],
-    "recommendedTreatmentIds": [
-      "facial-skin-care"
-    ],
-    "recommendedProductIds": [
-      "st-antioxidant-soothing-serum",
-      "st-antioxidant-matte-day-cream"
-    ],
-    "treatmentGroupId": "facial-skin-care",
-    "linkedTreatmentId": "facial-skin-care",
-    "linkedTreatmentTitle": "Facial skin care",
-    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-    "seoKeywords": [],
-    "featured": false,
-    "hidden": false,
-    "updatedAt": 1793791646178
-  },
-  {
-    "id": "pair-1793724538573",
-    "title": "Clinical Transformation",
-    "category": "Skin Texture & Scars",
-    "tag": "Facial skin care",
-    "patientInfo": "Facial skin care",
-    "duration": "8 Weeks",
-    "sessions": 1,
-    "concern": "Clinical Transformation clinical transformation at Age Reversal Clinics.",
-    "beforeImage": "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
-    "afterImage": "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773",
-    "galleryImages": [
-      "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
-      "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773"
-    ],
-    "recommendedTreatmentIds": [
-      "facial-skin-care"
-    ],
-    "recommendedProductIds": [
-      "st-antioxidant-soothing-serum",
-      "st-antioxidant-matte-day-cream"
-    ],
-    "treatmentGroupId": "facial-skin-care",
-    "linkedTreatmentId": "facial-skin-care",
-    "linkedTreatmentTitle": "Facial skin care",
-    "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-    "seoKeywords": [],
-    "featured": false,
-    "hidden": false,
-    "updatedAt": 1793791646179
   },
   {
     "id": "pair-4",
