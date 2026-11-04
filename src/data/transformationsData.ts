@@ -273,7 +273,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "seoKeywords": [],
     "featured": false,
     "hidden": false,
-    "updatedAt": 1793726355740
+    "updatedAt": 1793791121448
   },
   {
     "id": "pair-1793724383033",
@@ -304,7 +304,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "seoKeywords": [],
     "featured": false,
     "hidden": false,
-    "updatedAt": 1793726355741
+    "updatedAt": 1793791121448
   },
   {
     "id": "pair-1793724538573",
@@ -335,7 +335,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "seoKeywords": [],
     "featured": false,
     "hidden": false,
-    "updatedAt": 1793726355741
+    "updatedAt": 1793791121449
   },
   {
     "id": "pair-4",

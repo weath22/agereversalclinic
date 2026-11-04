@@ -957,6 +957,476 @@ function syncHomepageTreatmentsDataTs(treatmentsConfig: any): void {
 }
 
 // ============================================================================
+// HOMEPAGE TREATMENT COVER IMAGES: MULTI-IMAGE PER SUBCATEGORY & MANIFEST SYNC
+// ============================================================================
+const treatmentCoversManifestPath = path.join(publicTreatmentsDir, '_treatment_covers_manifest.json');
+
+function sanitizeCoverTokenForFile(val: string, fallback = 'cover'): string {
+  const cleaned = String(val || fallback)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleaned || fallback;
+}
+
+function readTreatmentCoversManifestFromDisk(): any | null {
+  try {
+    if (fs.existsSync(treatmentCoversManifestPath)) {
+      const parsed = JSON.parse(fs.readFileSync(treatmentCoversManifestPath, 'utf-8'));
+      if (parsed && Array.isArray(parsed.items)) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not read _treatment_covers_manifest.json:', err);
+  }
+  return null;
+}
+
+function writeTreatmentCoversManifestToDisk(config: any): void {
+  if (!config || !Array.isArray(config.items)) return;
+  try {
+    if (!fs.existsSync(publicTreatmentsDir)) {
+      fs.mkdirSync(publicTreatmentsDir, { recursive: true });
+    }
+    writeFileAtomicallySync(treatmentCoversManifestPath, JSON.stringify(config, null, 2));
+  } catch (err) {
+    console.warn('[Admin] Could not write _treatment_covers_manifest.json:', err);
+  }
+}
+
+function resolveDiskTreatmentCoverImage(
+  coverId: string,
+  subCategoryId: string,
+  currentUrl?: string
+): string {
+  const cleanCoverId = sanitizeCoverTokenForFile(coverId, 'cover');
+  const cleanSubCat = sanitizeCoverTokenForFile(subCategoryId, 'general');
+  const rawUrl = typeof currentUrl === 'string' ? currentUrl.trim() : '';
+
+  if (!fs.existsSync(publicTreatmentsDir)) {
+    return rawUrl;
+  }
+
+  try {
+    const deterministicName = cleanCoverId.startsWith(`cover-${cleanSubCat}-`)
+      ? `${cleanCoverId}.webp`
+      : cleanCoverId.startsWith('cover-')
+      ? `${cleanCoverId}.webp`
+      : `cover-${cleanSubCat}-${cleanCoverId}.webp`;
+    const deterministicPath = path.join(publicTreatmentsDir, deterministicName);
+    const hasDeterministicFile = fs.existsSync(deterministicPath);
+
+    // 1. If rawUrl points to an existing local /assets/ file on disk, verify it and attach mtime cache-buster
+    if (rawUrl.startsWith('/assets/')) {
+      const cleanPathOnly = rawUrl.split('?')[0].split('#')[0];
+      const relativeFromAssets = cleanPathOnly.replace(/^\/assets\/+/, '');
+      const diskPath = path.join(publicAssetsDir, relativeFromAssets);
+      if (fs.existsSync(diskPath)) {
+        const mtime = Math.floor(fs.statSync(diskPath).mtimeMs);
+        if (hasDeterministicFile && path.resolve(diskPath) !== path.resolve(deterministicPath)) {
+          const detMtime = Math.floor(fs.statSync(deterministicPath).mtimeMs);
+          if (detMtime > mtime) {
+            return `/assets/treatments/${deterministicName}?v=${detMtime}`;
+          }
+        }
+        return rawUrl.includes('?v=') ? rawUrl : `${cleanPathOnly}?v=${mtime}`;
+      }
+    }
+
+    // 2. If deterministic cover file exists on disk in /public/assets/treatments/, always recover it
+    if (hasDeterministicFile) {
+      const mtime = Math.floor(fs.statSync(deterministicPath).mtimeMs);
+      return `/assets/treatments/${deterministicName}?v=${mtime}`;
+    }
+
+    // 3. Also check if any file in /public/assets/treatments/ matches `${cleanCoverId}.webp`
+    const directCoverPath = path.join(publicTreatmentsDir, `${cleanCoverId}.webp`);
+    if (fs.existsSync(directCoverPath)) {
+      const mtime = Math.floor(fs.statSync(directCoverPath).mtimeMs);
+      return `/assets/treatments/${cleanCoverId}.webp?v=${mtime}`;
+    }
+  } catch (err) {
+    console.warn('[Admin] Error resolving disk treatment cover image:', err);
+  }
+
+  return rawUrl;
+}
+
+function getDefaultHomepageTreatmentCovers(): any[] {
+  return TREATMENTS.map((t: any, idx: number) => {
+    const subCatId = String(t.subGroupId || t.id || `subcat-${idx + 1}`).trim();
+    const subCatName = String(t.subCategory || t.name || `Treatment ${idx + 1}`).trim();
+    const branchCategory = String(t.tag || 'Face & Injectables').trim();
+    const coverId = `cover-seed-${sanitizeCoverTokenForFile(subCatId)}`;
+    const resolvedImage =
+      resolveDiskTreatmentCoverImage(coverId, subCatId, t.image) ||
+      String(t.image || '/assets/images/treatments/specialist-profhilo.jpg').trim();
+
+    return {
+      id: coverId,
+      subCategoryId: subCatId,
+      subCategoryName: subCatName,
+      branchCategory: branchCategory === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : branchCategory,
+      imageUrl: resolvedImage,
+      title: String(t.name || subCatName).trim(),
+      caption: String(t.duration || '45 - 60 Mins').trim(),
+      altText: String(
+        t.imageAlt || `${subCatName} (${branchCategory}) at Age Reversal Clinic London`
+      ).trim(),
+      seoTitle: String(
+        t.seoTitle || `${subCatName} | ${branchCategory} — Age Reversal Clinic`
+      ).trim(),
+      seoKeywords: Array.isArray(t.seoKeywords)
+        ? t.seoKeywords
+        : [
+            subCatName.toLowerCase(),
+            branchCategory.toLowerCase(),
+            `${subCatName.toLowerCase()} london`,
+            'age reversal clinic treatment',
+          ],
+      showInDefaultGrid: idx < 6,
+      hidden: false,
+      order: idx + 1,
+    };
+  });
+}
+
+/**
+ * Projects strictly the needed columns for a HomepageTreatmentCoverImage item
+ * so no extra heavy bloat is returned over the wire.
+ */
+function projectServerHomepageTreatmentCover(item: any, idx: number = 0): any {
+  const defaultSeed =
+    TREATMENTS.find(
+      (t: any) =>
+        String(t.subGroupId || t.id || '').toLowerCase() ===
+          String(item?.subCategoryId || '').toLowerCase() ||
+        String(t.subCategory || t.name || '').toLowerCase() ===
+          String(item?.subCategoryName || '').toLowerCase()
+    ) || TREATMENTS[idx % Math.max(1, TREATMENTS.length)];
+
+  const subCategoryId = String(
+    item?.subCategoryId || defaultSeed?.subGroupId || defaultSeed?.id || 'facial-skin-care'
+  ).trim();
+  const subCategoryName = String(
+    item?.subCategoryName || defaultSeed?.subCategory || defaultSeed?.name || 'Facial skin care'
+  ).trim();
+  const rawBranch = String(
+    item?.branchCategory || defaultSeed?.tag || 'Face & Injectables'
+  ).trim();
+  const branchCategory =
+    rawBranch === 'IV Drip Lounge & Wellness' ? 'IV Drips & Wellness' : rawBranch;
+
+  const id = String(
+    item?.id || `cover-${sanitizeCoverTokenForFile(subCategoryId)}-${idx + 1}`
+  ).trim();
+
+  const resolvedUrl = resolveDiskTreatmentCoverImage(
+    id,
+    subCategoryId,
+    item?.imageUrl || item?.image || defaultSeed?.image
+  );
+
+  const title = String(item?.title !== undefined ? item.title : subCategoryName).trim();
+  const caption = String(item?.caption !== undefined ? item.caption : '').trim();
+  const altText = String(
+    item?.altText ||
+      item?.imageAlt ||
+      defaultSeed?.imageAlt ||
+      `${title || subCategoryName} (${branchCategory}) at Age Reversal Clinic London`
+  ).trim();
+  const seoTitle = String(
+    item?.seoTitle ||
+      defaultSeed?.seoTitle ||
+      `${title || subCategoryName} | ${branchCategory} — Age Reversal Clinic`
+  ).trim();
+  const rawKeywords =
+    Array.isArray(item?.seoKeywords) && item.seoKeywords.length > 0
+      ? item.seoKeywords
+      : Array.isArray(defaultSeed?.seoKeywords) && defaultSeed.seoKeywords.length > 0
+      ? defaultSeed.seoKeywords
+      : [
+          subCategoryName.toLowerCase(),
+          branchCategory.toLowerCase(),
+          `${subCategoryName.toLowerCase()} london`,
+          'age reversal clinic treatment',
+        ];
+  const seoKeywords = Array.from(
+    new Set(rawKeywords.map((k: unknown) => String(k || '').trim()).filter(Boolean))
+  );
+
+  return {
+    id,
+    subCategoryId,
+    subCategoryName,
+    branchCategory,
+    imageUrl: resolvedUrl,
+    title,
+    caption,
+    altText,
+    seoTitle,
+    seoKeywords,
+    showInDefaultGrid: Boolean(item?.showInDefaultGrid),
+    hidden: Boolean(item?.hidden),
+    order: typeof item?.order === 'number' && Number.isFinite(item.order) ? item.order : idx + 1,
+    ...(item?.updatedAt ? { updatedAt: item.updatedAt } : {}),
+  };
+}
+
+function scoreTreatmentCoverCompleteness(item: any): number {
+  if (!item) return 0;
+  let score = 0;
+  const img = String(item.imageUrl || '');
+  if (img.startsWith('/assets/treatments/cover-') || img.startsWith('/assets/treatments/')) {
+    score += 60;
+  } else if (img.startsWith('/assets/')) {
+    score += 30;
+  }
+  if (item.updatedAt) score += 20;
+  return score;
+}
+
+/**
+ * Reconciles Homepage Treatment Cover Images across:
+ * 1) incomingConfig
+ * 2) existingJsonConfig (siteCustomizations.json -> homepage_treatment_cover_images_v1)
+ * 3) manifestConfig (/public/assets/treatments/_treatment_covers_manifest.json)
+ * 4) physical `cover-*.webp` files in /public/assets/treatments/
+ * 5) default seed items
+ */
+function reconcileHomepageTreatmentCoversConfig(
+  incomingConfig: any,
+  existingJsonConfig?: any,
+  options?: { deletedIds?: string[]; restoredDefaults?: boolean }
+): { items: any[]; updatedAt: string } {
+  const opts = options || {};
+  const explicitDeletedIds = new Set<string>(
+    Array.isArray(opts.deletedIds) ? opts.deletedIds.map((id) => String(id).trim()) : []
+  );
+
+  if (opts.restoredDefaults) {
+    const defaults = getDefaultHomepageTreatmentCovers();
+    const restoredPayload = {
+      items: defaults,
+      updatedAt: new Date().toISOString(),
+    };
+    writeTreatmentCoversManifestToDisk(restoredPayload);
+    return restoredPayload;
+  }
+
+  const manifestConfig = readTreatmentCoversManifestFromDisk();
+  const defaultSeeds = getDefaultHomepageTreatmentCovers();
+  const seedById = new Map<string, any>(defaultSeeds.map((s) => [String(s.id), s]));
+
+  const incomingItems: any[] = Array.isArray(incomingConfig?.items)
+    ? incomingConfig.items
+    : Array.isArray(incomingConfig)
+    ? incomingConfig
+    : [];
+  const existingItems: any[] = Array.isArray(existingJsonConfig?.items)
+    ? existingJsonConfig.items
+    : Array.isArray(existingJsonConfig)
+    ? existingJsonConfig
+    : [];
+  const manifestItems: any[] = Array.isArray(manifestConfig?.items) ? manifestConfig.items : [];
+
+  const incomingById = new Map<string, any>();
+  for (const item of incomingItems) {
+    if (!item || !item.id) continue;
+    const id = String(item.id).trim();
+    if (!explicitDeletedIds.has(id)) {
+      incomingById.set(id, item);
+    }
+  }
+
+  const existingById = new Map<string, any>();
+  for (const item of existingItems) {
+    if (!item || !item.id) continue;
+    const id = String(item.id).trim();
+    if (!explicitDeletedIds.has(id)) {
+      existingById.set(id, item);
+    }
+  }
+
+  const manifestById = new Map<string, any>();
+  for (const item of manifestItems) {
+    if (!item || !item.id) continue;
+    const id = String(item.id).trim();
+    if (!explicitDeletedIds.has(id)) {
+      manifestById.set(id, item);
+    }
+  }
+
+  // Scan /public/assets/treatments/ for any orphaned `cover-<subCatId>-<coverId>.webp` files
+  const diskOrphansById = new Map<string, any>();
+  if (fs.existsSync(publicTreatmentsDir)) {
+    try {
+      const files = fs.readdirSync(publicTreatmentsDir);
+      const knownSubCatIds = TREATMENTS.map((t: any) =>
+        sanitizeCoverTokenForFile(String(t.subGroupId || t.id || ''))
+      )
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length); // match longest subcategory slug first
+
+      for (const f of files) {
+        if (!f.toLowerCase().startsWith('cover-') || !f.toLowerCase().endsWith('.webp')) continue;
+        const stem = f.slice(0, -5); // remove .webp
+        const withoutPrefix = stem.slice('cover-'.length);
+        let matchedSubCat = 'facial-skin-care';
+        let extractedId = stem;
+
+        for (const subId of knownSubCatIds) {
+          if (withoutPrefix === subId) {
+            matchedSubCat = subId;
+            extractedId = `cover-seed-${subId}`;
+            break;
+          }
+          if (withoutPrefix.startsWith(`${subId}-`)) {
+            matchedSubCat = subId;
+            const remainder = withoutPrefix.slice(subId.length + 1);
+            extractedId = remainder.startsWith('cover-') ? remainder : `cover-${subId}-${remainder}`;
+            break;
+          }
+        }
+
+        if (explicitDeletedIds.has(extractedId) || explicitDeletedIds.has(stem)) continue;
+
+        // Check if any known item already references this file or ID
+        const cleanFileUrl = `/assets/treatments/${f}`;
+        const alreadyReferenced = [...incomingById.values(), ...existingById.values(), ...manifestById.values()].some(
+          (it: any) =>
+            String(it?.id) === extractedId ||
+            String(it?.id) === stem ||
+            String(it?.imageUrl || '').split('?')[0] === cleanFileUrl
+        );
+
+        if (!alreadyReferenced) {
+          const stat = fs.statSync(path.join(publicTreatmentsDir, f));
+          const mtime = Math.floor(stat.mtimeMs);
+          const matchedTreatment = TREATMENTS.find(
+            (t: any) =>
+              sanitizeCoverTokenForFile(String(t.subGroupId || t.id || '')) === matchedSubCat
+          );
+          diskOrphansById.set(extractedId, {
+            id: extractedId,
+            subCategoryId: matchedTreatment?.subGroupId || matchedTreatment?.id || matchedSubCat,
+            subCategoryName: matchedTreatment?.subCategory || matchedTreatment?.name || matchedSubCat,
+            branchCategory: matchedTreatment?.tag || 'Face & Injectables',
+            imageUrl: `${cleanFileUrl}?v=${mtime}`,
+            title: matchedTreatment?.name || matchedSubCat,
+            caption: matchedTreatment?.duration || '45 - 60 Mins',
+            showInDefaultGrid: false,
+            hidden: false,
+            order: 999,
+            updatedAt: mtime,
+          });
+        }
+      }
+    } catch (scanErr) {
+      console.warn('[Admin] Could not scan /public/assets/treatments/ for cover-*.webp files:', scanErr);
+    }
+  }
+
+  const allIds = new Set<string>();
+  incomingById.forEach((_, id) => allIds.add(id));
+  existingById.forEach((_, id) => allIds.add(id));
+  manifestById.forEach((_, id) => allIds.add(id));
+  diskOrphansById.forEach((_, id) => allIds.add(id));
+
+  // If no custom or manifest items exist yet, seed with the 24 default subcategories
+  if (allIds.size === 0) {
+    defaultSeeds.forEach((seed) => {
+      if (!explicitDeletedIds.has(String(seed.id))) {
+        allIds.add(String(seed.id));
+      }
+    });
+  }
+
+  const mergedItems: any[] = [];
+  let idxCounter = 0;
+
+  for (const id of allIds) {
+    if (explicitDeletedIds.has(id)) continue;
+
+    const inc = incomingById.get(id);
+    const ex = existingById.get(id);
+    const mf = manifestById.get(id);
+    const orphan = diskOrphansById.get(id);
+    const seed = seedById.get(id);
+
+    // Choose metadata from incoming if present, otherwise existing, manifest, orphan, or seed
+    let chosen = inc || ex || mf || orphan || seed;
+    if (!chosen) continue;
+
+    // Never allow a stale payload to overwrite a custom uploaded /assets/treatments/cover-*.webp image
+    const candidates = [inc, ex, mf, orphan].filter(Boolean);
+    let bestImageCandidate = chosen;
+    let bestScore = scoreTreatmentCoverCompleteness(chosen);
+
+    for (const cand of candidates) {
+      const s = scoreTreatmentCoverCompleteness(cand);
+      const candTime = Number(cand.updatedAt || 0);
+      const bestTime = Number(bestImageCandidate?.updatedAt || 0);
+      if (s > bestScore || (s === bestScore && candTime > bestTime)) {
+        bestImageCandidate = cand;
+        bestScore = s;
+      }
+    }
+
+    const rawCombined = {
+      ...(seed || {}),
+      ...(orphan || {}),
+      ...(mf || {}),
+      ...(ex || {}),
+      ...(inc || {}),
+      id: chosen.id || id,
+      imageUrl:
+        (inc?.imageUrl && String(inc.imageUrl).startsWith('/assets/treatments/cover-')
+          ? inc.imageUrl
+          : bestImageCandidate?.imageUrl) ||
+        inc?.imageUrl ||
+        ex?.imageUrl ||
+        mf?.imageUrl ||
+        orphan?.imageUrl ||
+        seed?.imageUrl,
+      updatedAt:
+        Math.max(
+          Number(inc?.updatedAt || 0),
+          Number(ex?.updatedAt || 0),
+          Number(mf?.updatedAt || 0),
+          Number(orphan?.updatedAt || 0)
+        ) || undefined,
+    };
+
+    mergedItems.push(projectServerHomepageTreatmentCover(rawCombined, idxCounter++));
+  }
+
+  // Sort by explicit `order` ascending, then updatedAt descending
+  mergedItems.sort((a, b) => {
+    const orderDiff = (a.order ?? 999) - (b.order ?? 999);
+    if (orderDiff !== 0) return orderDiff;
+    return Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
+  });
+
+  // Normalize sequential order 1..N
+  const normalizedItems = mergedItems.map((item, i) => ({
+    ...item,
+    order: i + 1,
+  }));
+
+  const reconciledConfig = {
+    items: normalizedItems,
+    updatedAt: new Date().toISOString(),
+  };
+
+  writeTreatmentCoversManifestToDisk(reconciledConfig);
+  return reconciledConfig;
+}
+
+// ============================================================================
 // BLOG & CLINICAL JOURNAL: SEO SCORE, PROJECTION & DISK PERSISTENCE HELPERS
 // ============================================================================
 function slugifyBlogText(value: string, fallback: string = 'clinical-article'): string {
@@ -1629,6 +2099,18 @@ function collectActiveTreatmentAssetUrls(customizations: Record<string, any>): S
   for (const item of TREATMENT_PRICING_DATA) {
     addUrl((item as any)?.image);
   }
+  const coverCfg = customizations?.homepage_treatment_cover_images_v1;
+  if (coverCfg && Array.isArray(coverCfg.items)) {
+    for (const item of coverCfg.items) {
+      addUrl(item?.imageUrl);
+    }
+  }
+  const diskManifestCovers = readTreatmentCoversManifestFromDisk();
+  if (diskManifestCovers && Array.isArray(diskManifestCovers.items)) {
+    for (const item of diskManifestCovers.items) {
+      addUrl(item?.imageUrl);
+    }
+  }
   return active;
 }
 
@@ -1647,7 +2129,7 @@ function deleteReplacedTreatmentAssetFile(oldUrl: string, activeUrlsSet: Set<str
   }
 
   const fileName = path.basename(cleanPath);
-  if (!fileName || fileName.startsWith('specialist-')) return deleted;
+  if (!fileName || fileName.startsWith('specialist-') || fileName.startsWith('_')) return deleted;
 
   for (const activeUrl of activeUrlsSet) {
     const activeClean = activeUrl.split('?')[0].split('#')[0].trim();
@@ -3233,6 +3715,8 @@ app.get('/api/admin/config', (_req, res) => {
   try {
     if (fs.existsSync(customizationsPath)) {
       const data = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      let modified = false;
+
       const reconciledGallery = reconcileBeforeAfterGalleryConfig(
         data.homepage_gallery_config_v6,
         data.homepage_gallery_config_v6,
@@ -3240,9 +3724,25 @@ app.get('/api/admin/config', (_req, res) => {
       );
       if (JSON.stringify(data.homepage_gallery_config_v6) !== JSON.stringify(reconciledGallery)) {
         data.homepage_gallery_config_v6 = reconciledGallery;
+        syncTransformationsDataTs(reconciledGallery);
+        modified = true;
+      }
+
+      const reconciledCovers = reconcileHomepageTreatmentCoversConfig(
+        data.homepage_treatment_cover_images_v1,
+        data.homepage_treatment_cover_images_v1
+      );
+      if (
+        JSON.stringify(data.homepage_treatment_cover_images_v1?.items) !==
+        JSON.stringify(reconciledCovers.items)
+      ) {
+        data.homepage_treatment_cover_images_v1 = reconciledCovers;
+        modified = true;
+      }
+
+      if (modified) {
         data.lastSynced = new Date().toISOString();
         writeFileAtomicallySync(customizationsPath, JSON.stringify(data, null, 2));
-        syncTransformationsDataTs(reconciledGallery);
       }
       return res.json({ success: true, data });
     }
@@ -3386,6 +3886,18 @@ app.post('/api/admin/save-to-files', (req, res) => {
       );
       existing.homepage_gallery_config_v6 = reconciledGallery;
       syncTransformationsDataTs(reconciledGallery);
+    }
+
+    // If homepage_treatment_cover_images_v1 is part of this save, reconcile with disk & _treatment_covers_manifest.json
+    if (
+      isTargetKey('homepage_treatment_cover_images_v1') &&
+      existing.homepage_treatment_cover_images_v1 &&
+      typeof existing.homepage_treatment_cover_images_v1 === 'object'
+    ) {
+      existing.homepage_treatment_cover_images_v1 = reconcileHomepageTreatmentCoversConfig(
+        existing.homepage_treatment_cover_images_v1,
+        existing.homepage_treatment_cover_images_v1
+      );
     }
 
     // If master_services_config_v1 or homepage_specialist_areas_config_v4 is part of this save,
@@ -3655,6 +4167,382 @@ app.post('/api/admin/homepage-treatments', (req, res) => {
     });
   } catch (error) {
     console.error('[Admin] Error saving Homepage Treatments config:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// ============================================================================
+// HOMEPAGE TREATMENT COVER IMAGES: MULTI-IMAGE GALLERY, PAGINATION & WEBP UPLOAD
+// ============================================================================
+app.get('/api/admin/homepage-treatment-covers', (req, res) => {
+  try {
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    const rawJsonCovers = existing?.homepage_treatment_cover_images_v1 || null;
+    const reconciled = reconcileHomepageTreatmentCoversConfig(rawJsonCovers, rawJsonCovers);
+
+    if (JSON.stringify(rawJsonCovers?.items) !== JSON.stringify(reconciled.items)) {
+      existing.homepage_treatment_cover_images_v1 = reconciled;
+      existing.lastSynced = new Date().toISOString();
+      writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+    } else if (!fs.existsSync(treatmentCoversManifestPath)) {
+      writeTreatmentCoversManifestToDisk(reconciled);
+    }
+
+    const allItems = reconciled.items;
+
+    // Compute per-subcategory counts & default grid counts before filtering
+    const subcategoryCounts: Record<string, number> = {};
+    let defaultGridCount = 0;
+    for (const item of allItems) {
+      const subId = String(item.subCategoryId || '').toLowerCase();
+      if (subId) {
+        subcategoryCounts[subId] = (subcategoryCounts[subId] || 0) + 1;
+      }
+      if (item.showInDefaultGrid && !item.hidden) {
+        defaultGridCount++;
+      }
+    }
+
+    const subCategoryFilter =
+      req.query.subCategoryId || req.query.subCategory
+        ? String(req.query.subCategoryId || req.query.subCategory).trim().toLowerCase()
+        : '';
+    const branchFilter =
+      req.query.branchCategory || req.query.category || req.query.tag
+        ? String(req.query.branchCategory || req.query.category || req.query.tag).trim().toLowerCase()
+        : '';
+    const defaultGridOnly =
+      req.query.showInDefaultGrid === 'true' || req.query.defaultGridOnly === 'true';
+    const includeHidden = req.query.includeHidden !== 'false';
+    const searchFilter = req.query.search ? String(req.query.search).trim().toLowerCase() : '';
+
+    const filtered = allItems.filter((item: any) => {
+      if (!includeHidden && item.hidden) return false;
+      if (defaultGridOnly && !item.showInDefaultGrid) return false;
+      if (
+        branchFilter &&
+        branchFilter !== 'all' &&
+        String(item.branchCategory || '').toLowerCase() !== branchFilter
+      ) {
+        return false;
+      }
+      if (
+        subCategoryFilter &&
+        subCategoryFilter !== 'all' &&
+        String(item.subCategoryId || '').toLowerCase() !== subCategoryFilter &&
+        String(item.subCategoryName || '').toLowerCase() !== subCategoryFilter
+      ) {
+        return false;
+      }
+      if (searchFilter) {
+        const hay = `${item.title || ''} ${item.caption || ''} ${item.subCategoryName || ''} ${item.branchCategory || ''} ${item.altText || ''} ${(item.seoKeywords || []).join(' ')}`.toLowerCase();
+        if (!hay.includes(searchFilter)) return false;
+      }
+      return true;
+    });
+
+    const totalCount = filtered.length;
+    const limit =
+      req.query.limit !== undefined
+        ? Math.max(1, Number(req.query.limit) || 12)
+        : Math.max(1, totalCount || 12);
+    const page = req.query.page !== undefined ? Math.max(1, Number(req.query.page) || 1) : 1;
+    const offset =
+      req.query.offset !== undefined
+        ? Math.max(0, Number(req.query.offset) || 0)
+        : (page - 1) * limit;
+
+    const paginatedItems = filtered.slice(offset, offset + limit);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+    const hasMore = offset + paginatedItems.length < totalCount;
+
+    const isPaginatedQuery = req.query.limit !== undefined || req.query.page !== undefined || req.query.offset !== undefined;
+
+    return res.json({
+      success: true,
+      ...(isPaginatedQuery ? {} : { config: reconciled }),
+      data: paginatedItems,
+      items: paginatedItems,
+      totalCount,
+      hasMore,
+      page: Math.floor(offset / limit) + 1,
+      totalPages,
+      offset,
+      limit,
+      subcategoryCounts,
+      defaultGridCount,
+      updatedAt: reconciled.updatedAt,
+    });
+  } catch (error) {
+    console.error('[Admin] Error reading Homepage Treatment Cover Images:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+app.post('/api/admin/homepage-treatment-covers', (req, res) => {
+  try {
+    const incoming = req.body?.config || req.body?.data || req.body;
+    const items = Array.isArray(incoming?.items)
+      ? incoming.items
+      : Array.isArray(req.body?.items)
+      ? req.body.items
+      : Array.isArray(incoming)
+      ? incoming
+      : null;
+    const deletedIds: string[] = Array.isArray(req.body?.deletedIds)
+      ? req.body.deletedIds.map((id: unknown) => String(id || '').trim()).filter(Boolean)
+      : [];
+    const restoredDefaults = Boolean(req.body?.restoredDefaults);
+
+    if (!items && !restoredDefaults) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Homepage Treatment Cover Images payload (items array required).',
+      });
+    }
+
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    // Track previous cover image URLs so explicitly deleted cover images can be removed from disk
+    const previousCoverUrls = new Set<string>();
+    const prevManifest = readTreatmentCoversManifestFromDisk();
+    for (const srcList of [
+      existing.homepage_treatment_cover_images_v1?.items,
+      prevManifest?.items,
+    ]) {
+      if (Array.isArray(srcList)) {
+        for (const it of srcList) {
+          if (typeof it?.imageUrl === 'string' && it.imageUrl.startsWith('/assets/treatments/cover-')) {
+            previousCoverUrls.add(it.imageUrl.split('?')[0].split('#')[0].trim());
+          }
+          if (deletedIds.includes(String(it?.id || '')) && typeof it?.imageUrl === 'string') {
+            const cleanDelUrl = it.imageUrl.split('?')[0].split('#')[0].trim();
+            if (cleanDelUrl.startsWith('/assets/treatments/cover-')) {
+              deleteReplacedTreatmentAssetFile(cleanDelUrl, new Set());
+            }
+          }
+        }
+      }
+    }
+
+    const reconciled = reconcileHomepageTreatmentCoversConfig(
+      { items: items || [] },
+      existing.homepage_treatment_cover_images_v1,
+      {
+        deletedIds,
+        restoredDefaults,
+      }
+    );
+
+    existing.homepage_treatment_cover_images_v1 = reconciled;
+    existing.lastSynced = new Date().toISOString();
+
+    // If any cover IDs were explicitly deleted, remove their unreferenced `cover-*.webp` files from disk
+    if (deletedIds.length > 0) {
+      const activeUrls = collectActiveTreatmentAssetUrls(existing);
+      for (const oldUrl of previousCoverUrls) {
+        if (!activeUrls.has(oldUrl)) {
+          deleteReplacedTreatmentAssetFile(oldUrl, activeUrls);
+        }
+      }
+    }
+
+    writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+    writeTreatmentCoversManifestToDisk(reconciled);
+
+    console.log(
+      `[Admin] Persisted ${reconciled.items.length} Homepage Treatment Cover Image(s) to siteCustomizations.json and _treatment_covers_manifest.json`
+    );
+
+    return res.json({
+      success: true,
+      config: reconciled,
+      data: reconciled.items,
+      items: reconciled.items,
+      updatedAt: existing.lastSynced,
+      message: 'Homepage Treatment Cover Images saved to disk and manifest.',
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving Homepage Treatment Cover Images:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+app.post('/api/admin/homepage-treatment-covers/upload-image', (req, res) => {
+  try {
+    const {
+      id,
+      subCategoryId,
+      subCategoryName,
+      branchCategory,
+      title,
+      caption,
+      altText,
+      seoTitle,
+      seoKeywords,
+      showInDefaultGrid,
+      hidden,
+      order,
+      dataUrl,
+      base64,
+      previousUrl,
+    } = req.body || {};
+
+    if (!dataUrl && !base64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing image data (dataUrl or base64 required)',
+      });
+    }
+
+    const timestamp = Date.now();
+    const cleanSubCat = sanitizeCoverTokenForFile(subCategoryId || subCategoryName || 'general', 'general');
+    const coverId = String(id || `cover-${cleanSubCat}-${timestamp}`).trim();
+    const cleanCoverId = sanitizeCoverTokenForFile(coverId, `cover-${timestamp}`);
+
+    const safeWebpName = cleanCoverId.startsWith(`cover-${cleanSubCat}-`)
+      ? `${cleanCoverId}.webp`
+      : cleanCoverId.startsWith('cover-')
+      ? `${cleanCoverId}.webp`
+      : `cover-${cleanSubCat}-${cleanCoverId}.webp`;
+
+    // Read & reconcile existing cover items BEFORE writing the new file to disk
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(customizationsPath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
+      }
+    }
+
+    const currentCoversConfig = reconcileHomepageTreatmentCoversConfig(
+      existing.homepage_treatment_cover_images_v1,
+      existing.homepage_treatment_cover_images_v1
+    );
+
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
+    const buffer = Buffer.from(rawData, 'base64');
+
+    if (!fs.existsSync(publicTreatmentsDir)) {
+      fs.mkdirSync(publicTreatmentsDir, { recursive: true });
+    }
+
+    const publicFilePath = path.join(publicTreatmentsDir, safeWebpName);
+    fs.writeFileSync(publicFilePath, buffer);
+
+    if (fs.existsSync(distTreatmentsDir)) {
+      try {
+        fs.writeFileSync(path.join(distTreatmentsDir, safeWebpName), buffer);
+      } catch (distErr) {
+        console.warn('[Admin] Could not mirror treatment cover WebP to distTreatmentsDir:', distErr);
+      }
+    }
+
+    const cleanUrl = `/assets/treatments/${safeWebpName}`;
+    const versionedUrl = `${cleanUrl}?v=${timestamp}`;
+    console.log(`[Admin] Saved Homepage Treatment Cover WebP image to ${cleanUrl}`);
+
+    const existingIdx = currentCoversConfig.items.findIndex(
+      (it: any) => String(it?.id) === coverId
+    );
+
+    const upsertedItem = projectServerHomepageTreatmentCover(
+      {
+        ...(existingIdx !== -1 ? currentCoversConfig.items[existingIdx] : {}),
+        id: coverId,
+        subCategoryId: subCategoryId || currentCoversConfig.items[existingIdx]?.subCategoryId || cleanSubCat,
+        subCategoryName:
+          subCategoryName || currentCoversConfig.items[existingIdx]?.subCategoryName || cleanSubCat,
+        branchCategory:
+          branchCategory || currentCoversConfig.items[existingIdx]?.branchCategory || 'Face & Injectables',
+        imageUrl: versionedUrl,
+        ...(title !== undefined ? { title } : {}),
+        ...(caption !== undefined ? { caption } : {}),
+        ...(altText !== undefined ? { altText } : {}),
+        ...(seoTitle !== undefined ? { seoTitle } : {}),
+        ...(Array.isArray(seoKeywords) ? { seoKeywords } : {}),
+        showInDefaultGrid:
+          showInDefaultGrid !== undefined
+            ? Boolean(showInDefaultGrid)
+            : existingIdx !== -1
+            ? Boolean(currentCoversConfig.items[existingIdx].showInDefaultGrid)
+            : false,
+        hidden:
+          hidden !== undefined
+            ? Boolean(hidden)
+            : existingIdx !== -1
+            ? Boolean(currentCoversConfig.items[existingIdx].hidden)
+            : false,
+        order:
+          typeof order === 'number'
+            ? order
+            : existingIdx !== -1
+            ? currentCoversConfig.items[existingIdx].order
+            : currentCoversConfig.items.length + 1,
+        updatedAt: timestamp,
+      },
+      existingIdx !== -1 ? existingIdx : currentCoversConfig.items.length
+    );
+
+    const nextItems = [...currentCoversConfig.items];
+    if (existingIdx !== -1) {
+      nextItems[existingIdx] = upsertedItem;
+    } else {
+      nextItems.push(upsertedItem);
+    }
+
+    const updatedConfig = reconcileHomepageTreatmentCoversConfig(
+      { items: nextItems },
+      currentCoversConfig
+    );
+
+    existing.homepage_treatment_cover_images_v1 = updatedConfig;
+    existing.lastSynced = new Date().toISOString();
+
+    if (typeof previousUrl === 'string' && previousUrl.trim()) {
+      const normPrev = previousUrl.split('?')[0].split('#')[0].trim();
+      if (normPrev && normPrev !== cleanUrl && normPrev.startsWith('/assets/treatments/cover-')) {
+        const activeSet = collectActiveTreatmentAssetUrls(existing);
+        activeSet.delete(normPrev);
+        activeSet.add(cleanUrl);
+        deleteReplacedTreatmentAssetFile(normPrev, activeSet);
+      }
+    }
+
+    writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+    writeTreatmentCoversManifestToDisk(updatedConfig);
+
+    return res.json({
+      success: true,
+      id: coverId,
+      fileName: safeWebpName,
+      url: cleanUrl,
+      versionedUrl,
+      imagePath: versionedUrl,
+      rawPath: cleanUrl,
+      version: timestamp,
+      item: upsertedItem,
+      updatedConfig,
+      message: 'Homepage Treatment Cover WebP image saved and persisted to disk & manifest!',
+    });
+  } catch (error) {
+    console.error('[Admin] Error uploading Homepage Treatment Cover WebP image:', error);
     return res.status(500).json({ success: false, error: String(error) });
   }
 });

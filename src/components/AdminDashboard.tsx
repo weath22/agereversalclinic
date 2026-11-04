@@ -136,6 +136,7 @@ const MasterServicesManager = lazyWithRetry(
   'MasterServicesManager'
 );
 const HomepageTreatmentsEditor = lazyWithRetry(() => import('./HomepageTreatmentsEditor'), 'HomepageTreatmentsEditor');
+const HomepageTreatmentCoversEditor = lazyWithRetry(() => import('./HomepageTreatmentCoversEditor'), 'HomepageTreatmentCoversEditor');
 
 
 interface AdminDashboardProps {
@@ -149,7 +150,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
   const [passcodeError, setPasscodeError] = useState('');
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'master-services' | 'clinic-info' | 'clinical-protocols' | 'treatment-pricing' | 'treatment-images-hub' | 'treatment-media-studio' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'master-services' | 'clinic-info' | 'clinical-protocols' | 'treatment-pricing' | 'treatment-images-hub' | 'treatment-media-studio' | 'consultations' | 'appointments' | 'inquiries' | 'assets-media' | 'migration' | 'edit-service-details' | 'edit-profile-details' | 'edit-header' | 'edit-hero' | 'edit-specialist' | 'edit-treatments' | 'edit-treatment-covers' | 'edit-gallery' | 'edit-whychoose' | 'edit-awards' | 'edit-locations' | 'edit-team' | 'edit-process' | 'edit-facility' | 'edit-testimonials' | 'edit-offers' | 'edit-skincare' | 'edit-trust' | 'edit-accreditations' | 'edit-news' | 'edit-footer' | 'edit-floating' | 'chat-support'>('overview');
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isHomepageEditorsOpen, setIsHomepageEditorsOpen] = useState(false);
@@ -815,6 +816,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                     { id: 'edit-hero', label: 'Hero Presentation', icon: Image },
                     { id: 'edit-specialist', label: 'Specialist Areas', icon: Sparkles },
                     { id: 'edit-treatments', label: 'Treatments & Pricing', icon: FileText },
+                    { id: 'edit-treatment-covers', label: 'Treatments Cover Images', icon: Camera },
                     { id: 'edit-gallery', label: 'Before & After Gallery', icon: Image },
                     { id: 'edit-whychoose', label: 'Why Choose Us', icon: Heart },
                     { id: 'edit-awards', label: 'Awards & Honors', icon: Trophy },
@@ -937,6 +939,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                  activeTab === 'edit-hero' ? 'Hero Presentation' : 
                  activeTab === 'edit-specialist' ? 'Services & Branches (Specialist Areas)' : 
                  activeTab === 'edit-treatments' ? 'Homepage Treatments & SEO Studio' : 
+                 activeTab === 'edit-treatment-covers' ? 'Homepage: Treatments Cover Images' : 
                  activeTab === 'edit-gallery' ? 'Before & After Gallery' : 
                  activeTab === 'edit-whychoose' ? 'Why Choose Us' : 
                  activeTab === 'edit-awards' ? 'Awards & Honors' : 
@@ -993,6 +996,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                           { id: 'edit-hero', label: 'Hero Presentation', icon: Image },
                           { id: 'edit-specialist', label: 'Specialist Areas', icon: Sparkles },
                           { id: 'edit-treatments', label: 'Treatments & Pricing', icon: FileText },
+                          { id: 'edit-treatment-covers', label: 'Treatments Cover Images', icon: Camera },
                           { id: 'edit-gallery', label: 'Before & After Gallery', icon: Image },
                           { id: 'edit-whychoose', label: 'Why Choose Us', icon: Heart },
                           { id: 'edit-awards', label: 'Awards & Honors', icon: Trophy },
@@ -1125,6 +1129,20 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                   <div className="min-w-0 flex-1">
                     <span className="text-xs font-bold block truncate">Homepage Treatments</span>
                     <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">SEO & Card Studio</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('edit-treatment-covers')}
+                  className="flex items-center gap-3 bg-white hover:bg-[#003334] text-slate-800 hover:text-white p-3.5 rounded-2xl border border-slate-200 hover:border-[#003334] shadow-xs hover:shadow-md transition-all text-left cursor-pointer group min-w-0"
+                >
+                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 group-hover:bg-[#c5a880] group-hover:text-[#003334] transition-colors shrink-0">
+                    <Camera className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-bold block truncate">Treatments Covers</span>
+                    <span className="text-[10px] text-slate-400 group-hover:text-slate-300 block truncate">Homepage cover grid</span>
                   </div>
                 </button>
 
@@ -1972,6 +1990,11 @@ CREATE TABLE inquiries (
         {/* TAB: HOMEPAGE TREATMENTS & SEO EDITOR */}
         {activeTab === 'edit-treatments' && (
           <HomepageTreatmentsEditor />
+        )}
+
+        {/* TAB: HOMEPAGE TREATMENTS COVER IMAGES EDITOR */}
+        {activeTab === 'edit-treatment-covers' && (
+          <HomepageTreatmentCoversEditor />
         )}
 
         {/* TAB: EDIT BEFORE & AFTER GALLERY */}

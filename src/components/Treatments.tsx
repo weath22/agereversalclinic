@@ -2,10 +2,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { TREATMENTS, TREATMENT_IMAGES } from '../data';
 import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
 import { motion } from 'motion/react';
-import { Calendar, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react';
-import { TreatmentsConfig, SpecialistArea } from '../types';
+import { Calendar, ChevronLeft, ChevronRight, ArrowUpRight, Layers, X } from 'lucide-react';
+import { TreatmentsConfig, SpecialistArea, HomepageTreatmentCoverImage } from '../types';
 import { getTreatmentImagePath } from '../utils/treatmentImageHelper';
-import { getMasterServices, getTreatmentsConfig, normalizeMasterBranch } from '../lib/adminStore';
+import {
+  getMasterServices,
+  getTreatmentsConfig,
+  normalizeMasterBranch,
+  getPaginatedHomepageTreatmentCovers,
+  fetchPaginatedHomepageTreatmentCovers,
+  fetchRemoteHomepageTreatmentCoversConfig,
+} from '../lib/adminStore';
 
 interface TreatmentsProps {
   onBookClick: () => void;
@@ -14,10 +21,17 @@ interface TreatmentsProps {
 }
 
 const ITEMS_PER_PAGE = 6;
+const COVER_ITEMS_PER_PAGE = 6;
 
-export default function Treatments({ onBookClick, onTreatmentClick, treatmentsConfig }: TreatmentsProps) {
+export default function Treatments({
+  onBookClick,
+  onTreatmentClick,
+  treatmentsConfig,
+}: TreatmentsProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [coverPage, setCoverPage] = useState(1);
+  const [coversVersion, setCoversVersion] = useState(0);
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [liveTreatmentsConfig, setLiveTreatmentsConfig] = useState<TreatmentsConfig | undefined>(
     () => treatmentsConfig || getTreatmentsConfig()
@@ -29,22 +43,37 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
     }
   }, [treatmentsConfig]);
 
+  // Hydrate cover images from server on mount & listen for Admin updates
   useEffect(() => {
-    const handleMasterServicesUpdate = () => {
+    let mounted = true;
+    fetchRemoteHomepageTreatmentCoversConfig()
+      .then(() => {
+        if (mounted) {
+          setCoversVersion((v) => v + 1);
+        }
+      })
+      .catch(() => {});
+
+    const handleStoreUpdate = () => {
       setMasterServices(getMasterServices());
       setLiveTreatmentsConfig(getTreatmentsConfig());
+      setCoversVersion((v) => v + 1);
     };
-    window.addEventListener('master_services_updated', handleMasterServicesUpdate);
-    window.addEventListener('treatments_config_updated', handleMasterServicesUpdate);
-    window.addEventListener('storage', handleMasterServicesUpdate);
+
+    window.addEventListener('master_services_updated', handleStoreUpdate);
+    window.addEventListener('treatments_config_updated', handleStoreUpdate);
+    window.addEventListener('homepage_treatment_covers_updated', handleStoreUpdate);
+    window.addEventListener('storage', handleStoreUpdate);
     return () => {
-      window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
-      window.removeEventListener('treatments_config_updated', handleMasterServicesUpdate);
-      window.removeEventListener('storage', handleMasterServicesUpdate);
+      mounted = false;
+      window.removeEventListener('master_services_updated', handleStoreUpdate);
+      window.removeEventListener('treatments_config_updated', handleStoreUpdate);
+      window.removeEventListener('homepage_treatment_covers_updated', handleStoreUpdate);
+      window.removeEventListener('storage', handleStoreUpdate);
     };
   }, []);
 
-  // Dynamically reflect all treatment cards configured in HomepageTreatmentsEditor & data files
+  // Dynamically reflect all 24 treatment subcategories configured in the left-hand accordion list
   const activeTreatments = useMemo(() => {
     const rawTreatments =
       liveTreatmentsConfig?.treatments && liveTreatmentsConfig.treatments.length > 0
@@ -86,7 +115,7 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
           staticMatch?.description ||
           'Bespoke clinical protocol tailored by our aesthetic specialists for natural, lasting results.',
         tag: branch,
-        subGroupId: item.subGroupId || masterMatch?.id || staticMatch?.id,
+        subGroupId: item.subGroupId || masterMatch?.id || staticMatch?.id || item.id,
         subCategory,
         image: item.image || defaultTreatMatch?.image || fallbackImg,
         imageAlt:
@@ -123,37 +152,174 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
     safePage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
   );
 
-  // Active opened item in the accordion list
+  // Active opened subcategory in the left-hand accordion list
   const expandedTreatment = useMemo(() => {
     if (!expandedId) return null;
     return activeTreatments.find((t) => t.id === expandedId) || null;
   }, [expandedId, activeTreatments]);
 
-  // When a subgroup item is clicked/opened, display its respective images as updated in editor;
-  // by default (when none is opened or clicked), display all visibleTreatments
-  const cardsToDisplay = useMemo(() => {
+  // Reset cover grid page to 1 whenever the visitor clicks a different subcategory or resets to Default View
+  useEffect(() => {
+    setCoverPage(1);
+  }, [expandedId]);
+
+  // Step number map by subcategory ID or name for visual continuity on cover cards
+  const stepNumberBySubcategory = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of activeTreatments) {
+      if (t.id) map.set(t.id.toLowerCase(), t.stepNumber);
+      if (t.subGroupId) map.set(t.subGroupId.toLowerCase(), t.stepNumber);
+      if (t.subCategory) map.set(t.subCategory.toLowerCase(), t.stepNumber);
+      if (t.name) map.set(t.name.toLowerCase(), t.stepNumber);
+    }
+    return map;
+  }, [activeTreatments]);
+
+  // Compute local paginated & column-projected cover images:
+  // 1) Default View (expandedTreatment === null): cover images pinned with `showInDefaultGrid: true`
+  // 2) Subcategory Active View (expandedTreatment !== null): all cover images assigned to that clicked subcategory
+  const localCoverQueryResult = useMemo(() => {
     if (!expandedTreatment) {
-      return visibleTreatments;
+      const pinnedRes = getPaginatedHomepageTreatmentCovers({
+        page: coverPage,
+        limit: COVER_ITEMS_PER_PAGE,
+        showInDefaultGrid: true,
+        includeHidden: false,
+      });
+
+      if (pinnedRes.totalCount > 0) {
+        return pinnedRes;
+      }
+
+      // Fallback if 0 covers are marked showInDefaultGrid: show first page of non-hidden cover images
+      return getPaginatedHomepageTreatmentCovers({
+        page: coverPage,
+        limit: COVER_ITEMS_PER_PAGE,
+        includeHidden: false,
+      });
     }
 
-    const targetId = expandedTreatment.id.toLowerCase();
-    const targetSubGroupId = (expandedTreatment.subGroupId || '').toLowerCase();
-    const targetSubCategory = (expandedTreatment.subCategory || '').toLowerCase();
+    // Subcategory Active View: try matching by subGroupId, id, subCategory, or name
+    const candidateKeys = Array.from(
+      new Set(
+        [
+          expandedTreatment.subGroupId,
+          expandedTreatment.id,
+          expandedTreatment.subCategory,
+          expandedTreatment.name,
+        ]
+          .map((v) => String(v || '').trim())
+          .filter(Boolean)
+      )
+    );
 
-    // Match all treatment cards belonging to this subgroup / treatment
-    const matching = activeTreatments.filter((t) => {
-      const tid = t.id.toLowerCase();
-      const tSubGroupId = (t.subGroupId || '').toLowerCase();
-      const tSubCat = (t.subCategory || '').toLowerCase();
+    for (const candidateKey of candidateKeys) {
+      const subRes = getPaginatedHomepageTreatmentCovers({
+        page: coverPage,
+        limit: COVER_ITEMS_PER_PAGE,
+        subCategoryId: candidateKey,
+        includeHidden: false,
+      });
+      if (subRes.totalCount > 0) {
+        return subRes;
+      }
+    }
 
-      if (tid === targetId) return true;
-      if (targetSubGroupId && tSubGroupId === targetSubGroupId) return true;
-      if (targetSubCategory && tSubCat && tSubCat === targetSubCategory) return true;
-      return false;
-    });
+    // Fallback if no cover images are stored for this subcategory yet: synthesize 1 cover card from the subcategory
+    const synthesized: HomepageTreatmentCoverImage = {
+      id: `cover-${expandedTreatment.id}`,
+      subCategoryId: expandedTreatment.subGroupId || expandedTreatment.id,
+      subCategoryName: expandedTreatment.subCategory || expandedTreatment.name,
+      branchCategory: expandedTreatment.tag,
+      imageUrl: expandedTreatment.image,
+      title: expandedTreatment.name,
+      caption: expandedTreatment.description,
+      altText: expandedTreatment.imageAlt,
+      seoTitle: expandedTreatment.seoTitle,
+      seoKeywords: expandedTreatment.seoKeywords,
+      showInDefaultGrid: false,
+      hidden: false,
+      order: 1,
+    };
 
-    return matching.length > 0 ? matching : [expandedTreatment];
-  }, [expandedTreatment, visibleTreatments, activeTreatments]);
+    return {
+      items: [synthesized],
+      totalCount: 1,
+      hasMore: false,
+      page: 1,
+      totalPages: 1,
+      offset: 0,
+      limit: COVER_ITEMS_PER_PAGE,
+      subcategoryCounts: {},
+      defaultGridCount: 0,
+    };
+  }, [expandedTreatment, coverPage, coversVersion]);
+
+  const [remoteCoverState, setRemoteCoverState] = useState<{
+    key: string;
+    items: HomepageTreatmentCoverImage[];
+    totalCount: number;
+    totalPages: number;
+  } | null>(null);
+
+  const activeQueryKey = `${expandedTreatment ? expandedTreatment.subGroupId || expandedTreatment.id : 'DEFAULT_GRID'}::p${coverPage}::v${coversVersion}`;
+
+  // Fetch paginated, exact-column cover slice from server when filter or coverPage changes
+  useEffect(() => {
+    let active = true;
+    const queryParams = expandedTreatment
+      ? {
+          page: coverPage,
+          limit: COVER_ITEMS_PER_PAGE,
+          subCategoryId: expandedTreatment.subGroupId || expandedTreatment.id,
+          includeHidden: false,
+        }
+      : {
+          page: coverPage,
+          limit: COVER_ITEMS_PER_PAGE,
+          showInDefaultGrid: true,
+          includeHidden: false,
+        };
+
+    fetchPaginatedHomepageTreatmentCovers(queryParams)
+      .then((res) => {
+        if (!active) return;
+        if (res.items.length > 0) {
+          setRemoteCoverState({
+            key: activeQueryKey,
+            items: res.items,
+            totalCount: res.totalCount,
+            totalPages: res.totalPages,
+          });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [activeQueryKey, expandedTreatment, coverPage]);
+
+  const coversToDisplay =
+    remoteCoverState &&
+    remoteCoverState.key === activeQueryKey &&
+    remoteCoverState.items.length > 0
+      ? remoteCoverState.items
+      : localCoverQueryResult.items;
+
+  const totalCoversForActiveView =
+    remoteCoverState &&
+    remoteCoverState.key === activeQueryKey &&
+    remoteCoverState.totalCount > 0
+      ? remoteCoverState.totalCount
+      : localCoverQueryResult.totalCount;
+
+  const totalCoverPages =
+    remoteCoverState &&
+    remoteCoverState.key === activeQueryKey &&
+    remoteCoverState.totalPages > 0
+      ? remoteCoverState.totalPages
+      : localCoverQueryResult.totalPages;
 
   // Schema.org ItemList + MedicalProcedure + ImageObject structured data for Googlebot & Google Images
   const treatmentsJsonLd = useMemo(() => {
@@ -185,34 +351,39 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
       name: `${sectionTitle} – Age Reversal Clinic Treatments`,
       description: sectionDesc,
       keywords: sectionKeywords,
-      numberOfItems: activeTreatments.length,
-      itemListElement: activeTreatments.map((treatment, idx) => {
+      numberOfItems: coversToDisplay.length,
+      itemListElement: coversToDisplay.map((cover, idx) => {
         const fallbackImg = TREATMENT_IMAGES[idx % TREATMENT_IMAGES.length];
-        const rawImg = treatment.image || getTreatmentImagePath(treatment.id, fallbackImg);
+        const rawImg =
+          cover.imageUrl || getTreatmentImagePath(cover.subCategoryId, fallbackImg);
         const resolvedUrl =
           rawImg.startsWith('http://') || rawImg.startsWith('https://') || rawImg.startsWith('data:')
             ? rawImg
             : `${origin}${rawImg.startsWith('/') ? '' : '/'}${rawImg}`;
-        const keywordsStr = (treatment.seoKeywords || []).join(', ');
+        const keywordsStr = (cover.seoKeywords || []).join(', ');
+        const displayName = cover.title || cover.subCategoryName;
 
         return {
           '@type': 'ListItem',
           position: idx + 1,
           item: {
             '@type': 'MedicalProcedure',
-            '@id': `${origin}/#treatment-${treatment.id}`,
-            name: treatment.seoTitle || treatment.name,
-            alternateName: treatment.name,
-            description: treatment.description,
-            procedureType: treatment.tag,
+            '@id': `${origin}/#treatment-cover-${cover.id}`,
+            name: cover.seoTitle || displayName,
+            alternateName: cover.subCategoryName,
+            description:
+              cover.caption ||
+              cover.altText ||
+              `${displayName} (${cover.branchCategory}) at Age Reversal Clinic London`,
+            procedureType: cover.branchCategory,
             keywords: keywordsStr,
             image: {
               '@type': 'ImageObject',
               contentUrl: resolvedUrl,
               url: resolvedUrl,
-              name: treatment.seoTitle || treatment.name,
-              description: treatment.imageAlt || treatment.description,
-              caption: treatment.imageAlt || treatment.name,
+              name: cover.seoTitle || displayName,
+              description: cover.altText || displayName,
+              caption: cover.caption || cover.altText || displayName,
               keywords: keywordsStr,
               representativeOfPage: idx === 0,
             },
@@ -220,20 +391,44 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
         };
       }),
     };
-  }, [activeTreatments, liveTreatmentsConfig, treatmentsConfig]);
+  }, [coversToDisplay, liveTreatmentsConfig, treatmentsConfig]);
 
-  // Bento grid layout classes for the 6 cards on each page
+  // Bento grid layout classes for 6 cards on a page, with responsive layouts for 1, 2, 3, 4, or 5 cover images
   const gridSpanClasses = [
     'md:col-span-7 aspect-[4/3]',
     'md:col-span-5 aspect-square md:aspect-auto',
     'md:col-span-5 aspect-[4/3] md:aspect-square',
     'md:col-span-7 aspect-[16/9] md:aspect-auto',
     'md:col-span-6 aspect-square',
-    'md:col-span-6 aspect-square'
+    'md:col-span-6 aspect-square',
   ];
 
+  const getCoverCardSpanClass = (count: number, idx: number): string => {
+    if (count === 1) {
+      return 'md:col-span-12 aspect-[16/10] sm:aspect-[16/9]';
+    }
+    if (count === 2) {
+      return 'md:col-span-6 aspect-[4/3] sm:aspect-square';
+    }
+    if (count === 3) {
+      return 'md:col-span-4 aspect-[4/3] sm:aspect-square';
+    }
+    if (count === 4) {
+      return 'md:col-span-6 aspect-[4/3]';
+    }
+    if (count === 5) {
+      return idx < 2
+        ? 'md:col-span-6 aspect-[4/3]'
+        : 'md:col-span-4 aspect-[4/3] sm:aspect-square';
+    }
+    return gridSpanClasses[idx % gridSpanClasses.length];
+  };
+
   return (
-    <section id="treatments" className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200 isolate">
+    <section
+      id="treatments"
+      className="pt-10 pb-12 sm:pt-16 sm:pb-20 md:py-24 lg:py-32 bg-[#ff8656] text-slate-950 border-b border-[#e57042] overflow-hidden relative selection:bg-orange-200 isolate"
+    >
       {/* Schema.org Structured Data for Google Image Search & MedicalProcedure Crawlability */}
       <script
         type="application/ld+json"
@@ -244,31 +439,37 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
       <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/50 pointer-events-none" />
 
       {/* Luminous Ambient Light Glow (GPU-optimized pre-computed radial gradients) */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-85" 
+      <div
+        className="absolute inset-0 pointer-events-none opacity-85"
         style={{
-          background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)'
+          background:
+            'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 45%, transparent 75%), radial-gradient(circle 350px at 0% 90%, rgba(255, 255, 255, 0.28) 0%, transparent 70%)',
         }}
       />
 
       <div className="container mx-auto px-4 md:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-start gap-8 sm:gap-12 lg:gap-16">
-          
           {/* Left Column: Text, Accordion List (01 through 24) & Controls */}
           <div className="w-full lg:w-5/12 lg:max-w-[460px] relative">
             <div className="relative mb-4 sm:mb-6">
               <span className="absolute -top-5 sm:-top-7 md:-top-9 left-0 text-3xl sm:text-5xl md:text-6xl lg:text-4xl font-serif italic text-black/15 select-none uppercase tracking-wider pointer-events-none">
-                {liveTreatmentsConfig?.editorialHeading || treatmentsConfig?.editorialHeading || "rejuvenation"}
+                {liveTreatmentsConfig?.editorialHeading ||
+                  treatmentsConfig?.editorialHeading ||
+                  'rejuvenation'}
               </span>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-3xl font-light font-serif text-slate-950 leading-tight uppercase relative z-10 pt-2 sm:pt-3">
-                {liveTreatmentsConfig?.editorialSub || treatmentsConfig?.editorialSub || "Begin your transformation"}
+                {liveTreatmentsConfig?.editorialSub ||
+                  treatmentsConfig?.editorialSub ||
+                  'Begin your transformation'}
               </h2>
             </div>
-            
+
             <div className="w-12 h-[1.5px] bg-slate-950 mb-4 sm:mb-6" />
 
             <p className="text-slate-950 font-sans font-normal mb-6 leading-relaxed text-sm sm:text-base">
-              {liveTreatmentsConfig?.description || treatmentsConfig?.description || "At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual."}
+              {liveTreatmentsConfig?.description ||
+                treatmentsConfig?.description ||
+                'At Age Reversal Clinic, we believe that aesthetic harmony elevates self-confidence. Our clinical therapists custom-tailor skin therapy sessions, premium facials, and micropigmentation protocols to support your personal wellness ritual.'}
             </p>
 
             {/* Treatment Accordion List (01 through 24) */}
@@ -280,15 +481,19 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                     <div className="flex items-center justify-between gap-3">
                       <button
                         type="button"
-                        onClick={() =>
-                          setExpandedId(isExpanded ? null : treatment.id)
-                        }
+                        onClick={() => setExpandedId(isExpanded ? null : treatment.id)}
                         className="flex items-center space-x-3 text-left group flex-1 cursor-pointer"
                       >
                         <span className="font-mono text-xs font-semibold text-slate-950/60 group-hover:text-slate-950 transition-colors w-6 shrink-0">
                           {treatment.stepNumber}
                         </span>
-                        <span className="text-slate-950 font-sans font-medium group-hover:text-black transition-colors duration-200 text-sm sm:text-base leading-snug">
+                        <span
+                          className={`font-sans transition-colors duration-200 text-sm sm:text-base leading-snug ${
+                            isExpanded
+                              ? 'font-bold text-black underline decoration-slate-950/40 underline-offset-4'
+                              : 'font-medium text-slate-950 group-hover:text-black'
+                          }`}
+                        >
                           {treatment.name}
                         </span>
                       </button>
@@ -337,8 +542,10 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               <div className="flex items-center justify-between gap-3 mb-6">
                 <span className="text-xs font-sans font-medium text-slate-950/80">
                   Showing {String(safePage * ITEMS_PER_PAGE + 1).padStart(2, '0')}–
-                  {String(Math.min((safePage + 1) * ITEMS_PER_PAGE, activeTreatments.length)).padStart(2, '0')} of{' '}
-                  {String(activeTreatments.length).padStart(2, '0')} services
+                  {String(
+                    Math.min((safePage + 1) * ITEMS_PER_PAGE, activeTreatments.length)
+                  ).padStart(2, '0')}{' '}
+                  of {String(activeTreatments.length).padStart(2, '0')} services
                 </span>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -388,43 +595,82 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
               onClick={onBookClick}
               className="bg-slate-950 hover:bg-black text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-lg hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 font-sans font-medium tracking-wide flex items-center space-x-2 w-fit group text-xs sm:text-sm cursor-pointer active:scale-95 border border-white/40"
             >
-              <Calendar className="h-4 w-4 text-orange-200 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+              <Calendar
+                className="h-4 w-4 text-orange-200 group-hover:scale-110 transition-transform"
+                strokeWidth={1.5}
+              />
               <span>Schedule Spa Day</span>
             </button>
           </div>
 
-          {/* Right Column: Orderly, aligned straight-line grid synced with visible 24 services */}
-          <div className="w-full lg:w-7/12 relative">
+          {/* Right Column: Bento Cover Images Grid (Synced with HomepageTreatmentCoverImage Store) */}
+          <div className="w-full lg:w-7/12 relative space-y-3">
+            {/* Contextual Subcategory Filter Pill when a visitor clicks a subcategory */}
+            {expandedTreatment && (
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-white/45 backdrop-blur-xs border border-white/70 rounded-2xl px-3.5 py-2 shadow-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Layers className="w-3.5 h-3.5 text-slate-950 shrink-0" />
+                  <span className="text-xs font-sans font-bold text-slate-950 truncate">
+                    {expandedTreatment.name}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-950/10 text-slate-900 shrink-0">
+                    {totalCoversForActiveView}{' '}
+                    {totalCoversForActiveView === 1 ? 'Cover' : 'Covers'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(null)}
+                  className="inline-flex items-center gap-1 text-[11px] font-sans font-semibold text-slate-950 hover:text-black bg-white/70 hover:bg-white px-2.5 py-1 rounded-xl border border-slate-950/15 transition-colors cursor-pointer shrink-0"
+                >
+                  <span>All Default Covers</span>
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 relative w-full">
-              {cardsToDisplay.map((treatment, idx) => {
-                const spanClass =
-                  cardsToDisplay.length === 1
-                    ? 'md:col-span-12 aspect-[16/10] sm:aspect-[16/9]'
-                    : cardsToDisplay.length === 2
-                    ? 'md:col-span-6 aspect-square md:aspect-auto'
-                    : cardsToDisplay.length === 3
-                    ? 'md:col-span-4 aspect-square'
-                    : gridSpanClasses[idx % gridSpanClasses.length];
+              {coversToDisplay.map((cover, idx) => {
+                const spanClass = getCoverCardSpanClass(coversToDisplay.length, idx);
                 const fallbackImage = TREATMENT_IMAGES[idx % TREATMENT_IMAGES.length];
+                const stepNum =
+                  stepNumberBySubcategory.get((cover.subCategoryId || '').toLowerCase()) ||
+                  stepNumberBySubcategory.get((cover.subCategoryName || '').toLowerCase()) ||
+                  String(idx + 1).padStart(2, '0');
+                const displayTitle =
+                  cover.title && cover.title.trim() ? cover.title : cover.subCategoryName;
+                const displayCaption = cover.caption && cover.caption.trim() ? cover.caption : '';
+
                 return (
                   <motion.div
-                    key={treatment.id}
+                    key={cover.id}
                     itemScope
                     itemType="https://schema.org/MedicalProcedure"
                     whileHover={{ scale: 1.01, y: -2 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    onClick={() => onTreatmentClick?.(treatment.name, treatment.tag)}
+                    onClick={() =>
+                      onTreatmentClick?.(
+                        cover.subCategoryName || displayTitle,
+                        cover.branchCategory
+                      )
+                    }
                     className={`${spanClass} group relative overflow-hidden bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all`}
                   >
                     <img
                       itemProp="image"
-                      alt={treatment.imageAlt || `${treatment.name} at Age Reversal Clinic London`}
-                      title={treatment.seoTitle || treatment.name}
-                      data-seo-keywords={(treatment.seoKeywords || []).join(', ')}
+                      alt={
+                        cover.altText ||
+                        `${displayTitle} — ${cover.subCategoryName} at Age Reversal Clinic London`
+                      }
+                      title={cover.seoTitle || displayTitle}
+                      data-seo-keywords={(cover.seoKeywords || []).join(', ')}
                       loading="lazy"
                       decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      src={treatment.image || getTreatmentImagePath(treatment.id, fallbackImage)}
+                      src={
+                        cover.imageUrl ||
+                        getTreatmentImagePath(cover.subCategoryId, fallbackImage)
+                      }
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = fallbackImage;
                       }}
@@ -434,33 +680,74 @@ export default function Treatments({ onBookClick, onTreatmentClick, treatmentsCo
                         itemProp="procedureType"
                         className="font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200 mb-1.5 font-bold"
                       >
-                        {treatment.stepNumber} • {treatment.tag}
+                        {stepNum} • {cover.branchCategory}
                       </span>
                       <h3
                         itemProp="name"
                         className="font-serif text-xl md:text-2xl font-light text-white mb-1"
                       >
-                        {treatment.name}
+                        {displayTitle}
                       </h3>
-                      <p
-                        itemProp="description"
-                        className="font-sans text-xs text-white/80 line-clamp-2"
-                      >
-                        {treatment.description}
-                      </p>
+                      {displayCaption ? (
+                        <p
+                          itemProp="description"
+                          className="font-sans text-xs text-white/80 line-clamp-2"
+                        >
+                          {displayCaption}
+                        </p>
+                      ) : (
+                        cover.subCategoryName &&
+                        cover.subCategoryName.toLowerCase() !== displayTitle.toLowerCase() && (
+                          <p
+                            itemProp="description"
+                            className="font-sans text-xs text-white/80 line-clamp-1"
+                          >
+                            {cover.subCategoryName}
+                          </p>
+                        )
+                      )}
                     </div>
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-5 group-hover:opacity-0 transition-opacity">
                       <span className="block font-sans text-[10px] tracking-[0.15em] uppercase text-orange-200/95 font-semibold mb-0.5">
-                        {treatment.stepNumber} • {treatment.tag}
+                        {stepNum} • {cover.branchCategory}
                       </span>
                       <span className="block font-serif text-base md:text-lg text-white font-light truncate">
-                        {treatment.name}
+                        {displayTitle}
                       </span>
                     </div>
                   </motion.div>
                 );
               })}
             </div>
+
+            {/* Cover Grid Pagination (shown only when active view has > 6 cover images) */}
+            {totalCoverPages > 1 && (
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <span className="text-[11px] font-sans font-medium text-slate-950/75 mr-1">
+                  Covers Page {coverPage} of {totalCoverPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCoverPage((p) => (p > 1 ? p - 1 : totalCoverPages))
+                  }
+                  aria-label="Previous cover images page"
+                  className="p-1.5 rounded-full border border-slate-950/30 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCoverPage((p) => (p < totalCoverPages ? p + 1 : 1))
+                  }
+                  aria-label="Next cover images page"
+                  className="p-1.5 rounded-full border border-slate-950/30 hover:bg-slate-950 hover:text-white transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

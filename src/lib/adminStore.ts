@@ -39,7 +39,9 @@ import {
   BlogCardSummary,
   BlogPostQueryParams,
   PaginatedBlogPostsResponse,
-  BlogSortOption
+  BlogSortOption,
+  HomepageTreatmentCoverImage,
+  HomepageTreatmentCoversConfig
 } from '../types';
 import { NEWS_ARTICLES, STORY_ARTICLES } from '../data';
 import {
@@ -119,6 +121,8 @@ const HEADER_CONFIG_KEY = 'homepage_header_config';
 const HERO_CONFIG_KEY = 'homepage_hero_config_v2';
 const SPECIALIST_AREAS_CONFIG_KEY = 'homepage_specialist_areas_config_v4';
 const TREATMENTS_CONFIG_KEY = 'homepage_treatments_config';
+export const HOMEPAGE_TREATMENT_COVERS_KEY = 'homepage_treatment_cover_images_v1';
+const DELETED_TREATMENT_COVER_IDS_KEY = 'homepage_treatment_covers_deleted_ids_v1';
 const GALLERY_CONFIG_KEY = 'homepage_gallery_config_v6';
 const WHY_CHOOSE_US_CONFIG_KEY = 'homepage_why_choose_us_config_v3';
 const AWARDS_CONFIG_KEY = 'homepage_awards_config';
@@ -3504,6 +3508,669 @@ export async function fetchPaginatedHomepageTreatments(
   }
 
   return getPaginatedHomepageTreatments(params);
+}
+
+// ============================================================================
+// HOMEPAGE TREATMENT COVER IMAGES STORE (MULTI-IMAGE PER SUBCATEGORY + DEFAULT GRID SELECTION)
+// ============================================================================
+
+export interface HomepageTreatmentCoversQueryParams {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  subCategoryId?: string;
+  branchCategory?: string;
+  showInDefaultGrid?: boolean;
+  includeHidden?: boolean;
+  search?: string;
+}
+
+export interface PaginatedHomepageTreatmentCoversResponse {
+  items: HomepageTreatmentCoverImage[];
+  totalCount: number;
+  hasMore: boolean;
+  page: number;
+  totalPages: number;
+  offset: number;
+  limit: number;
+  subcategoryCounts: Record<string, number>;
+  defaultGridCount: number;
+}
+
+function sanitizeClientCoverSlug(val: string, fallback = 'cover'): string {
+  const cleaned = String(val || fallback)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleaned || fallback;
+}
+
+export function getDefaultHomepageTreatmentCovers(): HomepageTreatmentCoverImage[] {
+  return DEFAULT_TREATMENTS_CONFIG.treatments.map((t, idx) => {
+    const subCatId = String(t.subGroupId || t.id || `subcat-${idx + 1}`).trim();
+    const subCatName = String(t.subCategory || t.name || `Treatment ${idx + 1}`).trim();
+    const branchCategory = normalizeMasterBranch(t.tag, subCatName);
+    const coverId = `cover-seed-${sanitizeClientCoverSlug(subCatId)}`;
+
+    return {
+      id: coverId,
+      subCategoryId: subCatId,
+      subCategoryName: subCatName,
+      branchCategory,
+      imageUrl: String(t.image || '/assets/images/treatments/specialist-profhilo.jpg').trim(),
+      title: String(t.name || subCatName).trim(),
+      caption: String(t.duration || '45 - 60 Mins').trim(),
+      altText: String(
+        t.imageAlt || `${subCatName} (${branchCategory}) at Age Reversal Clinic London`
+      ).trim(),
+      seoTitle: String(
+        t.seoTitle || `${subCatName} | ${branchCategory} — Age Reversal Clinic`
+      ).trim(),
+      seoKeywords:
+        Array.isArray(t.seoKeywords) && t.seoKeywords.length > 0
+          ? t.seoKeywords
+          : [
+              subCatName.toLowerCase(),
+              branchCategory.toLowerCase(),
+              `${subCatName.toLowerCase()} london`,
+              'age reversal clinic treatment',
+            ],
+      showInDefaultGrid: idx < 6,
+      hidden: false,
+      order: idx + 1,
+    };
+  });
+}
+
+/**
+ * Projects strictly the needed columns for a HomepageTreatmentCoverImage record.
+ */
+export function projectHomepageTreatmentCoverItem(
+  item: Partial<HomepageTreatmentCoverImage> | any,
+  idx = 0
+): HomepageTreatmentCoverImage {
+  const defaults = getDefaultHomepageTreatmentCovers();
+  const fallbackSeed =
+    defaults.find(
+      (d) =>
+        d.id === item?.id ||
+        d.subCategoryId.toLowerCase() === String(item?.subCategoryId || '').toLowerCase() ||
+        d.subCategoryName.toLowerCase() === String(item?.subCategoryName || '').toLowerCase()
+    ) || defaults[idx % Math.max(1, defaults.length)];
+
+  const subCategoryId = String(
+    item?.subCategoryId || fallbackSeed?.subCategoryId || 'facial-skin-care'
+  ).trim();
+  const subCategoryName = String(
+    item?.subCategoryName || fallbackSeed?.subCategoryName || 'Facial skin care'
+  ).trim();
+  const branchCategory = normalizeMasterBranch(
+    item?.branchCategory || fallbackSeed?.branchCategory || 'Face & Injectables',
+    subCategoryName
+  );
+  const id = String(
+    item?.id || `cover-${sanitizeClientCoverSlug(subCategoryId)}-${idx + 1}`
+  ).trim();
+  const imageUrl = String(
+    item?.imageUrl || item?.image || fallbackSeed?.imageUrl || '/assets/images/treatments/specialist-profhilo.jpg'
+  ).trim();
+  const title = String(item?.title !== undefined ? item.title : subCategoryName).trim();
+  const caption = String(item?.caption !== undefined ? item.caption : '').trim();
+  const altText = String(
+    item?.altText ||
+      item?.imageAlt ||
+      fallbackSeed?.altText ||
+      `${title || subCategoryName} (${branchCategory}) at Age Reversal Clinic London`
+  ).trim();
+  const seoTitle = String(
+    item?.seoTitle ||
+      fallbackSeed?.seoTitle ||
+      `${title || subCategoryName} | ${branchCategory} — Age Reversal Clinic`
+  ).trim();
+  const rawKeywords =
+    Array.isArray(item?.seoKeywords) && item.seoKeywords.length > 0
+      ? item.seoKeywords
+      : fallbackSeed?.seoKeywords || [
+          subCategoryName.toLowerCase(),
+          branchCategory.toLowerCase(),
+          `${subCategoryName.toLowerCase()} london`,
+        ];
+  const seoKeywords = Array.from(
+    new Set(rawKeywords.map((k: unknown) => String(k || '').trim()).filter(Boolean))
+  );
+
+  return {
+    id,
+    subCategoryId,
+    subCategoryName,
+    branchCategory,
+    imageUrl,
+    title,
+    caption,
+    altText,
+    seoTitle,
+    seoKeywords,
+    showInDefaultGrid: Boolean(item?.showInDefaultGrid),
+    hidden: Boolean(item?.hidden),
+    order: typeof item?.order === 'number' && Number.isFinite(item.order) ? item.order : idx + 1,
+    ...(item?.updatedAt ? { updatedAt: item.updatedAt } : {}),
+  };
+}
+
+export function getDeletedTreatmentCoverIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(DELETED_TREATMENT_COVER_IDS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return new Set(parsed.map(String));
+    }
+  } catch {}
+  return new Set();
+}
+
+export function recordDeletedTreatmentCoverIds(ids: string[]): void {
+  if (typeof window === 'undefined' || !Array.isArray(ids) || ids.length === 0) return;
+  try {
+    const current = getDeletedTreatmentCoverIds();
+    ids.forEach((id) => {
+      if (id) current.add(String(id));
+    });
+    window.localStorage.setItem(
+      DELETED_TREATMENT_COVER_IDS_KEY,
+      JSON.stringify(Array.from(current))
+    );
+  } catch {}
+}
+
+export function clearDeletedTreatmentCoverIds(ids?: string[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (!ids) {
+      window.localStorage.removeItem(DELETED_TREATMENT_COVER_IDS_KEY);
+      return;
+    }
+    const current = getDeletedTreatmentCoverIds();
+    ids.forEach((id) => current.delete(String(id)));
+    window.localStorage.setItem(
+      DELETED_TREATMENT_COVER_IDS_KEY,
+      JSON.stringify(Array.from(current))
+    );
+  } catch {}
+}
+
+function scoreClientCoverCompleteness(item?: Partial<HomepageTreatmentCoverImage> | null): number {
+  if (!item) return 0;
+  let score = 0;
+  const img = String(item.imageUrl || '');
+  if (img.startsWith('/assets/treatments/cover-') || img.startsWith('/assets/treatments/')) {
+    score += 60;
+  } else if (img.startsWith('/assets/')) {
+    score += 30;
+  }
+  if (item.updatedAt) score += 20;
+  return score;
+}
+
+export function getHomepageTreatmentCoversConfig(
+  remoteOverride?: HomepageTreatmentCoversConfig | null
+): HomepageTreatmentCoversConfig {
+  initializeAdminStore();
+
+  const deletedIds = getDeletedTreatmentCoverIds();
+  const fileSaved = getFileDefault<HomepageTreatmentCoversConfig | null>(
+    HOMEPAGE_TREATMENT_COVERS_KEY,
+    null
+  );
+  const localStored = getStorageItem<HomepageTreatmentCoversConfig | null>(
+    HOMEPAGE_TREATMENT_COVERS_KEY,
+    null
+  );
+  const defaults = getDefaultHomepageTreatmentCovers();
+  const seedById = new Map<string, HomepageTreatmentCoverImage>(
+    defaults.map((d) => [d.id, d])
+  );
+
+  const remoteById = new Map<string, HomepageTreatmentCoverImage>();
+  for (const item of remoteOverride?.items || []) {
+    if (item && item.id && !deletedIds.has(String(item.id))) {
+      remoteById.set(String(item.id), item);
+    }
+  }
+
+  const localById = new Map<string, HomepageTreatmentCoverImage>();
+  for (const item of localStored?.items || []) {
+    if (item && item.id && !deletedIds.has(String(item.id))) {
+      localById.set(String(item.id), item);
+    }
+  }
+
+  const fileById = new Map<string, HomepageTreatmentCoverImage>();
+  for (const item of fileSaved?.items || []) {
+    if (item && item.id && !deletedIds.has(String(item.id))) {
+      fileById.set(String(item.id), item);
+    }
+  }
+
+  const allIds = new Set<string>();
+  remoteById.forEach((_, id) => allIds.add(id));
+  localById.forEach((_, id) => allIds.add(id));
+  fileById.forEach((_, id) => allIds.add(id));
+
+  if (allIds.size === 0) {
+    defaults.forEach((d) => {
+      if (!deletedIds.has(d.id)) {
+        allIds.add(d.id);
+      }
+    });
+  }
+
+  const merged: HomepageTreatmentCoverImage[] = [];
+  let idx = 0;
+
+  for (const id of allIds) {
+    if (deletedIds.has(id)) continue;
+    const rem = remoteById.get(id);
+    const loc = localById.get(id);
+    const fil = fileById.get(id);
+    const seed = seedById.get(id);
+
+    const primary = rem || loc || fil || seed;
+    if (!primary) continue;
+
+    // Pick best image candidate so custom /assets/treatments/cover-*.webp is never lost
+    const candidates = [rem, loc, fil].filter(Boolean) as HomepageTreatmentCoverImage[];
+    let bestImgCandidate = primary;
+    let bestScore = scoreClientCoverCompleteness(primary);
+    for (const c of candidates) {
+      const s = scoreClientCoverCompleteness(c);
+      const cTime = Number(c.updatedAt || 0);
+      const bTime = Number(bestImgCandidate?.updatedAt || 0);
+      if (s > bestScore || (s === bestScore && cTime > bTime)) {
+        bestImgCandidate = c;
+        bestScore = s;
+      }
+    }
+
+    const combined = {
+      ...(seed || {}),
+      ...(fil || {}),
+      ...(loc || {}),
+      ...(rem || {}),
+      // If local has newer edits than remote, prefer local metadata unless remoteOverride was explicitly passed
+      ...(!remoteOverride && loc ? loc : {}),
+      imageUrl:
+        bestImgCandidate?.imageUrl ||
+        loc?.imageUrl ||
+        rem?.imageUrl ||
+        fil?.imageUrl ||
+        seed?.imageUrl ||
+        '',
+      updatedAt:
+        Math.max(
+          Number(rem?.updatedAt || 0),
+          Number(loc?.updatedAt || 0),
+          Number(fil?.updatedAt || 0)
+        ) || undefined,
+    };
+
+    merged.push(projectHomepageTreatmentCoverItem(combined, idx++));
+  }
+
+  merged.sort((a, b) => {
+    const orderDiff = (a.order ?? 999) - (b.order ?? 999);
+    if (orderDiff !== 0) return orderDiff;
+    return Number(b.updatedAt || 0) - Number(a.updatedAt || 0);
+  });
+
+  const normalizedItems = merged.map((it, i) => ({
+    ...it,
+    order: i + 1,
+  }));
+
+  const resolvedConfig: HomepageTreatmentCoversConfig = {
+    items: normalizedItems,
+    updatedAt:
+      remoteOverride?.updatedAt ||
+      localStored?.updatedAt ||
+      fileSaved?.updatedAt ||
+      new Date().toISOString(),
+  };
+
+  if (typeof window !== 'undefined') {
+    try {
+      const currentRaw = window.localStorage.getItem(HOMEPAGE_TREATMENT_COVERS_KEY);
+      const nextRaw = JSON.stringify(resolvedConfig);
+      if (!currentRaw || currentRaw !== nextRaw) {
+        window.localStorage.setItem(HOMEPAGE_TREATMENT_COVERS_KEY, nextRaw);
+      }
+    } catch {}
+  }
+
+  return resolvedConfig;
+}
+
+export async function saveHomepageTreatmentCoversConfig(
+  config: HomepageTreatmentCoversConfig | { items: HomepageTreatmentCoverImage[] },
+  options?: {
+    deletedIds?: string[];
+    restoredDefaults?: boolean;
+    skipServerSync?: boolean;
+  }
+): Promise<HomepageTreatmentCoversConfig> {
+  const opts = options || {};
+  if (opts.restoredDefaults) {
+    clearDeletedTreatmentCoverIds();
+  } else if (Array.isArray(opts.deletedIds) && opts.deletedIds.length > 0) {
+    recordDeletedTreatmentCoverIds(opts.deletedIds);
+  }
+
+  const deletedSet = getDeletedTreatmentCoverIds();
+  const rawItems = Array.isArray(config?.items) ? config.items : [];
+  const projectedItems = rawItems
+    .filter((it) => it && it.id && !deletedSet.has(String(it.id)))
+    .map((it, idx) => projectHomepageTreatmentCoverItem(it, idx));
+
+  const normalizedConfig: HomepageTreatmentCoversConfig = {
+    items: projectedItems,
+    updatedAt: new Date().toISOString(),
+  };
+
+  setStorageItem(HOMEPAGE_TREATMENT_COVERS_KEY, normalizedConfig, true);
+  if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+    _siteCustomizationsCache[HOMEPAGE_TREATMENT_COVERS_KEY] = normalizedConfig;
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('homepage_treatment_covers_updated', { detail: normalizedConfig })
+    );
+  }
+
+  if (!opts.skipServerSync) {
+    try {
+      const res = await fetch('/api/admin/homepage-treatment-covers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          config: normalizedConfig,
+          items: normalizedConfig.items,
+          deletedIds: Array.from(deletedSet),
+          restoredDefaults: Boolean(opts.restoredDefaults),
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.success && json.config && Array.isArray(json.config.items)) {
+          const serverConfig: HomepageTreatmentCoversConfig = {
+            items: json.config.items.map((it: any, i: number) =>
+              projectHomepageTreatmentCoverItem(it, i)
+            ),
+            updatedAt: json.config.updatedAt || normalizedConfig.updatedAt,
+          };
+          setStorageItem(HOMEPAGE_TREATMENT_COVERS_KEY, serverConfig, true);
+          if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+            _siteCustomizationsCache[HOMEPAGE_TREATMENT_COVERS_KEY] = serverConfig;
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('homepage_treatment_covers_updated', { detail: serverConfig })
+            );
+          }
+          return serverConfig;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not persist Homepage Treatment Cover Images to server:', err);
+    }
+  }
+
+  return normalizedConfig;
+}
+
+export async function fetchRemoteHomepageTreatmentCoversConfig(): Promise<HomepageTreatmentCoversConfig> {
+  try {
+    const res = await fetch('/api/admin/homepage-treatment-covers');
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && json.config && Array.isArray(json.config.items)) {
+        const reconciled = getHomepageTreatmentCoversConfig(json.config);
+        if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+          _siteCustomizationsCache[HOMEPAGE_TREATMENT_COVERS_KEY] = reconciled;
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('homepage_treatment_covers_updated', { detail: reconciled })
+          );
+        }
+        return reconciled;
+      }
+    }
+  } catch (err) {
+    console.warn('Falling back to local Homepage Treatment Cover Images config:', err);
+  }
+  return getHomepageTreatmentCoversConfig();
+}
+
+export function getPaginatedHomepageTreatmentCovers(
+  params: HomepageTreatmentCoversQueryParams = {}
+): PaginatedHomepageTreatmentCoversResponse {
+  const config = getHomepageTreatmentCoversConfig();
+  const allItems = config.items || [];
+
+  const subcategoryCounts: Record<string, number> = {};
+  let defaultGridCount = 0;
+  for (const item of allItems) {
+    const subId = String(item.subCategoryId || '').toLowerCase();
+    if (subId) {
+      subcategoryCounts[subId] = (subcategoryCounts[subId] || 0) + 1;
+    }
+    if (item.showInDefaultGrid && !item.hidden) {
+      defaultGridCount++;
+    }
+  }
+
+  const subCatFilter = (params.subCategoryId || '').trim().toLowerCase();
+  const branchFilter = (params.branchCategory || '').trim().toLowerCase();
+  const defaultGridOnly = Boolean(params.showInDefaultGrid);
+  const includeHidden = params.includeHidden !== false;
+  const searchFilter = (params.search || '').trim().toLowerCase();
+
+  const filtered = allItems.filter((item) => {
+    if (!includeHidden && item.hidden) return false;
+    if (defaultGridOnly && !item.showInDefaultGrid) return false;
+    if (
+      branchFilter &&
+      branchFilter !== 'all' &&
+      item.branchCategory.toLowerCase() !== branchFilter
+    ) {
+      return false;
+    }
+    if (
+      subCatFilter &&
+      subCatFilter !== 'all' &&
+      item.subCategoryId.toLowerCase() !== subCatFilter &&
+      item.subCategoryName.toLowerCase() !== subCatFilter
+    ) {
+      return false;
+    }
+    if (searchFilter) {
+      const hay = `${item.title || ''} ${item.caption || ''} ${item.subCategoryName} ${item.branchCategory} ${item.altText || ''} ${(item.seoKeywords || []).join(' ')}`.toLowerCase();
+      if (!hay.includes(searchFilter)) return false;
+    }
+    return true;
+  });
+
+  const totalCount = filtered.length;
+  const limit = params.limit !== undefined ? Math.max(1, params.limit) : Math.max(1, totalCount || 12);
+  const page = params.page !== undefined ? Math.max(1, params.page) : 1;
+  const offset = params.offset !== undefined ? Math.max(0, params.offset) : (page - 1) * limit;
+
+  const paginatedItems = filtered
+    .slice(offset, offset + limit)
+    .map((it, idx) => projectHomepageTreatmentCoverItem(it, offset + idx));
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const hasMore = offset + paginatedItems.length < totalCount;
+
+  return {
+    items: paginatedItems,
+    totalCount,
+    hasMore,
+    page: Math.floor(offset / limit) + 1,
+    totalPages,
+    offset,
+    limit,
+    subcategoryCounts,
+    defaultGridCount,
+  };
+}
+
+export async function fetchPaginatedHomepageTreatmentCovers(
+  params: HomepageTreatmentCoversQueryParams = {}
+): Promise<PaginatedHomepageTreatmentCoversResponse> {
+  const limit = params.limit !== undefined ? Math.max(1, params.limit) : 12;
+  const page = params.page !== undefined ? Math.max(1, params.page) : 1;
+  const offset = params.offset !== undefined ? Math.max(0, params.offset) : (page - 1) * limit;
+
+  try {
+    const qs = new URLSearchParams();
+    qs.set('limit', String(limit));
+    qs.set('offset', String(offset));
+    qs.set('page', String(page));
+    if (params.subCategoryId) qs.set('subCategoryId', params.subCategoryId);
+    if (params.branchCategory) qs.set('branchCategory', params.branchCategory);
+    if (params.showInDefaultGrid !== undefined) {
+      qs.set('showInDefaultGrid', String(params.showInDefaultGrid));
+    }
+    if (params.includeHidden !== undefined) {
+      qs.set('includeHidden', String(params.includeHidden));
+    }
+    if (params.search && params.search.trim()) {
+      qs.set('search', params.search.trim());
+    }
+
+    const res = await fetch(`/api/admin/homepage-treatment-covers?${qs.toString()}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && Array.isArray(json.items || json.data)) {
+        if (json.config && Array.isArray(json.config.items)) {
+          getHomepageTreatmentCoversConfig(json.config);
+        }
+        const rawItems = json.items || json.data;
+        return {
+          items: rawItems.map((it: any, idx: number) =>
+            projectHomepageTreatmentCoverItem(it, offset + idx)
+          ),
+          totalCount: typeof json.totalCount === 'number' ? json.totalCount : rawItems.length,
+          hasMore: Boolean(json.hasMore),
+          page: typeof json.page === 'number' ? json.page : page,
+          totalPages:
+            typeof json.totalPages === 'number'
+              ? json.totalPages
+              : Math.max(1, Math.ceil((json.totalCount || rawItems.length) / limit)),
+          offset: typeof json.offset === 'number' ? json.offset : offset,
+          limit: typeof json.limit === 'number' ? json.limit : limit,
+          subcategoryCounts: json.subcategoryCounts || {},
+          defaultGridCount:
+            typeof json.defaultGridCount === 'number' ? json.defaultGridCount : 0,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Falling back to local paginated Homepage Treatment Cover Images:', err);
+  }
+
+  return getPaginatedHomepageTreatmentCovers(params);
+}
+
+export async function uploadHomepageTreatmentCoverWebp(
+  file: File,
+  metadata: Partial<HomepageTreatmentCoverImage> & { previousUrl?: string }
+): Promise<{
+  success: boolean;
+  id?: string;
+  url?: string;
+  versionedUrl?: string;
+  item?: HomepageTreatmentCoverImage;
+  updatedConfig?: HomepageTreatmentCoversConfig;
+  error?: string;
+}> {
+  try {
+    const converted = await convertClinicImageFileToWebP(file, 0.9, 1600);
+    const dataUrl =
+      typeof converted === 'string'
+        ? converted
+        : (converted as { dataUrl?: string })?.dataUrl || '';
+
+    if (!dataUrl) {
+      return { success: false, error: 'Failed to convert image to WebP format.' };
+    }
+
+    const cleanSubCat = sanitizeClientCoverSlug(
+      metadata.subCategoryId || metadata.subCategoryName || 'general',
+      'general'
+    );
+    const coverId = String(metadata.id || `cover-${cleanSubCat}-${Date.now()}`).trim();
+    clearDeletedTreatmentCoverIds([coverId]);
+
+    const res = await fetch('/api/admin/homepage-treatment-covers/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...metadata,
+        id: coverId,
+        dataUrl,
+      }),
+    });
+
+    const json = await res.json();
+    if (json && json.success) {
+      let updatedConfig: HomepageTreatmentCoversConfig | undefined;
+      if (json.updatedConfig && Array.isArray(json.updatedConfig.items)) {
+        updatedConfig = getHomepageTreatmentCoversConfig(json.updatedConfig);
+        setStorageItem(HOMEPAGE_TREATMENT_COVERS_KEY, updatedConfig, true);
+        if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+          _siteCustomizationsCache[HOMEPAGE_TREATMENT_COVERS_KEY] = updatedConfig;
+        }
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('homepage_treatment_covers_updated', { detail: updatedConfig })
+          );
+        }
+      }
+      return {
+        success: true,
+        id: json.id || coverId,
+        url: json.url,
+        versionedUrl: json.versionedUrl || json.imagePath || json.url,
+        item: json.item ? projectHomepageTreatmentCoverItem(json.item) : undefined,
+        updatedConfig,
+      };
+    }
+
+    return {
+      success: false,
+      error: json?.error || 'Failed to upload Homepage Treatment Cover WebP image.',
+    };
+  } catch (err) {
+    console.error('Error uploading Homepage Treatment Cover WebP image:', err);
+    return {
+      success: false,
+      error: String(err),
+    };
+  }
+}
+
+export async function resetHomepageTreatmentCoversToDefaults(): Promise<HomepageTreatmentCoversConfig> {
+  clearDeletedTreatmentCoverIds();
+  const defaults = getDefaultHomepageTreatmentCovers();
+  return saveHomepageTreatmentCoversConfig(
+    { items: defaults, updatedAt: new Date().toISOString() },
+    { restoredDefaults: true }
+  );
 }
 
 export function syncBeforeAfterPairSeoToTreatments(

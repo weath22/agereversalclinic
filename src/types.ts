@@ -21,6 +21,28 @@ export interface TreatmentType {
   duration?: string;
 }
 
+export interface HomepageTreatmentCoverImage {
+  id: string;
+  subCategoryId: string;
+  subCategoryName: string;
+  branchCategory: string;
+  imageUrl: string;
+  title?: string;
+  caption?: string;
+  altText?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
+  showInDefaultGrid: boolean;
+  hidden?: boolean;
+  order: number;
+  updatedAt?: number | string;
+}
+
+export interface HomepageTreatmentCoversConfig {
+  items: HomepageTreatmentCoverImage[];
+  updatedAt?: number | string;
+}
+
 export interface ProcessStep {
   id: string;
   stepNumber: string;
