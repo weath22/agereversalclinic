@@ -218,16 +218,14 @@ export const CLINIC_DATA: ClinicData = {
     "Medical aesthetics UK",
     "Aesthetic clinics UK"
   ],
-  "ogImage": "/assets/clinic-og-image.webp?v=1793630162556",
+  "ogImage": "",
   "logo": {
-    "icon": "/assets/clinic-logo-icon.webp?v=1793675846495",
+    "icon": "",
     "alt": "Age Reversal Clinics Logo",
-    "full": "/assets/clinic-logo-full.webp?v=1793675866633"
+    "full": ""
   },
-  "exteriorPhoto": "/assets/clinic-exterior.webp?v=1793630162480",
-  "interiorPhotos": [
-    "/assets/clinic-interior-0.webp?v=1793630162340"
-  ],
+  "exteriorPhoto": "",
+  "interiorPhotos": [],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",
   "whatsapp": "https://wa.me/44207984159517",
@@ -278,7 +276,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "/assets/clinic-location-1791722960928.webp?v=1793676129435",
+      "image": "",
       "imageAlt": ""
     },
     {
@@ -295,7 +293,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": false,
-      "image": "/assets/clinic-location-1791728808656.webp?v=1793676140294",
+      "image": "",
       "imageAlt": ""
     }
   ],
@@ -317,7 +315,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
         "iconName": "Building",
         "badge": "Harley St Flagship",
-        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793630163088"
+        "imageUrl": ""
       },
       {
         "id": "p2",
@@ -325,7 +323,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
         "iconName": "Star",
         "badge": "4.9/5 ★ (2,000+ Reviews)",
-        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793630163125"
+        "imageUrl": ""
       },
       {
         "id": "p3",
@@ -333,7 +331,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
         "iconName": "Sparkles",
         "badge": "FDA-Cleared Tech",
-        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793630163201"
+        "imageUrl": ""
       },
       {
         "id": "p4",
@@ -341,7 +339,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
         "iconName": "Medal",
         "badge": "GMC Registered",
-        "imageUrl": "/assets/clinic-pillar-4.webp?v=1793630163227"
+        "imageUrl": ""
       }
     ]
   },
@@ -355,7 +353,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-1.webp?v=1793640345568"
+        "imageUrl": ""
       },
       {
         "id": "award-2",
@@ -363,7 +361,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2025",
         "organization": "Global Cosmetic Congress",
         "iconName": "Sparkles",
-        "imageUrl": "/assets/clinic-award-2.webp?v=1793640085858"
+        "imageUrl": ""
       },
       {
         "id": "award-3",
@@ -371,7 +369,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "British Health Standards",
         "iconName": "ShieldCheck",
-        "imageUrl": "/assets/clinic-award-3.webp?v=1793630163635"
+        "imageUrl": ""
       },
       {
         "id": "award-4",
@@ -379,7 +377,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "International Laser Association",
         "iconName": "Award",
-        "imageUrl": "/assets/clinic-award-4.webp?v=1793640116790"
+        "imageUrl": ""
       },
       {
         "id": "award-5",
@@ -387,7 +385,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "UK Clinical Dermatology Board",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-5.webp?v=1793630163559"
+        "imageUrl": ""
       }
     ]
   },
@@ -523,25 +521,25 @@ export const CLINIC_DATA: ClinicData = {
         "id": "step-1",
         "stepNumber": "01",
         "title": "Comprehensive Consultation & Assessment",
-        "image": "/assets/clinic-process-01.webp?v=1793630163807"
+        "image": ""
       },
       {
         "id": "step-2",
         "stepNumber": "02",
         "title": "Bespoke Treatment Plan",
-        "image": "/assets/clinic-process-02.webp?v=1793639640480"
+        "image": ""
       },
       {
         "id": "step-3",
         "stepNumber": "03",
         "title": "Precision Clinical Procedure",
-        "image": "/assets/clinic-process-03.webp?v=1793630164014"
+        "image": ""
       },
       {
         "id": "step-4",
         "stepNumber": "04",
         "title": "Regenerative Aftercare & Follow-Up",
-        "image": "/assets/clinic-process-04.webp?v=1793630164097"
+        "image": ""
       }
     ]
   },
@@ -554,28 +552,28 @@ export const CLINIC_DATA: ClinicData = {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "/assets/clinic-facility-1.webp?v=1793630163684",
+        "image": "",
         "imageAlt": "Consultation Suite at Age Reversal Clinics"
       },
       {
         "id": "room-2",
         "title": "Treatment Room",
         "tag": "Clinical",
-        "image": "/assets/clinic-facility-2.webp?v=1793630163718",
+        "image": "",
         "imageAlt": "Treatment Room at Age Reversal Clinics"
       },
       {
         "id": "room-3",
         "title": "Laser & Diagnostic Suite",
         "tag": "Technology",
-        "image": "/assets/clinic-facility-3.webp?v=1793630164164",
+        "image": "",
         "imageAlt": "Laser & Diagnostic Suite at Age Reversal Clinics"
       },
       {
         "id": "room-4",
         "title": "Executive Recovery Lounge",
         "tag": "Sanctuary",
-        "image": "/assets/clinic-facility-4.webp?v=1793630163764",
+        "image": "",
         "imageAlt": "Executive Recovery Lounge at Age Reversal Clinics"
       }
     ]
@@ -588,31 +586,31 @@ export const CLINIC_DATA: ClinicData = {
         "id": "bp-1",
         "name": "Aqualyx",
         "iconType": "layers",
-        "imageUrl": "/assets/clinic-brand-1.webp?v=1793639677166"
+        "imageUrl": ""
       },
       {
         "id": "bp-2",
         "name": "Azzalure",
         "iconType": "layers",
-        "imageUrl": "/assets/clinic-brand-2.webp?v=1793639694774"
+        "imageUrl": ""
       },
       {
         "id": "bp-3",
         "name": "Obagi",
         "iconType": "pill",
-        "imageUrl": "/assets/clinic-brand-3.webp?v=1793639706206"
+        "imageUrl": ""
       },
       {
         "id": "bp-4",
         "name": "Radiesse",
         "iconType": "shield",
-        "imageUrl": "/assets/clinic-brand-4.webp?v=1793630164537"
+        "imageUrl": ""
       },
       {
         "id": "bp-5",
         "name": "Profili",
         "iconType": "instagram",
-        "imageUrl": "/assets/clinic-brand-5.webp?v=1793630164608"
+        "imageUrl": ""
       }
     ]
   },
