@@ -31,8 +31,17 @@ import {
   ClinicalProtocolsConfig,
   MasterBranchCategory,
   MASTER_BRANCH_CATEGORIES,
-  TransformationCategorySlug
+  TransformationCategorySlug,
+  Article,
+  ArticleType,
+  ArticleStatus,
+  ArticleSeoCheckResult,
+  BlogCardSummary,
+  BlogPostQueryParams,
+  PaginatedBlogPostsResponse,
+  BlogSortOption
 } from '../types';
+import { NEWS_ARTICLES, STORY_ARTICLES } from '../data';
 import {
   CLINIC_DATA,
   ClinicData,
@@ -67,6 +76,7 @@ import {
 } from '../data/treatmentPricing';
 import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments';
 import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
+import { ADMIN_SYNCED_TRANSFORMATION_CASES } from '../data/transformationsData';
 // Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
 let _siteCustomizationsCache: Record<string, any> | null = null;
 let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
@@ -1174,84 +1184,97 @@ const DEFAULT_GALLERY_CONFIG: BeforeAfterGalleryConfig = {
 };
 
 const DEFAULT_WHY_CHOOSE_US_CONFIG: WhyChooseUsConfig = {
-  heading: "Why choose Age Reversal Clinic London?",
-  description: "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
-  pillars: [
-    {
-      id: 'p1',
-      title: "London's Premier Aesthetic Destination",
-      description: "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
-      iconName: "Building",
-      badge: "Harley St Flagship",
-      imageUrl: ""
-    },
-    {
-      id: 'p2',
-      title: "Top-rated by real patients",
-      description: "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
-      iconName: "Star",
-      badge: "4.9/5 ★ (2,000+ Reviews)",
-      imageUrl: ""
-    },
-    {
-      id: 'p3',
-      title: "Advanced Clinical Technologies",
-      description: "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
-      iconName: "Sparkles",
-      badge: "FDA-Cleared Tech",
-      imageUrl: ""
-    },
-    {
-      id: 'p4',
-      title: "World-Class Medical Team",
-      description: "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
-      iconName: "Medal",
-      badge: "GMC Registered",
-      imageUrl: ""
-    }
-  ]
+  heading: CLINIC_DATA.whyChooseUs?.heading || "Why choose Age Reversal Clinic London?",
+  subheading:
+    CLINIC_DATA.whyChooseUs?.subheading ||
+    "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
+  description:
+    CLINIC_DATA.whyChooseUs?.subheading ||
+    "Experience the pinnacle of clinical aesthetics. Here’s why clients trust our London flagship for their transformation.",
+  pillars:
+    CLINIC_DATA.whyChooseUs?.pillars && CLINIC_DATA.whyChooseUs.pillars.length > 0
+      ? CLINIC_DATA.whyChooseUs.pillars
+      : [
+          {
+            id: 'p1',
+            title: "London's Premier Aesthetic Destination",
+            description: "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
+            iconName: "Building",
+            badge: "Harley St Flagship",
+            imageUrl: ""
+          },
+          {
+            id: 'p2',
+            title: "Top-rated by real patients",
+            description: "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
+            iconName: "Star",
+            badge: "4.9/5 ★ (2,000+ Reviews)",
+            imageUrl: ""
+          },
+          {
+            id: 'p3',
+            title: "Advanced Clinical Technologies",
+            description: "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
+            iconName: "Sparkles",
+            badge: "FDA-Cleared Tech",
+            imageUrl: ""
+          },
+          {
+            id: 'p4',
+            title: "World-Class Medical Team",
+            description: "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
+            iconName: "Medal",
+            badge: "GMC Registered",
+            imageUrl: ""
+          }
+        ]
 };
 
 const DEFAULT_AWARDS_CONFIG: AwardsConfig = {
-  heading: "Awards & Recognition",
-  subheading: "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
-  awards: [
-    {
-      id: 'award-1',
-      title: 'Dermatology Clinic of the Year',
-      year: '2025',
-      organization: 'Aesthetic Medicine Awards',
-      imageUrl: ''
-    },
-    {
-      id: 'award-2',
-      title: 'Best Non-Surgical Rejuvenation',
-      year: '2025',
-      organization: 'Global Cosmetic Congress',
-      imageUrl: ''
-    },
-    {
-      id: 'award-3',
-      title: 'Patient Safety Excellence Award',
-      year: '2024',
-      organization: 'British Health Standards',
-      imageUrl: ''
-    },
-    {
-      id: 'award-4',
-      title: 'Best Laser Skin Clinic',
-      year: '2024',
-      organization: 'International Laser Association',
-      imageUrl: ''
-    },
-    {
-      id: 'award-5',
-      title: 'Excellence in Aesthetic Innovation',
-      year: '2024',
-      organization: 'UK Clinical Dermatology Board',
-      imageUrl: ''
-    }
-  ]
+  heading: CLINIC_DATA.awardsShowcase?.heading || "Awards & Recognition",
+  subheading:
+    CLINIC_DATA.awardsShowcase?.subheading ||
+    "Recognized nationally and globally for excellence in clinical and aesthetic dermatology.",
+  awards:
+    CLINIC_DATA.awardsShowcase?.awards && CLINIC_DATA.awardsShowcase.awards.length > 0
+      ? CLINIC_DATA.awardsShowcase.awards
+      : [
+          {
+            id: 'award-1',
+            title: 'Dermatology Clinic of the Year',
+            year: '2025',
+            organization: 'Aesthetic Medicine Awards',
+            imageUrl: ''
+          },
+          {
+            id: 'award-2',
+            title: 'Best Non-Surgical Rejuvenation',
+            year: '2025',
+            organization: 'Global Cosmetic Congress',
+            imageUrl: ''
+          },
+          {
+            id: 'award-3',
+            title: 'Patient Safety Excellence Award',
+            year: '2024',
+            organization: 'British Health Standards',
+            imageUrl: ''
+          },
+          {
+            id: 'award-4',
+            title: 'Best Laser Skin Clinic',
+            year: '2024',
+            organization: 'International Laser Association',
+            imageUrl: ''
+          },
+          {
+            id: 'award-5',
+            title: 'Excellence in Aesthetic Innovation',
+            year: '2024',
+            organization: 'UK Clinical Dermatology Board',
+            imageUrl: ''
+          }
+        ]
 };
 
 const DEFAULT_LOCATIONS_CONFIG: OurLocationsConfig = {
@@ -1435,8 +1458,8 @@ const DEFAULT_ACCREDITATIONS_CONFIG: AccreditationsConfig = {
 const DEFAULT_LATEST_NEWS_CONFIG: LatestNewsConfig = {
   heading: "Latest News & Insights",
   description: "Stay informed on the latest clinical advancements.",
-  newsArticles: [],
-  storyArticles: []
+  newsArticles: NEWS_ARTICLES,
+  storyArticles: STORY_ARTICLES
 };
 
 const DEFAULT_FOOTER_CONFIG: FooterConfig = {
@@ -1973,64 +1996,65 @@ export const DEFAULT_CLINICAL_PROTOCOLS_CONFIG: ClinicalProtocolsConfig = {
   ]
 };
 
-// Initialize databases if they don't exist
+let _isAdminStoreInitialized = false;
+
+// Initialize databases if they don't exist (local-only seed; never trigger server disk writes on init)
 export function initializeAdminStore(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || _isAdminStoreInitialized) return;
+  _isAdminStoreInitialized = true;
   if (!window.localStorage.getItem(CONSULTATIONS_KEY)) {
-    setStorageItem(CONSULTATIONS_KEY, INITIAL_CONSULTATIONS);
+    setStorageItem(CONSULTATIONS_KEY, INITIAL_CONSULTATIONS, true);
   }
   if (!window.localStorage.getItem(APPOINTMENTS_KEY)) {
-    setStorageItem(APPOINTMENTS_KEY, INITIAL_APPOINTMENTS);
+    setStorageItem(APPOINTMENTS_KEY, INITIAL_APPOINTMENTS, true);
   }
   if (!window.localStorage.getItem(INQUIRIES_KEY)) {
-    setStorageItem(INQUIRIES_KEY, INITIAL_INQUIRIES);
+    setStorageItem(INQUIRIES_KEY, INITIAL_INQUIRIES, true);
   }
   if (!window.localStorage.getItem(HEADER_CONFIG_KEY)) {
-    setStorageItem(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG);
+    setStorageItem(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG, true);
   }
   if (!window.localStorage.getItem(HERO_CONFIG_KEY)) {
-    setStorageItem(HERO_CONFIG_KEY, DEFAULT_HERO_CONFIG);
+    setStorageItem(HERO_CONFIG_KEY, DEFAULT_HERO_CONFIG, true);
   }
   if (!window.localStorage.getItem(SPECIALIST_AREAS_CONFIG_KEY)) {
-    setStorageItem(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG);
+    setStorageItem(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG, true);
   }
   if (!window.localStorage.getItem(TREATMENTS_CONFIG_KEY)) {
-    setStorageItem(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG);
-  }
-  if (!window.localStorage.getItem(GALLERY_CONFIG_KEY)) {
-    setStorageItem(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG);
+    setStorageItem(TREATMENTS_CONFIG_KEY, DEFAULT_TREATMENTS_CONFIG, true);
   }
   if (!window.localStorage.getItem(WHY_CHOOSE_US_CONFIG_KEY)) {
-    setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, DEFAULT_WHY_CHOOSE_US_CONFIG);
+    setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, DEFAULT_WHY_CHOOSE_US_CONFIG, true);
   }
   if (!window.localStorage.getItem(AWARDS_CONFIG_KEY)) {
-    setStorageItem(AWARDS_CONFIG_KEY, DEFAULT_AWARDS_CONFIG);
+    setStorageItem(AWARDS_CONFIG_KEY, DEFAULT_AWARDS_CONFIG, true);
   }
   if (!window.localStorage.getItem(LOCATIONS_CONFIG_KEY)) {
-    setStorageItem(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG);
+    setStorageItem(LOCATIONS_CONFIG_KEY, DEFAULT_LOCATIONS_CONFIG, true);
   }
   if (!window.localStorage.getItem(TEAM_LEADERSHIP_CONFIG_KEY)) {
-    setStorageItem(TEAM_LEADERSHIP_CONFIG_KEY, DEFAULT_TEAM_LEADERSHIP_CONFIG);
+    setStorageItem(TEAM_LEADERSHIP_CONFIG_KEY, DEFAULT_TEAM_LEADERSHIP_CONFIG, true);
   }
   if (!window.localStorage.getItem(PROCESS_CONFIG_KEY)) {
-    setStorageItem(PROCESS_CONFIG_KEY, DEFAULT_PROCESS_CONFIG);
+    setStorageItem(PROCESS_CONFIG_KEY, DEFAULT_PROCESS_CONFIG, true);
   }
   if (!window.localStorage.getItem(FACILITY_INTERIORS_CONFIG_KEY)) {
-    setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, DEFAULT_FACILITY_INTERIORS_CONFIG);
+    setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, DEFAULT_FACILITY_INTERIORS_CONFIG, true);
   }
   if (!window.localStorage.getItem(TESTIMONIALS_CONFIG_KEY)) {
-    setStorageItem(TESTIMONIALS_CONFIG_KEY, DEFAULT_TESTIMONIALS_CONFIG);
+    setStorageItem(TESTIMONIALS_CONFIG_KEY, DEFAULT_TESTIMONIALS_CONFIG, true);
   }
   if (!window.localStorage.getItem(SPECIAL_OFFERS_CONFIG_KEY)) {
-    setStorageItem(SPECIAL_OFFERS_CONFIG_KEY, DEFAULT_SPECIAL_OFFERS_CONFIG);
+    setStorageItem(SPECIAL_OFFERS_CONFIG_KEY, DEFAULT_SPECIAL_OFFERS_CONFIG, true);
   }
   if (!window.localStorage.getItem(CLINICAL_PROTOCOLS_CONFIG_KEY)) {
-    setStorageItem(CLINICAL_PROTOCOLS_CONFIG_KEY, DEFAULT_CLINICAL_PROTOCOLS_CONFIG);
+    setStorageItem(CLINICAL_PROTOCOLS_CONFIG_KEY, DEFAULT_CLINICAL_PROTOCOLS_CONFIG, true);
   }
   if (!window.localStorage.getItem(TREATMENT_TAXONOMY_KEY)) {
     setStorageItem(
       TREATMENT_TAXONOMY_KEY,
-      getFileDefault<TreatmentTaxonomyGroup[]>(TREATMENT_TAXONOMY_KEY, DEFAULT_TREATMENT_TAXONOMY)
+      getFileDefault<TreatmentTaxonomyGroup[]>(TREATMENT_TAXONOMY_KEY, DEFAULT_TREATMENT_TAXONOMY),
+      true
     );
   }
 }
@@ -2621,7 +2645,18 @@ export function resetAdminStoreToDefaults(): void {
 // HOMEPAGE EDIT METHODS
 export function getHeaderConfig(): HeaderConfig {
   initializeAdminStore();
-  return getStorageItem<HeaderConfig>(HEADER_CONFIG_KEY, getFileDefault(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG));
+  const stored = getStorageItem<HeaderConfig>(HEADER_CONFIG_KEY, getFileDefault(HEADER_CONFIG_KEY, DEFAULT_HEADER_CONFIG));
+  if (!stored?.logoUrl || !stored.logoUrl.trim()) {
+    const clinicLogo = getClinicData()?.logo;
+    const fallbackLogo = (clinicLogo?.icon || clinicLogo?.full || DEFAULT_HEADER_CONFIG.logoUrl || '').trim();
+    if (fallbackLogo) {
+      return {
+        ...(stored || DEFAULT_HEADER_CONFIG),
+        logoUrl: fallbackLogo,
+      };
+    }
+  }
+  return stored;
 }
 
 export function saveHeaderConfig(config: HeaderConfig): HeaderConfig {
@@ -2903,12 +2938,12 @@ export function saveMasterServices(
           ...p,
           treatmentGroupId: item.id as any,
           linkedTreatmentId: p.linkedTreatmentId || item.id,
-          linkedTreatmentTitle: item.title
+          linkedTreatmentTitle: p.linkedTreatmentTitle || item.title
         }))
       };
     })
   };
-  setStorageItem(GALLERY_CONFIG_KEY, nextGalleryConfig);
+  setStorageItem(GALLERY_CONFIG_KEY, nextGalleryConfig, true);
   syncConfigToFile(GALLERY_CONFIG_KEY, nextGalleryConfig);
 
   // 5. Auto-sync Pricing Catalog Categories if a matching service's parent branch was reassigned
@@ -3471,7 +3506,10 @@ export async function fetchPaginatedHomepageTreatments(
   return getPaginatedHomepageTreatments(params);
 }
 
-export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').BeforeAfterPair): void {
+export function syncBeforeAfterPairSeoToTreatments(
+  pair: import('../types').BeforeAfterPair,
+  localOnly = true
+): void {
   if (!pair) return;
 
   const keywords = Array.from(
@@ -3482,31 +3520,70 @@ export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').Befo
     )
   );
 
-  // 1. Register Before & After photos in the Central Media Asset Library for Google Image SEO tracking
+  // 1. Register Before & After photos in the Central Media Asset Library in localStorage
+  // (avoid firing concurrent POST /api/admin/save-to-files while /api/admin/before-after-gallery is saving)
   try {
-    if (pair.beforeImage && !pair.beforeImage.includes('unsplash.com')) {
-      registerMediaAsset({
-        name: `${pair.title} (Before Treatment)`,
-        url: pair.beforeImage,
-        mediaType: 'image',
-        category: 'Before & After',
-        altText:
-          pair.beforeAltText ||
-          `${pair.title} Before Treatment at Age Reversal Clinics London`,
-        seoKeywords: keywords,
-      });
+    const existingAssets = getStorageItem<MediaAssetItem[]>(
+      CENTRAL_MEDIA_ASSETS_KEY,
+      getFileDefault(CENTRAL_MEDIA_ASSETS_KEY, DEFAULT_CENTRAL_MEDIA_ASSETS)
+    );
+    let assetsChanged = false;
+    const nextAssets = [...existingAssets];
+
+    const upsertLocalAsset = (url: string, name: string, altText: string) => {
+      if (!url || url.includes('unsplash.com') || url.startsWith('https://lh3.googleusercontent.com/aida')) {
+        return;
+      }
+      const idx = nextAssets.findIndex((a) => a.url === url);
+      if (idx >= 0) {
+        const mergedKw = Array.from(new Set([...(nextAssets[idx].seoKeywords || []), ...keywords]));
+        if (
+          nextAssets[idx].altText !== altText ||
+          mergedKw.length !== (nextAssets[idx].seoKeywords || []).length
+        ) {
+          nextAssets[idx] = { ...nextAssets[idx], altText, seoKeywords: mergedKw };
+          assetsChanged = true;
+        }
+      } else {
+        nextAssets.unshift({
+          id: `asset-ba-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name,
+          url,
+          mediaType: 'image',
+          category: 'Before & After',
+          altText,
+          seoKeywords: keywords,
+          uploadedAt: new Date().toISOString().split('T')[0],
+          dimensions: 'WebP Optimized',
+        });
+        assetsChanged = true;
+      }
+    };
+
+    upsertLocalAsset(
+      pair.beforeImage,
+      `${pair.title} (Before Treatment)`,
+      pair.beforeAltText || `${pair.title} Before Treatment at Age Reversal Clinics London`
+    );
+    upsertLocalAsset(
+      pair.afterImage,
+      `${pair.title} (After Treatment)`,
+      pair.afterAltText || `${pair.title} After Treatment Result at Age Reversal Clinics London`
+    );
+    if (pair.singleFrameImage) {
+      upsertLocalAsset(
+        pair.singleFrameImage,
+        `${pair.title} (Single Frame Transformation)`,
+        pair.singleFrameAltText ||
+          `${pair.title} Before & After Transformation at Age Reversal Clinics London`
+      );
     }
-    if (pair.afterImage && !pair.afterImage.includes('unsplash.com')) {
-      registerMediaAsset({
-        name: `${pair.title} (After Treatment)`,
-        url: pair.afterImage,
-        mediaType: 'image',
-        category: 'Before & After',
-        altText:
-          pair.afterAltText ||
-          `${pair.title} After Treatment Result at Age Reversal Clinics London`,
-        seoKeywords: keywords,
-      });
+
+    if (assetsChanged) {
+      setStorageItem(CENTRAL_MEDIA_ASSETS_KEY, nextAssets, true);
+      if (!localOnly) {
+        syncConfigToFile(CENTRAL_MEDIA_ASSETS_KEY, nextAssets);
+      }
     }
   } catch (err) {
     console.warn('Could not register Before & After assets to central library:', err);
@@ -3538,7 +3615,13 @@ export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').Befo
     });
 
     if (pricingUpdated) {
-      saveTreatmentPricingData(nextPricing);
+      setStorageItem(TREATMENT_PRICING_DATA_KEY, nextPricing, true);
+      if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+        _siteCustomizationsCache[TREATMENT_PRICING_DATA_KEY] = nextPricing;
+      }
+      if (!localOnly) {
+        saveTreatmentPricingData(nextPricing);
+      }
     }
   } catch (err) {
     console.warn('Could not sync Before & After SEO keywords to treatment pricing:', err);
@@ -3571,7 +3654,13 @@ export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').Befo
       }
 
       if (detailsUpdated) {
-        saveTreatmentDetailsConfig(nextDetailsDb);
+        setStorageItem(TREATMENT_DETAILS_KEY, nextDetailsDb, true);
+        if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+          _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = nextDetailsDb;
+        }
+        if (!localOnly) {
+          saveTreatmentDetailsConfig(nextDetailsDb);
+        }
       }
     }
   } catch (err) {
@@ -3579,12 +3668,124 @@ export function syncBeforeAfterPairSeoToTreatments(pair: import('../types').Befo
   }
 }
 
-export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
+const DELETED_GALLERY_PAIR_IDS_KEY = 'homepage_gallery_deleted_pair_ids_v1';
+
+function getDeletedGalleryPairIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(DELETED_GALLERY_PAIR_IDS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDeletedGalleryPairIds(ids: Set<string>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DELETED_GALLERY_PAIR_IDS_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+function isUnmodifiedDefaultGalleryPair(pair: any): boolean {
+  if (!pair || !pair.id) return false;
+  const defaultIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+  if (!defaultIds.has(String(pair.id))) return false;
+  if (pair.updatedAt) return false;
+  if (pair.singleFrameImage) return false;
+  const before = String(pair.beforeImage || '');
+  const after = String(pair.afterImage || '');
+  const isDefBefore = !before || before.startsWith('https://lh3.googleusercontent.com/aida');
+  const isDefAfter = !after || after.startsWith('https://lh3.googleusercontent.com/aida');
+  return isDefBefore && isDefAfter;
+}
+
+function pickBestBeforeAfterPair(a: BeforeAfterPair, b: BeforeAfterPair): BeforeAfterPair {
+  if (!a) return b;
+  if (!b) return a;
+  if (isUnmodifiedDefaultGalleryPair(a) && !isUnmodifiedDefaultGalleryPair(b)) return b;
+  if (!isUnmodifiedDefaultGalleryPair(a) && isUnmodifiedDefaultGalleryPair(b)) return a;
+
+  const scoreImg = (u?: string) => {
+    const s = String(u || '');
+    if (s.startsWith('/assets/transformations/')) return 3;
+    if (s.startsWith('/assets/')) return 2;
+    if (s && !s.startsWith('https://lh3.googleusercontent.com/aida')) return 1;
+    return 0;
+  };
+
+  const scoreA = scoreImg(a.beforeImage) + scoreImg(a.afterImage) + scoreImg(a.singleFrameImage);
+  const scoreB = scoreImg(b.beforeImage) + scoreImg(b.afterImage) + scoreImg(b.singleFrameImage);
+  const timeA = Number(a.updatedAt || 0);
+  const timeB = Number(b.updatedAt || 0);
+
+  let winner = timeB > timeA ? { ...a, ...b } : { ...b, ...a };
+  if (scoreB > scoreA && timeB >= timeA) {
+    winner = { ...a, ...b };
+  } else if (scoreA > scoreB && timeA >= timeB) {
+    winner = { ...b, ...a };
+  } else if (scoreB > scoreA) {
+    winner = { ...a, ...b };
+  } else if (scoreA > scoreB) {
+    winner = { ...b, ...a };
+  }
+
+  // Always preserve local /assets/transformations/ or /assets/ image paths over default placeholders
+  const bestBefore =
+    [winner.beforeImage, a.beforeImage, b.beforeImage].find((u) =>
+      String(u || '').startsWith('/assets/transformations/')
+    ) ||
+    [winner.beforeImage, a.beforeImage, b.beforeImage].find((u) =>
+      String(u || '').startsWith('/assets/')
+    ) ||
+    [winner.beforeImage, a.beforeImage, b.beforeImage].find(
+      (u) => u && !String(u).startsWith('https://lh3.googleusercontent.com/aida')
+    ) ||
+    winner.beforeImage;
+
+  const bestAfter =
+    [winner.afterImage, a.afterImage, b.afterImage].find((u) =>
+      String(u || '').startsWith('/assets/transformations/')
+    ) ||
+    [winner.afterImage, a.afterImage, b.afterImage].find((u) =>
+      String(u || '').startsWith('/assets/')
+    ) ||
+    [winner.afterImage, a.afterImage, b.afterImage].find(
+      (u) => u && !String(u).startsWith('https://lh3.googleusercontent.com/aida')
+    ) ||
+    winner.afterImage;
+
+  const bestSingle =
+    [winner.singleFrameImage, a.singleFrameImage, b.singleFrameImage].find((u) =>
+      String(u || '').startsWith('/assets/transformations/')
+    ) ||
+    [winner.singleFrameImage, a.singleFrameImage, b.singleFrameImage].find((u) =>
+      String(u || '').startsWith('/assets/')
+    ) ||
+    [winner.singleFrameImage, a.singleFrameImage, b.singleFrameImage].find((u) => Boolean(u)) ||
+    winner.singleFrameImage;
+
+  return {
+    ...winner,
+    beforeImage: bestBefore || '',
+    afterImage: bestAfter || '',
+    singleFrameImage: bestSingle || undefined,
+    singleFrameAltText:
+      winner.singleFrameAltText || a.singleFrameAltText || b.singleFrameAltText || undefined,
+  };
+}
+
+export function getBeforeAfterGalleryConfig(
+  remoteOverride?: BeforeAfterGalleryConfig | null
+): BeforeAfterGalleryConfig {
   initializeAdminStore();
-  const stored = getStorageItem<BeforeAfterGalleryConfig>(
-    GALLERY_CONFIG_KEY,
-    getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG)
-  );
+  const fileDefault = getFileDefault(GALLERY_CONFIG_KEY, DEFAULT_GALLERY_CONFIG);
+  const stored = getStorageItem<BeforeAfterGalleryConfig>(GALLERY_CONFIG_KEY, fileDefault);
+  const deletedIds = getDeletedGalleryPairIds();
 
   // Generate treatment groups directly from the current Master Services list
   const masterServices = getMasterServices();
@@ -3632,57 +3833,153 @@ export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
     .flat()
     .forEach((p) => defaultPairById.set(p.id, p));
 
-  const bucketedPairs = new Map<string, BeforeAfterPair[]>();
-  fixedGroups.forEach((g) => bucketedPairs.set(g.id, []));
+  const resolveGroupId = (rawPair: any, catId?: string): string => {
+    const explicitGroup = String(rawPair?.treatmentGroupId || '');
+    const categoryId = String(catId || '');
+    const linkedId = String(rawPair?.linkedTreatmentId || '');
 
-  const seenPairIds = new Set<string>();
-  const storedCategories = stored?.categories || [];
-  const hasAnyNewGroup = storedCategories.some((c) => validGroupIds.has(c.id));
+    // If user modified or created a pair and assigned a valid group, respect it first!
+    if (explicitGroup && validGroupIds.has(explicitGroup)) {
+      if (!defaultPairById.has(rawPair.id) || rawPair.updatedAt || explicitGroup === categoryId) {
+        return explicitGroup;
+      }
+    }
+    if (categoryId && validGroupIds.has(categoryId)) {
+      return categoryId;
+    }
+    if (linkedId && validGroupIds.has(linkedId)) {
+      return linkedId;
+    }
+    if (rawPair?.id && pairIdToGroupMap[rawPair.id] && validGroupIds.has(pairIdToGroupMap[rawPair.id])) {
+      return pairIdToGroupMap[rawPair.id];
+    }
+    if (explicitGroup && legacyGroupMap[explicitGroup] && validGroupIds.has(legacyGroupMap[explicitGroup])) {
+      return legacyGroupMap[explicitGroup];
+    }
+    if (categoryId && legacyGroupMap[categoryId] && validGroupIds.has(legacyGroupMap[categoryId])) {
+      return legacyGroupMap[categoryId];
+    }
+    return fixedGroups[0]?.id || 'facial-skin-care';
+  };
 
-  for (const cat of storedCategories) {
-    for (const rawPair of cat.pairs || []) {
-      if (!rawPair || seenPairIds.has(rawPair.id)) continue;
-      seenPairIds.add(rawPair.id);
+  // Merge pairs across all sources:
+  // 1) localStorage (`stored`)
+  // 2) siteCustomizations.json (`fileDefault`)
+  // 3) transformationsData.ts (`ADMIN_SYNCED_TRANSFORMATION_CASES`)
+  const mergedPairsById = new Map<string, { pair: BeforeAfterPair; groupId: string }>();
 
-      const targetGroupId =
-        (rawPair.id && pairIdToGroupMap[rawPair.id]) ||
-        (validGroupIds.has(cat.id) ? cat.id : legacyGroupMap[cat.id]) ||
-        fixedGroups[0].id;
+  const ingestPair = (rawPair: any, catId?: string) => {
+    if (!rawPair || !rawPair.id) return;
+    const pairId = String(rawPair.id);
+    if (deletedIds.has(pairId)) return;
 
-      const defaultPair = defaultPairById.get(rawPair.id);
-      const shouldUpgradeDefaultTitle =
-        defaultPair && (!rawPair.title || legacyDefaultTitles.has(rawPair.title));
+    const targetGroupId = resolveGroupId(rawPair, catId);
+    const defaultPair = defaultPairById.get(pairId);
+    const shouldUpgradeDefaultTitle =
+      defaultPair && (!rawPair.title || legacyDefaultTitles.has(rawPair.title));
 
-      const upgradedPair: BeforeAfterPair = {
-        ...defaultPair,
-        ...rawPair,
-        treatmentGroupId: targetGroupId as any,
-        title: shouldUpgradeDefaultTitle ? defaultPair.title : rawPair.title,
-        linkedTreatmentId: shouldUpgradeDefaultTitle
-          ? defaultPair.linkedTreatmentId
-          : rawPair.linkedTreatmentId || targetGroupId,
-        linkedTreatmentTitle: shouldUpgradeDefaultTitle
-          ? defaultPair.linkedTreatmentTitle
-          : rawPair.linkedTreatmentTitle || defaultPair?.linkedTreatmentTitle,
-      };
+    const candidate: BeforeAfterPair = {
+      ...defaultPair,
+      ...rawPair,
+      id: pairId,
+      treatmentGroupId: targetGroupId as any,
+      title: shouldUpgradeDefaultTitle ? defaultPair.title : rawPair.title || 'Clinical Transformation',
+      linkedTreatmentId: shouldUpgradeDefaultTitle
+        ? defaultPair.linkedTreatmentId
+        : rawPair.linkedTreatmentId || targetGroupId,
+      linkedTreatmentTitle: shouldUpgradeDefaultTitle
+        ? defaultPair.linkedTreatmentTitle
+        : rawPair.linkedTreatmentTitle || defaultPair?.linkedTreatmentTitle,
+    };
 
-      const list = bucketedPairs.get(targetGroupId) || [];
-      list.push(upgradedPair);
-      bucketedPairs.set(targetGroupId, list);
+    const existing = mergedPairsById.get(pairId);
+    if (!existing) {
+      mergedPairsById.set(pairId, { pair: candidate, groupId: targetGroupId });
+    } else {
+      const best = pickBestBeforeAfterPair(existing.pair, candidate);
+      const bestGroupId = resolveGroupId(best, targetGroupId);
+      mergedPairsById.set(pairId, {
+        pair: { ...best, treatmentGroupId: bestGroupId as any },
+        groupId: bestGroupId,
+      });
+    }
+  };
+
+  // Source A: stored in localStorage
+  for (const cat of stored?.categories || []) {
+    for (const rawPair of cat?.pairs || []) {
+      ingestPair(rawPair, cat.id);
     }
   }
 
-  // Ensure all 8 default pairs are present if migrating from a legacy 5-pair snapshot
-  if (!hasAnyNewGroup) {
-    defaultPairById.forEach((defPair, pairId) => {
-      if (!seenPairIds.has(pairId)) {
-        const gId = defPair.treatmentGroupId || pairIdToGroupMap[pairId] || fixedGroups[0].id;
-        const list = bucketedPairs.get(gId) || [];
-        list.push({ ...defPair });
-        bucketedPairs.set(gId, list);
+  // Source B: remoteOverride from GET /api/admin/before-after-gallery
+  if (remoteOverride && Array.isArray(remoteOverride.categories)) {
+    for (const cat of remoteOverride.categories) {
+      for (const rawPair of cat?.pairs || []) {
+        ingestPair(rawPair, cat.id);
       }
-    });
+    }
   }
+
+  // Source C: siteCustomizations.json (in case localStorage had stale DEFAULT_GALLERY_CONFIG)
+  if (fileDefault && fileDefault !== stored) {
+    for (const cat of fileDefault.categories || []) {
+      for (const rawPair of cat?.pairs || []) {
+        ingestPair(rawPair, cat.id);
+      }
+    }
+  }
+
+  // Source C: ADMIN_SYNCED_TRANSFORMATION_CASES in src/data/transformationsData.ts
+  if (Array.isArray(ADMIN_SYNCED_TRANSFORMATION_CASES)) {
+    for (const tc of ADMIN_SYNCED_TRANSFORMATION_CASES) {
+      if (!tc || !tc.id) continue;
+      ingestPair(
+        {
+          id: tc.id,
+          title: tc.title,
+          treatmentGroupId: tc.treatmentGroupId || tc.linkedTreatmentId,
+          linkedTreatmentId: tc.linkedTreatmentId || tc.treatmentGroupId,
+          linkedTreatmentTitle: tc.linkedTreatmentTitle || tc.patientInfo || tc.tag,
+          beforeImage: tc.beforeImage,
+          afterImage: tc.afterImage,
+          singleFrameImage: tc.singleFrameImage,
+          beforeAltText: tc.beforeAltText,
+          afterAltText: tc.afterAltText,
+          singleFrameAltText: tc.singleFrameAltText,
+          seoTitle: tc.seoTitle || tc.concern,
+          seoKeywords: tc.seoKeywords,
+          duration: tc.duration,
+          sessions: tc.sessions,
+          featured: tc.featured,
+          hidden: tc.hidden,
+          updatedAt: tc.updatedAt,
+        },
+        tc.treatmentGroupId || tc.linkedTreatmentId
+      );
+    }
+  }
+
+  // Source D: Ensure the 8 default pairs are present unless explicitly deleted
+  defaultPairById.forEach((defPair, pairId) => {
+    if (!mergedPairsById.has(pairId) && !deletedIds.has(pairId)) {
+      const gId = defPair.treatmentGroupId || pairIdToGroupMap[pairId] || fixedGroups[0].id;
+      mergedPairsById.set(pairId, {
+        pair: { ...defPair, treatmentGroupId: gId as any },
+        groupId: gId,
+      });
+    }
+  });
+
+  const bucketedPairs = new Map<string, BeforeAfterPair[]>();
+  fixedGroups.forEach((g) => bucketedPairs.set(g.id, []));
+
+  mergedPairsById.forEach(({ pair, groupId }) => {
+    const validTarget = validGroupIds.has(groupId) ? groupId : fixedGroups[0].id;
+    const list = bucketedPairs.get(validTarget) || [];
+    list.push({ ...pair, treatmentGroupId: validTarget as any });
+    bucketedPairs.set(validTarget, list);
+  });
 
   const normalizedCategories = fixedGroups.map((group) => {
     const pairs = bucketedPairs.get(group.id) || [];
@@ -3698,6 +3995,9 @@ export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
         afterAltText:
           p.afterAltText ||
           `${p.title} After ${group.name} Treatment Result at Age Reversal Clinics London`,
+        singleFrameAltText:
+          p.singleFrameAltText ||
+          `${p.title} Before & After ${group.name} Transformation at Age Reversal Clinics London`,
         seoTitle: p.seoTitle || `${p.title} — Before & After Result | Age Reversal Clinics`,
         seoKeywords:
           p.seoKeywords && p.seoKeywords.length > 0
@@ -3712,34 +4012,80 @@ export function getBeforeAfterGalleryConfig(): BeforeAfterGalleryConfig {
   });
 
   return {
-    heading: stored?.heading || DEFAULT_GALLERY_CONFIG.heading,
-    description: stored?.description || DEFAULT_GALLERY_CONFIG.description,
+    heading:
+      stored?.heading ||
+      remoteOverride?.heading ||
+      fileDefault?.heading ||
+      DEFAULT_GALLERY_CONFIG.heading,
+    description:
+      stored?.description ||
+      remoteOverride?.description ||
+      fileDefault?.description ||
+      DEFAULT_GALLERY_CONFIG.description,
     categories: normalizedCategories,
   };
 }
 
-export function saveBeforeAfterGalleryConfig(config: BeforeAfterGalleryConfig): BeforeAfterGalleryConfig {
-  setStorageItem(GALLERY_CONFIG_KEY, config);
-  syncConfigToFile(GALLERY_CONFIG_KEY, config);
+export function saveBeforeAfterGalleryConfig(
+  config: BeforeAfterGalleryConfig,
+  options?: { deletedPairId?: string; restoredDefaults?: boolean }
+): BeforeAfterGalleryConfig {
+  const deletedIds = getDeletedGalleryPairIds();
+  if (options?.restoredDefaults) {
+    deletedIds.clear();
+  } else {
+    if (options?.deletedPairId) {
+      deletedIds.add(String(options.deletedPairId));
+    }
+    // Any pair present in config is not deleted
+    for (const cat of config?.categories || []) {
+      for (const p of cat?.pairs || []) {
+        if (p?.id) deletedIds.delete(String(p.id));
+      }
+    }
+  }
+  saveDeletedGalleryPairIds(deletedIds);
 
-  // Sync directly to dedicated Before & After gallery endpoint (updates siteCustomizations.json + transformationsData.ts)
+  // Sync SEO keywords locally first so localStorage is up to date without firing competing POST requests
+  if (config?.categories) {
+    config.categories.forEach((cat) => {
+      (cat.pairs || []).forEach((pair) => {
+        syncBeforeAfterPairSeoToTreatments(pair, true);
+      });
+    });
+  }
+
+  setStorageItem(GALLERY_CONFIG_KEY, config, true);
+  if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+    _siteCustomizationsCache[GALLERY_CONFIG_KEY] = config;
+  }
+
+  // Single authoritative POST to dedicated Before & After gallery endpoint
+  // (atomically updates siteCustomizations.json, _gallery_manifest.json, and transformationsData.ts)
   if (typeof window !== 'undefined') {
     fetch('/api/admin/before-after-gallery', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ config }),
-    }).catch((err) => {
-      console.warn('Could not sync Before & After gallery to server endpoint:', err);
-    });
-  }
-
-  // Sync SEO keywords from all pairs to their linked existing treatments & Central Asset Library
-  if (config?.categories) {
-    config.categories.forEach((cat) => {
-      (cat.pairs || []).forEach((pair) => {
-        syncBeforeAfterPairSeoToTreatments(pair);
+      body: JSON.stringify({
+        config,
+        allowDeletions: true,
+        deletedPairIds: Array.from(deletedIds),
+        restoredDefaults: Boolean(options?.restoredDefaults),
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const saved = data?.data || data?.config;
+        if (saved && Array.isArray(saved.categories)) {
+          if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+            _siteCustomizationsCache[GALLERY_CONFIG_KEY] = saved;
+          }
+          setStorageItem(GALLERY_CONFIG_KEY, saved, true);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not sync Before & After gallery to server endpoint:', err);
       });
-    });
   }
 
   if (typeof window !== 'undefined') {
@@ -3756,8 +4102,47 @@ export async function fetchRemoteBeforeAfterGalleryConfig(): Promise<BeforeAfter
     const data = await res.json();
     const remoteConfig = data?.config || data?.data;
     if (remoteConfig && Array.isArray(remoteConfig.categories)) {
-      setStorageItem(GALLERY_CONFIG_KEY, remoteConfig);
-      return getBeforeAfterGalleryConfig();
+      // CRITICAL: Merge BEFORE writing to localStorage so localStorage pairs/images are never overwritten by a replaced file!
+      const merged = getBeforeAfterGalleryConfig(remoteConfig);
+      if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+        _siteCustomizationsCache[GALLERY_CONFIG_KEY] = merged;
+      }
+      setStorageItem(GALLERY_CONFIG_KEY, merged, true);
+
+      // If `merged` recovered custom pairs or local /assets/ images from localStorage that were missing in `remoteConfig`
+      // (for example, right after the user replaced siteCustomizations.json on disk), auto-heal the server files!
+      const countLocalAssetPairs = (cfg: any): number => {
+        let count = 0;
+        for (const c of cfg?.categories || []) {
+          for (const p of c?.pairs || []) {
+            if (!p) continue;
+            if (
+              String(p.beforeImage || '').startsWith('/assets/') ||
+              String(p.afterImage || '').startsWith('/assets/') ||
+              String(p.singleFrameImage || '').startsWith('/assets/') ||
+              !isUnmodifiedDefaultGalleryPair(p)
+            ) {
+              count++;
+            }
+          }
+        }
+        return count;
+      };
+
+      if (countLocalAssetPairs(merged) > countLocalAssetPairs(remoteConfig)) {
+        const deletedIds = getDeletedGalleryPairIds();
+        fetch('/api/admin/before-after-gallery', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            config: merged,
+            allowDeletions: false,
+            deletedPairIds: Array.from(deletedIds),
+          }),
+        }).catch(() => {});
+      }
+
+      return merged;
     }
   } catch (err) {
     console.warn('Could not fetch remote Before & After gallery config:', err);
@@ -3768,9 +4153,20 @@ export async function fetchRemoteBeforeAfterGalleryConfig(): Promise<BeforeAfter
 export async function uploadBeforeAfterWebpImage(params: {
   fileName: string;
   dataUrl: string;
-  slot?: 'before' | 'after';
+  slot?: 'before' | 'after' | 'single';
   pairId?: string;
-}): Promise<{ url: string; fileName: string } | null> {
+  title?: string;
+  groupId?: string;
+  linkedTreatmentId?: string;
+  linkedTreatmentTitle?: string;
+  duration?: string;
+  sessions?: number;
+  beforeAltText?: string;
+  afterAltText?: string;
+  singleFrameAltText?: string;
+  seoTitle?: string;
+  seoKeywords?: string[];
+}): Promise<{ url: string; versionedUrl?: string; fileName: string; updatedGallery?: BeforeAfterGalleryConfig } | null> {
   if (typeof window === 'undefined') return null;
   try {
     const res = await fetch('/api/admin/transformations/upload-image', {
@@ -3780,8 +4176,19 @@ export async function uploadBeforeAfterWebpImage(params: {
     });
     if (!res.ok) return null;
     const data = await res.json();
+    if (data?.updatedGallery && Array.isArray(data.updatedGallery.categories)) {
+      if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+        _siteCustomizationsCache[GALLERY_CONFIG_KEY] = data.updatedGallery;
+      }
+      setStorageItem(GALLERY_CONFIG_KEY, data.updatedGallery, true);
+    }
     if (data?.url) {
-      return { url: data.url, fileName: data.fileName || params.fileName };
+      return {
+        url: data.url,
+        versionedUrl: data.versionedUrl || `${data.url}?v=${data.version || Date.now()}`,
+        fileName: data.fileName || params.fileName,
+        updatedGallery: data.updatedGallery,
+      };
     }
   } catch (err) {
     console.error('Error uploading Before & After WebP image:', err);
@@ -3840,6 +4247,20 @@ export function getOurLocationsConfig(): OurLocationsConfig {
   // If stored config locations contain the legacy dummy "Devonshire Place, London W1G 6BW" or empty, dynamically fall back to DEFAULT_LOCATIONS_CONFIG
   if (config && (!config.locations || config.locations.length === 0 || config.locations.some(l => l.address?.includes('Devonshire Place, London W1G 6BW') || l.name?.includes('The London Clinic')))) {
     return DEFAULT_LOCATIONS_CONFIG;
+  }
+  if (config && Array.isArray(config.locations)) {
+    const clinicLocations = getClinicData()?.locations || CLINIC_DATA.locations || [];
+    return {
+      ...config,
+      locations: config.locations.map((loc, idx) => {
+        const matchedClinicLoc =
+          clinicLocations.find((cl) => cl.id && cl.id === loc.id) || clinicLocations[idx];
+        return {
+          ...loc,
+          imageUrl: (loc.imageUrl && loc.imageUrl.trim()) || matchedClinicLoc?.image || DEFAULT_LOCATIONS_CONFIG.locations?.[idx]?.imageUrl || '',
+        };
+      }),
+    };
   }
   return config;
 }
@@ -3998,14 +4419,195 @@ export function saveAccreditationsConfig(config: AccreditationsConfig): Accredit
   return config;
 }
 
+function countClientLocalBlogAssets(article?: Partial<Article> | null): number {
+  if (!article || typeof article !== 'object') return 0;
+  let count = 0;
+  if (typeof article.image === 'string' && article.image.startsWith('/assets/blog/')) {
+    count += 2;
+  }
+  if (Array.isArray(article.contentBlocks)) {
+    for (const b of article.contentBlocks) {
+      if (typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')) {
+        count += 2;
+      } else if (b?.type === 'image') {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function mergeTwoClientArticleLists(
+  primaryList: Article[],
+  secondaryList: Article[],
+  defaultType: ArticleType
+): Article[] {
+  const pArr = Array.isArray(primaryList) ? primaryList : [];
+  const sArr = Array.isArray(secondaryList) ? secondaryList : [];
+  if (pArr.length === 0) {
+    return sArr.map((a, idx) => normalizeBlogArticle(a, defaultType, idx));
+  }
+  if (sArr.length === 0) {
+    return pArr.map((a, idx) => normalizeBlogArticle(a, defaultType, idx));
+  }
+
+  const secondaryById = new Map<string, Article>();
+  for (const item of sArr) {
+    if (item && item.id) {
+      secondaryById.set(String(item.id), item);
+    }
+  }
+
+  const seenIds = new Set<string>();
+  const merged: Article[] = [];
+
+  for (let i = 0; i < pArr.length; i++) {
+    const pItem = pArr[i];
+    if (!pItem || !pItem.id) continue;
+    const idStr = String(pItem.id);
+    seenIds.add(idStr);
+    const sItem = secondaryById.get(idStr);
+
+    if (!sItem) {
+      merged.push(normalizeBlogArticle(pItem, defaultType, i));
+      continue;
+    }
+
+    const pNorm = normalizeBlogArticle(pItem, defaultType, i);
+    const sNorm = normalizeBlogArticle(sItem, defaultType, i);
+
+    const pAssets = countClientLocalBlogAssets(pNorm);
+    const sAssets = countClientLocalBlogAssets(sNorm);
+    const pTime = Date.parse(pNorm.updatedAt || pNorm.publishedAt || '') || 0;
+    const sTime = Date.parse(sNorm.updatedAt || sNorm.publishedAt || '') || 0;
+
+    const base: Article =
+      sTime > pTime || (sTime === pTime && sAssets > pAssets)
+        ? { ...pNorm, ...sNorm }
+        : { ...sNorm, ...pNorm };
+
+    // Always preserve /assets/blog/ cover image if either source has one
+    if (
+      typeof sNorm.image === 'string' &&
+      sNorm.image.startsWith('/assets/blog/') &&
+      (!base.image || !base.image.startsWith('/assets/blog/'))
+    ) {
+      base.image = sNorm.image;
+      base.imageAlt = sNorm.imageAlt || base.imageAlt;
+    } else if (
+      typeof pNorm.image === 'string' &&
+      pNorm.image.startsWith('/assets/blog/') &&
+      (!base.image || !base.image.startsWith('/assets/blog/'))
+    ) {
+      base.image = pNorm.image;
+      base.imageAlt = pNorm.imageAlt || base.imageAlt;
+    }
+
+    // Preserve contentBlocks with /assets/blog/ images
+    const pBlockAssets = (pNorm.contentBlocks || []).filter(
+      (b) => typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')
+    ).length;
+    const sBlockAssets = (sNorm.contentBlocks || []).filter(
+      (b) => typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')
+    ).length;
+
+    if (sBlockAssets > pBlockAssets) {
+      base.contentBlocks = sNorm.contentBlocks;
+    } else if (pBlockAssets > sBlockAssets) {
+      base.contentBlocks = pNorm.contentBlocks;
+    } else if (
+      sTime === pTime &&
+      Array.isArray(sNorm.contentBlocks) &&
+      sNorm.contentBlocks.length > (base.contentBlocks?.length || 0)
+    ) {
+      base.contentBlocks = sNorm.contentBlocks;
+    }
+
+    merged.push(normalizeBlogArticle(base, defaultType, i));
+  }
+
+  for (let j = 0; j < sArr.length; j++) {
+    const sItem = sArr[j];
+    if (sItem && sItem.id && !seenIds.has(String(sItem.id))) {
+      seenIds.add(String(sItem.id));
+      merged.push(normalizeBlogArticle(sItem, defaultType, merged.length));
+    }
+  }
+
+  return merged;
+}
+
 export function getLatestNewsConfig(): LatestNewsConfig {
   initializeAdminStore();
-  return getStorageItem<LatestNewsConfig>(LATEST_NEWS_CONFIG_KEY, getFileDefault(LATEST_NEWS_CONFIG_KEY, DEFAULT_LATEST_NEWS_CONFIG));
+  const fileDefault = getFileDefault<LatestNewsConfig | null>(LATEST_NEWS_CONFIG_KEY, null);
+  const stored = getStorageItem<(LatestNewsConfig & { updatedAt?: string }) | null>(
+    LATEST_NEWS_CONFIG_KEY,
+    null
+  );
+
+  // Reconcile src/data.ts (NEWS_ARTICLES / STORY_ARTICLES) with siteCustomizations.json first,
+  // then reconcile with localStorage so pasting an updated src/data.ts or siteCustomizations.json
+  // immediately reflects without stale localStorage overwriting it.
+  const codebaseNews = mergeTwoClientArticleLists(
+    NEWS_ARTICLES,
+    Array.isArray(fileDefault?.newsArticles) ? fileDefault.newsArticles : [],
+    'news'
+  );
+  const codebaseStories = mergeTwoClientArticleLists(
+    STORY_ARTICLES,
+    Array.isArray(fileDefault?.storyArticles) ? fileDefault.storyArticles : [],
+    'stories'
+  );
+
+  const hasStoredNews = Array.isArray(stored?.newsArticles) && stored.newsArticles.length > 0;
+  const hasStoredStories = Array.isArray(stored?.storyArticles) && stored.storyArticles.length > 0;
+
+  const resolvedNews = hasStoredNews
+    ? mergeTwoClientArticleLists(stored!.newsArticles, codebaseNews, 'news')
+    : codebaseNews;
+  const resolvedStories = hasStoredStories
+    ? mergeTwoClientArticleLists(stored!.storyArticles, codebaseStories, 'stories')
+    : codebaseStories;
+
+  const resolvedConfig: LatestNewsConfig = {
+    heading: stored?.heading || fileDefault?.heading || DEFAULT_LATEST_NEWS_CONFIG.heading,
+    description:
+      stored?.description || fileDefault?.description || DEFAULT_LATEST_NEWS_CONFIG.description,
+    newsArticles: resolvedNews,
+    storyArticles: resolvedStories,
+  };
+
+  // Auto-heal localStorage if reconciled config has newer/recovered articles from src/data.ts or siteCustomizations.json
+  if (typeof window !== 'undefined') {
+    try {
+      const currentRaw = window.localStorage.getItem(LATEST_NEWS_CONFIG_KEY);
+      const nextRaw = JSON.stringify(resolvedConfig);
+      if (!currentRaw || currentRaw !== nextRaw) {
+        window.localStorage.setItem(LATEST_NEWS_CONFIG_KEY, nextRaw);
+      }
+    } catch {}
+  }
+
+  return resolvedConfig;
 }
 
 export function saveLatestNewsConfig(config: LatestNewsConfig): LatestNewsConfig {
-  setStorageItem(LATEST_NEWS_CONFIG_KEY, config);
-  return config;
+  const normalized: LatestNewsConfig & { updatedAt: string } = {
+    heading: config.heading || DEFAULT_LATEST_NEWS_CONFIG.heading,
+    description: config.description || DEFAULT_LATEST_NEWS_CONFIG.description,
+    newsArticles: (Array.isArray(config.newsArticles) ? config.newsArticles : []).map((a, idx) =>
+      normalizeBlogArticle({ ...a, type: 'news' }, 'news', idx)
+    ),
+    storyArticles: (Array.isArray(config.storyArticles) ? config.storyArticles : []).map((a, idx) =>
+      normalizeBlogArticle({ ...a, type: 'stories' }, 'stories', idx)
+    ),
+    updatedAt: new Date().toISOString(),
+  };
+  setStorageItem(LATEST_NEWS_CONFIG_KEY, normalized);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('blog_posts_updated', { detail: normalized }));
+  }
+  return normalized;
 }
 
 export function getFooterConfig(): FooterConfig {
@@ -4204,6 +4806,62 @@ export function saveChatSessions(sessions: import('../types').ChatSession[]): vo
 // Clinic Master Data (clinicInfo.ts) Store Management
 let _hasHydratedClinicDataFromServer = false;
 
+function pickClinicImage(...candidates: Array<string | undefined | null>): string {
+  // First pass: prefer local /assets/... URLs
+  for (const cand of candidates) {
+    if (typeof cand === 'string') {
+      const trimmed = cand.trim();
+      if (trimmed.startsWith('/assets/')) {
+        return trimmed;
+      }
+    }
+  }
+  // Second pass: any non-empty string
+  for (const cand of candidates) {
+    if (typeof cand === 'string' && cand.trim().length > 0) {
+      return cand.trim();
+    }
+  }
+  return '';
+}
+
+function mergeFacilityRoomsList(
+  primaryRooms?: Array<any> | null,
+  ...fallbackRoomLists: Array<Array<any> | undefined | null>
+) {
+  const baseList =
+    Array.isArray(primaryRooms) && primaryRooms.length > 0
+      ? [...primaryRooms]
+      : [];
+  const seenIds = new Set(baseList.map((r, idx) => String(r?.id || `room-${idx + 1}`)));
+
+  for (const fbList of fallbackRoomLists) {
+    if (!Array.isArray(fbList)) continue;
+    if (baseList.length === 0) {
+      for (let i = 0; i < fbList.length; i++) {
+        const item = fbList[i];
+        const id = String(item?.id || `room-${i + 1}`);
+        if (!seenIds.has(id)) {
+          baseList.push(item);
+          seenIds.add(id);
+        }
+      }
+    } else if (fbList.length > baseList.length) {
+      // Recover missing canonical rooms (e.g. room-3, room-4) when stale config only had 2 rooms
+      for (let i = 0; i < fbList.length; i++) {
+        const item = fbList[i];
+        const id = String(item?.id || `room-${i + 1}`);
+        if (!seenIds.has(id)) {
+          baseList.push(item);
+          seenIds.add(id);
+        }
+      }
+    }
+  }
+
+  return baseList;
+}
+
 function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): ClinicData {
   const fileDefault = getFileDefault<Partial<ClinicData> | null>('clinic_info_data', null);
   const fileWhyChooseUs = getFileDefault<WhyChooseUsConfig | null>(WHY_CHOOSE_US_CONFIG_KEY, null);
@@ -4232,27 +4890,19 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     specialistLabel: 'Preferred Specialist',
     doctors: [
       {
-        id: 'dr-smith',
-        name: 'Dr. Alistair Smith (Lead Aesthetic Specialist)',
-        specialty: 'Lead Aesthetic Specialist',
-        locationIds: ['location-1791722960928', 'location-1791728808656'],
-        availableDays: [1, 2, 3, 4, 5, 6],
-        timeSlots: ['09:30', '11:00', '13:30', '15:00', '16:30'],
-      },
-      {
         id: 'dr-jones',
-        name: 'Dr. Sarah Jones (Aesthetic Physician)',
+        name: 'Adv. Faith Chris',
         specialty: 'Aesthetic Physician',
         locationIds: ['location-1791722960928'],
-        availableDays: [1, 2, 4, 5],
+        availableDays: [1, 2, 3, 4, 5, 6],
         timeSlots: ['10:00', '11:30', '14:00', '16:00'],
       },
       {
         id: 'dr-jaipur',
-        name: 'Dr. Vikram Jaipur (Regenerative & Laser Specialist)',
+        name: 'Adv. Nuri',
         specialty: 'Regenerative & Laser Specialist',
         locationIds: ['location-1791728808656'],
-        availableDays: [2, 3, 5, 6],
+        availableDays: [2, 3, 4, 5, 6],
         timeSlots: ['09:30', '12:00', '14:30', '17:00'],
       },
     ],
@@ -4272,7 +4922,7 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       { id: 'email', label: 'Email', enabled: true },
       { id: 'phone', label: 'Phone', enabled: true },
       { id: 'telephone', label: 'Tel Phone', enabled: true },
-      { id: 'post', label: 'Post Mail', enabled: true },
+      { id: 'post', label: 'Post Mail', enabled: false },
       { id: 'whatsapp', label: 'WhatsApp', enabled: false },
       { id: 'sms', label: 'SMS', enabled: false },
     ],
@@ -4342,9 +4992,7 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     seoKeywords: Array.isArray(fileFacility.seoKeywords) && fileFacility.seoKeywords.length > 0
       ? fileFacility.seoKeywords
       : defaultFacilityGallery.seoKeywords,
-    rooms: Array.isArray(fileFacility.rooms) && fileFacility.rooms.length > 0
-      ? fileFacility.rooms
-      : defaultFacilityGallery.rooms,
+    rooms: mergeFacilityRoomsList(fileFacility.rooms, defaultFacilityGallery.rooms),
   } : null);
 
   const resolvedFileTrustBrands: ClinicTrustBrandsSection | null = fileDefault?.trustBrandsSection || (fileTrustBrands ? {
@@ -4366,55 +5014,107 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       : defaultAccreditationsSection.seoKeywords,
   } : null);
 
+  const fileInteriorPhotos = Array.isArray(fileDefault?.interiorPhotos)
+    ? fileDefault.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0)
+    : [];
+
+  const legacyPlaceholderBrands = new Set(['Lumina', 'Aether', 'Vera', 'Zenith', 'Nexus']);
+
   const base: ClinicData = {
     ...CLINIC_DATA,
     ...(fileDefault || {}),
-    ogImage: fileDefault?.ogImage ?? CLINIC_DATA.ogImage,
-    exteriorPhoto: fileDefault?.exteriorPhoto ?? CLINIC_DATA.exteriorPhoto,
+    ogImage: pickClinicImage(CLINIC_DATA.ogImage, fileDefault?.ogImage),
+    exteriorPhoto: pickClinicImage(CLINIC_DATA.exteriorPhoto, fileDefault?.exteriorPhoto),
     logo: {
       ...CLINIC_DATA.logo,
       ...(fileDefault?.logo || {}),
-      icon: fileDefault?.logo?.icon ?? CLINIC_DATA.logo.icon,
-      full: fileDefault?.logo?.full ?? CLINIC_DATA.logo.full,
+      icon: pickClinicImage(CLINIC_DATA.logo?.icon, fileDefault?.logo?.icon),
+      full: pickClinicImage(CLINIC_DATA.logo?.full, fileDefault?.logo?.full),
     },
     socials: {
       ...CLINIC_DATA.socials,
       ...(fileDefault?.socials || {}),
     },
-    interiorPhotos: Array.isArray(fileDefault?.interiorPhotos)
-      ? fileDefault.interiorPhotos
-      : CLINIC_DATA.interiorPhotos || [],
+    interiorPhotos:
+      CLINIC_DATA.interiorPhotos && CLINIC_DATA.interiorPhotos.length > 0
+        ? CLINIC_DATA.interiorPhotos
+        : fileInteriorPhotos.length > 0
+        ? fileInteriorPhotos
+        : [],
     locations: (
-      Array.isArray(fileDefault?.locations) && fileDefault.locations.length > 0
+      Array.isArray(CLINIC_DATA.locations) && CLINIC_DATA.locations.length > 0
+        ? CLINIC_DATA.locations
+        : Array.isArray(fileDefault?.locations) && fileDefault.locations.length > 0
         ? fileDefault.locations
-        : CLINIC_DATA.locations
-    ).map((loc, idx) => ({
-      ...loc,
-      image: loc.image ?? CLINIC_DATA.locations?.[idx]?.image ?? '',
-    })),
+        : []
+    ).map((loc, idx) => {
+      const fileLoc =
+        (Array.isArray(fileDefault?.locations)
+          ? fileDefault.locations.find((fl) => fl?.id && fl.id === loc.id) || fileDefault.locations[idx]
+          : undefined) || {};
+      const bakedLoc =
+        (Array.isArray(CLINIC_DATA.locations)
+          ? CLINIC_DATA.locations.find((bl) => bl?.id && bl.id === loc.id) || CLINIC_DATA.locations[idx]
+          : undefined) || {};
+      return {
+        ...fileLoc,
+        ...bakedLoc,
+        ...loc,
+        image: pickClinicImage(bakedLoc.image, loc.image, (fileLoc as any).image),
+      };
+    }),
     whyChooseUs: {
-      heading: resolvedFileWhyChooseUs?.heading || defaultWhyChooseUs.heading,
-      subheading: resolvedFileWhyChooseUs?.subheading || defaultWhyChooseUs.subheading,
+      heading: defaultWhyChooseUs.heading || resolvedFileWhyChooseUs?.heading,
+      subheading: defaultWhyChooseUs.subheading || resolvedFileWhyChooseUs?.subheading,
       pillars: (
-        Array.isArray(resolvedFileWhyChooseUs?.pillars) && resolvedFileWhyChooseUs.pillars.length > 0
+        Array.isArray(defaultWhyChooseUs.pillars) && defaultWhyChooseUs.pillars.length > 0
+          ? defaultWhyChooseUs.pillars
+          : Array.isArray(resolvedFileWhyChooseUs?.pillars) && resolvedFileWhyChooseUs.pillars.length > 0
           ? resolvedFileWhyChooseUs.pillars
-          : defaultWhyChooseUs.pillars
-      ).map((pillar, idx) => ({
-        ...pillar,
-        imageUrl: pillar.imageUrl ?? defaultWhyChooseUs.pillars?.[idx]?.imageUrl ?? '',
-      })),
+          : []
+      ).map((pillar, idx) => {
+        const filePillar =
+          (Array.isArray(resolvedFileWhyChooseUs?.pillars)
+            ? resolvedFileWhyChooseUs.pillars.find((fp) => fp?.id && fp.id === pillar.id) ||
+              resolvedFileWhyChooseUs.pillars[idx]
+            : undefined) || {};
+        const bakedPillar =
+          (Array.isArray(defaultWhyChooseUs.pillars)
+            ? defaultWhyChooseUs.pillars.find((bp) => bp?.id && bp.id === pillar.id) || defaultWhyChooseUs.pillars[idx]
+            : undefined) || {};
+        return {
+          ...filePillar,
+          ...bakedPillar,
+          ...pillar,
+          imageUrl: pickClinicImage(bakedPillar.imageUrl, pillar.imageUrl, (filePillar as any).imageUrl),
+        };
+      }),
     },
     awardsShowcase: {
-      heading: resolvedFileAwards?.heading || defaultAwardsShowcase.heading,
-      subheading: resolvedFileAwards?.subheading || defaultAwardsShowcase.subheading,
+      heading: defaultAwardsShowcase.heading || resolvedFileAwards?.heading,
+      subheading: defaultAwardsShowcase.subheading || resolvedFileAwards?.subheading,
       awards: (
-        Array.isArray(resolvedFileAwards?.awards) && resolvedFileAwards.awards.length > 0
+        Array.isArray(defaultAwardsShowcase.awards) && defaultAwardsShowcase.awards.length > 0
+          ? defaultAwardsShowcase.awards
+          : Array.isArray(resolvedFileAwards?.awards) && resolvedFileAwards.awards.length > 0
           ? resolvedFileAwards.awards
-          : defaultAwardsShowcase.awards
-      ).map((award, idx) => ({
-        ...award,
-        imageUrl: award.imageUrl ?? defaultAwardsShowcase.awards?.[idx]?.imageUrl ?? '',
-      })),
+          : []
+      ).map((award, idx) => {
+        const fileAward =
+          (Array.isArray(resolvedFileAwards?.awards)
+            ? resolvedFileAwards.awards.find((fa) => fa?.id && fa.id === award.id) || resolvedFileAwards.awards[idx]
+            : undefined) || {};
+        const bakedAward =
+          (Array.isArray(defaultAwardsShowcase.awards)
+            ? defaultAwardsShowcase.awards.find((ba) => ba?.id && ba.id === award.id) || defaultAwardsShowcase.awards[idx]
+            : undefined) || {};
+        return {
+          ...fileAward,
+          ...bakedAward,
+          ...award,
+          imageUrl: pickClinicImage(bakedAward.imageUrl, award.imageUrl, (fileAward as any).imageUrl),
+        };
+      }),
     },
     consultationConfig: {
       heading: resolvedFileConsultation?.heading || defaultConsultationConfig.heading,
@@ -4442,52 +5142,96 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
           : defaultConsultationConfig.stayInTouchChannels,
     },
     processSection: {
-      eyebrow: resolvedFileProcess?.eyebrow || defaultProcessSection.eyebrow,
-      heading: resolvedFileProcess?.heading || defaultProcessSection.heading,
-      subheading: resolvedFileProcess?.subheading || defaultProcessSection.subheading,
+      eyebrow: defaultProcessSection.eyebrow || resolvedFileProcess?.eyebrow,
+      heading: defaultProcessSection.heading || resolvedFileProcess?.heading,
+      subheading: defaultProcessSection.subheading || resolvedFileProcess?.subheading,
       seoKeywords:
-        Array.isArray(resolvedFileProcess?.seoKeywords) && resolvedFileProcess.seoKeywords.length > 0
-          ? resolvedFileProcess.seoKeywords
-          : defaultProcessSection.seoKeywords,
+        Array.isArray(defaultProcessSection.seoKeywords) && defaultProcessSection.seoKeywords.length > 0
+          ? defaultProcessSection.seoKeywords
+          : resolvedFileProcess?.seoKeywords || [],
       steps: (
-        Array.isArray(resolvedFileProcess?.steps) && resolvedFileProcess.steps.length > 0
+        Array.isArray(defaultProcessSection.steps) && defaultProcessSection.steps.length > 0
+          ? defaultProcessSection.steps
+          : Array.isArray(resolvedFileProcess?.steps) && resolvedFileProcess.steps.length > 0
           ? resolvedFileProcess.steps
-          : defaultProcessSection.steps
-      ).map((step, idx) => ({
-        ...step,
-        image: step.image ?? defaultProcessSection.steps?.[idx]?.image ?? '',
-      })),
+          : []
+      ).map((step, idx) => {
+        const fileStep =
+          (Array.isArray(resolvedFileProcess?.steps)
+            ? resolvedFileProcess.steps.find((fs) => fs?.id && fs.id === step.id) || resolvedFileProcess.steps[idx]
+            : undefined) || {};
+        const bakedStep =
+          (Array.isArray(defaultProcessSection.steps)
+            ? defaultProcessSection.steps.find((bs) => bs?.id && bs.id === step.id) || defaultProcessSection.steps[idx]
+            : undefined) || {};
+        return {
+          ...fileStep,
+          ...bakedStep,
+          ...step,
+          image: pickClinicImage(bakedStep.image, step.image, (fileStep as any).image),
+        };
+      }),
     },
     facilityGallery: {
-      eyebrow: resolvedFileFacility?.eyebrow || defaultFacilityGallery.eyebrow,
-      heading: resolvedFileFacility?.heading || defaultFacilityGallery.heading,
+      eyebrow: defaultFacilityGallery.eyebrow || resolvedFileFacility?.eyebrow,
+      heading: defaultFacilityGallery.heading || resolvedFileFacility?.heading,
       seoKeywords:
-        Array.isArray(resolvedFileFacility?.seoKeywords) && resolvedFileFacility.seoKeywords.length > 0
-          ? resolvedFileFacility.seoKeywords
-          : defaultFacilityGallery.seoKeywords,
-      rooms: (
-        Array.isArray(resolvedFileFacility?.rooms) && resolvedFileFacility.rooms.length > 0
-          ? resolvedFileFacility.rooms
-          : defaultFacilityGallery.rooms
-      ).map((room, idx) => ({
-        ...room,
-        image: room.image ?? defaultFacilityGallery.rooms?.[idx]?.image ?? '',
-      })),
+        Array.isArray(defaultFacilityGallery.seoKeywords) && defaultFacilityGallery.seoKeywords.length > 0
+          ? defaultFacilityGallery.seoKeywords
+          : resolvedFileFacility?.seoKeywords || [],
+      rooms: mergeFacilityRoomsList(defaultFacilityGallery.rooms, resolvedFileFacility?.rooms).map((room, idx) => {
+        const fileRoom =
+          (Array.isArray(resolvedFileFacility?.rooms)
+            ? resolvedFileFacility.rooms.find((fr) => fr?.id && fr.id === room.id) || resolvedFileFacility.rooms[idx]
+            : undefined) || {};
+        const bakedRoom =
+          (Array.isArray(defaultFacilityGallery.rooms)
+            ? defaultFacilityGallery.rooms.find((br) => br?.id && br.id === room.id) || defaultFacilityGallery.rooms[idx]
+            : undefined) || {};
+        return {
+          ...fileRoom,
+          ...bakedRoom,
+          ...room,
+          image: pickClinicImage(bakedRoom.image, room.image, (fileRoom as any).image),
+        };
+      }),
     },
     trustBrandsSection: {
-      heading: resolvedFileTrustBrands?.heading || defaultTrustBrandsSection.heading,
+      heading: defaultTrustBrandsSection.heading || resolvedFileTrustBrands?.heading,
       seoKeywords:
-        Array.isArray(resolvedFileTrustBrands?.seoKeywords) && resolvedFileTrustBrands.seoKeywords.length > 0
-          ? resolvedFileTrustBrands.seoKeywords
-          : defaultTrustBrandsSection.seoKeywords,
+        Array.isArray(defaultTrustBrandsSection.seoKeywords) && defaultTrustBrandsSection.seoKeywords.length > 0
+          ? defaultTrustBrandsSection.seoKeywords
+          : resolvedFileTrustBrands?.seoKeywords || [],
       brands: (
-        Array.isArray(resolvedFileTrustBrands?.brands) && resolvedFileTrustBrands.brands.length > 0
+        Array.isArray(defaultTrustBrandsSection.brands) && defaultTrustBrandsSection.brands.length > 0
+          ? defaultTrustBrandsSection.brands
+          : Array.isArray(resolvedFileTrustBrands?.brands) && resolvedFileTrustBrands.brands.length > 0
           ? resolvedFileTrustBrands.brands
-          : defaultTrustBrandsSection.brands
-      ).map((brand, idx) => ({
-        ...brand,
-        imageUrl: brand.imageUrl ?? defaultTrustBrandsSection.brands?.[idx]?.imageUrl ?? '',
-      })),
+          : []
+      ).map((brand, idx) => {
+        const fileBrand =
+          (Array.isArray(resolvedFileTrustBrands?.brands)
+            ? resolvedFileTrustBrands.brands.find((fb) => fb?.id && fb.id === brand.id) ||
+              resolvedFileTrustBrands.brands[idx]
+            : undefined) || {};
+        const fbBrand =
+          (Array.isArray(defaultTrustBrandsSection.brands)
+            ? defaultTrustBrandsSection.brands.find((bb) => bb?.id && bb.id === brand.id) ||
+              defaultTrustBrandsSection.brands[idx]
+            : undefined) || {};
+        const useFbName =
+          (!brand?.name || legacyPlaceholderBrands.has(brand.name)) &&
+          fbBrand?.name &&
+          !legacyPlaceholderBrands.has(fbBrand.name);
+        return {
+          ...fileBrand,
+          ...fbBrand,
+          ...brand,
+          name: useFbName ? fbBrand.name : brand.name || fbBrand?.name || `Brand ${idx + 1}`,
+          iconType: useFbName ? fbBrand.iconType : brand.iconType || fbBrand?.iconType || 'layers',
+          imageUrl: pickClinicImage(fbBrand?.imageUrl, brand.imageUrl, (fileBrand as any).imageUrl),
+        };
+      }),
     },
     accreditationsSection: {
       eyebrow: resolvedFileAccreditations?.eyebrow || defaultAccreditationsSection.eyebrow,
@@ -4504,33 +5248,45 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
     return base;
   }
 
+  const candidateInteriorPhotos = Array.isArray(candidate.interiorPhotos)
+    ? candidate.interiorPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0)
+    : [];
+
   return {
     ...base,
     ...candidate,
-    ogImage: candidate.ogImage ?? base.ogImage,
-    exteriorPhoto: candidate.exteriorPhoto ?? base.exteriorPhoto,
+    ogImage: pickClinicImage(candidate.ogImage, base.ogImage),
+    exteriorPhoto: pickClinicImage(candidate.exteriorPhoto, base.exteriorPhoto),
     logo: {
       ...base.logo,
       ...(candidate.logo || {}),
-      icon: candidate.logo?.icon ?? base.logo.icon,
-      full: candidate.logo?.full ?? base.logo.full,
+      icon: pickClinicImage(candidate.logo?.icon, base.logo.icon),
+      full: pickClinicImage(candidate.logo?.full, base.logo.full),
       alt: candidate.logo?.alt || base.logo.alt,
     },
     socials: {
       ...base.socials,
       ...(candidate.socials || {}),
     },
-    interiorPhotos: Array.isArray(candidate.interiorPhotos)
-      ? candidate.interiorPhotos
-      : base.interiorPhotos || [],
+    interiorPhotos:
+      candidateInteriorPhotos.length > 0
+        ? candidateInteriorPhotos
+        : base.interiorPhotos || [],
     locations: (
       Array.isArray(candidate.locations) && candidate.locations.length > 0
         ? candidate.locations
         : base.locations
-    ).map((loc, idx) => ({
-      ...loc,
-      image: loc.image ?? base.locations?.[idx]?.image ?? '',
-    })),
+    ).map((loc, idx) => {
+      const baseLoc =
+        (Array.isArray(base.locations)
+          ? base.locations.find((bl) => bl?.id && bl.id === loc.id) || base.locations[idx]
+          : undefined) || {};
+      return {
+        ...baseLoc,
+        ...loc,
+        image: pickClinicImage(loc.image, (baseLoc as any).image),
+      };
+    }),
     whyChooseUs: {
       heading: candidate.whyChooseUs?.heading || base.whyChooseUs?.heading || defaultWhyChooseUs.heading,
       subheading: candidate.whyChooseUs?.subheading || base.whyChooseUs?.subheading || defaultWhyChooseUs.subheading,
@@ -4538,10 +5294,17 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.whyChooseUs?.pillars) && candidate.whyChooseUs.pillars.length > 0
           ? candidate.whyChooseUs.pillars
           : (base.whyChooseUs?.pillars || defaultWhyChooseUs.pillars)
-      ).map((pillar, idx) => ({
-        ...pillar,
-        imageUrl: pillar.imageUrl ?? base.whyChooseUs?.pillars?.[idx]?.imageUrl ?? '',
-      })),
+      ).map((pillar, idx) => {
+        const basePillar =
+          (Array.isArray(base.whyChooseUs?.pillars)
+            ? base.whyChooseUs.pillars.find((bp) => bp?.id && bp.id === pillar.id) || base.whyChooseUs.pillars[idx]
+            : undefined) || {};
+        return {
+          ...basePillar,
+          ...pillar,
+          imageUrl: pickClinicImage(pillar.imageUrl, (basePillar as any).imageUrl),
+        };
+      }),
     },
     awardsShowcase: {
       heading: candidate.awardsShowcase?.heading || base.awardsShowcase?.heading || defaultAwardsShowcase.heading,
@@ -4550,10 +5313,17 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.awardsShowcase?.awards) && candidate.awardsShowcase.awards.length > 0
           ? candidate.awardsShowcase.awards
           : (base.awardsShowcase?.awards || defaultAwardsShowcase.awards)
-      ).map((award, idx) => ({
-        ...award,
-        imageUrl: award.imageUrl ?? base.awardsShowcase?.awards?.[idx]?.imageUrl ?? '',
-      })),
+      ).map((award, idx) => {
+        const baseAward =
+          (Array.isArray(base.awardsShowcase?.awards)
+            ? base.awardsShowcase.awards.find((ba) => ba?.id && ba.id === award.id) || base.awardsShowcase.awards[idx]
+            : undefined) || {};
+        return {
+          ...baseAward,
+          ...award,
+          imageUrl: pickClinicImage(award.imageUrl, (baseAward as any).imageUrl),
+        };
+      }),
     },
     consultationConfig: {
       heading:
@@ -4570,7 +5340,7 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         defaultConsultationConfig.specialistLabel ||
         'Preferred Specialist',
       doctors:
-        Array.isArray(candidate.consultationConfig?.doctors)
+        Array.isArray(candidate.consultationConfig?.doctors) && candidate.consultationConfig.doctors.length > 0
           ? candidate.consultationConfig.doctors
           : (base.consultationConfig?.doctors || defaultConsultationConfig.doctors),
       defaultTimeSlots:
@@ -4611,10 +5381,17 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.processSection?.steps) && candidate.processSection.steps.length > 0
           ? candidate.processSection.steps
           : (base.processSection?.steps || defaultProcessSection.steps)
-      ).map((step, idx) => ({
-        ...step,
-        image: step.image ?? base.processSection?.steps?.[idx]?.image ?? '',
-      })),
+      ).map((step, idx) => {
+        const baseStep =
+          (Array.isArray(base.processSection?.steps)
+            ? base.processSection.steps.find((bs) => bs?.id && bs.id === step.id) || base.processSection.steps[idx]
+            : undefined) || {};
+        return {
+          ...baseStep,
+          ...step,
+          image: pickClinicImage(step.image, (baseStep as any).image),
+        };
+      }),
     },
     facilityGallery: {
       eyebrow:
@@ -4629,14 +5406,21 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.facilityGallery?.seoKeywords)
           ? candidate.facilityGallery.seoKeywords
           : (base.facilityGallery?.seoKeywords || defaultFacilityGallery.seoKeywords),
-      rooms: (
-        Array.isArray(candidate.facilityGallery?.rooms) && candidate.facilityGallery.rooms.length > 0
-          ? candidate.facilityGallery.rooms
-          : (base.facilityGallery?.rooms || defaultFacilityGallery.rooms)
-      ).map((room, idx) => ({
-        ...room,
-        image: room.image ?? base.facilityGallery?.rooms?.[idx]?.image ?? '',
-      })),
+      rooms: mergeFacilityRoomsList(
+        candidate.facilityGallery?.rooms,
+        base.facilityGallery?.rooms,
+        defaultFacilityGallery.rooms
+      ).map((room, idx) => {
+        const baseRoom =
+          (Array.isArray(base.facilityGallery?.rooms)
+            ? base.facilityGallery.rooms.find((br) => br?.id && br.id === room.id) || base.facilityGallery.rooms[idx]
+            : undefined) || {};
+        return {
+          ...baseRoom,
+          ...room,
+          image: pickClinicImage(room.image, (baseRoom as any).image),
+        };
+      }),
     },
     trustBrandsSection: {
       heading:
@@ -4651,10 +5435,24 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         Array.isArray(candidate.trustBrandsSection?.brands) && candidate.trustBrandsSection.brands.length > 0
           ? candidate.trustBrandsSection.brands
           : (base.trustBrandsSection?.brands || defaultTrustBrandsSection.brands)
-      ).map((brand, idx) => ({
-        ...brand,
-        imageUrl: brand.imageUrl ?? base.trustBrandsSection?.brands?.[idx]?.imageUrl ?? '',
-      })),
+      ).map((brand, idx) => {
+        const fbBrand =
+          (Array.isArray(base.trustBrandsSection?.brands)
+            ? base.trustBrandsSection.brands.find((bb) => bb?.id && bb.id === brand.id) ||
+              base.trustBrandsSection.brands[idx]
+            : undefined) || defaultTrustBrandsSection.brands?.[idx];
+        const useFbName =
+          (!brand?.name || legacyPlaceholderBrands.has(brand.name)) &&
+          fbBrand?.name &&
+          !legacyPlaceholderBrands.has(fbBrand.name);
+        return {
+          ...fbBrand,
+          ...brand,
+          name: useFbName ? fbBrand.name : brand.name || fbBrand?.name || `Brand ${idx + 1}`,
+          iconType: useFbName ? fbBrand.iconType : brand.iconType || fbBrand?.iconType || 'layers',
+          imageUrl: pickClinicImage(brand.imageUrl, fbBrand?.imageUrl),
+        };
+      }),
     },
     accreditationsSection: {
       eyebrow:
@@ -4677,13 +5475,32 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
   };
 }
 
-export function getClinicData(): ClinicData {
-  if (typeof window !== 'undefined' && !_hasHydratedClinicDataFromServer) {
-    const hasLocalOverride = Boolean(window.localStorage.getItem(CLINIC_INFO_DATA_KEY));
-    if (!hasLocalOverride) {
-      _hasHydratedClinicDataFromServer = true;
-      fetchRemoteClinicData().catch(() => {});
+const CLINIC_SLOT_CLEANUP_VERSION_KEY = 'arc_clinic_slots_cleared_v1';
+
+function ensureStaleSlotCacheClearedOnce(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (window.localStorage.getItem(CLINIC_SLOT_CLEANUP_VERSION_KEY) !== '1') {
+      window.localStorage.removeItem(CLINIC_INFO_DATA_KEY);
+      window.localStorage.removeItem(HEADER_CONFIG_KEY);
+      window.localStorage.removeItem(LOCATIONS_CONFIG_KEY);
+      window.localStorage.removeItem(WHY_CHOOSE_US_CONFIG_KEY);
+      window.localStorage.removeItem(AWARDS_CONFIG_KEY);
+      window.localStorage.removeItem(PROCESS_CONFIG_KEY);
+      window.localStorage.removeItem(FACILITY_INTERIORS_CONFIG_KEY);
+      window.localStorage.removeItem(TRUST_BRANDS_CONFIG_KEY);
+      window.localStorage.setItem(CLINIC_SLOT_CLEANUP_VERSION_KEY, '1');
     }
+  } catch {
+    // ignore storage errors
+  }
+}
+
+export function getClinicData(): ClinicData {
+  ensureStaleSlotCacheClearedOnce();
+  if (typeof window !== 'undefined' && !_hasHydratedClinicDataFromServer) {
+    _hasHydratedClinicDataFromServer = true;
+    fetchRemoteClinicData().catch(() => {});
   }
 
   const stored = getStorageItem<Partial<ClinicData> | null>(CLINIC_INFO_DATA_KEY, null);
@@ -4696,14 +5513,15 @@ export function getClinicDataConfig(): ClinicData {
 }
 
 export function updateClinicData(data: ClinicData): ClinicData {
+  const reconciled = mergeWithBakedInClinicData(data);
   if (typeof window !== 'undefined') {
     // Skip individual background /api/admin/save-to-files calls here because
     // POST /api/admin/clinic-data persists clinicInfo.ts and all synced section configs in siteCustomizations.json atomically.
-    setStorageItem(CLINIC_INFO_DATA_KEY, data, true);
+    setStorageItem(CLINIC_INFO_DATA_KEY, reconciled, true);
 
     // Automatically synchronize header config when logo.icon or logo.full changes
-    if (data.logo && typeof data.logo === 'object') {
-      const resolvedHeaderLogo = (data.logo.icon || data.logo.full) ?? '';
+    if (reconciled.logo && typeof reconciled.logo === 'object') {
+      const resolvedHeaderLogo = (reconciled.logo.icon || reconciled.logo.full) ?? '';
       const currentHeaderConfig = getHeaderConfig();
       if (currentHeaderConfig.logoUrl !== resolvedHeaderLogo) {
         const updatedHeaderConfig: HeaderConfig = {
@@ -4716,11 +5534,11 @@ export function updateClinicData(data: ClinicData): ClinicData {
     }
 
     // Automatically synchronize locations config so location and consultation components update in lockstep
-    if (Array.isArray(data.locations) && data.locations.length > 0) {
+    if (Array.isArray(reconciled.locations) && reconciled.locations.length > 0) {
       const currentLocConfig = getOurLocationsConfig();
       const updatedLocConfig: OurLocationsConfig = {
         ...currentLocConfig,
-        locations: data.locations.map((loc, idx) => {
+        locations: reconciled.locations.map((loc, idx) => {
           const fullAddress = [
             loc.address?.trim(),
             (loc.city && !loc.address?.toLowerCase().includes(loc.city.toLowerCase())) ? loc.city.trim() : null,
@@ -4731,7 +5549,7 @@ export function updateClinicData(data: ClinicData): ClinicData {
             name: loc.name,
             address: fullAddress,
             hours: loc.hours,
-            phone: loc.phone || data.phone || CLINIC_DATA.phone,
+            phone: loc.phone || reconciled.phone || CLINIC_DATA.phone,
             mapsUrl: loc.directionsUrl || `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`,
             bannerType: "Clinic",
             imageUrl: loc.image ?? ""
@@ -4743,45 +5561,45 @@ export function updateClinicData(data: ClinicData): ClinicData {
     }
 
     // Automatically synchronize homepage_why_choose_us_config_v3 and dispatch why_choose_us_updated
-    if (data.whyChooseUs && Array.isArray(data.whyChooseUs.pillars)) {
+    if (reconciled.whyChooseUs && Array.isArray(reconciled.whyChooseUs.pillars)) {
       const updatedWhyChooseUs: WhyChooseUsConfig = {
-        heading: data.whyChooseUs.heading || DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
-        subheading: data.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
-        description: data.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
-        pillars: data.whyChooseUs.pillars,
+        heading: reconciled.whyChooseUs.heading || DEFAULT_WHY_CHOOSE_US_CONFIG.heading,
+        subheading: reconciled.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+        description: reconciled.whyChooseUs.subheading || DEFAULT_WHY_CHOOSE_US_CONFIG.description,
+        pillars: reconciled.whyChooseUs.pillars,
       };
       setStorageItem(WHY_CHOOSE_US_CONFIG_KEY, updatedWhyChooseUs, true);
       window.dispatchEvent(new CustomEvent('why_choose_us_updated', { detail: updatedWhyChooseUs }));
     }
 
     // Automatically synchronize homepage_awards_config and dispatch awards_config_updated
-    if (data.awardsShowcase && Array.isArray(data.awardsShowcase.awards)) {
+    if (reconciled.awardsShowcase && Array.isArray(reconciled.awardsShowcase.awards)) {
       const updatedAwards: AwardsConfig = {
-        heading: data.awardsShowcase.heading || DEFAULT_AWARDS_CONFIG.heading,
-        subheading: data.awardsShowcase.subheading || DEFAULT_AWARDS_CONFIG.subheading,
-        awards: data.awardsShowcase.awards,
+        heading: reconciled.awardsShowcase.heading || DEFAULT_AWARDS_CONFIG.heading,
+        subheading: reconciled.awardsShowcase.subheading || DEFAULT_AWARDS_CONFIG.subheading,
+        awards: reconciled.awardsShowcase.awards,
       };
       setStorageItem(AWARDS_CONFIG_KEY, updatedAwards, true);
       window.dispatchEvent(new CustomEvent('awards_config_updated', { detail: updatedAwards }));
     }
 
     // Automatically synchronize homepage_consultation_config and dispatch consultation_config_updated
-    if (data.consultationConfig && typeof data.consultationConfig === 'object') {
-      setStorageItem(CONSULTATION_CONFIG_KEY, data.consultationConfig, true);
-      window.dispatchEvent(new CustomEvent('consultation_config_updated', { detail: data.consultationConfig }));
+    if (reconciled.consultationConfig && typeof reconciled.consultationConfig === 'object') {
+      setStorageItem(CONSULTATION_CONFIG_KEY, reconciled.consultationConfig, true);
+      window.dispatchEvent(new CustomEvent('consultation_config_updated', { detail: reconciled.consultationConfig }));
     }
 
     // Automatically synchronize homepage_process_config and dispatch process_config_updated
-    if (data.processSection && typeof data.processSection === 'object') {
+    if (reconciled.processSection && typeof reconciled.processSection === 'object') {
       const updatedProcess: ProcessConfig = {
-        eyebrow: data.processSection.eyebrow || DEFAULT_PROCESS_CONFIG.eyebrow || 'Our Process',
-        heading: data.processSection.heading || DEFAULT_PROCESS_CONFIG.heading,
-        description: data.processSection.subheading || DEFAULT_PROCESS_CONFIG.description,
-        seoKeywords: Array.isArray(data.processSection.seoKeywords)
-          ? data.processSection.seoKeywords
+        eyebrow: reconciled.processSection.eyebrow || DEFAULT_PROCESS_CONFIG.eyebrow || 'Our Process',
+        heading: reconciled.processSection.heading || DEFAULT_PROCESS_CONFIG.heading,
+        description: reconciled.processSection.subheading || DEFAULT_PROCESS_CONFIG.description,
+        seoKeywords: Array.isArray(reconciled.processSection.seoKeywords)
+          ? reconciled.processSection.seoKeywords
           : DEFAULT_PROCESS_CONFIG.seoKeywords || [],
-        steps: Array.isArray(data.processSection.steps)
-          ? data.processSection.steps
+        steps: Array.isArray(reconciled.processSection.steps)
+          ? reconciled.processSection.steps
           : DEFAULT_PROCESS_CONFIG.steps,
       };
       setStorageItem(PROCESS_CONFIG_KEY, updatedProcess, true);
@@ -4789,16 +5607,16 @@ export function updateClinicData(data: ClinicData): ClinicData {
     }
 
     // Automatically synchronize homepage_facility_interiors_config and dispatch facility_interiors_updated
-    if (data.facilityGallery && typeof data.facilityGallery === 'object') {
+    if (reconciled.facilityGallery && typeof reconciled.facilityGallery === 'object') {
       const updatedFacility: FacilityInteriorsConfig = {
-        eyebrow: data.facilityGallery.eyebrow || DEFAULT_FACILITY_INTERIORS_CONFIG.eyebrow || 'Our Facility',
-        heading: data.facilityGallery.heading || DEFAULT_FACILITY_INTERIORS_CONFIG.heading,
+        eyebrow: reconciled.facilityGallery.eyebrow || DEFAULT_FACILITY_INTERIORS_CONFIG.eyebrow || 'Our Facility',
+        heading: reconciled.facilityGallery.heading || DEFAULT_FACILITY_INTERIORS_CONFIG.heading,
         description: DEFAULT_FACILITY_INTERIORS_CONFIG.description,
-        seoKeywords: Array.isArray(data.facilityGallery.seoKeywords)
-          ? data.facilityGallery.seoKeywords
+        seoKeywords: Array.isArray(reconciled.facilityGallery.seoKeywords)
+          ? reconciled.facilityGallery.seoKeywords
           : DEFAULT_FACILITY_INTERIORS_CONFIG.seoKeywords || [],
-        rooms: Array.isArray(data.facilityGallery.rooms)
-          ? data.facilityGallery.rooms
+        rooms: Array.isArray(reconciled.facilityGallery.rooms)
+          ? reconciled.facilityGallery.rooms
           : DEFAULT_FACILITY_INTERIORS_CONFIG.rooms,
       };
       setStorageItem(FACILITY_INTERIORS_CONFIG_KEY, updatedFacility, true);
@@ -4806,14 +5624,14 @@ export function updateClinicData(data: ClinicData): ClinicData {
     }
 
     // Automatically synchronize homepage_trust_brands_config and dispatch trust_brands_updated
-    if (data.trustBrandsSection && typeof data.trustBrandsSection === 'object') {
+    if (reconciled.trustBrandsSection && typeof reconciled.trustBrandsSection === 'object') {
       const updatedTrustBrands: TrustBrandsConfig = {
-        heading: data.trustBrandsSection.heading || DEFAULT_TRUST_BRANDS_CONFIG.heading,
-        seoKeywords: Array.isArray(data.trustBrandsSection.seoKeywords)
-          ? data.trustBrandsSection.seoKeywords
+        heading: reconciled.trustBrandsSection.heading || DEFAULT_TRUST_BRANDS_CONFIG.heading,
+        seoKeywords: Array.isArray(reconciled.trustBrandsSection.seoKeywords)
+          ? reconciled.trustBrandsSection.seoKeywords
           : DEFAULT_TRUST_BRANDS_CONFIG.seoKeywords || [],
-        brands: Array.isArray(data.trustBrandsSection.brands)
-          ? data.trustBrandsSection.brands
+        brands: Array.isArray(reconciled.trustBrandsSection.brands)
+          ? reconciled.trustBrandsSection.brands
           : DEFAULT_TRUST_BRANDS_CONFIG.brands,
       };
       setStorageItem(TRUST_BRANDS_CONFIG_KEY, updatedTrustBrands, true);
@@ -4821,22 +5639,22 @@ export function updateClinicData(data: ClinicData): ClinicData {
     }
 
     // Automatically synchronize homepage_accreditations_config and dispatch accreditations_updated
-    if (data.accreditationsSection || Array.isArray(data.accreditations)) {
-      const accList = Array.isArray(data.accreditations) ? data.accreditations : CLINIC_DATA.accreditations || [];
+    if (reconciled.accreditationsSection || Array.isArray(reconciled.accreditations)) {
+      const accList = Array.isArray(reconciled.accreditations) ? reconciled.accreditations : CLINIC_DATA.accreditations || [];
       const updatedAccreditations: AccreditationsConfig = {
         eyebrow:
-          data.accreditationsSection?.eyebrow ||
+          reconciled.accreditationsSection?.eyebrow ||
           DEFAULT_ACCREDITATIONS_CONFIG.eyebrow ||
           'Accreditations & Certifications',
         heading:
-          data.accreditationsSection?.heading ||
+          reconciled.accreditationsSection?.heading ||
           DEFAULT_ACCREDITATIONS_CONFIG.heading ||
           'Excellence guaranteed. Trusted globally.',
         description:
-          data.accreditationsSection?.description ||
+          reconciled.accreditationsSection?.description ||
           DEFAULT_ACCREDITATIONS_CONFIG.description,
-        seoKeywords: Array.isArray(data.accreditationsSection?.seoKeywords)
-          ? data.accreditationsSection.seoKeywords
+        seoKeywords: Array.isArray(reconciled.accreditationsSection?.seoKeywords)
+          ? reconciled.accreditationsSection.seoKeywords
           : DEFAULT_ACCREDITATIONS_CONFIG.seoKeywords || [],
         items: accList,
         accreditations: accList.map((text, idx) => ({ id: `acc-${idx + 1}`, text })),
@@ -4845,20 +5663,23 @@ export function updateClinicData(data: ClinicData): ClinicData {
       window.dispatchEvent(new CustomEvent('accreditations_updated', { detail: updatedAccreditations }));
     }
 
-    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: data }));
+    window.dispatchEvent(new CustomEvent('clinic_data_changed', { detail: reconciled }));
   }
-  return data;
+  return reconciled;
 }
 
-export async function saveClinicDataToFile(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string }> {
-  updateClinicData(data);
+export async function saveClinicDataToFile(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string; clinicData?: ClinicData }> {
+  const reconciledLocal = updateClinicData(data);
   try {
     const res = await fetch('/api/admin/clinic-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinicData: data })
+      body: JSON.stringify({ clinicData: reconciledLocal })
     });
     const result = await res.json();
+    if (result && result.clinicData) {
+      updateClinicData(result.clinicData);
+    }
     return result;
   } catch (err) {
     console.error('Failed to save clinic data to file:', err);
@@ -4867,7 +5688,7 @@ export async function saveClinicDataToFile(data: ClinicData): Promise<{ success:
 }
 
 // Alias for requested name: saveClinicDataConfig(data)
-export async function saveClinicDataConfig(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string }> {
+export async function saveClinicDataConfig(data: ClinicData): Promise<{ success: boolean; message?: string; error?: string; clinicData?: ClinicData }> {
   return saveClinicDataToFile(data);
 }
 
@@ -4879,22 +5700,38 @@ export function resetClinicDataToDefault(): ClinicData {
   return CLINIC_DATA;
 }
 
-// Sync clinic data from remote server on demand
+let _remoteClinicDataPromise: Promise<ClinicData | null> | null = null;
+
+// Sync clinic data from remote server on demand (deduplicated across concurrent callers)
 export async function fetchRemoteClinicData(): Promise<ClinicData | null> {
-  try {
-    const res = await fetch('/api/admin/clinic-data');
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.clinicData) {
-        updateClinicData(json.clinicData);
-        return json.clinicData;
-      }
-    }
-    return null;
-  } catch (err) {
-    console.warn('Could not fetch remote clinic data:', err);
-    return null;
+  if (_remoteClinicDataPromise) {
+    return _remoteClinicDataPromise;
   }
+  _remoteClinicDataPromise = (async () => {
+    try {
+      const res = await fetch('/api/admin/clinic-data');
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.clinicData) {
+          const prevRaw =
+            typeof window !== 'undefined' ? window.localStorage.getItem(CLINIC_INFO_DATA_KEY) : null;
+          const reconciled = mergeWithBakedInClinicData(json.clinicData);
+          const nextRaw = JSON.stringify(reconciled);
+          if (prevRaw !== nextRaw) {
+            return updateClinicData(reconciled);
+          }
+          return reconciled;
+        }
+      }
+      return null;
+    } catch (err) {
+      console.warn('Could not fetch remote clinic data:', err);
+      return null;
+    } finally {
+      _remoteClinicDataPromise = null;
+    }
+  })();
+  return _remoteClinicDataPromise;
 }
 
 // =========================================================================
@@ -5238,9 +6075,9 @@ export function getTreatmentTaxonomy(): TreatmentTaxonomyGroup[] {
     hasLegacySubGroups ? undefined : raw || undefined
   );
 
-  // If localStorage had stale legacy brochure sub-groups, overwrite it immediately with the synced Services & Branches taxonomy
+  // If localStorage had stale legacy brochure sub-groups, overwrite it locally without triggering server file writes
   if (hasLegacySubGroups && typeof window !== 'undefined') {
-    setStorageItem(TREATMENT_TAXONOMY_KEY, synced);
+    setStorageItem(TREATMENT_TAXONOMY_KEY, synced, true);
   }
 
   return synced.length > 0 ? synced : DEFAULT_TREATMENT_TAXONOMY;
@@ -5250,7 +6087,7 @@ export function updateTreatmentTaxonomy(
   taxonomy: TreatmentTaxonomyGroup[]
 ): TreatmentTaxonomyGroup[] {
   if (typeof window !== 'undefined') {
-    setStorageItem(TREATMENT_TAXONOMY_KEY, taxonomy);
+    setStorageItem(TREATMENT_TAXONOMY_KEY, taxonomy, true);
     window.dispatchEvent(
       new CustomEvent('treatment_taxonomy_updated', { detail: taxonomy })
     );
@@ -5346,7 +6183,7 @@ export function resetTreatmentTaxonomy(): TreatmentTaxonomyGroup[] {
   const resetServices = resetMasterServicesToDefaults();
   const defaultTax = buildTaxonomyFromMasterServices(resetServices);
   if (typeof window !== 'undefined') {
-    setStorageItem(TREATMENT_TAXONOMY_KEY, defaultTax);
+    setStorageItem(TREATMENT_TAXONOMY_KEY, defaultTax, true);
     window.dispatchEvent(
       new CustomEvent('treatment_taxonomy_updated', { detail: defaultTax })
     );
@@ -5374,7 +6211,8 @@ export async function fetchRemoteTreatmentTaxonomy(): Promise<TreatmentTaxonomyG
           const currentStored = getStorageItem<TreatmentTaxonomyGroup[]>(TREATMENT_TAXONOMY_KEY, []);
           const isDifferent = JSON.stringify(currentStored) !== JSON.stringify(json.taxonomy);
           if (isDifferent) {
-            setStorageItem(TREATMENT_TAXONOMY_KEY, json.taxonomy);
+            // Pass skipFileSync = true so hydrating from server never writes back to server!
+            setStorageItem(TREATMENT_TAXONOMY_KEY, json.taxonomy, true);
             const merged = getTreatmentTaxonomy();
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('treatment_taxonomy_updated', { detail: merged }));
@@ -5392,7 +6230,874 @@ export async function fetchRemoteTreatmentTaxonomy(): Promise<TreatmentTaxonomyG
   }
 }
 
+// =========================================================================
+// Blog & Clinical Journal Store (Paginated List Projection, Single Post Query & WebP Persistence)
+// =========================================================================
 
+export function slugifyArticleText(value: string, fallback: string = 'clinical-article'): string {
+  const cleaned = String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleaned || fallback;
+}
 
+export function estimateArticleReadingTime(article: Partial<Article>): string {
+  if (typeof article?.readingTime === 'string' && article.readingTime.trim()) {
+    return article.readingTime.trim();
+  }
+  const blockWords = Array.isArray(article?.contentBlocks)
+    ? article.contentBlocks
+        .map((b) =>
+          [
+            b?.heading || '',
+            b?.text || '',
+            ...(Array.isArray(b?.paragraphs) ? b.paragraphs : []),
+            b?.calloutQuote || '',
+            ...(Array.isArray(b?.bulletPoints) ? b.bulletPoints : []),
+          ].join(' ')
+        )
+        .join(' ')
+    : '';
+  const totalWords = `${article?.title || ''} ${article?.description || ''} ${blockWords}`
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const mins = Math.max(2, Math.ceil(totalWords / 180));
+  return `${mins} min read`;
+}
 
+export function computeArticleSeoScore(article: Partial<Article>): ArticleSeoCheckResult {
+  const effectiveTitle = String(article?.seoTitle || article?.title || '').trim();
+  const rawTitle = String(article?.title || '').trim();
+  const effectiveMeta = String(article?.metaDescription || article?.description || '').trim();
+  const keywords = Array.isArray(article?.focusKeywords)
+    ? article.focusKeywords.map((k) => String(k || '').trim()).filter(Boolean)
+    : [];
+  const slug = String(article?.slug || slugifyArticleText(article?.title || '')).toLowerCase();
+  const imageAlt = String(article?.imageAlt || '').trim();
 
+  // First paragraph text from lead description or first paragraph block
+  const firstParagraphBlock = Array.isArray(article?.contentBlocks)
+    ? article.contentBlocks.find((b) => b.type === 'paragraph' && (b.text || (b.paragraphs && b.paragraphs[0])))
+    : undefined;
+  const firstParagraphText = `${article?.description || ''} ${
+    firstParagraphBlock?.text || firstParagraphBlock?.paragraphs?.[0] || ''
+  }`
+    .trim()
+    .toLowerCase();
+
+  const titleLength = effectiveTitle.length >= 40 && effectiveTitle.length <= 65;
+  const metaLength = effectiveMeta.length >= 110 && effectiveMeta.length <= 165;
+  const focusKeyword = keywords.length > 0;
+
+  const matchesAnyKeyword = (haystack: string, slugMode = false) => {
+    if (!haystack || keywords.length === 0) return false;
+    const lowerHay = haystack.toLowerCase();
+    return keywords.some((kw) => {
+      const cleanKw = kw.toLowerCase().trim();
+      if (!cleanKw) return false;
+      if (slugMode) {
+        const kwSlug = slugifyArticleText(cleanKw, '');
+        if (kwSlug && lowerHay.includes(kwSlug)) return true;
+        // Also check individual significant words of the focus keyword in the slug
+        const significantTokens = cleanKw.split(/\s+/).filter((w) => w.length >= 4);
+        return significantTokens.length > 0 && significantTokens.some((tok) => lowerHay.includes(tok));
+      }
+      if (lowerHay.includes(cleanKw)) return true;
+      const significantTokens = cleanKw.split(/\s+/).filter((w) => w.length >= 4);
+      return significantTokens.length > 0 && significantTokens.every((tok) => lowerHay.includes(tok));
+    });
+  };
+
+  const keywordInTitle = matchesAnyKeyword(`${effectiveTitle} ${rawTitle}`, false);
+  const keywordInSlug = matchesAnyKeyword(slug, true);
+  const keywordInFirstParagraph = matchesAnyKeyword(`${firstParagraphText} ${effectiveMeta}`, false);
+  const keywordInTitleOrSlug = keywordInTitle || keywordInSlug;
+
+  const hasImageAlt = imageAlt.length >= 10;
+  const structuredContent = Boolean(
+    (Array.isArray(article?.contentBlocks) && article.contentBlocks.length > 0) ||
+      (Array.isArray(article?.faqItems) && article.faqItems.length > 0)
+  );
+
+  let score = 0;
+  if (titleLength) score += 20;
+  else if (effectiveTitle.length >= 20) score += 10;
+
+  if (metaLength) score += 20;
+  else if (effectiveMeta.length >= 50) score += 10;
+
+  if (focusKeyword) score += 15;
+  if (keywordInTitle) score += 10;
+  if (keywordInSlug) score += 10;
+  if (keywordInFirstParagraph) score += 10;
+  if (hasImageAlt) score += 10;
+  if (structuredContent) score += 5;
+
+  const clamped = Math.min(100, Math.max(0, score));
+  return {
+    score: clamped,
+    grade: clamped >= 75 ? 'optimized' : 'needs-attention',
+    checks: {
+      titleLength,
+      metaLength,
+      focusKeyword,
+      keywordInTitle,
+      keywordInSlug,
+      keywordInFirstParagraph,
+      keywordInTitleOrSlug,
+      imageAlt: hasImageAlt,
+      structuredContent,
+    },
+  };
+}
+
+export function normalizeBlogArticle(
+  raw: Partial<Article>,
+  defaultType: ArticleType = 'news',
+  idx: number = 0
+): Article {
+  const title = String(raw?.title || `Untitled Clinical Post ${idx + 1}`).trim();
+  const type: ArticleType =
+    raw?.type === 'stories' || raw?.type === 'news' ? raw.type : defaultType;
+  const id =
+    String(raw?.id || '').trim() ||
+    `${type === 'stories' ? 'story' : 'news'}-${Date.now()}-${idx}`;
+  const slug = slugifyArticleText(raw?.slug || title, id);
+  const status: ArticleStatus = raw?.status === 'draft' ? 'draft' : 'published';
+  const nowIso = new Date().toISOString();
+  const publishedAt = String(raw?.publishedAt || nowIso).trim();
+  const updatedAt = String(raw?.updatedAt || publishedAt).trim();
+  const date =
+    String(raw?.date || '').trim() ||
+    new Date(publishedAt).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  const tag = String(
+    raw?.tag || raw?.category || (type === 'stories' ? 'Patient Story' : 'Clinical News')
+  ).trim();
+  const category = String(raw?.category || tag).trim();
+  const author = String(raw?.author || 'Adv. Faith Chris').trim();
+  const description = String(raw?.description || '').trim();
+  const image = String(raw?.image || '').trim();
+  const imageAlt = String(
+    raw?.imageAlt || `${title} — ${category} at Age Reversal Clinic`
+  ).trim();
+  const seoTitle = String(raw?.seoTitle || `${title} | Age Reversal Clinic`).trim();
+  const metaDescription = String(
+    raw?.metaDescription || description || `${title} clinical insights at Age Reversal Clinic.`
+  ).trim();
+  const focusKeywords = Array.isArray(raw?.focusKeywords)
+    ? Array.from(
+        new Set(raw.focusKeywords.map((k) => String(k || '').trim()).filter(Boolean))
+      )
+    : [category.toLowerCase(), 'age reversal clinic', 'clinical aesthetics'];
+  const canonicalUrl = String(raw?.canonicalUrl || `#article-${id}`).trim();
+  const readingTime = estimateArticleReadingTime(raw);
+  const contentBlocks = Array.isArray(raw?.contentBlocks) ? raw.contentBlocks : [];
+  const faqItems = Array.isArray(raw?.faqItems) ? raw.faqItems : [];
+
+  return {
+    id,
+    slug,
+    type,
+    status,
+    title,
+    description,
+    image,
+    imageAlt,
+    date,
+    publishedAt,
+    updatedAt,
+    readingTime,
+    author,
+    tag,
+    category,
+    seoTitle,
+    metaDescription,
+    focusKeywords,
+    canonicalUrl,
+    contentBlocks,
+    faqItems,
+  };
+}
+
+/**
+ * Resolves the cover image URL for a blog post with automatic fallback to the clinic logo placeholder
+ * when the post has no cover image or the image fails to load.
+ */
+export function getBlogCoverImageWithFallback(article?: Partial<Article> | null): {
+  src: string;
+  isLogoFallback: boolean;
+  fallbackLogoUrl: string;
+} {
+  const clinicData = getClinicData();
+  const fallbackLogoUrl =
+    clinicData?.logo?.icon ||
+    clinicData?.logo?.full ||
+    CLINIC_DATA.logo?.icon ||
+    CLINIC_DATA.logo?.full ||
+    '/assets/clinic-logo-icon.webp';
+  const rawImg = String(article?.image || '').trim();
+  if (!rawImg) {
+    return {
+      src: fallbackLogoUrl,
+      isLogoFallback: true,
+      fallbackLogoUrl,
+    };
+  }
+  return {
+    src: rawImg,
+    isLogoFallback: false,
+    fallbackLogoUrl,
+  };
+}
+
+/**
+ * Lightweight Card-Summary Column Projection:
+ * Returns ONLY the exact summary columns needed for blog cards (id, slug, title, category, type, status, date, image, seoScore)
+ * and strips out full contentBlocks[] and faqItems[].
+ */
+export function projectBlogPostCardSummary(article: Article | Partial<Article>): BlogCardSummary {
+  const normalized = normalizeBlogArticle(article, (article?.type as ArticleType) || 'news');
+  const { score, grade } = computeArticleSeoScore(normalized);
+  return {
+    id: normalized.id,
+    slug: normalized.slug || normalized.id,
+    title: normalized.title,
+    description: normalized.description,
+    category: normalized.category || normalized.tag,
+    tag: normalized.tag,
+    type: normalized.type || 'news',
+    status: normalized.status || 'published',
+    date: normalized.date,
+    publishedAt: normalized.publishedAt || '',
+    updatedAt: normalized.updatedAt || '',
+    author: normalized.author,
+    readingTime: normalized.readingTime || '4 min read',
+    image: normalized.image,
+    imageAlt: normalized.imageAlt || normalized.title,
+    seoScore: score,
+    seoGrade: grade,
+  };
+}
+
+/**
+ * Local Paginated & Projected Blog List Query:
+ * Filters by type ('all' | 'news' | 'stories'), status ('all' | 'published' | 'draft'), category, search,
+ * sorts by sort, projects ONLY lightweight summary columns, and returns a paginated slice (default 6 per page).
+ */
+export function getPaginatedBlogPosts(
+  params: BlogPostQueryParams = {}
+): PaginatedBlogPostsResponse {
+  const config = getLatestNewsConfig();
+  const allPosts: Article[] = [
+    ...config.newsArticles.map((a, idx) => normalizeBlogArticle(a, 'news', idx)),
+    ...config.storyArticles.map((a, idx) => normalizeBlogArticle(a, 'stories', idx)),
+  ];
+
+  const counts = {
+    all: allPosts.length,
+    news: allPosts.filter((p) => p.type === 'news').length,
+    stories: allPosts.filter((p) => p.type === 'stories').length,
+    published: allPosts.filter((p) => p.status !== 'draft').length,
+    drafts: allPosts.filter((p) => p.status === 'draft').length,
+  };
+
+  const typeFilter = (params.type || 'all').toLowerCase();
+  const statusFilter = (params.status || 'all').toLowerCase();
+  const categoryFilter = (params.category || '').trim().toLowerCase();
+  const searchFilter = (params.search || '').trim().toLowerCase();
+  const sortOption: BlogSortOption = params.sort || 'newest';
+
+  let projected = allPosts.map(projectBlogPostCardSummary);
+
+  projected = projected.filter((item) => {
+    if (typeFilter === 'news' && item.type !== 'news') return false;
+    if (typeFilter === 'stories' && item.type !== 'stories') return false;
+    if (statusFilter === 'published' && item.status !== 'published') return false;
+    if (statusFilter === 'draft' && item.status !== 'draft') return false;
+    if (
+      categoryFilter &&
+      categoryFilter !== 'all' &&
+      item.category.toLowerCase() !== categoryFilter &&
+      item.tag.toLowerCase() !== categoryFilter
+    ) {
+      return false;
+    }
+    if (searchFilter) {
+      const hay = `${item.title} ${item.slug} ${item.category} ${item.tag} ${item.author} ${item.description}`.toLowerCase();
+      if (!hay.includes(searchFilter)) return false;
+    }
+    return true;
+  });
+
+  projected.sort((a, b) => {
+    if (sortOption === 'title-asc') {
+      return a.title.localeCompare(b.title);
+    }
+    if (sortOption === 'seo-desc') {
+      return b.seoScore - a.seoScore;
+    }
+    const timeA = Date.parse(a.publishedAt || a.date || '') || 0;
+    const timeB = Date.parse(b.publishedAt || b.date || '') || 0;
+    if (sortOption === 'oldest') {
+      return timeA - timeB;
+    }
+    return timeB - timeA;
+  });
+
+  const totalCount = projected.length;
+  const limit = params.limit !== undefined ? Math.max(1, Number(params.limit) || 6) : 6;
+  const page = params.page !== undefined ? Math.max(1, Number(params.page) || 1) : 1;
+  const offset =
+    params.offset !== undefined ? Math.max(0, Number(params.offset) || 0) : (page - 1) * limit;
+
+  const items = projected.slice(offset, offset + limit);
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+  const hasMore = offset + items.length < totalCount;
+
+  return {
+    items,
+    totalCount,
+    hasMore,
+    page: Math.floor(offset / limit) + 1,
+    totalPages,
+    offset,
+    limit,
+    counts,
+    heading: config.heading,
+    description: config.description,
+  };
+}
+
+/**
+ * Remote Paginated & Projected Blog List Fetcher:
+ * Calls GET /api/admin/blog-posts with exact pagination & filter parameters.
+ */
+export async function fetchPaginatedBlogPosts(
+  params: BlogPostQueryParams = {}
+): Promise<PaginatedBlogPostsResponse> {
+  const limit = params.limit ?? 6;
+  const page = params.page ?? 1;
+  const offset = params.offset !== undefined ? params.offset : (page - 1) * limit;
+
+  try {
+    const searchParams = new URLSearchParams();
+    searchParams.set('limit', String(limit));
+    searchParams.set('page', String(page));
+    searchParams.set('offset', String(offset));
+    if (params.type && params.type !== 'all') searchParams.set('type', params.type);
+    if (params.status && params.status !== 'all') searchParams.set('status', params.status);
+    if (params.category) searchParams.set('category', params.category);
+    if (params.search && params.search.trim()) searchParams.set('search', params.search.trim());
+    if (params.sort) searchParams.set('sort', params.sort);
+
+    const res = await fetch(`/api/admin/blog-posts?${searchParams.toString()}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && Array.isArray(json.items)) {
+        // Sync server-authoritative card summaries (such as /assets/blog/ cover images) into localStorage
+        try {
+          const currentCfg = getLatestNewsConfig();
+          const itemById = new Map<string, BlogCardSummary>();
+          for (const item of json.items as BlogCardSummary[]) {
+            if (item && item.id) itemById.set(String(item.id), item);
+          }
+          let updatedAny = false;
+          const syncSummaryIntoPost = (post: Article): Article => {
+            const summary = itemById.get(String(post.id));
+            if (!summary) return post;
+            const shouldUpdateImage =
+              summary.image &&
+              summary.image !== post.image &&
+              (summary.image.startsWith('/assets/blog/') || !post.image.startsWith('/assets/blog/'));
+            if (shouldUpdateImage || summary.updatedAt !== post.updatedAt || summary.status !== post.status) {
+              updatedAny = true;
+              return {
+                ...post,
+                title: summary.title || post.title,
+                description: summary.description || post.description,
+                image: shouldUpdateImage ? summary.image : post.image,
+                imageAlt: summary.imageAlt || post.imageAlt,
+                status: summary.status || post.status,
+                updatedAt: summary.updatedAt || post.updatedAt,
+              };
+            }
+            return post;
+          };
+          const syncedNews = currentCfg.newsArticles.map(syncSummaryIntoPost);
+          const syncedStories = currentCfg.storyArticles.map(syncSummaryIntoPost);
+          if (updatedAny) {
+            setStorageItem(
+              LATEST_NEWS_CONFIG_KEY,
+              {
+                ...currentCfg,
+                heading: json.heading || currentCfg.heading,
+                description: json.description || currentCfg.description,
+                newsArticles: syncedNews,
+                storyArticles: syncedStories,
+              },
+              true
+            );
+          }
+        } catch {}
+
+        return {
+          items: json.items as BlogCardSummary[],
+          totalCount: typeof json.totalCount === 'number' ? json.totalCount : json.items.length,
+          hasMore: Boolean(json.hasMore),
+          page: typeof json.page === 'number' ? json.page : page,
+          totalPages: typeof json.totalPages === 'number' ? json.totalPages : 1,
+          offset: typeof json.offset === 'number' ? json.offset : offset,
+          limit: typeof json.limit === 'number' ? json.limit : limit,
+          counts: json.counts || {
+            all: json.totalCount || json.items.length,
+            news: 0,
+            stories: 0,
+            published: 0,
+            drafts: 0,
+          },
+          heading: json.heading,
+          description: json.description,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Falling back to local paginated blog posts:', err);
+  }
+
+  return getPaginatedBlogPosts({ ...params, limit, page, offset });
+}
+
+/**
+ * Synchronous On-Demand Single Post Lookup (includes contentBlocks, faqItems, and full SEO metadata)
+ */
+export function getBlogPostByIdOrSlug(idOrSlug: string): Article | null {
+  const target = String(idOrSlug || '').trim().toLowerCase();
+  if (!target) return null;
+  const config = getLatestNewsConfig();
+  const allPosts = [...config.newsArticles, ...config.storyArticles];
+  return (
+    allPosts.find(
+      (post) =>
+        String(post.id || '').toLowerCase() === target ||
+        String(post.slug || '').toLowerCase() === target
+    ) || null
+  );
+}
+
+/**
+ * Asynchronous On-Demand Single Post Fetcher:
+ * Calls GET /api/admin/blog-posts/:idOrSlug ONLY when opening a post for editing or reading.
+ */
+export async function fetchBlogPostByIdOrSlug(idOrSlug: string): Promise<Article | null> {
+  const target = String(idOrSlug || '').trim();
+  if (!target) return null;
+
+  try {
+    const res = await fetch(`/api/admin/blog-posts/${encodeURIComponent(target)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.success && (json.post || json.data)) {
+        const remotePost = normalizeBlogArticle(json.post || json.data);
+        // Sync authoritative full post (including contentBlocks and disk-resolved /assets/blog/ images) into localStorage
+        try {
+          const cfg = getLatestNewsConfig();
+          const isStory = remotePost.type === 'stories';
+          const nextNews = isStory
+            ? cfg.newsArticles.filter((p) => p.id !== remotePost.id)
+            : cfg.newsArticles.some((p) => p.id === remotePost.id)
+            ? cfg.newsArticles.map((p) => (p.id === remotePost.id ? remotePost : p))
+            : [remotePost, ...cfg.newsArticles];
+          const nextStories = isStory
+            ? cfg.storyArticles.some((p) => p.id === remotePost.id)
+              ? cfg.storyArticles.map((p) => (p.id === remotePost.id ? remotePost : p))
+              : [remotePost, ...cfg.storyArticles]
+            : cfg.storyArticles.filter((p) => p.id !== remotePost.id);
+          setStorageItem(
+            LATEST_NEWS_CONFIG_KEY,
+            {
+              ...cfg,
+              newsArticles: nextNews,
+              storyArticles: nextStories,
+            },
+            true
+          );
+        } catch {}
+        return remotePost;
+      }
+    }
+  } catch (err) {
+    console.warn(`Could not fetch remote blog post '${target}', using local fallback:`, err);
+  }
+
+  return getBlogPostByIdOrSlug(target);
+}
+
+/**
+ * Create or Update a Blog Post and persist to server disk (siteCustomizations.json + src/data.ts)
+ */
+export async function saveBlogPost(
+  postInput: Partial<Article> & { title: string }
+): Promise<{
+  success: boolean;
+  post?: Article;
+  summary?: BlogCardSummary;
+  error?: string;
+}> {
+  const config = getLatestNewsConfig();
+  const existing = [...config.newsArticles, ...config.storyArticles].find(
+    (p) => p.id === postInput.id
+  );
+  const postType: ArticleType =
+    postInput.type === 'stories' || postInput.type === 'news'
+      ? postInput.type
+      : existing?.type || 'news';
+
+  const normalized = normalizeBlogArticle(
+    {
+      ...(existing || {}),
+      ...postInput,
+      id: postInput.id || `${postType === 'stories' ? 'story' : 'news'}-${Date.now()}`,
+      type: postType,
+      updatedAt: new Date().toISOString(),
+    },
+    postType
+  );
+
+  // Optimistically update local store & dispatch event
+  const filteredNews = config.newsArticles.filter((p) => p.id !== normalized.id);
+  const filteredStories = config.storyArticles.filter((p) => p.id !== normalized.id);
+
+  const nextNews =
+    postType === 'news'
+      ? existing && config.newsArticles.some((p) => p.id === normalized.id)
+        ? config.newsArticles.map((p) => (p.id === normalized.id ? normalized : p))
+        : [normalized, ...filteredNews]
+      : filteredNews;
+
+  const nextStories =
+    postType === 'stories'
+      ? existing && config.storyArticles.some((p) => p.id === normalized.id)
+        ? config.storyArticles.map((p) => (p.id === normalized.id ? normalized : p))
+        : [normalized, ...filteredStories]
+      : filteredStories;
+
+  const nextConfig = {
+    ...config,
+    newsArticles: nextNews,
+    storyArticles: nextStories,
+    updatedAt: new Date().toISOString(),
+  };
+  setStorageItem(LATEST_NEWS_CONFIG_KEY, nextConfig, true);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('blog_posts_updated', { detail: nextConfig }));
+  }
+
+  try {
+    const endpoint = existing
+      ? `/api/admin/blog-posts/${encodeURIComponent(normalized.id)}`
+      : '/api/admin/blog-posts';
+    const method = existing ? 'PUT' : 'POST';
+    const res = await fetch(endpoint, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post: normalized }),
+    });
+    const json = await res.json();
+    if (json && json.success) {
+      return {
+        success: true,
+        post: json.post ? normalizeBlogArticle(json.post, postType) : normalized,
+        summary: json.summary || projectBlogPostCardSummary(normalized),
+      };
+    }
+    return {
+      success: false,
+      post: normalized,
+      summary: projectBlogPostCardSummary(normalized),
+      error: json?.error || 'Failed to persist blog post to server',
+    };
+  } catch (err) {
+    console.error('Error saving blog post to server:', err);
+    return {
+      success: true,
+      post: normalized,
+      summary: projectBlogPostCardSummary(normalized),
+    };
+  }
+}
+
+/**
+ * Toggle or set a Blog Post's status ('published' | 'draft') and persist to disk
+ */
+export async function toggleBlogPostStatus(
+  id: string,
+  requestedStatus?: ArticleStatus
+): Promise<{
+  success: boolean;
+  status?: ArticleStatus;
+  post?: Article;
+  summary?: BlogCardSummary;
+  error?: string;
+}> {
+  const config = getLatestNewsConfig();
+  const existing = [...config.newsArticles, ...config.storyArticles].find((p) => p.id === id);
+  if (!existing) {
+    return { success: false, error: `Blog post '${id}' not found` };
+  }
+
+  const nextStatus: ArticleStatus =
+    requestedStatus || (existing.status === 'draft' ? 'published' : 'draft');
+  const nowIso = new Date().toISOString();
+  const updatedPost = normalizeBlogArticle(
+    {
+      ...existing,
+      status: nextStatus,
+      updatedAt: nowIso,
+      ...(nextStatus === 'published' && existing.status === 'draft'
+        ? { publishedAt: nowIso }
+        : {}),
+    },
+    existing.type || 'news'
+  );
+
+  const nextConfig = {
+    ...config,
+    newsArticles: config.newsArticles.map((p) => (p.id === id ? updatedPost : p)),
+    storyArticles: config.storyArticles.map((p) => (p.id === id ? updatedPost : p)),
+    updatedAt: nowIso,
+  };
+  setStorageItem(LATEST_NEWS_CONFIG_KEY, nextConfig, true);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('blog_posts_updated', { detail: nextConfig }));
+  }
+
+  try {
+    const res = await fetch(`/api/admin/blog-posts/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: nextStatus }),
+    });
+    const json = await res.json();
+    if (json && json.success) {
+      return {
+        success: true,
+        status: nextStatus,
+        post: json.post ? normalizeBlogArticle(json.post) : updatedPost,
+        summary: json.summary || projectBlogPostCardSummary(updatedPost),
+      };
+    }
+  } catch (err) {
+    console.warn('Could not sync blog status toggle to server:', err);
+  }
+
+  return {
+    success: true,
+    status: nextStatus,
+    post: updatedPost,
+    summary: projectBlogPostCardSummary(updatedPost),
+  };
+}
+
+/**
+ * Delete a Blog Post by ID and purge its unreferenced WebP cover image on disk
+ */
+export async function deleteBlogPost(
+  id: string
+): Promise<{ success: boolean; deletedId?: string; error?: string }> {
+  const config = getLatestNewsConfig();
+  const nextConfig = {
+    ...config,
+    newsArticles: config.newsArticles.filter((p) => p.id !== id),
+    storyArticles: config.storyArticles.filter((p) => p.id !== id),
+    updatedAt: new Date().toISOString(),
+  };
+  setStorageItem(LATEST_NEWS_CONFIG_KEY, nextConfig, true);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('blog_posts_updated', { detail: nextConfig }));
+  }
+
+  try {
+    const res = await fetch(`/api/admin/blog-posts/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    const json = await res.json();
+    if (json && json.success) {
+      return { success: true, deletedId: id };
+    }
+  } catch (err) {
+    console.warn('Could not sync blog post deletion to server:', err);
+  }
+
+  return { success: true, deletedId: id };
+}
+
+/**
+ * Convert an uploaded blog image file to .webp and save it to /public/assets/blog/${id}${ext}?v=${Date.now()}
+ */
+export async function uploadBlogPostCoverImage(
+  postId: string,
+  file: File,
+  options?: { previousUrl?: string; imageAlt?: string; parentPostId?: string; blockId?: string }
+): Promise<{
+  success: boolean;
+  id?: string;
+  url?: string;
+  imagePath?: string;
+  rawPath?: string;
+  version?: number;
+  error?: string;
+}> {
+  try {
+    const cleanId =
+      String(postId || 'blog-cover')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'blog-cover';
+    const converted = await convertClinicImageFileToWebP(file, 0.9, 1600);
+    const dataUrl =
+      typeof converted === 'string'
+        ? converted
+        : (converted as { dataUrl?: string })?.dataUrl ||
+          (await convertImageFileToWebpDataUrl(file));
+
+    const res = await fetch(`/api/admin/blog-posts/${encodeURIComponent(cleanId)}/image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: cleanId,
+        dataUrl,
+        previousUrl: options?.previousUrl,
+        imageAlt: options?.imageAlt,
+        parentPostId: options?.parentPostId,
+        blockId: options?.blockId,
+      }),
+    });
+    const json = await res.json();
+    if (json && json.success) {
+      const version = typeof json.version === 'number' ? json.version : Date.now();
+      const rawPath = json.rawPath || `/assets/blog/${cleanId}.webp`;
+      const versionedUrl =
+        json.imagePath && String(json.imagePath).includes('?v=')
+          ? json.imagePath
+          : `${rawPath.split('?')[0]}?v=${version}`;
+
+      // Immediately sync to local blog store if this ID matches an existing post cover OR an inline contentBlock
+      try {
+        const config = getLatestNewsConfig();
+        let matched = false;
+        const cleanParentId = options?.parentPostId
+          ? String(options.parentPostId)
+              .trim()
+              .replace(/[^a-zA-Z0-9_-]/g, '-')
+              .replace(/-+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .toLowerCase()
+          : '';
+        const cleanBlockId = options?.blockId ? String(options.blockId).trim() : '';
+
+        const syncUploadedImageToLocalPost = (post: Article): Article => {
+          const postCleanId = String(post.id || '')
+            .trim()
+            .replace(/[^a-zA-Z0-9_-]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .toLowerCase();
+
+          if (!cleanBlockId && postCleanId === cleanId) {
+            matched = true;
+            return {
+              ...post,
+              image: versionedUrl,
+              ...(options?.imageAlt?.trim() ? { imageAlt: options.imageAlt.trim() } : {}),
+              updatedAt: new Date().toISOString(),
+            };
+          }
+
+          const isParentMatch =
+            (cleanParentId && (postCleanId === cleanParentId || post.id === options?.parentPostId)) ||
+            (!cleanParentId && cleanId.startsWith(`${postCleanId}-block-`));
+
+          if (isParentMatch) {
+            matched = true;
+            const resolvedBlockId =
+              cleanBlockId || cleanId.slice(postCleanId.length + 1) || `block-${version}`;
+            const nextBlocks = Array.isArray(post.contentBlocks) ? [...post.contentBlocks] : [];
+            const bIdx = nextBlocks.findIndex(
+              (b) => b && String(b.id || '').toLowerCase() === resolvedBlockId.toLowerCase()
+            );
+            if (bIdx !== -1) {
+              nextBlocks[bIdx] = {
+                ...nextBlocks[bIdx],
+                id: nextBlocks[bIdx].id || resolvedBlockId,
+                type: 'image',
+                imageUrl: versionedUrl,
+                imageAlt:
+                  options?.imageAlt?.trim() ||
+                  nextBlocks[bIdx].imageAlt ||
+                  `${post.title || 'Clinical'} — illustration`,
+              };
+            } else {
+              nextBlocks.push({
+                id: resolvedBlockId,
+                type: 'image',
+                imageUrl: versionedUrl,
+                imageAlt: options?.imageAlt?.trim() || `${post.title || 'Clinical'} — illustration`,
+                imageCaption: '',
+              });
+            }
+            return {
+              ...post,
+              contentBlocks: nextBlocks,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+
+          return post;
+        };
+
+        const nextNews = config.newsArticles.map(syncUploadedImageToLocalPost);
+        const nextStories = config.storyArticles.map(syncUploadedImageToLocalPost);
+        if (matched) {
+          const nextConfig = {
+            ...config,
+            newsArticles: nextNews,
+            storyArticles: nextStories,
+            updatedAt: new Date().toISOString(),
+          };
+          setStorageItem(LATEST_NEWS_CONFIG_KEY, nextConfig, true);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('blog_posts_updated', { detail: nextConfig }));
+          }
+        }
+      } catch {}
+
+      return {
+        success: true,
+        id: cleanId,
+        url: versionedUrl,
+        imagePath: versionedUrl,
+        rawPath,
+        version,
+      };
+    }
+    return {
+      success: false,
+      error: json?.error || 'Failed to upload blog WebP image',
+    };
+  } catch (err) {
+    console.error('Error uploading blog WebP image:', err);
+    return {
+      success: false,
+      error: String(err),
+    };
+  }
+}

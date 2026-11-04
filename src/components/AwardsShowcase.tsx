@@ -8,11 +8,11 @@ import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder'
 import { CLINIC_AWARDS_MEDIA } from '../data/clinicImages';
 import { getClinicSlotId } from '../utils/clinicImageHelper';
 
-const awardDermatology = '/assets/clinic-award-1.webp';
-const awardRejuvenation = '/assets/clinic-award-2.webp';
-const awardPatientSafety = '/assets/clinic-award-3.webp';
-const awardLaserClinic = '/assets/clinic-award-4.webp';
-const awardInnovation = '/assets/clinic-award-5.webp';
+const awardDermatology = '';
+const awardRejuvenation = '';
+const awardPatientSafety = '';
+const awardLaserClinic = '';
+const awardInnovation = '';
 
 const DEFAULT_AWARD_IMAGES: Record<string, string> = {
   'award-1': awardDermatology,

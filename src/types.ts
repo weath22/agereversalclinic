@@ -91,8 +91,34 @@ export interface BrandPartner {
   imageUrl?: string;
 }
 
+export type ArticleType = 'news' | 'stories';
+export type ArticleStatus = 'published' | 'draft';
+export type ArticleBlockType = 'h2' | 'h3' | 'paragraph' | 'callout' | 'bullets' | 'image';
+
+export interface ArticleFaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export interface ArticleContentBlock {
+  id: string;
+  type: ArticleBlockType;
+  headingLevel?: 'h2' | 'h3';
+  heading?: string;
+  text?: string;
+  paragraphs?: string[];
+  calloutQuote?: string;
+  calloutAttribution?: string;
+  bulletPoints?: string[];
+  imageUrl?: string;
+  imageAlt?: string;
+  imageCaption?: string;
+}
+
 export interface Article {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   image: string;
@@ -100,6 +126,91 @@ export interface Article {
   author: string;
   tag: string;
   category?: string;
+  // Core publishing fields
+  type?: ArticleType;
+  status?: ArticleStatus;
+  publishedAt?: string;
+  updatedAt?: string;
+  readingTime?: string;
+  // Dedicated search-ranking SEO fields
+  seoTitle?: string;
+  metaDescription?: string;
+  focusKeywords?: string[];
+  imageAlt?: string;
+  canonicalUrl?: string;
+  faqItems?: ArticleFaqItem[];
+  // Structured article sections (H2/H3 subheadings, body paragraphs, clinical callout/quote, bullet points)
+  contentBlocks?: ArticleContentBlock[];
+}
+
+export interface ArticleSeoCheckResult {
+  score: number;
+  grade: 'optimized' | 'needs-attention';
+  checks: {
+    titleLength: boolean;
+    metaLength: boolean;
+    focusKeyword: boolean;
+    keywordInTitle: boolean;
+    keywordInSlug: boolean;
+    keywordInFirstParagraph: boolean;
+    keywordInTitleOrSlug: boolean;
+    imageAlt: boolean;
+    structuredContent: boolean;
+  };
+}
+
+export interface BlogCardSummary {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  tag: string;
+  type: ArticleType;
+  status: ArticleStatus;
+  date: string;
+  publishedAt: string;
+  updatedAt: string;
+  author: string;
+  readingTime: string;
+  image: string;
+  imageAlt: string;
+  seoScore: number;
+  seoGrade: 'optimized' | 'needs-attention';
+}
+
+export type ArticleSummaryProjection = BlogCardSummary;
+
+export type BlogSortOption = 'newest' | 'oldest' | 'title-asc' | 'seo-desc';
+
+export interface BlogPostQueryParams {
+  page?: number;
+  limit?: number;
+  offset?: number;
+  type?: 'all' | ArticleType;
+  status?: 'all' | ArticleStatus;
+  category?: string;
+  search?: string;
+  sort?: BlogSortOption;
+}
+
+export interface PaginatedBlogPostsResponse {
+  items: BlogCardSummary[];
+  totalCount: number;
+  hasMore: boolean;
+  page: number;
+  totalPages: number;
+  offset: number;
+  limit: number;
+  counts: {
+    all: number;
+    news: number;
+    stories: number;
+    published: number;
+    drafts: number;
+  };
+  heading?: string;
+  description?: string;
 }
 
 export interface ConsultationRequest {
@@ -329,6 +440,8 @@ export interface BeforeAfterPair {
   title: string;
   beforeImage: string;
   afterImage: string;
+  singleFrameImage?: string;
+  singleFrameAltText?: string;
   treatmentGroupId?: ExistingTreatmentGroupId | string;
   linkedTreatmentId?: string;
   linkedTreatmentTitle?: string;

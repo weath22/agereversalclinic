@@ -220,14 +220,12 @@ export const CLINIC_DATA: ClinicData = {
   ],
   "ogImage": "",
   "logo": {
-    "icon": "/assets/clinic-logo-icon.webp",
+    "icon": "",
     "alt": "Age Reversal Clinics Logo",
-    "full": "/assets/clinic-logo-full.webp"
+    "full": ""
   },
   "exteriorPhoto": "",
-  "interiorPhotos": [
-    "/assets/clinic-interior-0.webp"
-  ],
+  "interiorPhotos": [],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",
   "whatsapp": "https://wa.me/44207984159517",
@@ -278,7 +276,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "/assets/clinic-location-1791722960928.webp",
+      "image": "",
       "imageAlt": ""
     },
     {
@@ -295,7 +293,7 @@ export const CLINIC_DATA: ClinicData = {
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": false,
-      "image": "/assets/clinic-location-1791728808656.webp",
+      "image": "",
       "imageAlt": ""
     }
   ],
@@ -397,9 +395,9 @@ export const CLINIC_DATA: ClinicData = {
     "specialistLabel": "Preferred Specialist",
     "doctors": [
       {
-        "id": "dr-1793362578610",
-        "name": "Adv Faith Chris",
-        "specialty": "Lead Aesthetics Specialist",
+        "id": "dr-jones",
+        "name": "Adv. Faith Chris",
+        "specialty": "Aesthetic Physician",
         "locationIds": [
           "location-1791722960928"
         ],
@@ -408,19 +406,20 @@ export const CLINIC_DATA: ClinicData = {
           2,
           3,
           4,
-          5
+          5,
+          6
         ],
         "timeSlots": [
-          "09:30",
-          "11:00",
+          "10:00",
+          "11:30",
           "14:00",
           "16:00"
         ]
       },
       {
-        "id": "dr-1793362615948",
+        "id": "dr-jaipur",
         "name": "Adv. Nuri",
-        "specialty": "Aesthetics Specialist",
+        "specialty": "Regenerative & Laser Specialist",
         "locationIds": [
           "location-1791728808656"
         ],
@@ -433,9 +432,9 @@ export const CLINIC_DATA: ClinicData = {
         ],
         "timeSlots": [
           "09:30",
-          "11:00",
-          "14:00",
-          "16:00"
+          "12:00",
+          "14:30",
+          "17:00"
         ]
       }
     ],
@@ -498,7 +497,7 @@ export const CLINIC_DATA: ClinicData = {
       {
         "id": "post",
         "label": "Post Mail",
-        "enabled": true
+        "enabled": false
       },
       {
         "id": "whatsapp",
@@ -553,13 +552,29 @@ export const CLINIC_DATA: ClinicData = {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": ""
+        "image": "",
+        "imageAlt": "Consultation Suite at Age Reversal Clinics"
       },
       {
         "id": "room-2",
         "title": "Treatment Room",
         "tag": "Clinical",
-        "image": ""
+        "image": "",
+        "imageAlt": "Treatment Room at Age Reversal Clinics"
+      },
+      {
+        "id": "room-3",
+        "title": "Laser & Diagnostic Suite",
+        "tag": "Technology",
+        "image": "",
+        "imageAlt": "Laser & Diagnostic Suite at Age Reversal Clinics"
+      },
+      {
+        "id": "room-4",
+        "title": "Executive Recovery Lounge",
+        "tag": "Sanctuary",
+        "image": "",
+        "imageAlt": "Executive Recovery Lounge at Age Reversal Clinics"
       }
     ]
   },
@@ -569,31 +584,31 @@ export const CLINIC_DATA: ClinicData = {
     "brands": [
       {
         "id": "bp-1",
-        "name": "Lumina",
-        "iconType": "circle",
+        "name": "Aqualyx",
+        "iconType": "layers",
         "imageUrl": ""
       },
       {
         "id": "bp-2",
-        "name": "Aether",
+        "name": "Azzalure",
         "iconType": "layers",
         "imageUrl": ""
       },
       {
         "id": "bp-3",
-        "name": "Vera",
+        "name": "Obagi",
         "iconType": "pill",
         "imageUrl": ""
       },
       {
         "id": "bp-4",
-        "name": "Zenith",
+        "name": "Radiesse",
         "iconType": "shield",
         "imageUrl": ""
       },
       {
         "id": "bp-5",
-        "name": "Nexus",
+        "name": "Profili",
         "iconType": "instagram",
         "imageUrl": ""
       }

@@ -466,6 +466,9 @@ export default function BeforeAfterGallery() {
 
     return combined.filter((item) => {
       if (!item || !item.id || hiddenIds.has(item.id)) return false;
+      // Pairs that ONLY have the Transformations Page single large frame (and no 2-frame before/after photos)
+      // should be displayed on the Transformations Page alone, not in the 2-frame Homepage gallery
+      if (!item.beforeImage && !item.afterImage) return false;
       const sig = `${item.treatmentGroupId || item.categoryId || ''}::${item.beforeImage || ''}::${item.afterImage || ''}`;
       if (
         item.treatmentGroupId &&

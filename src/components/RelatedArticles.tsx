@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Article } from '../types';
+import LogoOutlineSkeleton from './LogoOutlineSkeleton';
 
 interface RelatedArticlesProps {
   currentArticle: Article;
@@ -9,9 +10,48 @@ interface RelatedArticlesProps {
   articles: Article[];
 }
 
-export default function RelatedArticles({ currentArticle, onArticleClick, articles }: RelatedArticlesProps) {
-  // Filter out current and take up to 3
-  const related = articles.filter(a => a.id !== currentArticle.id).slice(0, 3);
+function RelatedCardMedia({
+  src,
+  alt,
+}: {
+  src?: string;
+  alt: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const cleanSrc = (src || '').trim();
+
+  useEffect(() => {
+    setHasError(false);
+  }, [cleanSrc]);
+
+  if (!cleanSrc || hasError) {
+    return (
+      <div className="w-full h-full bg-[#faf8f5] flex items-center justify-center">
+        <LogoOutlineSkeleton size="sm" showLabel={false} className="w-full h-full border-0" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      alt={alt}
+      loading="lazy"
+      onError={() => setHasError(true)}
+      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+      src={cleanSrc}
+      referrerPolicy="no-referrer"
+    />
+  );
+}
+
+export default function RelatedArticles({
+  currentArticle,
+  onArticleClick,
+  articles,
+}: RelatedArticlesProps) {
+  const related = articles
+    .filter((a) => a.id !== currentArticle.id && a.status !== 'draft')
+    .slice(0, 3);
 
   if (related.length === 0) return null;
 
@@ -31,7 +71,7 @@ export default function RelatedArticles({ currentArticle, onArticleClick, articl
             </h2>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {related.map((article, index) => (
             <motion.article
@@ -45,14 +85,12 @@ export default function RelatedArticles({ currentArticle, onArticleClick, articl
             >
               {/* Image Container */}
               <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-neutral-100 relative">
-                <img
-                  alt={article.title}
-                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                <RelatedCardMedia
                   src={article.image}
-                  referrerPolicy="no-referrer"
+                  alt={article.imageAlt || article.title}
                 />
                 <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-luxury-text font-sans font-medium text-[9px] sm:text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-full shadow-xs border border-[#e8dcc8]">
-                  {article.tag || article.category}
+                  {article.category || article.tag}
                 </div>
               </div>
 
@@ -64,12 +102,12 @@ export default function RelatedArticles({ currentArticle, onArticleClick, articl
                     <Calendar className="h-3.5 w-3.5 text-luxury-gold" strokeWidth={1.5} />
                     <span>{article.date}</span>
                   </div>
-                  
+
                   <h3 className="font-serif font-normal text-base sm:text-lg text-luxury-text mb-3 leading-snug group-hover:text-luxury-subtext transition-colors line-clamp-2">
                     {article.title}
                   </h3>
                 </div>
-                
+
                 {/* CTA button */}
                 <div className="pt-2">
                   <span className="text-black font-sans font-medium text-xs flex items-center gap-1.5 group-hover:text-luxury-gold transition-all uppercase tracking-wider">

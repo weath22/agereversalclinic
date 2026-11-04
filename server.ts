@@ -10,7 +10,7 @@ import {
   inferTreatmentSubGroup,
 } from './src/data/treatmentPricing.ts';
 import { CLINIC_DATA } from './src/data/clinicInfo.ts';
-import { TREATMENTS } from './src/data.ts';
+import { TREATMENTS, NEWS_ARTICLES, STORY_ARTICLES } from './src/data.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,26 +21,23 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Ensure asset storage directories exist
+// Ensure asset storage directories exist (public/assets is the single source of truth)
 const uploadsDir = path.resolve(__dirname, 'public/uploads');
 const publicAssetsDir = path.resolve(__dirname, 'public/assets');
-const srcAssetsDir = path.resolve(__dirname, 'src/assets/images');
 const distAssetsDir = path.resolve(__dirname, 'dist/assets');
 const publicTreatmentsDir = path.resolve(__dirname, 'public/assets/treatments');
-const srcTreatmentsDir = path.resolve(__dirname, 'src/assets/images/treatments');
 const distTreatmentsDir = path.resolve(__dirname, 'dist/assets/treatments');
 const publicTransformationsDir = path.resolve(__dirname, 'public/assets/transformations');
-const srcTransformationsDir = path.resolve(__dirname, 'src/assets/images/transformations');
 const distTransformationsDir = path.resolve(__dirname, 'dist/assets/transformations');
+const publicBlogDir = path.resolve(__dirname, 'public/assets/blog');
+const distBlogDir = path.resolve(__dirname, 'dist/assets/blog');
 
 for (const dir of [
   uploadsDir,
   publicAssetsDir,
-  srcAssetsDir,
   publicTreatmentsDir,
-  srcTreatmentsDir,
   publicTransformationsDir,
-  srcTransformationsDir,
+  publicBlogDir,
 ]) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -55,95 +52,9 @@ const transformationsDataPath = path.resolve(__dirname, 'src/data/transformation
 const specialistTreatmentsPath = path.resolve(__dirname, 'src/data/specialistTreatments.ts');
 const dataTsPath = path.resolve(__dirname, 'src/data.ts');
 
-// ============================================================================
-// TASK 5: MIRRORING FOR PRODUCTION BUILD & RUNTIME SAFETY
-// ============================================================================
-// Ensure assets in src/assets/images (and treatments & transformations subdirectories)
-// and public/assets (Vite public) are mirrored and kept in sync bidirectionally
-// so neither environment loses clinic logos, location photos, or procedure images upon server restart or build.
-try {
-  const mirrorPairs: Array<[string, string]> = [
-    [srcAssetsDir, publicAssetsDir],
-    [srcTreatmentsDir, publicTreatmentsDir],
-    [srcTransformationsDir, publicTransformationsDir],
-  ];
-
-  // Read active configuration files so the duplicate-extension cleaner never deletes
-  // any file actively referenced in clinicInfo.ts, specialistTreatments.ts, data.ts, or siteCustomizations.json
-  const activeReferenceContent = [clinicInfoPath, specialistTreatmentsPath, dataTsPath, customizationsPath]
-    .map((filePath) => {
-      try {
-        return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
-      } catch {
-        return '';
-      }
-    })
-    .join('\n');
-
-  const isFileActivelyReferenced = (fileName: string): boolean => {
-    if (!fileName) return false;
-    return activeReferenceContent.includes(fileName);
-  };
-
-  for (const [srcDir, pubDir] of mirrorPairs) {
-    if (fs.existsSync(srcDir) && fs.existsSync(pubDir)) {
-      const srcFiles = fs.readdirSync(srcDir);
-      for (const f of srcFiles) {
-        const srcFile = path.join(srcDir, f);
-        const pubFile = path.join(pubDir, f);
-        if (fs.statSync(srcFile).isFile() && !fs.existsSync(pubFile)) {
-          fs.copyFileSync(srcFile, pubFile);
-          console.log(`[Production Mirror Sync] Synced ${f} from src to public assets`);
-        }
-      }
-
-      const pubFiles = fs.readdirSync(pubDir);
-      for (const f of pubFiles) {
-        const pubFile = path.join(pubDir, f);
-        const srcFile = path.join(srcDir, f);
-        if (fs.statSync(pubFile).isFile() && !fs.existsSync(srcFile)) {
-          fs.copyFileSync(pubFile, srcFile);
-          console.log(`[Production Mirror Sync] Synced ${f} from public to src assets`);
-        }
-      }
-
-      // Purge redundant non-webp duplicate pairs ONLY in treatment/transformation subdirectories
-      // and NEVER delete any file actively referenced in clinicInfo.ts or siteCustomizations.json
-      const isRootGeneralAssetsPair = srcDir === srcAssetsDir || pubDir === publicAssetsDir;
-      if (!isRootGeneralAssetsPair) {
-        for (const dir of [pubDir, srcDir]) {
-          if (fs.existsSync(dir)) {
-            const allFiles = fs.readdirSync(dir);
-            for (const file of allFiles) {
-              const fullPath = path.join(dir, file);
-              if (!fs.statSync(fullPath).isFile()) continue;
-              const ext = path.extname(file).toLowerCase();
-              if (ext !== '.webp') {
-                if (isFileActivelyReferenced(file)) {
-                  continue;
-                }
-                const base = path.basename(file, ext);
-                if (fs.existsSync(path.join(dir, `${base}.webp`))) {
-                  try {
-                    fs.unlinkSync(fullPath);
-                    console.log(`[Cleaner] Purged redundant duplicate file: ${file}`);
-                  } catch {}
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-} catch (syncErr) {
-  console.warn('[Production Mirror] Initial synchronization notice:', syncErr);
-}
-
-// Serve uploaded and static assets
+// Serve uploaded and static assets from public/assets (and dist/assets in production)
 app.use('/uploads', express.static(uploadsDir));
 app.use('/assets/treatments', express.static(publicTreatmentsDir));
-app.use('/assets/treatments', express.static(srcTreatmentsDir));
 if (fs.existsSync(distTreatmentsDir)) {
   app.use('/assets/treatments', express.static(distTreatmentsDir));
 }
@@ -153,7 +64,6 @@ app.use('/assets/treatments', (_req, res) => {
 });
 
 app.use('/assets/transformations', express.static(publicTransformationsDir));
-app.use('/assets/transformations', express.static(srcTransformationsDir));
 if (fs.existsSync(distTransformationsDir)) {
   app.use('/assets/transformations', express.static(distTransformationsDir));
 }
@@ -162,8 +72,16 @@ app.use('/assets/transformations', (_req, res) => {
   res.status(404).end();
 });
 
+app.use('/assets/blog', express.static(publicBlogDir));
+if (fs.existsSync(distBlogDir)) {
+  app.use('/assets/blog', express.static(distBlogDir));
+}
+// Fast 404 for missing blog cover images so they never fall through to Vite SPA HTML middleware
+app.use('/assets/blog', (_req, res) => {
+  res.status(404).end();
+});
+
 app.use('/assets', express.static(publicAssetsDir));
-app.use('/assets', express.static(srcAssetsDir));
 if (fs.existsSync(distAssetsDir)) {
   app.use('/assets', express.static(distAssetsDir));
 }
@@ -180,51 +98,642 @@ const GROUP_TO_TRANSFORMATION_CATEGORY: Record<string, string> = {
   'clinical-hair': 'Hair Density',
   'body-sculpting': 'Lifting & Contouring',
   'advanced-facials': 'Skin Texture & Scars',
+  'botox': 'Facial Rejuvenation',
+  'sweat-botox': 'Facial Rejuvenation',
+  'dermal-fillers-1ml': 'Facial Rejuvenation',
+  'skin-boosters': 'Regenerative Biotech',
+  'polynucleotides': 'Regenerative Biotech',
+  'profhilo-2ml': 'Regenerative Biotech',
+  'salmon-sperm-injection': 'Regenerative Biotech',
+  'exosomes': 'Regenerative Biotech',
+  'sunekos': 'Regenerative Biotech',
+  'jalupro': 'Regenerative Biotech',
+  'lumi-eyes': 'Facial Rejuvenation',
+  'hifu-face-lifting': 'Lifting & Contouring',
+  'morpheus8-treatment': 'Lifting & Contouring',
+  'co2-laser-from': 'Skin Texture & Scars',
+  'thread-lifts': 'Lifting & Contouring',
+  'lip-fillers': 'Facial Rejuvenation',
+  'emface-skin-tightening-and-lifting': 'Lifting & Contouring',
+  'emscuplt-body-sculpt-and-tightening': 'Lifting & Contouring',
+  'buttock-sculpting-and-lifting': 'Lifting & Contouring',
+  'fat-dissolving-injections': 'Lifting & Contouring',
+  'vitamin-drips-and-shots': 'Regenerative Biotech',
+  'platelet-rich-plasma-prp': 'Hair Density',
+  'teeth-whitening': 'Facial Rejuvenation',
+  'facial-skin-care': 'Skin Texture & Scars',
 };
 
+const DEFAULT_PAIR_IDS_SET = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
+const galleryManifestPath = path.join(publicTransformationsDir, '_gallery_manifest.json');
+
+function isUnmodifiedDefaultPairObj(pair: any): boolean {
+  if (!pair || !DEFAULT_PAIR_IDS_SET.has(String(pair.id || ''))) return false;
+  if (pair.updatedAt) return false;
+  if (pair.singleFrameImage) return false;
+  const before = String(pair.beforeImage || '');
+  const after = String(pair.afterImage || '');
+  const isDefaultBefore = !before || before.startsWith('https://lh3.googleusercontent.com/aida');
+  const isDefaultAfter = !after || after.startsWith('https://lh3.googleusercontent.com/aida');
+  return isDefaultBefore && isDefaultAfter;
+}
+
+function sanitizePairIdForFile(pairId: string): string {
+  return String(pairId || 'pair')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function readGalleryManifestFromDisk(): any | null {
+  try {
+    if (fs.existsSync(galleryManifestPath)) {
+      const parsed = JSON.parse(fs.readFileSync(galleryManifestPath, 'utf-8'));
+      if (parsed && Array.isArray(parsed.categories)) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not read _gallery_manifest.json:', err);
+  }
+  return null;
+}
+
+function writeGalleryManifestToDisk(galleryConfig: any): void {
+  if (!galleryConfig || !Array.isArray(galleryConfig.categories)) return;
+  try {
+    if (!fs.existsSync(publicTransformationsDir)) {
+      fs.mkdirSync(publicTransformationsDir, { recursive: true });
+    }
+    writeFileAtomicallySync(galleryManifestPath, JSON.stringify(galleryConfig, null, 2));
+  } catch (err) {
+    console.warn('[Admin] Could not write _gallery_manifest.json:', err);
+  }
+}
+
+/**
+ * Resolves a pair's before/after image URL against physical files on disk in /public/assets/transformations/ or /public/assets/.
+ * Priority:
+ * 1. If a deterministic file `${cleanPairId}-${slot}.webp` exists on disk, prefer it over placeholders or missing files.
+ * 2. If `currentUrl` is a local `/assets/...` URL that exists on disk, return it with cache-busting `?v=${mtime}`.
+ * 3. Check timestamped or slug-based `.webp` files in `/public/assets/transformations/`.
+ */
+function resolveDiskTransformationImage(
+  pairId: string,
+  slot: 'before' | 'after' | 'single',
+  currentUrl?: string,
+  titleOrSlug?: string
+): string {
+  const rawUrl = String(currentUrl || '').trim();
+  const cleanPairId = sanitizePairIdForFile(pairId);
+
+  try {
+    if (!fs.existsSync(publicTransformationsDir)) {
+      return rawUrl;
+    }
+
+    const deterministicName = `${cleanPairId}-${slot}.webp`;
+    const deterministicPath = path.join(publicTransformationsDir, deterministicName);
+    const hasDeterministicFile = Boolean(cleanPairId && fs.existsSync(deterministicPath));
+
+    // 1. If rawUrl already points to a local /assets/ file, verify it exists on disk
+    if (rawUrl.startsWith('/assets/')) {
+      const cleanPathOnly = rawUrl.split('?')[0].split('#')[0];
+      const relativeFromAssets = cleanPathOnly.replace(/^\/assets\/+/, '');
+      const diskPath = path.join(publicAssetsDir, relativeFromAssets);
+      if (fs.existsSync(diskPath)) {
+        const mtime = Math.floor(fs.statSync(diskPath).mtimeMs);
+        // If deterministic slot file also exists and is newer than a different referenced file, use deterministic
+        if (hasDeterministicFile && path.resolve(diskPath) !== path.resolve(deterministicPath)) {
+          const detMtime = Math.floor(fs.statSync(deterministicPath).mtimeMs);
+          if (detMtime > mtime) {
+            return `/assets/transformations/${deterministicName}?v=${detMtime}`;
+          }
+        }
+        return rawUrl.includes('?v=') ? rawUrl : `${cleanPathOnly}?v=${mtime}`;
+      }
+    }
+
+    // 2. If deterministic file `${cleanPairId}-${slot}.webp` exists on disk, ALWAYS recover it
+    // when rawUrl is empty, a default Google placeholder, or a missing /assets/ file
+    const isCurrentPlaceholderOrMissingLocal =
+      !rawUrl ||
+      rawUrl.startsWith('https://lh3.googleusercontent.com/aida') ||
+      rawUrl.startsWith('/assets/');
+
+    if (hasDeterministicFile && isCurrentPlaceholderOrMissingLocal) {
+      const mtime = Math.floor(fs.statSync(deterministicPath).mtimeMs);
+      return `/assets/transformations/${deterministicName}?v=${mtime}`;
+    }
+
+    // 3. Fallback: check if any file in publicTransformationsDir matches `${cleanPairId}-${slot}-*.webp` or `ba-${slug}-${slot}*.webp`
+    if (isCurrentPlaceholderOrMissingLocal) {
+      const allFiles = fs.readdirSync(publicTransformationsDir).filter((f) =>
+        f.toLowerCase().endsWith('.webp')
+      );
+      const prefixes: string[] = [];
+      if (cleanPairId) {
+        prefixes.push(`${cleanPairId}-${slot}-`);
+        prefixes.push(`ba-${cleanPairId}-${slot}`);
+      }
+      if (titleOrSlug) {
+        const cleanSlug = sanitizePairIdForFile(titleOrSlug);
+        if (cleanSlug) {
+          prefixes.push(`ba-${cleanSlug}-${slot}`);
+          prefixes.push(`${cleanSlug}-${slot}`);
+        }
+      }
+
+      if (prefixes.length > 0) {
+        const matching = allFiles
+          .filter((f) => {
+            const lower = f.toLowerCase();
+            return prefixes.some((pref) => lower.startsWith(pref));
+          })
+          .map((f) => ({
+            name: f,
+            mtime: Math.floor(fs.statSync(path.join(publicTransformationsDir, f)).mtimeMs),
+          }))
+          .sort((a, b) => b.mtime - a.mtime);
+
+        if (matching.length > 0) {
+          return `/assets/transformations/${matching[0].name}?v=${matching[0].mtime}`;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin] Error resolving disk transformation image:', err);
+  }
+
+  return rawUrl;
+}
+
+/**
+ * Parses `ADMIN_SYNCED_TRANSFORMATION_CASES` from `/src/data/transformationsData.ts` on disk
+ * so any copy/pasted updates to transformationsData.ts are immediately recognized.
+ */
+function readTransformationsFromTsDisk(): any[] {
+  if (!fs.existsSync(transformationsDataPath)) return [];
+  try {
+    const content = fs.readFileSync(transformationsDataPath, 'utf-8');
+    const startMarker = 'export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] =';
+    const endMarker = 'export function getRecommendedTreatmentsForCase';
+    const startIdx = content.indexOf(startMarker);
+    const endIdx = content.indexOf(endMarker);
+    if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return [];
+
+    let jsonText = content.slice(startIdx + startMarker.length, endIdx).trim();
+    if (jsonText.endsWith(';')) {
+      jsonText = jsonText.slice(0, -1).trim();
+    }
+    const parsed = JSON.parse(jsonText);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn('[Admin] Could not parse ADMIN_SYNCED_TRANSFORMATION_CASES from transformationsData.ts:', err);
+    return [];
+  }
+}
+
+function caseToBeforeAfterPair(tc: any): any {
+  const id = String(tc.id || `pair-${Date.now()}`);
+  const groupId = String(tc.treatmentGroupId || tc.linkedTreatmentId || 'facial-skin-care');
+  const beforeImage = resolveDiskTransformationImage(
+    id,
+    'before',
+    tc.beforeImage,
+    tc.linkedTreatmentTitle || tc.title
+  );
+  const afterImage = resolveDiskTransformationImage(
+    id,
+    'after',
+    tc.afterImage,
+    tc.linkedTreatmentTitle || tc.title
+  );
+  const singleFrameImage = resolveDiskTransformationImage(
+    id,
+    'single',
+    tc.singleFrameImage,
+    tc.linkedTreatmentTitle || tc.title
+  );
+  return {
+    id,
+    title: tc.title || 'Clinical Transformation',
+    treatmentGroupId: groupId,
+    linkedTreatmentId: tc.linkedTreatmentId || groupId,
+    linkedTreatmentTitle: tc.linkedTreatmentTitle || tc.patientInfo || tc.tag || '',
+    beforeImage,
+    afterImage,
+    singleFrameImage: singleFrameImage || undefined,
+    beforeAltText: tc.beforeAltText || `${tc.title || 'Clinical'} Before Treatment at Age Reversal Clinics London`,
+    afterAltText: tc.afterAltText || `${tc.title || 'Clinical'} After Treatment Result at Age Reversal Clinics London`,
+    singleFrameAltText:
+      tc.singleFrameAltText ||
+      `${tc.title || 'Clinical'} Before & After Transformation at Age Reversal Clinics London`,
+    seoTitle: tc.seoTitle || tc.concern || `${tc.title || 'Clinical'} — Before & After Result | Age Reversal Clinics`,
+    seoKeywords: Array.isArray(tc.seoKeywords) ? tc.seoKeywords : [],
+    duration: tc.duration || '8 Weeks',
+    sessions: typeof tc.sessions === 'number' ? tc.sessions : 1,
+    featured: Boolean(tc.featured),
+    hidden: Boolean(tc.hidden),
+    updatedAt: tc.updatedAt || Date.now(),
+  };
+}
+
+function scoreBeforeAfterPairCompleteness(pair: any): number {
+  if (!pair) return 0;
+  let score = 0;
+  const before = String(pair.beforeImage || '');
+  const after = String(pair.afterImage || '');
+  const single = String(pair.singleFrameImage || '');
+  if (before.startsWith('/assets/transformations/') || before.startsWith('/assets/')) score += 50;
+  else if (before && !before.startsWith('https://lh3.googleusercontent.com/aida')) score += 25;
+  if (after.startsWith('/assets/transformations/') || after.startsWith('/assets/')) score += 50;
+  else if (after && !after.startsWith('https://lh3.googleusercontent.com/aida')) score += 25;
+  if (single.startsWith('/assets/transformations/') || single.startsWith('/assets/')) score += 50;
+  else if (single) score += 25;
+  if (pair.updatedAt) score += 10;
+  return score;
+}
+
+/**
+ * Reconciles Before & After gallery config across:
+ * 1) incomingConfig (from client or siteCustomizations.json)
+ * 2) existingJsonConfig (from siteCustomizations.json on disk)
+ * 3) manifestConfig (from /public/assets/transformations/_gallery_manifest.json on disk)
+ * 4) ADMIN_SYNCED_TRANSFORMATION_CASES (from transformationsData.ts on disk)
+ * 5) physical .webp files in /public/assets/transformations/
+ */
+function reconcileBeforeAfterGalleryConfig(
+  incomingConfig: any,
+  existingJsonConfig?: any,
+  options?: boolean | { allowDeletions?: boolean; deletedPairIds?: string[]; restoredDefaults?: boolean }
+): any {
+  const opts =
+    typeof options === 'boolean'
+      ? { allowDeletions: options, deletedPairIds: [], restoredDefaults: false }
+      : options || {};
+  const explicitDeletedIds = new Set<string>(
+    Array.isArray(opts.deletedPairIds) ? opts.deletedPairIds.map(String) : []
+  );
+
+  const manifestConfig = readGalleryManifestFromDisk();
+  const diskCases = readTransformationsFromTsDisk();
+
+  const baseConfig =
+    incomingConfig && Array.isArray(incomingConfig.categories) && incomingConfig.categories.length > 0
+      ? incomingConfig
+      : existingJsonConfig && Array.isArray(existingJsonConfig.categories) && existingJsonConfig.categories.length > 0
+      ? existingJsonConfig
+      : manifestConfig && Array.isArray(manifestConfig.categories) && manifestConfig.categories.length > 0
+      ? manifestConfig
+      : {
+          heading: 'Visible Transformations',
+          description: 'Explore our curated gallery of real patient results.',
+          categories: [],
+        };
+
+  const tsMtime = fs.existsSync(transformationsDataPath)
+    ? fs.statSync(transformationsDataPath).mtimeMs
+    : 0;
+  const jsonMtime = fs.existsSync(customizationsPath)
+    ? fs.statSync(customizationsPath).mtimeMs
+    : 0;
+  const preferTsOnTie = tsMtime > jsonMtime + 500;
+
+  // Map all categories in order
+  const categoryMap = new Map<string, { id: string; name: string; pairs: any[] }>();
+  for (const sourceCfg of [baseConfig, existingJsonConfig, manifestConfig]) {
+    for (const cat of sourceCfg?.categories || []) {
+      if (!cat || !cat.id) continue;
+      if (!categoryMap.has(String(cat.id))) {
+        categoryMap.set(String(cat.id), {
+          id: String(cat.id),
+          name: String(cat.name || cat.id),
+          pairs: [],
+        });
+      }
+    }
+  }
+
+  // Build map of incoming pairs
+  const incomingPairsById = new Map<string, { pair: any; groupId: string }>();
+  for (const cat of incomingConfig?.categories || []) {
+    if (!cat) continue;
+    for (const p of cat.pairs || []) {
+      if (!p || !p.id) continue;
+      const pairId = String(p.id);
+      if (explicitDeletedIds.has(pairId)) continue;
+      const groupId = String(p.treatmentGroupId || cat.id);
+      incomingPairsById.set(pairId, { pair: p, groupId });
+    }
+  }
+
+  // Build map of existing JSON pairs
+  const existingPairsById = new Map<string, { pair: any; groupId: string }>();
+  for (const cat of existingJsonConfig?.categories || []) {
+    if (!cat) continue;
+    for (const p of cat.pairs || []) {
+      if (!p || !p.id) continue;
+      const pairId = String(p.id);
+      if (explicitDeletedIds.has(pairId)) continue;
+      const groupId = String(p.treatmentGroupId || cat.id);
+      existingPairsById.set(pairId, { pair: p, groupId });
+    }
+  }
+
+  // Build map of disk manifest pairs
+  const manifestPairsById = new Map<string, { pair: any; groupId: string }>();
+  for (const cat of manifestConfig?.categories || []) {
+    if (!cat) continue;
+    for (const p of cat.pairs || []) {
+      if (!p || !p.id) continue;
+      const pairId = String(p.id);
+      if (explicitDeletedIds.has(pairId)) continue;
+      const groupId = String(p.treatmentGroupId || cat.id);
+      manifestPairsById.set(pairId, { pair: p, groupId });
+    }
+  }
+
+  // Build map of TS disk cases
+  const tsPairsById = new Map<string, { pair: any; groupId: string }>();
+  for (const tc of diskCases) {
+    if (!tc || !tc.id) continue;
+    const pairId = String(tc.id);
+    if (explicitDeletedIds.has(pairId)) continue;
+    const converted = caseToBeforeAfterPair(tc);
+    tsPairsById.set(pairId, {
+      pair: converted,
+      groupId: String(converted.treatmentGroupId || 'facial-skin-care'),
+    });
+  }
+
+  // Auto-discover any orphaned `*-before.webp` / `*-after.webp` pairs on disk in /public/assets/transformations/
+  const diskOrphanPairsById = new Map<string, { pair: any; groupId: string }>();
+  if (fs.existsSync(publicTransformationsDir)) {
+    try {
+      const files = fs.readdirSync(publicTransformationsDir);
+      const discoveredIds = new Set<string>();
+      for (const f of files) {
+        const match = f.match(/^(.+)-(before|after|single)\.webp$/i);
+        if (match && match[1]) {
+          discoveredIds.add(match[1]);
+        }
+      }
+      const defaultPairGroupMap: Record<string, string> = {
+        'pair-1': 'facial-skin-care',
+        'pair-2': 'co2-laser-from',
+        'pair-3': 'dermal-fillers-1ml',
+        'pair-4': 'platelet-rich-plasma-prp',
+        'pair-5': 'profhilo-2ml',
+        'pair-6': 'salmon-sperm-injection',
+        'pair-7': 'morpheus8-treatment',
+        'pair-8': 'emface-skin-tightening-and-lifting',
+      };
+      for (const discId of discoveredIds) {
+        if (explicitDeletedIds.has(discId)) continue;
+        if (
+          !incomingPairsById.has(discId) &&
+          !existingPairsById.has(discId) &&
+          !manifestPairsById.has(discId) &&
+          !tsPairsById.has(discId)
+        ) {
+          const beforeUrl = resolveDiskTransformationImage(discId, 'before', '');
+          const afterUrl = resolveDiskTransformationImage(discId, 'after', '');
+          const singleUrl = resolveDiskTransformationImage(discId, 'single', '');
+          if (beforeUrl || afterUrl || singleUrl) {
+            const gId = defaultPairGroupMap[discId] || 'facial-skin-care';
+            diskOrphanPairsById.set(discId, {
+              groupId: gId,
+              pair: {
+                id: discId,
+                title: 'Clinical Transformation',
+                treatmentGroupId: gId,
+                linkedTreatmentId: gId,
+                linkedTreatmentTitle: '',
+                beforeImage: beforeUrl,
+                afterImage: afterUrl,
+                singleFrameImage: singleUrl || undefined,
+                duration: '8 Weeks',
+                sessions: 1,
+                featured: false,
+                hidden: false,
+                updatedAt: Date.now(),
+              },
+            });
+          }
+        }
+      }
+    } catch (scanErr) {
+      console.warn('[Admin] Could not scan /public/assets/transformations/ for pairs:', scanErr);
+    }
+  }
+
+  // Always keep the union of all known pairs unless explicitly in deletedPairIds
+  const allPairIds = new Set<string>();
+  incomingPairsById.forEach((_, id) => allPairIds.add(id));
+  existingPairsById.forEach((_, id) => allPairIds.add(id));
+  manifestPairsById.forEach((_, id) => allPairIds.add(id));
+  tsPairsById.forEach((_, id) => allPairIds.add(id));
+  diskOrphanPairsById.forEach((_, id) => allPairIds.add(id));
+
+  for (const pairId of allPairIds) {
+    if (explicitDeletedIds.has(pairId)) continue;
+
+    const inc = incomingPairsById.get(pairId);
+    const ex = existingPairsById.get(pairId);
+    const mf = manifestPairsById.get(pairId);
+    const ts = tsPairsById.get(pairId);
+    const orphan = diskOrphanPairsById.get(pairId);
+
+    // Choose best version of this pair
+    let chosen = inc?.pair || ex?.pair || mf?.pair || ts?.pair || orphan?.pair;
+    let chosenGroupId =
+      inc?.groupId || ex?.groupId || mf?.groupId || ts?.groupId || orphan?.groupId || 'facial-skin-care';
+
+    const candidates = [inc, ex, mf, ts, orphan].filter(Boolean) as Array<{ pair: any; groupId: string }>;
+    if (candidates.length > 1) {
+      for (const cand of candidates) {
+        const chosenScore = scoreBeforeAfterPairCompleteness(chosen);
+        const candScore = scoreBeforeAfterPairCompleteness(cand.pair);
+        const chosenTime = Number(chosen?.updatedAt || 0);
+        const candTime = Number(cand.pair?.updatedAt || 0);
+
+        if (isUnmodifiedDefaultPairObj(chosen) && !isUnmodifiedDefaultPairObj(cand.pair)) {
+          chosen = cand.pair;
+          chosenGroupId = cand.groupId;
+        } else if (candScore > chosenScore && candTime >= chosenTime) {
+          chosen = cand.pair;
+          chosenGroupId = cand.groupId;
+        } else if (candScore > chosenScore && isUnmodifiedDefaultPairObj(chosen)) {
+          chosen = cand.pair;
+          chosenGroupId = cand.groupId;
+        } else if (candTime > chosenTime && !isUnmodifiedDefaultPairObj(cand.pair)) {
+          chosen = cand.pair;
+          chosenGroupId = cand.groupId;
+        }
+      }
+
+      if (preferTsOnTie && ts && !isUnmodifiedDefaultPairObj(ts.pair)) {
+        const tsScore = scoreBeforeAfterPairCompleteness(ts.pair);
+        const chosenScore = scoreBeforeAfterPairCompleteness(chosen);
+        if (tsScore >= chosenScore) {
+          chosen = { ...chosen, ...ts.pair };
+          chosenGroupId = ts.groupId || chosenGroupId;
+        }
+      }
+    }
+
+    const allBeforeUrls = [
+      chosen?.beforeImage,
+      inc?.pair?.beforeImage,
+      ex?.pair?.beforeImage,
+      mf?.pair?.beforeImage,
+      ts?.pair?.beforeImage,
+      orphan?.pair?.beforeImage,
+    ];
+    const allAfterUrls = [
+      chosen?.afterImage,
+      inc?.pair?.afterImage,
+      ex?.pair?.afterImage,
+      mf?.pair?.afterImage,
+      ts?.pair?.afterImage,
+      orphan?.pair?.afterImage,
+    ];
+    const allSingleUrls = [
+      chosen?.singleFrameImage,
+      inc?.pair?.singleFrameImage,
+      ex?.pair?.singleFrameImage,
+      mf?.pair?.singleFrameImage,
+      ts?.pair?.singleFrameImage,
+      orphan?.pair?.singleFrameImage,
+    ];
+
+    // Preserve local /assets/transformations/ or /assets/ images if another candidate had them and chosen had a placeholder
+    const bestBefore =
+      allBeforeUrls.find((u) => String(u || '').startsWith('/assets/transformations/')) ||
+      allBeforeUrls.find((u) => String(u || '').startsWith('/assets/')) ||
+      allBeforeUrls.find((u) => u && !String(u).startsWith('https://lh3.googleusercontent.com/aida')) ||
+      chosen?.beforeImage ||
+      '';
+
+    const bestAfter =
+      allAfterUrls.find((u) => String(u || '').startsWith('/assets/transformations/')) ||
+      allAfterUrls.find((u) => String(u || '').startsWith('/assets/')) ||
+      allAfterUrls.find((u) => u && !String(u).startsWith('https://lh3.googleusercontent.com/aida')) ||
+      chosen?.afterImage ||
+      '';
+
+    const bestSingle =
+      allSingleUrls.find((u) => String(u || '').startsWith('/assets/transformations/')) ||
+      allSingleUrls.find((u) => String(u || '').startsWith('/assets/')) ||
+      allSingleUrls.find((u) => Boolean(u)) ||
+      chosen?.singleFrameImage ||
+      '';
+
+    const titleHint = chosen?.linkedTreatmentTitle || chosen?.title || '';
+    const resolvedBefore = resolveDiskTransformationImage(pairId, 'before', bestBefore, titleHint);
+    const resolvedAfter = resolveDiskTransformationImage(pairId, 'after', bestAfter, titleHint);
+    const resolvedSingle = resolveDiskTransformationImage(pairId, 'single', bestSingle, titleHint);
+
+    const targetGroupId = String(chosen?.treatmentGroupId || chosenGroupId || 'facial-skin-care');
+    if (!categoryMap.has(targetGroupId)) {
+      categoryMap.set(targetGroupId, {
+        id: targetGroupId,
+        name: chosen?.linkedTreatmentTitle || targetGroupId,
+        pairs: [],
+      });
+    }
+
+    const hasResolvedCustomImage =
+      resolvedBefore.startsWith('/assets/') ||
+      resolvedAfter.startsWith('/assets/') ||
+      resolvedSingle.startsWith('/assets/');
+
+    const finalPair = {
+      ...chosen,
+      id: pairId,
+      treatmentGroupId: targetGroupId,
+      beforeImage: resolvedBefore,
+      afterImage: resolvedAfter,
+      singleFrameImage: resolvedSingle || undefined,
+      singleFrameAltText:
+        chosen?.singleFrameAltText ||
+        inc?.pair?.singleFrameAltText ||
+        ex?.pair?.singleFrameAltText ||
+        mf?.pair?.singleFrameAltText ||
+        ts?.pair?.singleFrameAltText ||
+        undefined,
+      updatedAt: chosen?.updatedAt || (hasResolvedCustomImage ? Date.now() : undefined),
+    };
+
+    categoryMap.get(targetGroupId)!.pairs.push(finalPair);
+  }
+
+  return {
+    heading: baseConfig.heading || 'Visible Transformations',
+    description:
+      baseConfig.description ||
+      'Explore our curated gallery of real patient results. Slide to compare before and after clinical treatments.',
+    categories: Array.from(categoryMap.values()),
+  };
+}
+
 function syncTransformationsDataTs(galleryConfig: any): void {
-  if (!galleryConfig || !Array.isArray(galleryConfig.categories) || !fs.existsSync(transformationsDataPath)) {
+  if (!galleryConfig || !Array.isArray(galleryConfig.categories)) {
+    return;
+  }
+
+  // Always keep the persistent manifest in /public/assets/transformations/_gallery_manifest.json in sync
+  writeGalleryManifestToDisk(galleryConfig);
+
+  if (!fs.existsSync(transformationsDataPath)) {
     return;
   }
   try {
-    const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
-    const isUnmodifiedDefaultPair = (pair: any): boolean => {
-      if (!defaultPairIds.has(pair.id)) return false;
-      if (pair.updatedAt) return false;
-      const before = String(pair.beforeImage || '');
-      const after = String(pair.afterImage || '');
-      return (
-        before.startsWith('https://lh3.googleusercontent.com/aida') &&
-        after.startsWith('https://lh3.googleusercontent.com/aida')
-      );
-    };
     const syncedCases: any[] = [];
+    const seenIds = new Set<string>();
 
     for (const cat of galleryConfig.categories) {
       const mappedCategory = GROUP_TO_TRANSFORMATION_CATEGORY[cat.id] || 'Facial Rejuvenation';
       for (const pair of cat.pairs || []) {
-        if (!pair || pair.hidden || isUnmodifiedDefaultPair(pair)) continue;
+        if (!pair || !pair.id || seenIds.has(pair.id)) continue;
+        seenIds.add(pair.id);
+
+        const titleHint = pair.linkedTreatmentTitle || pair.title || '';
+        const resolvedBefore = resolveDiskTransformationImage(pair.id, 'before', pair.beforeImage, titleHint);
+        const resolvedAfter = resolveDiskTransformationImage(pair.id, 'after', pair.afterImage, titleHint);
+        const resolvedSingle = resolveDiskTransformationImage(
+          pair.id,
+          'single',
+          pair.singleFrameImage,
+          titleHint
+        );
+
         syncedCases.push({
           id: pair.id,
           title: pair.title,
           category: mappedCategory,
-          tag: cat.name,
-          patientInfo: pair.linkedTreatmentTitle || cat.name,
+          tag: cat.name || pair.linkedTreatmentTitle || 'Clinical Transformation',
+          patientInfo: pair.linkedTreatmentTitle || cat.name || 'Clinical Transformation',
           duration: pair.duration || '8 Weeks',
           sessions: pair.sessions || 1,
           concern: pair.seoTitle || `${pair.title} clinical transformation at Age Reversal Clinics.`,
-          beforeImage: pair.beforeImage,
-          afterImage: pair.afterImage,
-          galleryImages: [pair.beforeImage, pair.afterImage],
+          beforeImage: resolvedBefore,
+          afterImage: resolvedAfter,
+          singleFrameImage: resolvedSingle || undefined,
+          galleryImages: resolvedSingle ? [resolvedSingle] : [resolvedBefore, resolvedAfter].filter(Boolean),
           recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : ['exosome', 'profhilo'],
           recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
           treatmentGroupId: pair.treatmentGroupId || cat.id,
-          linkedTreatmentId: pair.linkedTreatmentId,
+          linkedTreatmentId: pair.linkedTreatmentId || cat.id,
+          linkedTreatmentTitle: pair.linkedTreatmentTitle || cat.name,
           beforeAltText: pair.beforeAltText,
           afterAltText: pair.afterAltText,
+          singleFrameAltText: pair.singleFrameAltText,
           seoTitle: pair.seoTitle,
           seoKeywords: pair.seoKeywords || [],
           featured: Boolean(pair.featured),
+          hidden: Boolean(pair.hidden),
           updatedAt: pair.updatedAt || Date.now(),
         });
       }
@@ -241,8 +750,10 @@ function syncTransformationsDataTs(galleryConfig: any): void {
         existingContent.slice(0, startIdx) +
         `${startMarker} ${JSON.stringify(syncedCases, null, 2)};\n\n` +
         existingContent.slice(endIdx);
-      fs.writeFileSync(transformationsDataPath, updatedTs, 'utf-8');
-      console.log(`[Admin] Synced ${syncedCases.length} Before & After transformation case(s) to ${transformationsDataPath}`);
+      if (updatedTs !== existingContent) {
+        writeFileAtomicallySync(transformationsDataPath, updatedTs);
+        console.log(`[Admin] Synced ${syncedCases.length} Before & After transformation case(s) to ${transformationsDataPath}`);
+      }
     }
   } catch (err) {
     console.warn('[Admin] Could not sync transformationsData.ts:', err);
@@ -293,8 +804,10 @@ function syncSpecialistTreatmentsTs(services: any[]): void {
         existingContent.slice(0, startIdx) +
         `${startMarker} ${JSON.stringify(cleanedItems, null, 2)};\n\n` +
         existingContent.slice(endIdx);
-      fs.writeFileSync(specialistTreatmentsPath, updatedTs, 'utf-8');
-      console.log(`[Admin] Synced ${cleanedItems.length} specialist services (and images) to ${specialistTreatmentsPath}`);
+      if (updatedTs !== existingContent) {
+        fs.writeFileSync(specialistTreatmentsPath, updatedTs, 'utf-8');
+        console.log(`[Admin] Synced ${cleanedItems.length} specialist services (and images) to ${specialistTreatmentsPath}`);
+      }
     }
   } catch (err) {
     console.warn('[Admin] Could not sync specialistTreatments.ts:', err);
@@ -433,12 +946,644 @@ function syncHomepageTreatmentsDataTs(treatmentsConfig: any): void {
         existingContent.slice(0, startIdx) +
         `${startMarker} ${JSON.stringify(projectedList, null, 2)};\n\n` +
         existingContent.slice(endIdx);
-      fs.writeFileSync(dataTsPath, updatedTs, 'utf-8');
-      console.log(`[Admin] Synced ${projectedList.length} Homepage Treatments (with SEO metadata) to ${dataTsPath}`);
+      if (updatedTs !== existingContent) {
+        fs.writeFileSync(dataTsPath, updatedTs, 'utf-8');
+        console.log(`[Admin] Synced ${projectedList.length} Homepage Treatments (with SEO metadata) to ${dataTsPath}`);
+      }
     }
   } catch (err) {
     console.warn('[Admin] Could not sync homepage treatments to src/data.ts:', err);
   }
+}
+
+// ============================================================================
+// BLOG & CLINICAL JOURNAL: SEO SCORE, PROJECTION & DISK PERSISTENCE HELPERS
+// ============================================================================
+function slugifyBlogText(value: string, fallback: string = 'clinical-article'): string {
+  const cleaned = String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return cleaned || fallback;
+}
+
+function estimateServerReadingTime(article: any): string {
+  if (typeof article?.readingTime === 'string' && article.readingTime.trim()) {
+    return article.readingTime.trim();
+  }
+  const blockWords = Array.isArray(article?.contentBlocks)
+    ? article.contentBlocks
+        .map((b: any) =>
+          [
+            b?.heading || '',
+            b?.text || '',
+            ...(Array.isArray(b?.paragraphs) ? b.paragraphs : []),
+            b?.calloutQuote || '',
+            ...(Array.isArray(b?.bulletPoints) ? b.bulletPoints : []),
+          ].join(' ')
+        )
+        .join(' ')
+    : '';
+  const totalWords = `${article?.title || ''} ${article?.description || ''} ${blockWords}`
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const mins = Math.max(2, Math.ceil(totalWords / 180));
+  return `${mins} min read`;
+}
+
+function computeServerArticleSeoScore(article: any): {
+  score: number;
+  grade: 'optimized' | 'needs-attention';
+} {
+  const effectiveTitle = String(article?.seoTitle || article?.title || '').trim();
+  const effectiveMeta = String(article?.metaDescription || article?.description || '').trim();
+  const keywords: string[] = Array.isArray(article?.focusKeywords)
+    ? article.focusKeywords.map((k: unknown) => String(k || '').trim()).filter(Boolean)
+    : [];
+  const primaryKeyword = (keywords[0] || '').toLowerCase();
+  const slug = String(article?.slug || slugifyBlogText(article?.title || '')).toLowerCase();
+  const imageAlt = String(article?.imageAlt || '').trim();
+  const hasBlocks =
+    (Array.isArray(article?.contentBlocks) && article.contentBlocks.length > 0) ||
+    (Array.isArray(article?.faqItems) && article.faqItems.length > 0);
+
+  let score = 0;
+  if (effectiveTitle.length >= 30 && effectiveTitle.length <= 65) score += 20;
+  else if (effectiveTitle.length >= 15) score += 10;
+
+  if (effectiveMeta.length >= 100 && effectiveMeta.length <= 165) score += 20;
+  else if (effectiveMeta.length >= 50) score += 10;
+
+  if (keywords.length > 0) score += 20;
+
+  if (
+    primaryKeyword &&
+    (effectiveTitle.toLowerCase().includes(primaryKeyword) ||
+      slug.includes(slugifyBlogText(primaryKeyword, '')))
+  ) {
+    score += 15;
+  } else if (keywords.length > 0) {
+    score += 8;
+  }
+
+  if (imageAlt.length >= 10) score += 15;
+  if (hasBlocks) score += 10;
+
+  const clamped = Math.min(100, Math.max(0, score));
+  return {
+    score: clamped,
+    grade: clamped >= 75 ? 'optimized' : 'needs-attention',
+  };
+}
+
+function resolveDiskBlogImageById(rawId: string, currentImage?: string): string {
+  const cleanId = String(rawId || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  const trimmedCurrent = String(currentImage || '').trim();
+
+  // 1. Always check if a local file named ${cleanId}${ext} exists on disk in /public/assets/blog/
+  // If the user uploaded a custom blog image for this post/block ID, it MUST always take priority
+  // over any default external placeholder URL.
+  if (cleanId && fs.existsSync(publicBlogDir)) {
+    try {
+      const files = fs.readdirSync(publicBlogDir);
+      const matched = files.find((f) => {
+        const ext = path.extname(f);
+        const base = path.basename(f, ext).toLowerCase();
+        return base === cleanId && ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'].includes(ext.toLowerCase());
+      });
+      if (matched) {
+        const fullPath = path.join(publicBlogDir, matched);
+        const stat = fs.statSync(fullPath);
+        const ext = path.extname(matched).toLowerCase() || '.webp';
+        const expectedCleanPath = `/assets/blog/${cleanId}${ext}`;
+        if (trimmedCurrent.startsWith(expectedCleanPath) && trimmedCurrent.includes('?v=')) {
+          return trimmedCurrent;
+        }
+        return `${expectedCleanPath}?v=${Math.floor(stat.mtimeMs || Date.now())}`;
+      }
+    } catch {}
+  }
+
+  // 2. If currentImage is a /assets/blog/ URL with another filename, verify it exists on disk and has ?v=
+  if (trimmedCurrent.startsWith('/assets/blog/')) {
+    const cleanPath = trimmedCurrent.split('?')[0].split('#')[0].trim();
+    const fileName = path.basename(cleanPath);
+    const pubCandidate = path.join(publicBlogDir, fileName);
+    if (fs.existsSync(pubCandidate)) {
+      if (trimmedCurrent.includes('?v=')) {
+        return trimmedCurrent;
+      }
+      try {
+        const stat = fs.statSync(pubCandidate);
+        return `${cleanPath}?v=${Math.floor(stat.mtimeMs || Date.now())}`;
+      } catch {
+        return `${cleanPath}?v=${Date.now()}`;
+      }
+    }
+  }
+
+  return trimmedCurrent;
+}
+
+function collectAllBlogImagePaths(posts: any[]): Set<string> {
+  const urls = new Set<string>();
+  for (const post of posts) {
+    if (typeof post?.image === 'string' && post.image.startsWith('/assets/blog/')) {
+      urls.add(post.image.split('?')[0].split('#')[0].trim());
+    }
+    if (Array.isArray(post?.contentBlocks)) {
+      for (const block of post.contentBlocks) {
+        if (typeof block?.imageUrl === 'string' && block.imageUrl.startsWith('/assets/blog/')) {
+          urls.add(block.imageUrl.split('?')[0].split('#')[0].trim());
+        }
+      }
+    }
+  }
+  return urls;
+}
+
+function normalizeServerArticle(raw: any, defaultType: 'news' | 'stories' = 'news', idx: number = 0): any {
+  const title = String(raw?.title || `Untitled Clinical Post ${idx + 1}`).trim();
+  const type: 'news' | 'stories' =
+    raw?.type === 'stories' || raw?.type === 'news' ? raw.type : defaultType;
+  const id =
+    String(raw?.id || '').trim() ||
+    `${type === 'stories' ? 'story' : 'news'}-${Date.now()}-${idx}`;
+  const cleanId = id
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+  const slug = slugifyBlogText(raw?.slug || title, id);
+  const status: 'published' | 'draft' = raw?.status === 'draft' ? 'draft' : 'published';
+  const nowIso = new Date().toISOString();
+  const publishedAt = String(raw?.publishedAt || nowIso).trim();
+  const updatedAt = String(raw?.updatedAt || publishedAt).trim();
+  const date =
+    String(raw?.date || '').trim() ||
+    new Date(publishedAt).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  const tag = String(raw?.tag || raw?.category || (type === 'stories' ? 'Patient Story' : 'Clinical News')).trim();
+  const category = String(raw?.category || tag).trim();
+  const author = String(raw?.author || 'Adv. Faith Chris').trim();
+  const description = String(raw?.description || '').trim();
+  const image = resolveDiskBlogImageById(id, raw?.image);
+  const imageAlt = String(
+    raw?.imageAlt || `${title} — ${category} at Age Reversal Clinic`
+  ).trim();
+  const seoTitle = String(
+    raw?.seoTitle || `${title} | Age Reversal Clinic`
+  ).trim();
+  const metaDescription = String(
+    raw?.metaDescription || description || `${title} clinical insights at Age Reversal Clinic.`
+  ).trim();
+  const focusKeywords = Array.isArray(raw?.focusKeywords)
+    ? Array.from(
+        new Set(
+          raw.focusKeywords
+            .map((k: unknown) => String(k || '').trim())
+            .filter(Boolean)
+        )
+      )
+    : [category.toLowerCase(), 'age reversal clinic', 'clinical aesthetics'];
+  const canonicalUrl = String(raw?.canonicalUrl || `#article-${id}`).trim();
+  const readingTime = estimateServerReadingTime(raw);
+  const contentBlocks = Array.isArray(raw?.contentBlocks)
+    ? raw.contentBlocks.map((block: any, bIdx: number) => {
+        if (block && block.type === 'image') {
+          const blockAssetId = `${id}-${block.id || `block-${bIdx + 1}`}`;
+          return {
+            ...block,
+            imageUrl: resolveDiskBlogImageById(blockAssetId, block.imageUrl),
+          };
+        }
+        return block;
+      })
+    : [];
+
+  // Auto-recover any inline block image on disk matching ${cleanId}-block-* that might have been dropped by a stale config sync
+  if (cleanId && fs.existsSync(publicBlogDir)) {
+    try {
+      const prefix = `${cleanId}-block-`;
+      const files = fs.readdirSync(publicBlogDir);
+      for (const f of files) {
+        const ext = path.extname(f).toLowerCase();
+        if (!['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'].includes(ext)) continue;
+        const base = path.basename(f, ext).toLowerCase();
+        if (base.startsWith(prefix)) {
+          const extractedBlockId = base.slice(cleanId.length + 1); // e.g. "block-1793612033457-wvlq"
+          const cleanPath = `/assets/blog/${f}`;
+          const stat = fs.statSync(path.join(publicBlogDir, f));
+          const versionedUrl = `${cleanPath}?v=${Math.floor(stat.mtimeMs || Date.now())}`;
+          const existingIdx = contentBlocks.findIndex(
+            (b: any) =>
+              b &&
+              (String(b.id || '').toLowerCase() === extractedBlockId ||
+                (typeof b.imageUrl === 'string' && b.imageUrl.split('?')[0].toLowerCase() === cleanPath.toLowerCase()))
+          );
+          if (existingIdx !== -1) {
+            if (!contentBlocks[existingIdx].imageUrl || !String(contentBlocks[existingIdx].imageUrl).startsWith('/assets/blog/')) {
+              contentBlocks[existingIdx] = {
+                ...contentBlocks[existingIdx],
+                type: 'image',
+                imageUrl: versionedUrl,
+              };
+            }
+          } else {
+            contentBlocks.push({
+              id: extractedBlockId,
+              type: 'image',
+              imageUrl: versionedUrl,
+              imageAlt: `${title} — ${category} illustration`,
+              imageCaption: '',
+            });
+          }
+        }
+      }
+    } catch {}
+  }
+
+  const faqItems = Array.isArray(raw?.faqItems) ? raw.faqItems : [];
+
+  return {
+    id,
+    slug,
+    type,
+    status,
+    title,
+    description,
+    image,
+    imageAlt,
+    date,
+    publishedAt,
+    updatedAt,
+    readingTime,
+    author,
+    tag,
+    category,
+    seoTitle,
+    metaDescription,
+    focusKeywords,
+    canonicalUrl,
+    contentBlocks,
+    faqItems,
+  };
+}
+
+/**
+ * Exact Summary Column Projection for Paginated Blog Cards:
+ * Strips out heavy contentBlocks[] and faqItems[] arrays.
+ */
+function projectServerBlogPostCard(article: any) {
+  const normalized = normalizeServerArticle(article, article?.type || 'news');
+  const { score, grade } = computeServerArticleSeoScore(normalized);
+  return {
+    id: normalized.id,
+    slug: normalized.slug,
+    title: normalized.title,
+    description: normalized.description,
+    category: normalized.category,
+    tag: normalized.tag,
+    type: normalized.type,
+    status: normalized.status,
+    date: normalized.date,
+    publishedAt: normalized.publishedAt,
+    updatedAt: normalized.updatedAt,
+    author: normalized.author,
+    readingTime: normalized.readingTime,
+    image: normalized.image,
+    imageAlt: normalized.imageAlt,
+    seoScore: score,
+    seoGrade: grade,
+  };
+}
+
+function syncBlogArticlesDataTs(newsArticles: any[], storyArticles: any[]): void {
+  if (!fs.existsSync(dataTsPath)) return;
+  try {
+    const cleanNews = (Array.isArray(newsArticles) ? newsArticles : []).map((a, idx) =>
+      normalizeServerArticle(a, 'news', idx)
+    );
+    const cleanStories = (Array.isArray(storyArticles) ? storyArticles : []).map((a, idx) =>
+      normalizeServerArticle(a, 'stories', idx)
+    );
+
+    const existingContent = fs.readFileSync(dataTsPath, 'utf-8');
+    const newsStartMarker = 'export const NEWS_ARTICLES: Article[] =';
+    const storyStartMarker = 'export const STORY_ARTICLES: Article[] =';
+    const newsIdx = existingContent.indexOf(newsStartMarker);
+
+    if (newsIdx !== -1 && existingContent.includes(storyStartMarker)) {
+      const updatedTs =
+        existingContent.slice(0, newsIdx) +
+        `${newsStartMarker} ${JSON.stringify(cleanNews, null, 2)};\n\n` +
+        `${storyStartMarker} ${JSON.stringify(cleanStories, null, 2)};\n`;
+      if (updatedTs !== existingContent) {
+        fs.writeFileSync(dataTsPath, updatedTs, 'utf-8');
+        console.log(
+          `[Admin] Synced ${cleanNews.length} news & ${cleanStories.length} story articles directly to ${dataTsPath}`
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not sync blog articles to src/data.ts:', err);
+  }
+}
+
+/**
+ * Dynamically reads NEWS_ARTICLES and STORY_ARTICLES from src/data.ts on disk
+ * so that if a user copies and pastes an updated src/data.ts file to replace the old one,
+ * the server immediately sees the new articles and images without needing a server restart.
+ */
+function readBlogArticlesFromDataTsDisk(): {
+  newsArticles: any[];
+  storyArticles: any[];
+} {
+  if (!fs.existsSync(dataTsPath)) {
+    return { newsArticles: NEWS_ARTICLES, storyArticles: STORY_ARTICLES };
+  }
+  try {
+    const content = fs.readFileSync(dataTsPath, 'utf-8');
+    const newsStartMarker = 'export const NEWS_ARTICLES: Article[] =';
+    const storyStartMarker = 'export const STORY_ARTICLES: Article[] =';
+    const newsIdx = content.indexOf(newsStartMarker);
+    const storyIdx = content.indexOf(storyStartMarker);
+    if (newsIdx !== -1 && storyIdx !== -1 && storyIdx > newsIdx) {
+      const newsRaw = content
+        .slice(newsIdx + newsStartMarker.length, storyIdx)
+        .trim()
+        .replace(/;\s*$/, '');
+      const storyRaw = content
+        .slice(storyIdx + storyStartMarker.length)
+        .trim()
+        .replace(/;\s*$/, '');
+      const parsedNews = JSON.parse(newsRaw);
+      const parsedStories = JSON.parse(storyRaw);
+      if (Array.isArray(parsedNews) && Array.isArray(parsedStories)) {
+        return { newsArticles: parsedNews, storyArticles: parsedStories };
+      }
+    }
+  } catch {
+    // Fallback if src/data.ts uses non-JSON TS syntax
+  }
+  return { newsArticles: NEWS_ARTICLES, storyArticles: STORY_ARTICLES };
+}
+
+function countLocalBlogAssets(article: any): number {
+  if (!article || typeof article !== 'object') return 0;
+  let count = 0;
+  if (typeof article.image === 'string' && article.image.startsWith('/assets/blog/')) {
+    count += 2;
+  }
+  if (Array.isArray(article.contentBlocks)) {
+    for (const b of article.contentBlocks) {
+      if (typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')) {
+        count += 2;
+      } else if (b?.type === 'image') {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+function reconcileBlogArticleLists(
+  primaryList: any[],
+  secondaryList: any[],
+  defaultType: 'news' | 'stories'
+): any[] {
+  const pArr = Array.isArray(primaryList) ? primaryList : [];
+  const sArr = Array.isArray(secondaryList) ? secondaryList : [];
+  if (pArr.length === 0) {
+    return sArr.map((a, idx) => normalizeServerArticle(a, defaultType, idx));
+  }
+  if (sArr.length === 0) {
+    return pArr.map((a, idx) => normalizeServerArticle(a, defaultType, idx));
+  }
+
+  const secondaryById = new Map<string, any>();
+  for (const item of sArr) {
+    if (item && item.id) {
+      secondaryById.set(String(item.id), item);
+    }
+  }
+
+  const seenIds = new Set<string>();
+  const merged: any[] = [];
+
+  for (let i = 0; i < pArr.length; i++) {
+    const pItem = pArr[i];
+    if (!pItem || !pItem.id) continue;
+    const idStr = String(pItem.id);
+    seenIds.add(idStr);
+    const sItem = secondaryById.get(idStr);
+
+    if (!sItem) {
+      merged.push(normalizeServerArticle(pItem, defaultType, i));
+      continue;
+    }
+
+    const pNorm = normalizeServerArticle(pItem, defaultType, i);
+    const sNorm = normalizeServerArticle(sItem, defaultType, i);
+
+    const pAssets = countLocalBlogAssets(pNorm);
+    const sAssets = countLocalBlogAssets(sNorm);
+    const pTime = Date.parse(pNorm.updatedAt || pNorm.publishedAt || '') || 0;
+    const sTime = Date.parse(sNorm.updatedAt || sNorm.publishedAt || '') || 0;
+
+    // Pick base article by newer updatedAt or richer local /assets/blog/ assets
+    const base = sTime > pTime || (sTime === pTime && sAssets > pAssets) ? { ...pNorm, ...sNorm } : { ...sNorm, ...pNorm };
+
+    // Always preserve /assets/blog/ cover image if either source has one
+    if (
+      typeof sNorm.image === 'string' &&
+      sNorm.image.startsWith('/assets/blog/') &&
+      (!base.image || !String(base.image).startsWith('/assets/blog/'))
+    ) {
+      base.image = sNorm.image;
+      base.imageAlt = sNorm.imageAlt || base.imageAlt;
+    } else if (
+      typeof pNorm.image === 'string' &&
+      pNorm.image.startsWith('/assets/blog/') &&
+      (!base.image || !String(base.image).startsWith('/assets/blog/'))
+    ) {
+      base.image = pNorm.image;
+      base.imageAlt = pNorm.imageAlt || base.imageAlt;
+    }
+
+    // Preserve contentBlocks that have /assets/blog/ images or more blocks if timestamps are equal
+    const pBlockAssets = (pNorm.contentBlocks || []).filter(
+      (b: any) => typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')
+    ).length;
+    const sBlockAssets = (sNorm.contentBlocks || []).filter(
+      (b: any) => typeof b?.imageUrl === 'string' && b.imageUrl.startsWith('/assets/blog/')
+    ).length;
+    if (sBlockAssets > pBlockAssets) {
+      base.contentBlocks = sNorm.contentBlocks;
+    } else if (pBlockAssets > sBlockAssets) {
+      base.contentBlocks = pNorm.contentBlocks;
+    } else if (
+      sTime === pTime &&
+      Array.isArray(sNorm.contentBlocks) &&
+      sNorm.contentBlocks.length > (base.contentBlocks?.length || 0)
+    ) {
+      base.contentBlocks = sNorm.contentBlocks;
+    }
+
+    merged.push(normalizeServerArticle(base, defaultType, i));
+  }
+
+  for (let j = 0; j < sArr.length; j++) {
+    const sItem = sArr[j];
+    if (sItem && sItem.id && !seenIds.has(String(sItem.id))) {
+      seenIds.add(String(sItem.id));
+      merged.push(normalizeServerArticle(sItem, defaultType, merged.length));
+    }
+  }
+
+  return merged;
+}
+
+function getServerBlogConfig(): {
+  heading: string;
+  description: string;
+  newsArticles: any[];
+  storyArticles: any[];
+} {
+  let rawConfig: any = null;
+  let customizationsMtime = 0;
+  if (fs.existsSync(customizationsPath)) {
+    try {
+      customizationsMtime = fs.statSync(customizationsPath).mtimeMs || 0;
+      const existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      if (existing && existing.homepage_latest_news_config) {
+        rawConfig = existing.homepage_latest_news_config;
+      }
+    } catch {
+      rawConfig = null;
+    }
+  }
+
+  let dataTsMtime = 0;
+  if (fs.existsSync(dataTsPath)) {
+    try {
+      dataTsMtime = fs.statSync(dataTsPath).mtimeMs || 0;
+    } catch {}
+  }
+
+  const diskDataTs = readBlogArticlesFromDataTsDisk();
+  const hasSavedNews = Array.isArray(rawConfig?.newsArticles) && rawConfig.newsArticles.length > 0;
+  const hasSavedStories = Array.isArray(rawConfig?.storyArticles) && rawConfig.storyArticles.length > 0;
+
+  // If the user pasted/updated src/data.ts more recently than siteCustomizations.json, treat src/data.ts as primary
+  const dataTsIsNewer = dataTsMtime > customizationsMtime + 500;
+
+  const newsPrimary = !hasSavedNews || dataTsIsNewer ? diskDataTs.newsArticles : rawConfig.newsArticles;
+  const newsSecondary = !hasSavedNews || dataTsIsNewer ? rawConfig?.newsArticles || [] : diskDataTs.newsArticles;
+
+  const storyPrimary = !hasSavedStories || dataTsIsNewer ? diskDataTs.storyArticles : rawConfig.storyArticles;
+  const storySecondary = !hasSavedStories || dataTsIsNewer ? rawConfig?.storyArticles || [] : diskDataTs.storyArticles;
+
+  return {
+    heading: rawConfig?.heading || 'Latest News & Insights',
+    description: rawConfig?.description || 'Stay informed on the latest clinical advancements.',
+    newsArticles: reconcileBlogArticleLists(newsPrimary, newsSecondary, 'news'),
+    storyArticles: reconcileBlogArticleLists(storyPrimary, storySecondary, 'stories'),
+  };
+}
+
+function deleteUnreferencedBlogImageFile(oldUrl: string, activeUrls: Set<string>): string[] {
+  const deleted: string[] = [];
+  if (!oldUrl || typeof oldUrl !== 'string') return deleted;
+  const cleanUrl = oldUrl.split('?')[0].split('#')[0].trim();
+  if (!cleanUrl.startsWith('/assets/blog/') || activeUrls.has(cleanUrl)) {
+    return deleted;
+  }
+  const fileName = path.basename(cleanUrl);
+  for (const dir of [publicBlogDir, distBlogDir]) {
+    const candidate = path.join(dir, fileName);
+    if (fs.existsSync(candidate)) {
+      try {
+        fs.unlinkSync(candidate);
+        deleted.push(fileName);
+        console.log(`[Admin Blog Cleanup] Deleted unreferenced blog image: ${candidate}`);
+      } catch (err) {
+        console.warn(`[Admin Blog Cleanup] Could not delete ${candidate}:`, err);
+      }
+    }
+  }
+  return deleted;
+}
+
+function persistServerBlogConfig(config: {
+  heading?: string;
+  description?: string;
+  newsArticles: any[];
+  storyArticles: any[];
+}): {
+  heading: string;
+  description: string;
+  newsArticles: any[];
+  storyArticles: any[];
+  updatedAt: string;
+} {
+  let existing: Record<string, any> = {};
+  if (fs.existsSync(customizationsPath)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+    } catch {
+      existing = {};
+    }
+  }
+
+  const prevConfig = getServerBlogConfig();
+  const previousBlogImageUrls = collectAllBlogImagePaths([
+    ...prevConfig.newsArticles,
+    ...prevConfig.storyArticles,
+  ]);
+
+  const cleanNews = (Array.isArray(config.newsArticles) ? config.newsArticles : []).map((a, idx) =>
+    normalizeServerArticle({ ...a, type: 'news' }, 'news', idx)
+  );
+  const cleanStories = (Array.isArray(config.storyArticles) ? config.storyArticles : []).map((a, idx) =>
+    normalizeServerArticle({ ...a, type: 'stories' }, 'stories', idx)
+  );
+  const updatedAt = new Date().toISOString();
+
+  const savedPayload = {
+    heading: config.heading || prevConfig.heading || 'Latest News & Insights',
+    description:
+      config.description || prevConfig.description || 'Stay informed on the latest clinical advancements.',
+    newsArticles: cleanNews,
+    storyArticles: cleanStories,
+    updatedAt,
+  };
+
+  const activeBlogImageUrls = collectAllBlogImagePaths([...cleanNews, ...cleanStories]);
+
+  for (const oldUrl of previousBlogImageUrls) {
+    if (!activeBlogImageUrls.has(oldUrl)) {
+      deleteUnreferencedBlogImageFile(oldUrl, activeBlogImageUrls);
+    }
+  }
+
+  existing.homepage_latest_news_config = savedPayload;
+  existing.lastSynced = updatedAt;
+
+  fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+  syncBlogArticlesDataTs(cleanNews, cleanStories);
+
+  return savedPayload;
 }
 
 /**
@@ -513,9 +1658,9 @@ function deleteReplacedTreatmentAssetFile(oldUrl: string, activeUrlsSet: Set<str
 
   const isTreatmentSubdir = cleanPath.startsWith('/assets/treatments/');
   const targetDirs = isTreatmentSubdir
-    ? [publicTreatmentsDir, srcTreatmentsDir, ...(fs.existsSync(distTreatmentsDir) ? [distTreatmentsDir] : [])]
+    ? [publicTreatmentsDir, ...(fs.existsSync(distTreatmentsDir) ? [distTreatmentsDir] : [])]
     : path.posix.dirname(cleanPath) === '/assets'
-    ? [publicAssetsDir, srcAssetsDir, ...(fs.existsSync(distAssetsDir) ? [distAssetsDir] : [])]
+    ? [publicAssetsDir, ...(fs.existsSync(distAssetsDir) ? [distAssetsDir] : [])]
     : [];
 
   for (const dir of targetDirs) {
@@ -550,8 +1695,10 @@ function syncTreatmentTaxonomyTs(taxonomy: any[]): void {
         existingContent.slice(0, startIdx) +
         `${startMarker} ${JSON.stringify(taxonomy, null, 2)};\n\n` +
         existingContent.slice(endIdx);
-      fs.writeFileSync(treatmentPricingPath, updatedTs, 'utf-8');
-      console.log(`[Admin] Synced treatment taxonomy (${taxonomy.length} groups) to ${treatmentPricingPath}`);
+      if (updatedTs !== existingContent) {
+        fs.writeFileSync(treatmentPricingPath, updatedTs, 'utf-8');
+        console.log(`[Admin] Synced treatment taxonomy (${taxonomy.length} groups) to ${treatmentPricingPath}`);
+      }
     }
   } catch (err) {
     console.warn('[Admin] Could not sync treatment taxonomy to treatmentPricing.ts:', err);
@@ -582,7 +1729,7 @@ app.post('/api/admin/treatment-pricing', (req, res) => {
 
     // 1. Write directly to src/data/treatmentPricing.ts so it is baked into source control and production builds
     const tsCode = generateTreatmentPricingTs(payload);
-    fs.writeFileSync(treatmentPricingPath, tsCode, 'utf-8');
+    writeFileAtomicallySync(treatmentPricingPath, tsCode);
     console.log(`[Admin] Successfully wrote updated code to ${treatmentPricingPath}`);
 
     // 2. Also persist to siteCustomizations.json
@@ -597,7 +1744,7 @@ app.post('/api/admin/treatment-pricing', (req, res) => {
 
     existing.treatment_pricing_data = payload;
     existing.lastSynced = new Date().toISOString();
-    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
+    writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
 
     return res.json({
       success: true,
@@ -870,209 +2017,565 @@ const writeFileAtomicallySync = (targetPath: string, content: string): void => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+  if (fs.existsSync(targetPath)) {
+    try {
+      const current = fs.readFileSync(targetPath, 'utf-8');
+      if (current === content) {
+        return;
+      }
+    } catch {}
+  }
   const tempPath = `${targetPath}.${process.pid}.${Date.now()}-${Math.random().toString(36).slice(2, 8)}.tmp`;
   fs.writeFileSync(tempPath, content, 'utf-8');
   fs.renameSync(tempPath, targetPath);
 };
 
-const getMergedClinicData = () => {
-  const diskTsClinicData = parseClinicDataFromTsFile();
-  const baseClinicData: Record<string, any> = {
+const normalizeServerClinicSlotId = (slotId: string): string => {
+  if (!slotId) return 'clinic-asset-default';
+  return String(slotId)
+    .trim()
+    .replace(/\.webp$/i, '')
+    .replace(/^(\/assets\/|assets\/)/, '')
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .toLowerCase()
+    .replace(/^clinic-location-(?:location-|loc-)/, 'clinic-location-')
+    .replace(/^clinic-pillar-(?:pillar-|p-?)(?=\d)/, 'clinic-pillar-')
+    .replace(/^clinic-award-(?:award-|aw-)/, 'clinic-award-')
+    .replace(/^clinic-facility-(?:facility-room-|facility-|suite-|room-)/, 'clinic-facility-')
+    .replace(/^clinic-process-(?:process-step-|process-|step-)/, 'clinic-process-')
+    .replace(/^clinic-process-(\d)$/, 'clinic-process-0$1')
+    .replace(/^clinic-brand-(?:brand-|bp-)/, 'clinic-brand-');
+};
+
+const resolveDiskClinicSlotImage = (slotId: string, ...candidates: Array<unknown>): string => {
+  const cleanSlotId = normalizeServerClinicSlotId(slotId);
+  const canonicalUrl = `/assets/${cleanSlotId}.webp`;
+  const canonicalDiskPath = path.join(publicAssetsDir, `${cleanSlotId}.webp`);
+  const canonicalExists = fs.existsSync(canonicalDiskPath);
+
+  // 1. Prefer any non-empty candidate that points to an existing /assets/ file on disk or a valid external URL
+  for (const cand of candidates) {
+    if (typeof cand !== 'string') continue;
+    const trimmed = cand.trim();
+    if (!trimmed) continue;
+    const cleanNoQuery = trimmed.split('?')[0].split('#')[0].trim();
+    if (cleanNoQuery.startsWith('/assets/')) {
+      const relFile = cleanNoQuery.replace(/^\/assets\//, '');
+      const fullCandPath = path.join(publicAssetsDir, relFile);
+      if (fs.existsSync(fullCandPath)) {
+        return trimmed;
+      }
+      if (canonicalExists) {
+        const versionMatch = trimmed.match(/[?&]v=([^&#]+)/);
+        return versionMatch
+          ? `${canonicalUrl}?v=${versionMatch[1]}`
+          : `${canonicalUrl}?v=${Math.floor(fs.statSync(canonicalDiskPath).mtimeMs)}`;
+      }
+      // Do not return a local /assets/ path if the file does not exist on disk
+    } else if (!trimmed.includes('images.unsplash.com')) {
+      return trimmed;
+    }
+  }
+
+  // 2. Auto-recover from public/assets/${cleanSlotId}.webp if the physical slot file exists on disk
+  if (canonicalExists) {
+    try {
+      const mtime = Math.floor(fs.statSync(canonicalDiskPath).mtimeMs);
+      return `${canonicalUrl}?v=${mtime}`;
+    } catch {
+      return canonicalUrl;
+    }
+  }
+
+  return '';
+};
+
+const reconcileClinicDataWithDisk = (primary?: Record<string, any> | null, secondary?: Record<string, any> | null) => {
+  const diskTs = parseClinicDataFromTsFile() || {};
+  const p = primary && typeof primary === 'object' ? primary : {};
+  const s = secondary && typeof secondary === 'object' ? secondary : {};
+  const base: Record<string, any> = {
     ...CLINIC_DATA,
-    ...(diskTsClinicData || {}),
-    ogImage: diskTsClinicData?.ogImage ?? CLINIC_DATA.ogImage,
-    exteriorPhoto: diskTsClinicData?.exteriorPhoto ?? CLINIC_DATA.exteriorPhoto,
+    ...diskTs,
+    ...s,
+    ...p,
+  };
+
+  const pickList = <T = any>(...lists: Array<unknown>): T[] => {
+    for (const l of lists) {
+      if (Array.isArray(l) && l.length > 0) return l as T[];
+    }
+    return [];
+  };
+
+  const findItemInSource = (list: unknown, id: string | undefined, idx: number): any => {
+    if (!Array.isArray(list)) return {};
+    if (id) {
+      const byId = list.find((item: any) => item && String(item.id) === String(id));
+      if (byId) return byId;
+    }
+    return list[idx] || {};
+  };
+
+  // Reconcile interiorPhotos
+  let rawInteriorPhotos = pickList<string>(
+    p.interiorPhotos,
+    s.interiorPhotos,
+    diskTs.interiorPhotos,
+    CLINIC_DATA.interiorPhotos
+  ).filter((u) => typeof u === 'string' && u.trim().length > 0);
+
+  if (rawInteriorPhotos.length === 0) {
+    const slot0 = resolveDiskClinicSlotImage('clinic-interior-0');
+    if (slot0) rawInteriorPhotos = [slot0];
+  } else {
+    rawInteriorPhotos = rawInteriorPhotos
+      .map((url, idx) => resolveDiskClinicSlotImage(`clinic-interior-${idx}`, url))
+      .filter((u) => Boolean(u));
+  }
+
+  // Reconcile locations across all 4 sources (p, s, diskTs, CLINIC_DATA)
+  const baseLocations = pickList<any>(p.locations, s.locations, diskTs.locations, CLINIC_DATA.locations);
+  const locations = baseLocations.map((loc: any, idx: number) => {
+    const locId = loc?.id || `loc-${idx + 1}`;
+    const fromP = findItemInSource(p.locations, locId, idx);
+    const fromS = findItemInSource(s.locations, locId, idx);
+    const fromDiskTs = findItemInSource(diskTs.locations, locId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.locations, locId, idx);
+    const slotId = normalizeServerClinicSlotId(`clinic-location-${locId}`);
+    return {
+      ...fromBaked,
+      ...fromDiskTs,
+      ...fromS,
+      ...fromP,
+      ...loc,
+      id: locId,
+      image: resolveDiskClinicSlotImage(
+        slotId,
+        loc?.image,
+        fromP?.image,
+        fromS?.image,
+        fromDiskTs?.image,
+        fromBaked?.image
+      ),
+    };
+  });
+
+  // Reconcile whyChooseUs pillars across all 4 sources
+  const basePillars = pickList<any>(
+    p.whyChooseUs?.pillars,
+    s.whyChooseUs?.pillars,
+    diskTs.whyChooseUs?.pillars,
+    CLINIC_DATA.whyChooseUs?.pillars
+  );
+  const pillars = basePillars.map((pillar: any, idx: number) => {
+    const pillarId = pillar?.id || `p${idx + 1}`;
+    const fromP = findItemInSource(p.whyChooseUs?.pillars, pillarId, idx);
+    const fromS = findItemInSource(s.whyChooseUs?.pillars, pillarId, idx);
+    const fromDiskTs = findItemInSource(diskTs.whyChooseUs?.pillars, pillarId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.whyChooseUs?.pillars, pillarId, idx);
+    const slotId = normalizeServerClinicSlotId(`clinic-pillar-${pillarId}`);
+    return {
+      ...fromBaked,
+      ...fromDiskTs,
+      ...fromS,
+      ...fromP,
+      ...pillar,
+      id: pillarId,
+      imageUrl: resolveDiskClinicSlotImage(
+        slotId,
+        pillar?.imageUrl,
+        fromP?.imageUrl,
+        fromS?.imageUrl,
+        fromDiskTs?.imageUrl,
+        fromBaked?.imageUrl
+      ),
+    };
+  });
+
+  // Reconcile awardsShowcase awards across all 4 sources
+  const baseAwards = pickList<any>(
+    p.awardsShowcase?.awards,
+    s.awardsShowcase?.awards,
+    diskTs.awardsShowcase?.awards,
+    CLINIC_DATA.awardsShowcase?.awards
+  );
+  const awards = baseAwards.map((award: any, idx: number) => {
+    const awardId = award?.id || `award-${idx + 1}`;
+    const fromP = findItemInSource(p.awardsShowcase?.awards, awardId, idx);
+    const fromS = findItemInSource(s.awardsShowcase?.awards, awardId, idx);
+    const fromDiskTs = findItemInSource(diskTs.awardsShowcase?.awards, awardId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.awardsShowcase?.awards, awardId, idx);
+    const slotId = normalizeServerClinicSlotId(`clinic-award-${awardId}`);
+    return {
+      ...fromBaked,
+      ...fromDiskTs,
+      ...fromS,
+      ...fromP,
+      ...award,
+      id: awardId,
+      imageUrl: resolveDiskClinicSlotImage(
+        slotId,
+        award?.imageUrl,
+        fromP?.imageUrl,
+        fromS?.imageUrl,
+        fromDiskTs?.imageUrl,
+        fromBaked?.imageUrl
+      ),
+    };
+  });
+
+  // Reconcile processSection steps across all 4 sources
+  const baseSteps = pickList<any>(
+    p.processSection?.steps,
+    s.processSection?.steps,
+    diskTs.processSection?.steps,
+    CLINIC_DATA.processSection?.steps
+  );
+  const steps = baseSteps.map((step: any, idx: number) => {
+    const stepNum = step?.stepNumber || String(idx + 1).padStart(2, '0');
+    const stepId = step?.id || `step-${idx + 1}`;
+    const fromP = findItemInSource(p.processSection?.steps, stepId, idx);
+    const fromS = findItemInSource(s.processSection?.steps, stepId, idx);
+    const fromDiskTs = findItemInSource(diskTs.processSection?.steps, stepId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.processSection?.steps, stepId, idx);
+    const slotId = normalizeServerClinicSlotId(`clinic-process-${stepNum}`);
+    return {
+      ...fromBaked,
+      ...fromDiskTs,
+      ...fromS,
+      ...fromP,
+      ...step,
+      id: stepId,
+      stepNumber: stepNum,
+      image: resolveDiskClinicSlotImage(
+        slotId,
+        step?.image,
+        fromP?.image,
+        fromS?.image,
+        fromDiskTs?.image,
+        fromBaked?.image
+      ),
+    };
+  });
+
+  // Reconcile facilityGallery rooms across all 4 sources
+  const candidateRooms = pickList<any>(
+    p.facilityGallery?.rooms,
+    s.facilityGallery?.rooms,
+    diskTs.facilityGallery?.rooms,
+    CLINIC_DATA.facilityGallery?.rooms
+  );
+  const referenceRooms = pickList<any>(diskTs.facilityGallery?.rooms, s.facilityGallery?.rooms, CLINIC_DATA.facilityGallery?.rooms);
+  const mergedRoomsRaw = [...candidateRooms];
+  if (referenceRooms.length > mergedRoomsRaw.length) {
+    const seenRoomIds = new Set(mergedRoomsRaw.map((r: any, i: number) => String(r?.id || `room-${i + 1}`)));
+    for (let i = 0; i < referenceRooms.length; i++) {
+      const refRoom = referenceRooms[i];
+      const refId = String(refRoom?.id || `room-${i + 1}`);
+      if (!seenRoomIds.has(refId)) {
+        mergedRoomsRaw.push(refRoom);
+        seenRoomIds.add(refId);
+      }
+    }
+  }
+  const rooms = mergedRoomsRaw.map((room: any, idx: number) => {
+    const roomId = room?.id || `room-${idx + 1}`;
+    const fromP = findItemInSource(p.facilityGallery?.rooms, roomId, idx);
+    const fromS = findItemInSource(s.facilityGallery?.rooms, roomId, idx);
+    const fromDiskTs = findItemInSource(diskTs.facilityGallery?.rooms, roomId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.facilityGallery?.rooms, roomId, idx);
+    const slotId = normalizeServerClinicSlotId(`clinic-facility-${roomId}`);
+    return {
+      ...fromBaked,
+      ...fromDiskTs,
+      ...fromS,
+      ...fromP,
+      ...room,
+      id: roomId,
+      image: resolveDiskClinicSlotImage(
+        slotId,
+        room?.image,
+        fromP?.image,
+        fromS?.image,
+        fromDiskTs?.image,
+        fromBaked?.image
+      ),
+    };
+  });
+
+  // Reconcile trustBrandsSection brands across all 4 sources
+  const baseBrands = pickList<any>(
+    p.trustBrandsSection?.brands,
+    s.trustBrandsSection?.brands,
+    diskTs.trustBrandsSection?.brands,
+    CLINIC_DATA.trustBrandsSection?.brands
+  );
+  const legacyPlaceholderBrandNames = new Set(['Lumina', 'Aether', 'Vera', 'Zenith', 'Nexus']);
+  const brands = baseBrands.map((brand: any, idx: number) => {
+    const brandId = brand?.id || `bp-${idx + 1}`;
+    const fromP = findItemInSource(p.trustBrandsSection?.brands, brandId, idx);
+    const fromS = findItemInSource(s.trustBrandsSection?.brands, brandId, idx);
+    const fromDiskTs = findItemInSource(diskTs.trustBrandsSection?.brands, brandId, idx);
+    const fromBaked = findItemInSource(CLINIC_DATA.trustBrandsSection?.brands, brandId, idx);
+    const fb = { ...fromBaked, ...fromDiskTs, ...fromS };
+    const slotId = normalizeServerClinicSlotId(`clinic-brand-${brandId}`);
+    const useFallbackName =
+      (!brand?.name || legacyPlaceholderBrandNames.has(String(brand.name).trim())) &&
+      fb?.name &&
+      !legacyPlaceholderBrandNames.has(String(fb.name).trim());
+    return {
+      ...fb,
+      ...fromP,
+      ...brand,
+      id: brandId,
+      name: useFallbackName ? fb.name : brand?.name || fb?.name || `Brand ${idx + 1}`,
+      iconType: useFallbackName ? fb.iconType || brand?.iconType : brand?.iconType || fb?.iconType || 'layers',
+      imageUrl: resolveDiskClinicSlotImage(
+        slotId,
+        brand?.imageUrl,
+        fromP?.imageUrl,
+        fromS?.imageUrl,
+        fromDiskTs?.imageUrl,
+        fromBaked?.imageUrl
+      ),
+    };
+  });
+
+  const merged = {
+    ...base,
+    ogImage: resolveDiskClinicSlotImage(
+      'clinic-og-image',
+      p.ogImage,
+      s.ogImage,
+      diskTs.ogImage,
+      CLINIC_DATA.ogImage
+    ),
+    exteriorPhoto: resolveDiskClinicSlotImage(
+      'clinic-exterior',
+      p.exteriorPhoto,
+      s.exteriorPhoto,
+      diskTs.exteriorPhoto,
+      CLINIC_DATA.exteriorPhoto
+    ),
     logo: {
       ...(CLINIC_DATA.logo || {}),
-      ...(diskTsClinicData?.logo || {}),
-      icon: diskTsClinicData?.logo?.icon ?? CLINIC_DATA.logo?.icon,
-      full: diskTsClinicData?.logo?.full ?? CLINIC_DATA.logo?.full,
+      ...(diskTs.logo || {}),
+      ...(s.logo || {}),
+      ...(p.logo || {}),
+      icon: resolveDiskClinicSlotImage(
+        'clinic-logo-icon',
+        p.logo?.icon,
+        s.logo?.icon,
+        diskTs.logo?.icon,
+        CLINIC_DATA.logo?.icon
+      ),
+      full: resolveDiskClinicSlotImage(
+        'clinic-logo-full',
+        p.logo?.full,
+        s.logo?.full,
+        diskTs.logo?.full,
+        CLINIC_DATA.logo?.full
+      ),
+      alt:
+        p.logo?.alt ||
+        s.logo?.alt ||
+        diskTs.logo?.alt ||
+        CLINIC_DATA.logo?.alt ||
+        'Age Reversal Clinics Logo',
     },
     socials: {
       ...(CLINIC_DATA.socials || {}),
-      ...(diskTsClinicData?.socials || {}),
+      ...(diskTs.socials || {}),
+      ...(s.socials || {}),
+      ...(p.socials || {}),
+    },
+    interiorPhotos: rawInteriorPhotos,
+    locations,
+    whyChooseUs: {
+      ...(CLINIC_DATA.whyChooseUs || {}),
+      ...(diskTs.whyChooseUs || {}),
+      ...(s.whyChooseUs || {}),
+      ...(p.whyChooseUs || {}),
+      pillars,
+    },
+    awardsShowcase: {
+      ...(CLINIC_DATA.awardsShowcase || {}),
+      ...(diskTs.awardsShowcase || {}),
+      ...(s.awardsShowcase || {}),
+      ...(p.awardsShowcase || {}),
+      awards,
     },
     consultationConfig: {
       ...(CLINIC_DATA.consultationConfig || {}),
-      ...(diskTsClinicData?.consultationConfig || {}),
+      ...(diskTs.consultationConfig || {}),
+      ...(s.consultationConfig || {}),
+      ...(p.consultationConfig || {}),
+      doctors: pickList(
+        p.consultationConfig?.doctors,
+        s.consultationConfig?.doctors,
+        diskTs.consultationConfig?.doctors,
+        CLINIC_DATA.consultationConfig?.doctors
+      ),
+      defaultTimeSlots: pickList(
+        p.consultationConfig?.defaultTimeSlots,
+        s.consultationConfig?.defaultTimeSlots,
+        diskTs.consultationConfig?.defaultTimeSlots,
+        CLINIC_DATA.consultationConfig?.defaultTimeSlots
+      ),
+      bestTimeOptions: pickList(
+        p.consultationConfig?.bestTimeOptions,
+        s.consultationConfig?.bestTimeOptions,
+        diskTs.consultationConfig?.bestTimeOptions,
+        CLINIC_DATA.consultationConfig?.bestTimeOptions
+      ),
+      hearAboutUsOptions: pickList(
+        p.consultationConfig?.hearAboutUsOptions,
+        s.consultationConfig?.hearAboutUsOptions,
+        diskTs.consultationConfig?.hearAboutUsOptions,
+        CLINIC_DATA.consultationConfig?.hearAboutUsOptions
+      ),
+      stayInTouchChannels: pickList(
+        p.consultationConfig?.stayInTouchChannels,
+        s.consultationConfig?.stayInTouchChannels,
+        diskTs.consultationConfig?.stayInTouchChannels,
+        CLINIC_DATA.consultationConfig?.stayInTouchChannels
+      ),
     },
     processSection: {
       ...(CLINIC_DATA.processSection || {}),
-      ...(diskTsClinicData?.processSection || {}),
+      ...(diskTs.processSection || {}),
+      ...(s.processSection || {}),
+      ...(p.processSection || {}),
+      seoKeywords: pickList(
+        p.processSection?.seoKeywords,
+        s.processSection?.seoKeywords,
+        diskTs.processSection?.seoKeywords,
+        CLINIC_DATA.processSection?.seoKeywords
+      ),
+      steps,
     },
     facilityGallery: {
       ...(CLINIC_DATA.facilityGallery || {}),
-      ...(diskTsClinicData?.facilityGallery || {}),
+      ...(diskTs.facilityGallery || {}),
+      ...(s.facilityGallery || {}),
+      ...(p.facilityGallery || {}),
+      seoKeywords: pickList(
+        p.facilityGallery?.seoKeywords,
+        s.facilityGallery?.seoKeywords,
+        diskTs.facilityGallery?.seoKeywords,
+        CLINIC_DATA.facilityGallery?.seoKeywords
+      ),
+      rooms,
     },
     trustBrandsSection: {
       ...(CLINIC_DATA.trustBrandsSection || {}),
-      ...(diskTsClinicData?.trustBrandsSection || {}),
+      ...(diskTs.trustBrandsSection || {}),
+      ...(s.trustBrandsSection || {}),
+      ...(p.trustBrandsSection || {}),
+      seoKeywords: pickList(
+        p.trustBrandsSection?.seoKeywords,
+        s.trustBrandsSection?.seoKeywords,
+        diskTs.trustBrandsSection?.seoKeywords,
+        CLINIC_DATA.trustBrandsSection?.seoKeywords
+      ),
+      brands,
     },
     accreditationsSection: {
       ...(CLINIC_DATA.accreditationsSection || {}),
-      ...(diskTsClinicData?.accreditationsSection || {}),
+      ...(diskTs.accreditationsSection || {}),
+      ...(s.accreditationsSection || {}),
+      ...(p.accreditationsSection || {}),
+      seoKeywords: pickList(
+        p.accreditationsSection?.seoKeywords,
+        s.accreditationsSection?.seoKeywords,
+        diskTs.accreditationsSection?.seoKeywords,
+        CLINIC_DATA.accreditationsSection?.seoKeywords
+      ),
     },
   };
 
+  verifyAndRepairClinicDataAssets(merged);
+  return merged;
+};
+
+const countPopulatedClinicImages = (data: any): number => {
+  if (!data || typeof data !== 'object') return 0;
+  let count = 0;
+  const check = (val: unknown) => {
+    if (typeof val === 'string' && val.trim().length > 0) count++;
+  };
+  check(data.ogImage);
+  check(data.exteriorPhoto);
+  check(data.logo?.icon);
+  check(data.logo?.full);
+  if (Array.isArray(data.interiorPhotos)) data.interiorPhotos.forEach(check);
+  if (Array.isArray(data.locations)) data.locations.forEach((l: any) => check(l?.image));
+  if (Array.isArray(data.whyChooseUs?.pillars)) data.whyChooseUs.pillars.forEach((p: any) => check(p?.imageUrl));
+  if (Array.isArray(data.awardsShowcase?.awards)) data.awardsShowcase.awards.forEach((a: any) => check(a?.imageUrl));
+  if (Array.isArray(data.processSection?.steps)) data.processSection.steps.forEach((s: any) => check(s?.image));
+  if (Array.isArray(data.facilityGallery?.rooms)) data.facilityGallery.rooms.forEach((r: any) => check(r?.image));
+  if (Array.isArray(data.trustBrandsSection?.brands)) data.trustBrandsSection.brands.forEach((b: any) => check(b?.imageUrl));
+  return count;
+};
+
+const getMergedClinicData = () => {
+  const diskTsClinicData = parseClinicDataFromTsFile();
   let customClinicData: Record<string, any> | null = null;
+  let fullCustomizations: Record<string, any> | null = null;
   if (fs.existsSync(customizationsPath)) {
     try {
-      const customizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
-      if (customizations.clinic_info_data && typeof customizations.clinic_info_data === 'object') {
-        customClinicData = customizations.clinic_info_data;
+      fullCustomizations = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      if (fullCustomizations && fullCustomizations.clinic_info_data && typeof fullCustomizations.clinic_info_data === 'object') {
+        customClinicData = fullCustomizations.clinic_info_data;
       }
     } catch (e) {
       console.error('Error reading customizations for clinic-data:', e);
     }
   }
 
-  const merged = customClinicData
-    ? {
-        ...baseClinicData,
-        ...customClinicData,
-        ogImage: customClinicData.ogImage ?? baseClinicData.ogImage,
-        exteriorPhoto: customClinicData.exteriorPhoto ?? baseClinicData.exteriorPhoto,
-        logo: {
-          ...baseClinicData.logo,
-          ...(customClinicData.logo || {}),
-          icon: customClinicData.logo?.icon ?? baseClinicData.logo?.icon,
-          full: customClinicData.logo?.full ?? baseClinicData.logo?.full,
-        },
-        socials: {
-          ...baseClinicData.socials,
-          ...(customClinicData.socials || {}),
-        },
-        interiorPhotos: Array.isArray(customClinicData.interiorPhotos)
-          ? customClinicData.interiorPhotos
-          : baseClinicData.interiorPhotos || [],
-        locations: (
-          Array.isArray(customClinicData.locations) && customClinicData.locations.length > 0
-            ? customClinicData.locations
-            : baseClinicData.locations || []
-        ).map((loc: any, idx: number) => ({
-          ...loc,
-          image: loc.image ?? baseClinicData.locations?.[idx]?.image ?? '',
-        })),
-        whyChooseUs:
-          customClinicData.whyChooseUs && typeof customClinicData.whyChooseUs === 'object'
-            ? {
-                ...(baseClinicData.whyChooseUs || {}),
-                ...customClinicData.whyChooseUs,
-                pillars: (
-                  Array.isArray(customClinicData.whyChooseUs.pillars)
-                    ? customClinicData.whyChooseUs.pillars
-                    : baseClinicData.whyChooseUs?.pillars || []
-                ).map((pillar: any, idx: number) => ({
-                  ...pillar,
-                  imageUrl: pillar.imageUrl ?? baseClinicData.whyChooseUs?.pillars?.[idx]?.imageUrl ?? '',
-                })),
-              }
-            : baseClinicData.whyChooseUs,
-        awardsShowcase:
-          customClinicData.awardsShowcase && typeof customClinicData.awardsShowcase === 'object'
-            ? {
-                ...(baseClinicData.awardsShowcase || {}),
-                ...customClinicData.awardsShowcase,
-                awards: (
-                  Array.isArray(customClinicData.awardsShowcase.awards)
-                    ? customClinicData.awardsShowcase.awards
-                    : baseClinicData.awardsShowcase?.awards || []
-                ).map((award: any, idx: number) => ({
-                  ...award,
-                  imageUrl: award.imageUrl ?? baseClinicData.awardsShowcase?.awards?.[idx]?.imageUrl ?? '',
-                })),
-              }
-            : baseClinicData.awardsShowcase,
-        consultationConfig:
-          customClinicData.consultationConfig && typeof customClinicData.consultationConfig === 'object'
-            ? {
-                ...(baseClinicData.consultationConfig || {}),
-                ...customClinicData.consultationConfig,
-                doctors: Array.isArray(customClinicData.consultationConfig.doctors)
-                  ? customClinicData.consultationConfig.doctors
-                  : baseClinicData.consultationConfig?.doctors || [],
-                defaultTimeSlots: Array.isArray(customClinicData.consultationConfig.defaultTimeSlots)
-                  ? customClinicData.consultationConfig.defaultTimeSlots
-                  : baseClinicData.consultationConfig?.defaultTimeSlots || [],
-                bestTimeOptions: Array.isArray(customClinicData.consultationConfig.bestTimeOptions)
-                  ? customClinicData.consultationConfig.bestTimeOptions
-                  : baseClinicData.consultationConfig?.bestTimeOptions || [],
-                hearAboutUsOptions: Array.isArray(customClinicData.consultationConfig.hearAboutUsOptions)
-                  ? customClinicData.consultationConfig.hearAboutUsOptions
-                  : baseClinicData.consultationConfig?.hearAboutUsOptions || [],
-                stayInTouchChannels: Array.isArray(customClinicData.consultationConfig.stayInTouchChannels)
-                  ? customClinicData.consultationConfig.stayInTouchChannels
-                  : baseClinicData.consultationConfig?.stayInTouchChannels || [],
-              }
-            : baseClinicData.consultationConfig,
-        processSection:
-          customClinicData.processSection && typeof customClinicData.processSection === 'object'
-            ? {
-                ...(baseClinicData.processSection || {}),
-                ...customClinicData.processSection,
-                seoKeywords: Array.isArray(customClinicData.processSection.seoKeywords)
-                  ? customClinicData.processSection.seoKeywords
-                  : baseClinicData.processSection?.seoKeywords || [],
-                steps: (
-                  Array.isArray(customClinicData.processSection.steps)
-                    ? customClinicData.processSection.steps
-                    : baseClinicData.processSection?.steps || []
-                ).map((step: any, idx: number) => ({
-                  ...step,
-                  image: step.image ?? baseClinicData.processSection?.steps?.[idx]?.image ?? '',
-                })),
-              }
-            : baseClinicData.processSection,
-        facilityGallery:
-          customClinicData.facilityGallery && typeof customClinicData.facilityGallery === 'object'
-            ? {
-                ...(baseClinicData.facilityGallery || {}),
-                ...customClinicData.facilityGallery,
-                seoKeywords: Array.isArray(customClinicData.facilityGallery.seoKeywords)
-                  ? customClinicData.facilityGallery.seoKeywords
-                  : baseClinicData.facilityGallery?.seoKeywords || [],
-                rooms: (
-                  Array.isArray(customClinicData.facilityGallery.rooms)
-                    ? customClinicData.facilityGallery.rooms
-                    : baseClinicData.facilityGallery?.rooms || []
-                ).map((room: any, idx: number) => ({
-                  ...room,
-                  image: room.image ?? baseClinicData.facilityGallery?.rooms?.[idx]?.image ?? '',
-                })),
-              }
-            : baseClinicData.facilityGallery,
-        trustBrandsSection:
-          customClinicData.trustBrandsSection && typeof customClinicData.trustBrandsSection === 'object'
-            ? {
-                ...(baseClinicData.trustBrandsSection || {}),
-                ...customClinicData.trustBrandsSection,
-                seoKeywords: Array.isArray(customClinicData.trustBrandsSection.seoKeywords)
-                  ? customClinicData.trustBrandsSection.seoKeywords
-                  : baseClinicData.trustBrandsSection?.seoKeywords || [],
-                brands: (
-                  Array.isArray(customClinicData.trustBrandsSection.brands)
-                    ? customClinicData.trustBrandsSection.brands
-                    : baseClinicData.trustBrandsSection?.brands || []
-                ).map((brand: any, idx: number) => ({
-                  ...brand,
-                  imageUrl: brand.imageUrl ?? baseClinicData.trustBrandsSection?.brands?.[idx]?.imageUrl ?? '',
-                })),
-              }
-            : baseClinicData.trustBrandsSection,
-        accreditationsSection:
-          customClinicData.accreditationsSection && typeof customClinicData.accreditationsSection === 'object'
-            ? {
-                ...(baseClinicData.accreditationsSection || {}),
-                ...customClinicData.accreditationsSection,
-                seoKeywords: Array.isArray(customClinicData.accreditationsSection.seoKeywords)
-                  ? customClinicData.accreditationsSection.seoKeywords
-                  : baseClinicData.accreditationsSection?.seoKeywords || [],
-              }
-            : baseClinicData.accreditationsSection,
+  // Determine whether clinicInfo.ts was more recently modified (e.g. copied & pasted by user)
+  // or contains more populated images than siteCustomizations.json
+  let preferTsFile = false;
+  try {
+    if (fs.existsSync(clinicInfoPath) && fs.existsSync(customizationsPath)) {
+      const tsMtime = fs.statSync(clinicInfoPath).mtimeMs;
+      const jsonMtime = fs.statSync(customizationsPath).mtimeMs;
+      if (tsMtime > jsonMtime + 500) {
+        preferTsFile = true;
       }
-    : baseClinicData;
+    }
+  } catch {
+    // ignore stat errors
+  }
 
-  verifyAndRepairClinicDataAssets(merged);
+  if (!preferTsFile && diskTsClinicData && customClinicData) {
+    const tsImgCount = countPopulatedClinicImages(diskTsClinicData);
+    const jsonImgCount = countPopulatedClinicImages(customClinicData);
+    if (tsImgCount > jsonImgCount) {
+      preferTsFile = true;
+    }
+  }
+
+  const merged = preferTsFile
+    ? reconcileClinicDataWithDisk(diskTsClinicData, customClinicData)
+    : reconcileClinicDataWithDisk(customClinicData, diskTsClinicData);
+
+  // If clinicInfo.ts had newer/more complete data than siteCustomizations.json, auto-sync siteCustomizations.json
+  if (preferTsFile && fullCustomizations) {
+    try {
+      const prevJsonStr = JSON.stringify(fullCustomizations.clinic_info_data || {});
+      const nextJsonStr = JSON.stringify(merged);
+      if (prevJsonStr !== nextJsonStr) {
+        applyClinicDataToCustomizationsObject(fullCustomizations, merged);
+        fullCustomizations.lastSynced = new Date().toISOString();
+        fs.writeFileSync(customizationsPath, JSON.stringify(fullCustomizations, null, 2), 'utf-8');
+      }
+    } catch (syncErr) {
+      console.warn('Could not auto-sync clinicInfo.ts changes to siteCustomizations.json:', syncErr);
+    }
+  }
+
   return merged;
 };
 
@@ -1181,7 +2684,7 @@ const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string
   }
 
   let deletedAny = false;
-  for (const targetDir of [publicAssetsDir, srcAssetsDir]) {
+  for (const targetDir of [publicAssetsDir, ...(fs.existsSync(distAssetsDir) ? [distAssetsDir] : [])]) {
     try {
       const targetFilePath = path.join(targetDir, fileName);
       if (fs.existsSync(targetFilePath) && fs.statSync(targetFilePath).isFile()) {
@@ -1198,98 +2701,45 @@ const deleteReplacedClinicAssetFile = (oldUrl: string, activeUrlsSet: Set<string
 };
 
 // Helper: Inspect all image paths in clinicData and ensure any /assets/... file
-// and all permanent clinic-*.webp slot files exist in both public/assets/ and src/assets/images/
+// and all permanent clinic-*.webp slot files exist in public/assets/ (and dist/assets/ if exists)
 const verifyAndRepairClinicDataAssets = (clinicData?: any): number => {
   let repairedCount = 0;
 
-  // 1. Synchronize all URLs actively referenced by clinicData
   if (clinicData && typeof clinicData === 'object') {
     const uniqueUrls = Array.from(new Set(collectClinicDataAssetUrls(clinicData)));
     for (const cleanPath of uniqueUrls) {
       const fileName = path.basename(cleanPath);
       if (!fileName) continue;
 
-      let requiredDirs: string[] = [];
+      const primaryDir = cleanPath.startsWith('/assets/treatments/')
+        ? publicTreatmentsDir
+        : cleanPath.startsWith('/assets/transformations/')
+        ? publicTransformationsDir
+        : publicAssetsDir;
 
-      if (cleanPath.startsWith('/assets/treatments/')) {
-        requiredDirs = [publicTreatmentsDir, srcTreatmentsDir];
-      } else if (cleanPath.startsWith('/assets/transformations/')) {
-        requiredDirs = [publicTransformationsDir, srcTransformationsDir];
-      } else {
-        requiredDirs = [publicAssetsDir, srcAssetsDir];
-      }
-
-      const existingSourcePath = requiredDirs
-        .map((dir) => path.join(dir, fileName))
-        .find((candidatePath) => {
-          try {
-            return fs.existsSync(candidatePath) && fs.statSync(candidatePath).isFile();
-          } catch {
-            return false;
-          }
-        });
-
-      if (!existingSourcePath) {
+      const candidatePath = path.join(primaryDir, fileName);
+      if (!fs.existsSync(candidatePath)) {
         console.warn(`[Admin Asset Verify] Referenced clinic asset not found on disk: ${cleanPath}`);
-        continue;
-      }
-
-      for (const targetDir of requiredDirs) {
-        try {
-          if (!fs.existsSync(targetDir)) {
-            fs.mkdirSync(targetDir, { recursive: true });
-          }
-          const targetFilePath = path.join(targetDir, fileName);
-          if (!fs.existsSync(targetFilePath)) {
-            fs.copyFileSync(existingSourcePath, targetFilePath);
-            repairedCount++;
-            console.log(`[Admin Asset Repair] Restored ${fileName} -> ${targetDir}`);
-          }
-        } catch (copyErr) {
-          console.warn(`[Admin Asset Repair] Could not copy ${fileName} to ${targetDir}:`, copyErr);
-        }
       }
     }
   }
 
-  // 2. Bidirectionally synchronize all permanent slot files starting with 'clinic-'
-  // (e.g., clinic-logo-icon.webp, clinic-logo-full.webp, clinic-location-*.webp, clinic-interior-*.webp)
-  // between public/assets/ and src/assets/images/ (and dist/assets/ if exists)
-  const slotAssetDirs = [publicAssetsDir, srcAssetsDir];
-  if (fs.existsSync(distAssetsDir)) {
-    slotAssetDirs.push(distAssetsDir);
-  }
-
-  for (const sourceDir of [publicAssetsDir, srcAssetsDir]) {
-    if (fs.existsSync(sourceDir)) {
-      try {
-        const files = fs.readdirSync(sourceDir);
-        for (const file of files) {
-          if (file.startsWith('clinic-') && file.endsWith('.webp')) {
-            const srcPath = path.join(sourceDir, file);
-            if (!fs.statSync(srcPath).isFile()) continue;
-
-            for (const targetDir of slotAssetDirs) {
-              if (targetDir === sourceDir) continue;
-              try {
-                if (!fs.existsSync(targetDir)) {
-                  fs.mkdirSync(targetDir, { recursive: true });
-                }
-                const destPath = path.join(targetDir, file);
-                if (!fs.existsSync(destPath)) {
-                  fs.copyFileSync(srcPath, destPath);
-                  repairedCount++;
-                  console.log(`[Permanent Slot Repair] Synchronized slot asset ${file} -> ${targetDir}`);
-                }
-              } catch (destErr) {
-                console.warn(`[Permanent Slot Repair] Could not mirror ${file} to ${targetDir}:`, destErr);
-              }
-            }
+  // Mirror permanent slot files starting with 'clinic-' to dist/assets/ if dist exists
+  if (fs.existsSync(publicAssetsDir) && fs.existsSync(distAssetsDir)) {
+    try {
+      const files = fs.readdirSync(publicAssetsDir);
+      for (const file of files) {
+        if (file.startsWith('clinic-') && file.endsWith('.webp')) {
+          const srcPath = path.join(publicAssetsDir, file);
+          const destPath = path.join(distAssetsDir, file);
+          if (fs.statSync(srcPath).isFile() && !fs.existsSync(destPath)) {
+            fs.copyFileSync(srcPath, destPath);
+            repairedCount++;
           }
         }
-      } catch (readErr) {
-        console.warn(`[Permanent Slot Repair] Error scanning directory ${sourceDir}:`, readErr);
       }
+    } catch (readErr) {
+      console.warn(`[Permanent Slot Repair] Error syncing to distAssetsDir:`, readErr);
     }
   }
 
@@ -1434,8 +2884,8 @@ const applyClinicDataToCustomizationsObject = (existing: Record<string, any>, cl
 // Handler for saving clinic data atomically to both src/data/clinicInfo.ts and src/data/siteCustomizations.json
 const handleSaveClinicData = (req: any, res: any) => {
   try {
-    const clinicData = req.body.clinicData || req.body;
-    if (!clinicData || typeof clinicData !== 'object' || !clinicData.name) {
+    const rawClinicData = req.body.clinicData || req.body;
+    if (!rawClinicData || typeof rawClinicData !== 'object' || !rawClinicData.name) {
       return res.status(400).json({ success: false, error: 'Invalid clinicData object. Must include at least a clinic name.' });
     }
 
@@ -1454,14 +2904,16 @@ const handleSaveClinicData = (req: any, res: any) => {
       ...collectClinicDataAssetUrls(existing.clinic_info_data),
     ]);
 
+    // Reconcile with disk slot images so stale "" values never wipe out existing /assets/clinic-*.webp files
+    const clinicData = reconcileClinicDataWithDisk(rawClinicData, previousTsData);
+
     // 0. Auto-verify and repair all referenced clinic logo, interior, exterior, and location assets
-    // between public/assets/ and src/assets/images/
     const repairedAssetCount = verifyAndRepairClinicDataAssets(clinicData);
     if (repairedAssetCount > 0) {
       console.log(`[Admin] Auto-repaired ${repairedAssetCount} missing clinic asset mirror(s) before saving clinicInfo.ts`);
     }
 
-    // 0b. Delete any replaced or removed clinicInfo.ts assets from public/assets/ and src/assets/images/
+    // 0b. Delete any replaced or removed non-canonical clinicInfo.ts assets from public/assets/
     const activeUrlsSet = new Set<string>(collectClinicDataAssetUrls(clinicData));
     for (const oldUrl of previousUrls) {
       if (!activeUrlsSet.has(oldUrl)) {
@@ -1534,9 +2986,9 @@ const getServerTreatmentCatalog = (): any[] => {
     }
   }
 
-  // Check which treatment IDs actually have an uploaded image file in public/assets/treatments or src/assets/images/treatments
+  // Check which treatment IDs actually have an uploaded image file in public/assets/treatments
   const existingDiskFiles = new Map<string, { path: string; mtimeMs: number }>();
-  for (const dir of [publicTreatmentsDir, srcTreatmentsDir, distTreatmentsDir]) {
+  for (const dir of [publicTreatmentsDir, distTreatmentsDir]) {
     if (fs.existsSync(dir)) {
       try {
         for (const file of fs.readdirSync(dir)) {
@@ -1781,6 +3233,17 @@ app.get('/api/admin/config', (_req, res) => {
   try {
     if (fs.existsSync(customizationsPath)) {
       const data = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      const reconciledGallery = reconcileBeforeAfterGalleryConfig(
+        data.homepage_gallery_config_v6,
+        data.homepage_gallery_config_v6,
+        false
+      );
+      if (JSON.stringify(data.homepage_gallery_config_v6) !== JSON.stringify(reconciledGallery)) {
+        data.homepage_gallery_config_v6 = reconciledGallery;
+        data.lastSynced = new Date().toISOString();
+        writeFileAtomicallySync(customizationsPath, JSON.stringify(data, null, 2));
+        syncTransformationsDataTs(reconciledGallery);
+      }
       return res.json({ success: true, data });
     }
     return res.json({ success: true, data: {} });
@@ -1807,6 +3270,8 @@ app.post('/api/admin/save-to-files', (req, res) => {
     // Preserve existing homepage_treatments_config card images & SEO metadata so saving
     // Services & Branches (master_services_config_v1 / homepage_specialist_areas_config_v4) never overwrites them
     const prevTreatmentsConfig = existing.homepage_treatments_config;
+    const prevGalleryConfig = existing.homepage_gallery_config_v6;
+    const prevServerBlogConfig = getServerBlogConfig();
 
     if (allConfigs && typeof allConfigs === 'object') {
       existing = { ...existing, ...allConfigs };
@@ -1854,8 +3319,12 @@ app.post('/api/admin/save-to-files', (req, res) => {
       };
     }
 
+    const isTargetKey = (targetKey: string) =>
+      key === targetKey || Boolean(allConfigs && Object.prototype.hasOwnProperty.call(allConfigs, targetKey));
+
     // If homepage_treatments_config is part of this save, project exact required fields and bake into src/data.ts
     if (
+      isTargetKey('homepage_treatments_config') &&
       existing.homepage_treatments_config &&
       typeof existing.homepage_treatments_config === 'object' &&
       Array.isArray(existing.homepage_treatments_config.treatments)
@@ -1882,34 +3351,53 @@ app.post('/api/admin/save-to-files', (req, res) => {
       syncHomepageTreatmentsDataTs(existing.homepage_treatments_config);
     }
 
-    // If clinic_info_data is part of this save (e.g. via allConfigs or direct key), also bake into src/data/clinicInfo.ts
-    // Only do this when clinic_info_data was explicitly provided in this request to avoid overwriting clinicInfo.ts during unrelated section saves
+    // If clinic_info_data is part of this save (e.g. via allConfigs or direct key), reconcile with disk assets and bake into src/data/clinicInfo.ts
     if (
-      (key === 'clinic_info_data' || (allConfigs && allConfigs.clinic_info_data)) &&
+      isTargetKey('clinic_info_data') &&
       existing.clinic_info_data &&
       typeof existing.clinic_info_data === 'object'
     ) {
       try {
-        verifyAndRepairClinicDataAssets(existing.clinic_info_data);
-        applyClinicDataToCustomizationsObject(existing, existing.clinic_info_data);
-        const tsCode = generateClinicInfoTs(existing.clinic_info_data);
+        const reconciledClinicData = reconcileClinicDataWithDisk(
+          existing.clinic_info_data,
+          parseClinicDataFromTsFile()
+        );
+        existing.clinic_info_data = reconciledClinicData;
+        verifyAndRepairClinicDataAssets(reconciledClinicData);
+        applyClinicDataToCustomizationsObject(existing, reconciledClinicData);
+        const tsCode = generateClinicInfoTs(reconciledClinicData);
         writeFileAtomicallySync(clinicInfoPath, tsCode);
-        console.log(`[Admin] Also synced clinicInfo.ts via save-to-files`);
+        console.log(`[Admin] Also synced reconciled clinicInfo.ts via save-to-files`);
       } catch (err) {
         console.error('[Admin] Error baking clinicInfo.ts during save-to-files:', err);
       }
     }
 
-    // If homepage_gallery_config_v6 is part of this save, also sync into src/data/transformationsData.ts
-    if (existing.homepage_gallery_config_v6 && typeof existing.homepage_gallery_config_v6 === 'object') {
-      syncTransformationsDataTs(existing.homepage_gallery_config_v6);
+    // If homepage_gallery_config_v6 is part of this save, reconcile with disk & transformationsData.ts and sync
+    if (
+      isTargetKey('homepage_gallery_config_v6') &&
+      existing.homepage_gallery_config_v6 &&
+      typeof existing.homepage_gallery_config_v6 === 'object'
+    ) {
+      const reconciledGallery = reconcileBeforeAfterGalleryConfig(
+        existing.homepage_gallery_config_v6,
+        prevGalleryConfig,
+        false
+      );
+      existing.homepage_gallery_config_v6 = reconciledGallery;
+      syncTransformationsDataTs(reconciledGallery);
     }
 
     // If master_services_config_v1 or homepage_specialist_areas_config_v4 is part of this save,
     // also bake directly into src/data/specialistTreatments.ts so service images, names & branches persist after build/deploy
-    if (Array.isArray(existing.master_services_config_v1) && existing.master_services_config_v1.length > 0) {
+    if (
+      isTargetKey('master_services_config_v1') &&
+      Array.isArray(existing.master_services_config_v1) &&
+      existing.master_services_config_v1.length > 0
+    ) {
       syncSpecialistTreatmentsTs(existing.master_services_config_v1);
     } else if (
+      isTargetKey('homepage_specialist_areas_config_v4') &&
       existing.homepage_specialist_areas_config_v4 &&
       Array.isArray(existing.homepage_specialist_areas_config_v4.areas) &&
       existing.homepage_specialist_areas_config_v4.areas.length > 0
@@ -1918,8 +3406,46 @@ app.post('/api/admin/save-to-files', (req, res) => {
     }
 
     // If treatment_taxonomy_data is part of this save, bake into src/data/treatmentPricing.ts
-    if (Array.isArray(existing.treatment_taxonomy_data) && existing.treatment_taxonomy_data.length > 0) {
+    if (
+      isTargetKey('treatment_taxonomy_data') &&
+      Array.isArray(existing.treatment_taxonomy_data) &&
+      existing.treatment_taxonomy_data.length > 0
+    ) {
       syncTreatmentTaxonomyTs(existing.treatment_taxonomy_data);
+    }
+
+    // If homepage_latest_news_config is part of this save, reconcile with server state so stale localStorage never wipes out saved blog images or posts
+    if (
+      isTargetKey('homepage_latest_news_config') &&
+      existing.homepage_latest_news_config &&
+      typeof existing.homepage_latest_news_config === 'object'
+    ) {
+      const rawNewsCfg = existing.homepage_latest_news_config;
+      if (Array.isArray(rawNewsCfg.newsArticles) || Array.isArray(rawNewsCfg.storyArticles)) {
+        const incomingNews = Array.isArray(rawNewsCfg.newsArticles) ? rawNewsCfg.newsArticles : [];
+        const incomingStories = Array.isArray(rawNewsCfg.storyArticles) ? rawNewsCfg.storyArticles : [];
+        const cleanNews = reconcileBlogArticleLists(
+          prevServerBlogConfig.newsArticles,
+          incomingNews,
+          'news'
+        );
+        const cleanStories = reconcileBlogArticleLists(
+          prevServerBlogConfig.storyArticles,
+          incomingStories,
+          'stories'
+        );
+        existing.homepage_latest_news_config = {
+          heading: rawNewsCfg.heading || prevServerBlogConfig.heading || 'Latest News & Insights',
+          description:
+            rawNewsCfg.description ||
+            prevServerBlogConfig.description ||
+            'Stay informed on the latest clinical advancements.',
+          newsArticles: cleanNews,
+          storyArticles: cleanStories,
+          updatedAt: new Date().toISOString(),
+        };
+        syncBlogArticlesDataTs(cleanNews, cleanStories);
+      }
     }
 
     existing.lastSynced = new Date().toISOString();
@@ -2138,17 +3664,33 @@ app.post('/api/admin/homepage-treatments', (req, res) => {
 // ============================================================================
 app.get('/api/admin/before-after-gallery', (_req, res) => {
   try {
+    let existing: Record<string, any> = {};
     if (fs.existsSync(customizationsPath)) {
-      const existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
-      if (existing && existing.homepage_gallery_config_v6) {
-        return res.json({
-          success: true,
-          data: existing.homepage_gallery_config_v6,
-          updatedAt: existing.lastSynced || null,
-        });
+      try {
+        existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+      } catch {
+        existing = {};
       }
     }
-    return res.json({ success: true, data: null });
+
+    const rawJsonGallery = existing?.homepage_gallery_config_v6 || null;
+    const reconciled = reconcileBeforeAfterGalleryConfig(rawJsonGallery, rawJsonGallery, false);
+
+    // Always ensure manifest & transformationsData.ts stay synced if reconciliation recovered any cases or disk images
+    if (JSON.stringify(rawJsonGallery) !== JSON.stringify(reconciled)) {
+      existing.homepage_gallery_config_v6 = reconciled;
+      existing.lastSynced = new Date().toISOString();
+      writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+      syncTransformationsDataTs(reconciled);
+    } else if (!fs.existsSync(galleryManifestPath)) {
+      writeGalleryManifestToDisk(reconciled);
+    }
+
+    return res.json({
+      success: true,
+      data: reconciled,
+      updatedAt: existing.lastSynced || null,
+    });
   } catch (error) {
     console.error('[Admin] Error reading Before & After gallery config:', error);
     return res.status(500).json({ success: false, error: String(error) });
@@ -2158,6 +3700,9 @@ app.get('/api/admin/before-after-gallery', (_req, res) => {
 app.post('/api/admin/before-after-gallery', (req, res) => {
   try {
     const config = req.body?.config || req.body?.data || req.body;
+    const allowDeletions = Boolean(req.body?.allowDeletions ?? true);
+    const deletedPairIds = Array.isArray(req.body?.deletedPairIds) ? req.body.deletedPairIds : [];
+    const restoredDefaults = Boolean(req.body?.restoredDefaults);
     if (!config || !Array.isArray(config.categories)) {
       return res.status(400).json({
         success: false,
@@ -2174,15 +3719,26 @@ app.post('/api/admin/before-after-gallery', (req, res) => {
       }
     }
 
-    existing.homepage_gallery_config_v6 = config;
+    const reconciled = reconcileBeforeAfterGalleryConfig(
+      config,
+      existing.homepage_gallery_config_v6,
+      {
+        allowDeletions,
+        deletedPairIds,
+        restoredDefaults,
+      }
+    );
+
+    existing.homepage_gallery_config_v6 = reconciled;
     existing.lastSynced = new Date().toISOString();
 
-    fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
-    syncTransformationsDataTs(config);
+    writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+    syncTransformationsDataTs(reconciled);
 
-    console.log(`[Admin] Persisted Before & After gallery config to siteCustomizations.json and transformationsData.ts`);
+    console.log(`[Admin] Persisted reconciled Before & After gallery config to siteCustomizations.json and transformationsData.ts`);
     return res.json({
       success: true,
+      data: reconciled,
       message: 'Before & After gallery saved to siteCustomizations.json and transformationsData.ts',
       updatedAt: existing.lastSynced,
     });
@@ -2195,7 +3751,24 @@ app.post('/api/admin/before-after-gallery', (req, res) => {
 // API: Upload a Before or After image in WebP format directly to /assets/transformations/
 app.post('/api/admin/transformations/upload-image', (req, res) => {
   try {
-    const { pairId, slot, fileName, dataUrl, base64, title } = req.body || {};
+    const {
+      pairId,
+      slot,
+      fileName,
+      dataUrl,
+      base64,
+      title,
+      groupId,
+      linkedTreatmentId,
+      linkedTreatmentTitle,
+      duration,
+      sessions,
+      beforeAltText,
+      afterAltText,
+      singleFrameAltText,
+      seoTitle,
+      seoKeywords,
+    } = req.body || {};
     if (!dataUrl && !base64) {
       return res.status(400).json({
         success: false,
@@ -2206,21 +3779,44 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
     const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
     const buffer = Buffer.from(rawData, 'base64');
 
-    const rawBase = fileName
-      ? path.basename(fileName, path.extname(fileName))
-      : `${pairId || title || 'ba'}-${slot || 'image'}`;
-    const safeSlug = rawBase
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const normalizedSlot: 'before' | 'after' | 'single' =
+      slot === 'single' ? 'single' : slot === 'after' ? 'after' : 'before';
     const timestamp = Date.now();
-    const safeWebpName = `${safeSlug}-${timestamp}.webp`;
+    let safeWebpName: string;
 
+    if (pairId) {
+      const cleanPairId = sanitizePairIdForFile(pairId);
+      safeWebpName = `${cleanPairId}-${normalizedSlot}.webp`;
+
+      // Clean up any legacy timestamped files for the same pairId + slot to prevent orphan clutter
+      if (fs.existsSync(publicTransformationsDir)) {
+        try {
+          const prefix = `${cleanPairId}-${normalizedSlot}-`;
+          for (const existingFile of fs.readdirSync(publicTransformationsDir)) {
+            if (existingFile.toLowerCase().startsWith(prefix) && existingFile.toLowerCase().endsWith('.webp')) {
+              fs.unlinkSync(path.join(publicTransformationsDir, existingFile));
+            }
+          }
+        } catch (cleanupErr) {
+          console.warn('[Admin] Could not clean up old transformation slot file:', cleanupErr);
+        }
+      }
+    } else {
+      const rawBase = fileName
+        ? path.basename(fileName, path.extname(fileName))
+        : `${title || 'ba'}-${normalizedSlot}`;
+      const safeSlug = rawBase
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      safeWebpName = `${safeSlug}-${timestamp}.webp`;
+    }
+
+    if (!fs.existsSync(publicTransformationsDir)) {
+      fs.mkdirSync(publicTransformationsDir, { recursive: true });
+    }
     const publicTransformationPath = path.join(publicTransformationsDir, safeWebpName);
-    const srcTransformationPath = path.join(srcTransformationsDir, safeWebpName);
-
     fs.writeFileSync(publicTransformationPath, buffer);
-    fs.writeFileSync(srcTransformationPath, buffer);
 
     if (fs.existsSync(distTransformationsDir)) {
       try {
@@ -2231,14 +3827,131 @@ app.post('/api/admin/transformations/upload-image', (req, res) => {
     }
 
     const cleanUrl = `/assets/transformations/${safeWebpName}`;
+    const versionedUrl = `${cleanUrl}?v=${timestamp}`;
     console.log(`[Admin] Saved Before & After WebP image to ${cleanUrl}`);
+
+    // Immediately persist the updated image URL into siteCustomizations.json, _gallery_manifest.json, & transformationsData.ts
+    // even when creating a brand new pair in the modal before clicking Save!
+    let updatedGallery: any = null;
+    if (pairId) {
+      try {
+        let existing: Record<string, any> = {};
+        if (fs.existsSync(customizationsPath)) {
+          try {
+            existing = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+          } catch {
+            existing = {};
+          }
+        }
+
+        const currentGallery = reconcileBeforeAfterGalleryConfig(
+          existing.homepage_gallery_config_v6,
+          existing.homepage_gallery_config_v6,
+          false
+        );
+        let pairFound = false;
+        const fieldName =
+          normalizedSlot === 'single'
+            ? 'singleFrameImage'
+            : normalizedSlot === 'after'
+            ? 'afterImage'
+            : 'beforeImage';
+        const targetGroupId = String(groupId || linkedTreatmentId || 'facial-skin-care');
+
+        for (const cat of currentGallery.categories || []) {
+          for (const pair of cat.pairs || []) {
+            if (pair && String(pair.id) === String(pairId)) {
+              pair[fieldName] = versionedUrl;
+              if (title) pair.title = title;
+              if (linkedTreatmentId) pair.linkedTreatmentId = linkedTreatmentId;
+              if (linkedTreatmentTitle) pair.linkedTreatmentTitle = linkedTreatmentTitle;
+              if (duration) pair.duration = duration;
+              if (typeof sessions === 'number') pair.sessions = sessions;
+              if (beforeAltText) pair.beforeAltText = beforeAltText;
+              if (afterAltText) pair.afterAltText = afterAltText;
+              if (singleFrameAltText) pair.singleFrameAltText = singleFrameAltText;
+              if (seoTitle) pair.seoTitle = seoTitle;
+              if (Array.isArray(seoKeywords) && seoKeywords.length > 0) pair.seoKeywords = seoKeywords;
+              pair.updatedAt = timestamp;
+              pairFound = true;
+            }
+          }
+        }
+
+        // If pairId is a newly created pair not yet in categories, insert it now so the image cannot be lost!
+        if (!pairFound) {
+          if (!Array.isArray(currentGallery.categories)) {
+            currentGallery.categories = [];
+          }
+          let targetCat = currentGallery.categories.find((c: any) => c && String(c.id) === targetGroupId);
+          if (!targetCat) {
+            targetCat = currentGallery.categories[0];
+          }
+          if (!targetCat) {
+            targetCat = {
+              id: targetGroupId,
+              name: linkedTreatmentTitle || 'Facial & Skin Care',
+              pairs: [],
+            };
+            currentGallery.categories.push(targetCat);
+          }
+          if (!Array.isArray(targetCat.pairs)) {
+            targetCat.pairs = [];
+          }
+
+          const existingBeforeDiskUrl = resolveDiskTransformationImage(String(pairId), 'before', '');
+          const existingAfterDiskUrl = resolveDiskTransformationImage(String(pairId), 'after', '');
+          const existingSingleDiskUrl = resolveDiskTransformationImage(String(pairId), 'single', '');
+
+          const newPairEntry = {
+            id: String(pairId),
+            title: title || (linkedTreatmentTitle ? `${linkedTreatmentTitle} Transformation` : 'Clinical Transformation'),
+            treatmentGroupId: targetCat.id,
+            linkedTreatmentId: linkedTreatmentId || targetCat.id,
+            linkedTreatmentTitle: linkedTreatmentTitle || targetCat.name || '',
+            beforeImage: normalizedSlot === 'before' ? versionedUrl : existingBeforeDiskUrl || '',
+            afterImage: normalizedSlot === 'after' ? versionedUrl : existingAfterDiskUrl || '',
+            singleFrameImage:
+              normalizedSlot === 'single' ? versionedUrl : existingSingleDiskUrl || undefined,
+            beforeAltText:
+              beforeAltText || `${title || 'Clinical'} Before Treatment at Age Reversal Clinics London`,
+            afterAltText:
+              afterAltText || `${title || 'Clinical'} After Treatment Result at Age Reversal Clinics London`,
+            singleFrameAltText:
+              singleFrameAltText ||
+              `${title || 'Clinical'} Before & After Transformation at Age Reversal Clinics London`,
+            seoTitle:
+              seoTitle || `${title || 'Clinical'} — Before & After Result | Age Reversal Clinics`,
+            seoKeywords: Array.isArray(seoKeywords) ? seoKeywords : [],
+            duration: duration || '6 Weeks • 3 Sessions',
+            sessions: typeof sessions === 'number' ? sessions : 3,
+            featured: false,
+            hidden: false,
+            updatedAt: timestamp,
+          };
+
+          targetCat.pairs.unshift(newPairEntry);
+        }
+
+        existing.homepage_gallery_config_v6 = currentGallery;
+        existing.lastSynced = new Date().toISOString();
+        writeFileAtomicallySync(customizationsPath, JSON.stringify(existing, null, 2));
+        syncTransformationsDataTs(currentGallery);
+        updatedGallery = currentGallery;
+        console.log(`[Admin] Auto-persisted ${fieldName} for ${pairId} to siteCustomizations.json, _gallery_manifest.json, and transformationsData.ts`);
+      } catch (persistErr) {
+        console.warn('[Admin] Could not auto-persist uploaded transformation image to config:', persistErr);
+      }
+    }
 
     return res.json({
       success: true,
       url: cleanUrl,
+      versionedUrl,
       rawPath: cleanUrl,
       fileName: safeWebpName,
       version: timestamp,
+      updatedGallery,
       message: 'Before & After WebP image saved to /assets/transformations/ successfully!',
     });
   } catch (error) {
@@ -2272,10 +3985,9 @@ const handleAdminAssetUpload = (req: any, res: any) => {
 
       const singleFileName = `${sanitizedSlotId}.webp`;
       const publicAssetPath = path.join(publicAssetsDir, singleFileName);
-      const srcAssetPath = path.join(srcAssetsDir, singleFileName);
 
       // Purge any older obsolete files matching this slot (e.g. old PNGs, JPEGs, or timestamped duplicates)
-      const targetDirs = [publicAssetsDir, srcAssetsDir];
+      const targetDirs = [publicAssetsDir];
       if (fs.existsSync(distAssetsDir)) {
         targetDirs.push(distAssetsDir);
       }
@@ -2306,9 +4018,8 @@ const handleAdminAssetUpload = (req: any, res: any) => {
         }
       }
 
-      // Save the single .webp directly to public/assets and src/assets/images
+      // Save the single .webp directly to public/assets
       fs.writeFileSync(publicAssetPath, buffer);
-      fs.writeFileSync(srcAssetPath, buffer);
       if (fs.existsSync(distAssetsDir)) {
         try {
           fs.writeFileSync(path.join(distAssetsDir, singleFileName), buffer);
@@ -2319,7 +4030,7 @@ const handleAdminAssetUpload = (req: any, res: any) => {
       const cacheBustedUrl = `${cleanRelativeUrl}?v=${timestamp}`;
 
       // If replacing an existing clinicInfo.ts image (e.g. an old timestamped upload /assets/179172...png),
-      // delete the displaced file from public/assets and src/assets/images if not used elsewhere
+      // delete the displaced file from public/assets if not used elsewhere
       if (typeof previousUrl === 'string' && previousUrl.trim()) {
         const normalizedPrev = previousUrl.split('?')[0].split('#')[0].trim();
         if (normalizedPrev && normalizedPrev !== cleanRelativeUrl) {
@@ -2338,6 +4049,30 @@ const handleAdminAssetUpload = (req: any, res: any) => {
       }
 
       console.log(`[Admin] Saved permanent slot WebP asset: ${cleanRelativeUrl}`);
+
+      // Automatically reconcile and persist clinicInfo.ts & siteCustomizations.json when a clinic-* slot image is uploaded
+      if (sanitizedSlotId.startsWith('clinic-')) {
+        try {
+          let existingCust: Record<string, any> = {};
+          if (fs.existsSync(customizationsPath)) {
+            try {
+              existingCust = JSON.parse(fs.readFileSync(customizationsPath, 'utf-8'));
+            } catch {
+              existingCust = {};
+            }
+          }
+          const reconciled = reconcileClinicDataWithDisk(
+            existingCust.clinic_info_data,
+            parseClinicDataFromTsFile()
+          );
+          applyClinicDataToCustomizationsObject(existingCust, reconciled);
+          existingCust.lastSynced = new Date().toISOString();
+          writeFileAtomicallySync(clinicInfoPath, generateClinicInfoTs(reconciled));
+          writeFileAtomicallySync(customizationsPath, JSON.stringify(existingCust, null, 2));
+        } catch (syncErr) {
+          console.warn(`[Admin] Could not auto-sync clinicInfo.ts after slot upload:`, syncErr);
+        }
+      }
 
       return res.json({
         success: true,
@@ -2370,10 +4105,8 @@ const handleAdminAssetUpload = (req: any, res: any) => {
 
     if (isTreatmentsFolder) {
       const publicTreatPath = path.join(publicTreatmentsDir, safeName);
-      const srcTreatPath = path.join(srcTreatmentsDir, safeName);
 
       fs.writeFileSync(publicTreatPath, buffer);
-      fs.writeFileSync(srcTreatPath, buffer);
       if (fs.existsSync(distTreatmentsDir)) {
         try {
           fs.writeFileSync(path.join(distTreatmentsDir, safeName), buffer);
@@ -2411,10 +4144,8 @@ const handleAdminAssetUpload = (req: any, res: any) => {
 
     // 3. General non-slot asset upload fallback
     const publicAssetPath = path.join(publicAssetsDir, safeName);
-    const srcAssetPath = path.join(srcAssetsDir, safeName);
 
     fs.writeFileSync(publicAssetPath, buffer);
-    fs.writeFileSync(srcAssetPath, buffer);
 
     const newAssetUrl = `/assets/${safeName}`;
 
@@ -2432,13 +4163,13 @@ const handleAdminAssetUpload = (req: any, res: any) => {
       }
     }
 
-    console.log(`[Admin] Saved asset to public/assets/${safeName} and src/assets/images/${safeName}`);
+    console.log(`[Admin] Saved asset to public/assets/${safeName}`);
 
     return res.json({
       success: true,
       url: newAssetUrl,
       fileName: safeName,
-      message: 'Asset saved to public/assets and src/assets/images successfully!'
+      message: 'Asset saved to public/assets successfully!'
     });
   } catch (error) {
     console.error('Error saving asset:', error);
@@ -2449,55 +4180,73 @@ const handleAdminAssetUpload = (req: any, res: any) => {
 app.post('/api/admin/upload-asset', handleAdminAssetUpload);
 app.post('/api/admin/clinic-assets/upload', handleAdminAssetUpload);
 
-// API: List assets in src/assets/images, public/assets, public/assets/treatments, and public/assets/transformations
+// API: List assets in public/assets, public/assets/treatments, public/assets/transformations, and public/assets/blog
 app.get('/api/admin/assets', (_req, res) => {
   try {
     const assetsList: Array<{ name: string; url: string; size: number; mtime: string; location: string }> = [];
     const seen = new Set<string>();
 
-    // Read public/assets/treatments & src/assets/images/treatments first
-    for (const treatDir of [publicTreatmentsDir, srcTreatmentsDir]) {
-      if (fs.existsSync(treatDir)) {
-        const files = fs.readdirSync(treatDir);
-        for (const file of files) {
-          const url = `/assets/treatments/${file}`;
-          if (!seen.has(url)) {
-            const fullPath = path.join(treatDir, file);
-            const stat = fs.statSync(fullPath);
-            if (stat.isFile()) {
-              seen.add(url);
-              assetsList.push({
-                name: file,
-                url,
-                size: stat.size,
-                mtime: stat.mtime.toISOString(),
-                location: 'public/assets/treatments'
-              });
-            }
+    // Read public/assets/treatments
+    if (fs.existsSync(publicTreatmentsDir)) {
+      const files = fs.readdirSync(publicTreatmentsDir);
+      for (const file of files) {
+        const url = `/assets/treatments/${file}`;
+        if (!seen.has(url)) {
+          const fullPath = path.join(publicTreatmentsDir, file);
+          const stat = fs.statSync(fullPath);
+          if (stat.isFile()) {
+            seen.add(url);
+            assetsList.push({
+              name: file,
+              url,
+              size: stat.size,
+              mtime: stat.mtime.toISOString(),
+              location: 'public/assets/treatments'
+            });
           }
         }
       }
     }
 
-    // Read public/assets/transformations & src/assets/images/transformations
-    for (const transDir of [publicTransformationsDir, srcTransformationsDir]) {
-      if (fs.existsSync(transDir)) {
-        const files = fs.readdirSync(transDir);
-        for (const file of files) {
-          const url = `/assets/transformations/${file}`;
-          if (!seen.has(url)) {
-            const fullPath = path.join(transDir, file);
-            const stat = fs.statSync(fullPath);
-            if (stat.isFile()) {
-              seen.add(url);
-              assetsList.push({
-                name: file,
-                url,
-                size: stat.size,
-                mtime: stat.mtime.toISOString(),
-                location: 'public/assets/transformations'
-              });
-            }
+    // Read public/assets/transformations
+    if (fs.existsSync(publicTransformationsDir)) {
+      const files = fs.readdirSync(publicTransformationsDir);
+      for (const file of files) {
+        const url = `/assets/transformations/${file}`;
+        if (!seen.has(url)) {
+          const fullPath = path.join(publicTransformationsDir, file);
+          const stat = fs.statSync(fullPath);
+          if (stat.isFile()) {
+            seen.add(url);
+            assetsList.push({
+              name: file,
+              url,
+              size: stat.size,
+              mtime: stat.mtime.toISOString(),
+              location: 'public/assets/transformations'
+            });
+          }
+        }
+      }
+    }
+
+    // Read public/assets/blog
+    if (fs.existsSync(publicBlogDir)) {
+      const files = fs.readdirSync(publicBlogDir);
+      for (const file of files) {
+        const url = `/assets/blog/${file}`;
+        if (!seen.has(url)) {
+          const fullPath = path.join(publicBlogDir, file);
+          const stat = fs.statSync(fullPath);
+          if (stat.isFile()) {
+            seen.add(url);
+            assetsList.push({
+              name: file,
+              url,
+              size: stat.size,
+              mtime: stat.mtime.toISOString(),
+              location: 'public/assets/blog'
+            });
           }
         }
       }
@@ -2516,28 +4265,8 @@ app.get('/api/admin/assets', (_req, res) => {
             url: `/assets/${file}`,
             size: stat.size,
             mtime: stat.mtime.toISOString(),
-            location: 'public/assets & src/assets/images'
+            location: 'public/assets'
           });
-        }
-      }
-    }
-
-    // Read src/assets/images for existing project images
-    if (fs.existsSync(srcAssetsDir)) {
-      const files = fs.readdirSync(srcAssetsDir);
-      for (const file of files) {
-        if (!seen.has(file)) {
-          const fullPath = path.join(srcAssetsDir, file);
-          const stat = fs.statSync(fullPath);
-          if (stat.isFile()) {
-            assetsList.push({
-              name: file,
-              url: `/assets/${file}`,
-              size: stat.size,
-              mtime: stat.mtime.toISOString(),
-              location: 'src/assets/images'
-            });
-          }
         }
       }
     }
@@ -2590,8 +4319,7 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
     const buffer = Buffer.from(rawData, 'base64');
 
     // 1. Scan target directories and delete any previous image matching `${fileStem}.*`
-    // Includes public, src, and production dist directories
-    const targetDirs = [publicTreatmentsDir, srcTreatmentsDir];
+    const targetDirs = [publicTreatmentsDir];
     if (fs.existsSync(distTreatmentsDir)) {
       targetDirs.push(distTreatmentsDir);
     }
@@ -2622,10 +4350,8 @@ app.post('/api/admin/treatments/:id/image', (req, res) => {
     // 2. Save strictly ONE single .webp image per treatment card slot
     const singleFileName = `${fileStem}.webp`;
     const publicPath = path.join(publicTreatmentsDir, singleFileName);
-    const srcPath = path.join(srcTreatmentsDir, singleFileName);
 
     fs.writeFileSync(publicPath, buffer);
-    fs.writeFileSync(srcPath, buffer);
     if (fs.existsSync(distTreatmentsDir)) {
       try {
         fs.writeFileSync(path.join(distTreatmentsDir, singleFileName), buffer);
@@ -2810,12 +4536,655 @@ app.get('/api/admin/treatments/:id/image', (req, res) => {
   }
 });
 
+// ============================================================================
+// BLOG & CLINICAL JOURNAL: PAGINATED LIST, ON-DEMAND SINGLE POST, CRUD & WEBP COVER UPLOAD
+// ============================================================================
+
+// GET /api/admin/blog-posts
+// Lightweight Paginated List Query: Projects ONLY exact card summary columns (id, slug, title, category, type, status, date, image, seoScore, etc.)
+app.get('/api/admin/blog-posts', (req, res) => {
+  try {
+    const blogConfig = getServerBlogConfig();
+    const allPosts = [...blogConfig.newsArticles, ...blogConfig.storyArticles];
+
+    const counts = {
+      all: allPosts.length,
+      news: allPosts.filter((p) => p.type === 'news').length,
+      stories: allPosts.filter((p) => p.type === 'stories').length,
+      published: allPosts.filter((p) => p.status !== 'draft').length,
+      drafts: allPosts.filter((p) => p.status === 'draft').length,
+    };
+
+    const typeFilter = req.query.type ? String(req.query.type).trim().toLowerCase() : 'all';
+    const statusFilter = req.query.status ? String(req.query.status).trim().toLowerCase() : 'all';
+    const categoryFilter = req.query.category ? String(req.query.category).trim().toLowerCase() : '';
+    const searchFilter = req.query.search ? String(req.query.search).trim().toLowerCase() : '';
+    const sortOption = req.query.sort ? String(req.query.sort).trim().toLowerCase() : 'newest';
+
+    // Project summary columns first
+    let projected = allPosts.map((post) => projectServerBlogPostCard(post));
+
+    // Apply filters
+    projected = projected.filter((item) => {
+      if (typeFilter === 'news' && item.type !== 'news') return false;
+      if (typeFilter === 'stories' && item.type !== 'stories') return false;
+      if (statusFilter === 'published' && item.status !== 'published') return false;
+      if (statusFilter === 'draft' && item.status !== 'draft') return false;
+      if (
+        categoryFilter &&
+        categoryFilter !== 'all' &&
+        item.category.toLowerCase() !== categoryFilter &&
+        item.tag.toLowerCase() !== categoryFilter
+      ) {
+        return false;
+      }
+      if (searchFilter) {
+        const hay = `${item.title} ${item.slug} ${item.category} ${item.tag} ${item.author} ${item.description}`.toLowerCase();
+        if (!hay.includes(searchFilter)) return false;
+      }
+      return true;
+    });
+
+    // Apply sorting
+    projected.sort((a, b) => {
+      if (sortOption === 'title-asc') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortOption === 'seo-desc') {
+        return b.seoScore - a.seoScore;
+      }
+      const timeA = Date.parse(a.publishedAt || a.date || '') || 0;
+      const timeB = Date.parse(b.publishedAt || b.date || '') || 0;
+      if (sortOption === 'oldest') {
+        return timeA - timeB;
+      }
+      return timeB - timeA;
+    });
+
+    const totalCount = projected.length;
+    const limit = req.query.limit !== undefined ? Math.max(1, Number(req.query.limit) || 6) : 6;
+    const page = req.query.page !== undefined ? Math.max(1, Number(req.query.page) || 1) : 1;
+    const offset =
+      req.query.offset !== undefined
+        ? Math.max(0, Number(req.query.offset) || 0)
+        : (page - 1) * limit;
+
+    const paginatedItems = projected.slice(offset, offset + limit);
+    const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+    const hasMore = offset + paginatedItems.length < totalCount;
+
+    return res.json({
+      success: true,
+      items: paginatedItems,
+      data: paginatedItems,
+      totalCount,
+      hasMore,
+      page: Math.floor(offset / limit) + 1,
+      totalPages,
+      offset,
+      limit,
+      counts,
+      heading: blogConfig.heading,
+      description: blogConfig.description,
+    });
+  } catch (error) {
+    console.error('[Admin] Error fetching paginated blog posts:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// GET /api/admin/blog-posts/:idOrSlug
+// Single-Post On-Demand Query: Fetches full contentBlocks, faqItems, and complete SEO metadata ONLY when opening a post
+app.get('/api/admin/blog-posts/:idOrSlug', (req, res) => {
+  try {
+    const target = String(req.params.idOrSlug || '').trim().toLowerCase();
+    if (!target) {
+      return res.status(400).json({ success: false, error: 'Missing blog post ID or slug' });
+    }
+
+    const blogConfig = getServerBlogConfig();
+    const allPosts = [...blogConfig.newsArticles, ...blogConfig.storyArticles];
+    const matched = allPosts.find(
+      (post) =>
+        String(post.id || '').toLowerCase() === target ||
+        String(post.slug || '').toLowerCase() === target
+    );
+
+    if (!matched) {
+      return res.status(404).json({ success: false, error: `Blog post '${target}' not found` });
+    }
+
+    const seoCheck = computeServerArticleSeoScore(matched);
+    return res.json({
+      success: true,
+      data: matched,
+      post: matched,
+      seoScore: seoCheck.score,
+      seoGrade: seoCheck.grade,
+    });
+  } catch (error) {
+    console.error('[Admin] Error fetching single blog post:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// POST /api/admin/blog-posts
+// Create a new blog post (or save header metadata) and persist to siteCustomizations.json + src/data.ts
+app.post('/api/admin/blog-posts', (req, res) => {
+  try {
+    const incoming = req.body?.post || req.body?.article || req.body;
+    const blogConfig = getServerBlogConfig();
+
+    // Support updating section heading/description alongside or independently
+    if (incoming && !incoming.title && (incoming.heading || incoming.description)) {
+      const savedCfg = persistServerBlogConfig({
+        heading: incoming.heading || blogConfig.heading,
+        description: incoming.description || blogConfig.description,
+        newsArticles: blogConfig.newsArticles,
+        storyArticles: blogConfig.storyArticles,
+      });
+      return res.json({
+        success: true,
+        heading: savedCfg.heading,
+        description: savedCfg.description,
+        updatedAt: savedCfg.updatedAt,
+      });
+    }
+
+    if (!incoming || !String(incoming.title || '').trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Blog post title is required.',
+      });
+    }
+
+    const postType: 'news' | 'stories' = incoming.type === 'stories' ? 'stories' : 'news';
+    const generatedId =
+      String(incoming.id || '').trim() ||
+      `${postType === 'stories' ? 'story' : 'news'}-${Date.now()}`;
+
+    const normalizedPost = normalizeServerArticle(
+      {
+        ...incoming,
+        id: generatedId,
+        type: postType,
+        publishedAt: incoming.publishedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      postType
+    );
+
+    const nextNews =
+      postType === 'news'
+        ? [normalizedPost, ...blogConfig.newsArticles.filter((p) => p.id !== normalizedPost.id)]
+        : blogConfig.newsArticles.filter((p) => p.id !== normalizedPost.id);
+
+    const nextStories =
+      postType === 'stories'
+        ? [normalizedPost, ...blogConfig.storyArticles.filter((p) => p.id !== normalizedPost.id)]
+        : blogConfig.storyArticles.filter((p) => p.id !== normalizedPost.id);
+
+    const savedCfg = persistServerBlogConfig({
+      heading: blogConfig.heading,
+      description: blogConfig.description,
+      newsArticles: nextNews,
+      storyArticles: nextStories,
+    });
+
+    return res.json({
+      success: true,
+      post: normalizedPost,
+      summary: projectServerBlogPostCard(normalizedPost),
+      updatedAt: savedCfg.updatedAt,
+      message: 'Blog post created and persisted to src/data.ts and siteCustomizations.json.',
+    });
+  } catch (error) {
+    console.error('[Admin] Error creating blog post:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// PUT /api/admin/blog-posts/:id
+// Update an existing blog post by ID and persist to siteCustomizations.json + src/data.ts
+app.put('/api/admin/blog-posts/:id', (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ success: false, error: 'Missing blog post ID' });
+    }
+
+    const incoming = req.body?.post || req.body?.article || req.body;
+    const blogConfig = getServerBlogConfig();
+    const existingPost = [...blogConfig.newsArticles, ...blogConfig.storyArticles].find(
+      (p) => p.id === targetId
+    );
+
+    const postType: 'news' | 'stories' =
+      incoming?.type === 'stories' || incoming?.type === 'news'
+        ? incoming.type
+        : existingPost?.type || 'news';
+
+    const updatedPost = normalizeServerArticle(
+      {
+        ...(existingPost || {}),
+        ...(incoming || {}),
+        id: targetId,
+        type: postType,
+        updatedAt: new Date().toISOString(),
+      },
+      postType
+    );
+
+    const filteredNews = blogConfig.newsArticles.filter((p) => p.id !== targetId);
+    const filteredStories = blogConfig.storyArticles.filter((p) => p.id !== targetId);
+
+    const nextNews =
+      postType === 'news'
+        ? blogConfig.newsArticles.some((p) => p.id === targetId)
+          ? blogConfig.newsArticles.map((p) => (p.id === targetId ? updatedPost : p))
+          : [updatedPost, ...filteredNews]
+        : filteredNews;
+
+    const nextStories =
+      postType === 'stories'
+        ? blogConfig.storyArticles.some((p) => p.id === targetId)
+          ? blogConfig.storyArticles.map((p) => (p.id === targetId ? updatedPost : p))
+          : [updatedPost, ...filteredStories]
+        : filteredStories;
+
+    const savedCfg = persistServerBlogConfig({
+      heading: blogConfig.heading,
+      description: blogConfig.description,
+      newsArticles: nextNews,
+      storyArticles: nextStories,
+    });
+
+    return res.json({
+      success: true,
+      post: updatedPost,
+      summary: projectServerBlogPostCard(updatedPost),
+      updatedAt: savedCfg.updatedAt,
+      message: 'Blog post updated and synced to disk.',
+    });
+  } catch (error) {
+    console.error('[Admin] Error updating blog post:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// PATCH /api/admin/blog-posts/:id/status
+// Toggle or set a blog post's publication status ('published' | 'draft')
+app.patch('/api/admin/blog-posts/:id/status', (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ success: false, error: 'Missing blog post ID' });
+    }
+
+    const blogConfig = getServerBlogConfig();
+    const existingPost = [...blogConfig.newsArticles, ...blogConfig.storyArticles].find(
+      (p) => p.id === targetId
+    );
+    if (!existingPost) {
+      return res.status(404).json({ success: false, error: `Blog post '${targetId}' not found` });
+    }
+
+    const requestedStatus = req.body?.status;
+    const nextStatus: 'published' | 'draft' =
+      requestedStatus === 'published' || requestedStatus === 'draft'
+        ? requestedStatus
+        : existingPost.status === 'draft'
+        ? 'published'
+        : 'draft';
+
+    const nowIso = new Date().toISOString();
+    const updatedPost = normalizeServerArticle(
+      {
+        ...existingPost,
+        status: nextStatus,
+        updatedAt: nowIso,
+        ...(nextStatus === 'published' && existingPost.status === 'draft'
+          ? { publishedAt: nowIso }
+          : {}),
+      },
+      existingPost.type || 'news'
+    );
+
+    const nextNews = blogConfig.newsArticles.map((p) => (p.id === targetId ? updatedPost : p));
+    const nextStories = blogConfig.storyArticles.map((p) => (p.id === targetId ? updatedPost : p));
+
+    const savedCfg = persistServerBlogConfig({
+      heading: blogConfig.heading,
+      description: blogConfig.description,
+      newsArticles: nextNews,
+      storyArticles: nextStories,
+    });
+
+    return res.json({
+      success: true,
+      id: targetId,
+      status: nextStatus,
+      post: updatedPost,
+      summary: projectServerBlogPostCard(updatedPost),
+      updatedAt: savedCfg.updatedAt,
+    });
+  } catch (error) {
+    console.error('[Admin] Error toggling blog post status:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// DELETE /api/admin/blog-posts/:id
+// Delete a blog post by ID and purge its cover WebP file from /assets/blog/ if unreferenced
+app.delete('/api/admin/blog-posts/:id', (req, res) => {
+  try {
+    const targetId = String(req.params.id || '').trim();
+    if (!targetId) {
+      return res.status(400).json({ success: false, error: 'Missing blog post ID' });
+    }
+
+    const blogConfig = getServerBlogConfig();
+    const nextNews = blogConfig.newsArticles.filter((p) => p.id !== targetId);
+    const nextStories = blogConfig.storyArticles.filter((p) => p.id !== targetId);
+
+    const savedCfg = persistServerBlogConfig({
+      heading: blogConfig.heading,
+      description: blogConfig.description,
+      newsArticles: nextNews,
+      storyArticles: nextStories,
+    });
+
+    return res.json({
+      success: true,
+      deletedId: targetId,
+      updatedAt: savedCfg.updatedAt,
+      message: `Blog post '${targetId}' deleted and synced to disk.`,
+    });
+  } catch (error) {
+    console.error('[Admin] Error deleting blog post:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
+// POST /api/admin/blog-posts/upload-image & POST /api/admin/blog-posts/:id/image
+// Save uploaded blog image as /assets/blog/${id}${ext}?v=${Date.now()} in /public/assets/blog/ & /src/assets/images/blog/
+const handleBlogCoverImageUpload = (req: any, res: any) => {
+  try {
+    const rawId = req.params?.id || req.body?.id || req.body?.postId || req.body?.slug || 'blog-cover';
+    const sanitizedId =
+      String(rawId)
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'blog-cover';
+    const { dataUrl, base64, previousUrl, imageAlt, parentPostId, blockId } = req.body || {};
+
+    if (!dataUrl && !base64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing image data (dataUrl or base64 required)',
+      });
+    }
+
+    let ext = '.webp';
+    const mimeMatch =
+      typeof dataUrl === 'string'
+        ? dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,/)
+        : null;
+    if (mimeMatch && mimeMatch[1]) {
+      const sub = mimeMatch[1].toLowerCase();
+      if (sub === 'webp') ext = '.webp';
+      else if (sub === 'jpeg' || sub === 'jpg') ext = '.jpg';
+      else if (sub === 'png') ext = '.png';
+      else if (sub === 'gif') ext = '.gif';
+      else if (sub === 'avif') ext = '.avif';
+    }
+
+    const rawData = dataUrl ? dataUrl.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '') : base64;
+    const buffer = Buffer.from(rawData, 'base64');
+
+    const targetDirs = [publicBlogDir];
+    if (fs.existsSync(distBlogDir)) {
+      targetDirs.push(distBlogDir);
+    }
+    const deletedFiles: string[] = [];
+
+    // Purge any previous file with the exact same ID stem (never touch inline blocks or other post IDs)
+    for (const dir of targetDirs) {
+      if (fs.existsSync(dir)) {
+        try {
+          const files = fs.readdirSync(dir);
+          for (const f of files) {
+            const fExt = path.extname(f);
+            const fBase = path.basename(f, fExt).toLowerCase();
+            if (fBase === sanitizedId) {
+              const fullPath = path.join(dir, f);
+              try {
+                fs.unlinkSync(fullPath);
+                deletedFiles.push(f);
+              } catch {}
+            }
+          }
+        } catch {}
+      }
+    }
+
+    const singleFileName = `${sanitizedId}${ext}`;
+    const publicPath = path.join(publicBlogDir, singleFileName);
+
+    fs.writeFileSync(publicPath, buffer);
+    if (fs.existsSync(distBlogDir)) {
+      try {
+        fs.writeFileSync(path.join(distBlogDir, singleFileName), buffer);
+      } catch {}
+    }
+
+    const timestamp = Date.now();
+    const cleanRelativePath = `/assets/blog/${sanitizedId}${ext}`;
+    const cacheBustedUrl = `/assets/blog/${sanitizedId}${ext}?v=${timestamp}`;
+
+    const cleanParentPostId = parentPostId
+      ? String(parentPostId)
+          .trim()
+          .replace(/[^a-zA-Z0-9_-]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .toLowerCase()
+      : '';
+    const cleanBlockId = blockId ? String(blockId).trim() : '';
+
+    // Immediately persist cover image OR inline contentBlock image to siteCustomizations.json and src/data.ts
+    const blogConfig = getServerBlogConfig();
+    let foundExisting = false;
+
+    const updatePostWithUploadedImage = (post: any, postType: 'news' | 'stories') => {
+      const postCleanId = String(post.id || '')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase();
+
+      // Case 1: Cover image upload matching post.id
+      if (!cleanBlockId && (postCleanId === sanitizedId || post.id === rawId)) {
+        foundExisting = true;
+        return normalizeServerArticle(
+          {
+            ...post,
+            image: cacheBustedUrl,
+            ...(typeof imageAlt === 'string' && imageAlt.trim() ? { imageAlt: imageAlt.trim() } : {}),
+            updatedAt: new Date().toISOString(),
+          },
+          postType
+        );
+      }
+
+      // Case 2: Inline modular block image upload matching parentPostId (or prefix of sanitizedId)
+      const isParentMatch =
+        (cleanParentPostId && (postCleanId === cleanParentPostId || post.id === parentPostId)) ||
+        (!cleanParentPostId && sanitizedId.startsWith(`${postCleanId}-block-`));
+
+      if (isParentMatch) {
+        foundExisting = true;
+        const resolvedBlockId =
+          cleanBlockId || sanitizedId.slice(postCleanId.length + 1) || `block-${timestamp}`;
+        const existingBlocks = Array.isArray(post.contentBlocks) ? [...post.contentBlocks] : [];
+        const blockIdx = existingBlocks.findIndex(
+          (b: any) => b && String(b.id || '').toLowerCase() === resolvedBlockId.toLowerCase()
+        );
+        if (blockIdx !== -1) {
+          existingBlocks[blockIdx] = {
+            ...existingBlocks[blockIdx],
+            id: existingBlocks[blockIdx].id || resolvedBlockId,
+            type: 'image',
+            imageUrl: cacheBustedUrl,
+            imageAlt:
+              (typeof imageAlt === 'string' && imageAlt.trim()) ||
+              existingBlocks[blockIdx].imageAlt ||
+              `${post.title || 'Clinical'} — illustration`,
+          };
+        } else {
+          existingBlocks.push({
+            id: resolvedBlockId,
+            type: 'image',
+            imageUrl: cacheBustedUrl,
+            imageAlt:
+              (typeof imageAlt === 'string' && imageAlt.trim()) ||
+              `${post.title || 'Clinical'} — illustration`,
+            imageCaption: '',
+          });
+        }
+        return normalizeServerArticle(
+          {
+            ...post,
+            contentBlocks: existingBlocks,
+            updatedAt: new Date().toISOString(),
+          },
+          postType
+        );
+      }
+
+      return post;
+    };
+
+    const nextNews = blogConfig.newsArticles.map((post) => updatePostWithUploadedImage(post, 'news'));
+    const nextStories = blogConfig.storyArticles.map((post) => updatePostWithUploadedImage(post, 'stories'));
+
+    if (foundExisting) {
+      persistServerBlogConfig({
+        heading: blogConfig.heading,
+        description: blogConfig.description,
+        newsArticles: nextNews,
+        storyArticles: nextStories,
+      });
+    } else if (typeof previousUrl === 'string' && previousUrl.startsWith('/assets/blog/')) {
+      const normPrev = previousUrl.split('?')[0].split('#')[0].trim();
+      if (normPrev !== cleanRelativePath) {
+        const activeUrls = collectAllBlogImagePaths([
+          ...blogConfig.newsArticles,
+          ...blogConfig.storyArticles,
+        ]);
+        activeUrls.add(cleanRelativePath);
+        deleteUnreferencedBlogImageFile(normPrev, activeUrls);
+      }
+    }
+
+    console.log(`[Admin] Saved blog image to ${cacheBustedUrl}`);
+
+    return res.json({
+      success: true,
+      id: sanitizedId,
+      fileName: singleFileName,
+      url: cacheBustedUrl,
+      rawPath: cleanRelativePath,
+      imagePath: cacheBustedUrl,
+      version: timestamp,
+      deletedFiles: [...new Set(deletedFiles)],
+      message: `Blog image saved as ${cacheBustedUrl}`,
+    });
+  } catch (error) {
+    console.error('[Admin] Error saving blog image:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+};
+
+app.post('/api/admin/blog-posts/upload-image', handleBlogCoverImageUpload);
+app.post('/api/admin/blog-posts/:id/image', handleBlogCoverImageUpload);
+
+// GET /api/admin/blog-posts/:id/image
+// Resolve current image file in /assets/blog/${id}${ext}?v=${timestamp}
+app.get('/api/admin/blog-posts/:id/image', (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const sanitizedId =
+      String(rawId)
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'blog-cover';
+
+    if (fs.existsSync(publicBlogDir)) {
+      const files = fs.readdirSync(publicBlogDir);
+      const matched = files.find((f) => {
+        const fExt = path.extname(f);
+        return path.basename(f, fExt).toLowerCase() === sanitizedId;
+      });
+      if (matched) {
+        const stat = fs.statSync(path.join(publicBlogDir, matched));
+        const ext = path.extname(matched).toLowerCase() || '.webp';
+        const timestamp = Math.floor(stat.mtimeMs || Date.now());
+        return res.json({
+          success: true,
+          exists: true,
+          id: sanitizedId,
+          fileName: matched,
+          imagePath: `/assets/blog/${sanitizedId}${ext}?v=${timestamp}`,
+          rawPath: `/assets/blog/${sanitizedId}${ext}`,
+          updatedAt: stat.mtime.toISOString(),
+          version: timestamp,
+        });
+      }
+    }
+
+    return res.json({
+      success: true,
+      exists: false,
+      id: sanitizedId,
+      imagePath: `/assets/blog/${sanitizedId}.webp`,
+      rawPath: `/assets/blog/${sanitizedId}.webp`,
+    });
+  } catch (error) {
+    console.error('[Admin] Error checking blog image:', error);
+    return res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
 // Vite or Static file serving
 const isProd = process.env.NODE_ENV === 'production';
 if (!isProd) {
   const { createServer } = await import('vite');
   const vite = await createServer({
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      watch:
+        process.env.DISABLE_HMR === 'true'
+          ? null
+          : {
+              ignored: [
+                '**/src/data/siteCustomizations.json',
+                '**/src/data/clinicInfo.ts*',
+                '**/src/data/transformationsData.ts*',
+                '**/src/data/specialistTreatments.ts*',
+                '**/src/data/treatmentPricing.ts*',
+                '**/src/data.ts*',
+                '**/public/assets/**',
+                '**/public/uploads/**',
+                '**/*.tmp',
+              ],
+            },
+    },
     appType: 'spa'
   });
   app.use(vite.middlewares);

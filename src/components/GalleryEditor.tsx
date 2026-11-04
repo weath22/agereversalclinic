@@ -9,6 +9,7 @@ import {
   resetAdminStoreToDefaults,
   getTreatmentPricingData,
   listProjectAssets,
+  loadSiteCustomizations,
 } from '../lib/adminStore';
 import {
   BeforeAfterGalleryConfig,
@@ -67,6 +68,11 @@ export default function GalleryEditor() {
   const [config, setConfig] = useState<BeforeAfterGalleryConfig | null>(() =>
     getBeforeAfterGalleryConfig()
   );
+  const configRef = useRef<BeforeAfterGalleryConfig | null>(config);
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
   const [activeGroupFilter, setActiveGroupFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuPairId, setOpenMenuPairId] = useState<string | null>(null);
@@ -82,17 +88,18 @@ export default function GalleryEditor() {
   // Create / Edit Modal & Mobile Bottom Sheet state
   const [editorModal, setEditorModal] = useState<EditorModalState | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
-  const [uploadingSlot, setUploadingSlot] = useState<'before' | 'after' | null>(null);
-  const [dragOverSlot, setDragOverSlot] = useState<'before' | 'after' | null>(null);
+  const [uploadingSlot, setUploadingSlot] = useState<'before' | 'after' | 'single' | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<'before' | 'after' | 'single' | null>(null);
 
   // Asset Library Picker state (for Step 2 "Pick from Asset Library")
-  const [assetPickerSlot, setAssetPickerSlot] = useState<'before' | 'after' | null>(null);
+  const [assetPickerSlot, setAssetPickerSlot] = useState<'before' | 'after' | 'single' | null>(null);
   const [assetLibraryItems, setAssetLibraryItems] = useState<ProjectAssetItem[]>([]);
   const [assetSearch, setAssetSearch] = useState('');
   const [loadingAssets, setLoadingAssets] = useState(false);
 
   const beforeFileInputRef = useRef<HTMLInputElement | null>(null);
   const afterFileInputRef = useRef<HTMLInputElement | null>(null);
+  const singleFileInputRef = useRef<HTMLInputElement | null>(null);
   const seoStepRef = useRef<HTMLDivElement | null>(null);
 
   // Load existing catalog treatments for Step 1 linking & Step 3 keyword generation
@@ -105,12 +112,20 @@ export default function GalleryEditor() {
   }, []);
 
   useEffect(() => {
-    setConfig(getBeforeAfterGalleryConfig());
-    if (typeof window !== 'undefined' && !window.localStorage.getItem('homepage_gallery_config_v6')) {
+    const initial = getBeforeAfterGalleryConfig();
+    setConfig(initial);
+    configRef.current = initial;
+    loadSiteCustomizations().then(() => {
+      const loaded = getBeforeAfterGalleryConfig();
+      setConfig(loaded);
+      configRef.current = loaded;
       fetchRemoteBeforeAfterGalleryConfig().then((remote) => {
-        if (remote) setConfig(remote);
+        if (remote) {
+          setConfig(remote);
+          configRef.current = remote;
+        }
       });
-    }
+    });
   }, []);
 
   // Scroll to Step 3 when opened via "Manage SEO & Alt Text"
@@ -139,16 +154,72 @@ export default function GalleryEditor() {
     }, 3200);
   };
 
-  const persistConfig = (nextConfig: BeforeAfterGalleryConfig, message?: string) => {
+  const persistConfig = (
+    nextConfig: BeforeAfterGalleryConfig,
+    message?: string,
+    options?: { deletedPairId?: string; restoredDefaults?: boolean }
+  ) => {
+    configRef.current = nextConfig;
     setConfig(nextConfig);
-    saveBeforeAfterGalleryConfig(nextConfig);
+    saveBeforeAfterGalleryConfig(nextConfig, options);
     if (message) showToast(message);
+  };
+
+  const upsertPairIntoConfig = (
+    baseConfig: BeforeAfterGalleryConfig,
+    targetGroupId: string,
+    pairToUpsert: BeforeAfterPair
+  ): BeforeAfterGalleryConfig => {
+    const normalizedGroupId =
+      targetGroupId || pairToUpsert.treatmentGroupId || baseConfig.categories[0]?.id || 'facial-skin-care';
+    const normalizedPair: BeforeAfterPair = {
+      ...pairToUpsert,
+      treatmentGroupId: normalizedGroupId as ExistingTreatmentGroupId,
+      title:
+        pairToUpsert.title?.trim() ||
+        (pairToUpsert.linkedTreatmentTitle
+          ? `${pairToUpsert.linkedTreatmentTitle} Transformation`
+          : 'Clinical Transformation'),
+    };
+
+    let inserted = false;
+    const nextCategories = baseConfig.categories.map((cat) => {
+      const existingInCat = (cat.pairs || []).some((p) => p.id === normalizedPair.id);
+      const filtered = (cat.pairs || []).filter((p) => p.id !== normalizedPair.id);
+      if (cat.id !== normalizedGroupId) {
+        return { ...cat, pairs: filtered };
+      }
+      inserted = true;
+      return {
+        ...cat,
+        pairs: existingInCat
+          ? (cat.pairs || []).map((p) => (p.id === normalizedPair.id ? normalizedPair : p))
+          : [normalizedPair, ...filtered],
+      };
+    });
+
+    if (!inserted && nextCategories.length > 0) {
+      nextCategories[0] = {
+        ...nextCategories[0],
+        pairs: [
+          normalizedPair,
+          ...(nextCategories[0].pairs || []).filter((p) => p.id !== normalizedPair.id),
+        ],
+      };
+    }
+
+    return {
+      ...baseConfig,
+      categories: nextCategories,
+    };
   };
 
   const handleReset = () => {
     resetAdminStoreToDefaults();
     const fresh = getBeforeAfterGalleryConfig();
+    configRef.current = fresh;
     setConfig(fresh);
+    saveBeforeAfterGalleryConfig(fresh, { restoredDefaults: true });
     showToast('Restored default Before & After pairs');
   };
 
@@ -168,6 +239,7 @@ export default function GalleryEditor() {
     return {
       beforeAltText: `Before ${subject} treatment at Age Reversal Clinics London — baseline clinical photography`,
       afterAltText: `After ${subject} treatment result${durationSuffix} at Age Reversal Clinics London — verified transformation`,
+      singleFrameAltText: `Before & After ${subject} transformation${durationSuffix} at Age Reversal Clinics London — full clinical comparison frame`,
       seoTitle: `${subject} Before & After Results${durationSuffix} | Age Reversal Clinics London`,
     };
   };
@@ -335,8 +407,10 @@ export default function GalleryEditor() {
       linkedTreatmentTitle: initialTreatmentTitle,
       beforeImage: '',
       afterImage: '',
+      singleFrameImage: '',
       beforeAltText: autoMeta.beforeAltText,
       afterAltText: autoMeta.afterAltText,
+      singleFrameAltText: autoMeta.singleFrameAltText,
       seoTitle: autoMeta.seoTitle,
       seoKeywords: initialKeywords,
       duration: initialDuration,
@@ -379,14 +453,15 @@ export default function GalleryEditor() {
         treatmentGroupId: pair.treatmentGroupId || groupId,
         beforeAltText: pair.beforeAltText || autoMeta.beforeAltText,
         afterAltText: pair.afterAltText || autoMeta.afterAltText,
+        singleFrameAltText: pair.singleFrameAltText || autoMeta.singleFrameAltText,
         seoTitle: pair.seoTitle || autoMeta.seoTitle,
         seoKeywords: Array.isArray(pair.seoKeywords) ? [...pair.seoKeywords] : [],
       },
     });
   };
 
-  // Open Asset Library Picker for 'before' or 'after' slot
-  const openAssetLibraryPicker = async (slot: 'before' | 'after') => {
+  // Open Asset Library Picker for 'before', 'after', or 'single' slot
+  const openAssetLibraryPicker = async (slot: 'before' | 'after' | 'single') => {
     setAssetPickerSlot(slot);
     setAssetSearch('');
     setLoadingAssets(true);
@@ -430,17 +505,23 @@ export default function GalleryEditor() {
   // Step 2 Action inside Modal: 1-Click Swap Before ⇄ After
   const handleModalSwapPhotos = () => {
     if (!editorModal) return;
+    const updatedPair: BeforeAfterPair = {
+      ...editorModal.pair,
+      beforeImage: editorModal.pair.afterImage,
+      afterImage: editorModal.pair.beforeImage,
+      beforeAltText: editorModal.pair.afterAltText,
+      afterAltText: editorModal.pair.beforeAltText,
+      updatedAt: Date.now(),
+    };
     setEditorModal({
       ...editorModal,
-      pair: {
-        ...editorModal.pair,
-        beforeImage: editorModal.pair.afterImage,
-        afterImage: editorModal.pair.beforeImage,
-        beforeAltText: editorModal.pair.afterAltText,
-        afterAltText: editorModal.pair.beforeAltText,
-        updatedAt: Date.now(),
-      },
+      pair: updatedPair,
     });
+    const latestConfig = configRef.current || config;
+    if (latestConfig && (updatedPair.beforeImage || updatedPair.afterImage)) {
+      const nextConfig = upsertPairIntoConfig(latestConfig, editorModal.groupId, updatedPair);
+      persistConfig(nextConfig);
+    }
   };
 
   // Quick Action: Toggle Featured or Hidden flag
@@ -478,23 +559,25 @@ export default function GalleryEditor() {
   // Confirm Delete Pair
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
+    const deletedId = deleteTarget.pairId;
     const nextConfig: BeforeAfterGalleryConfig = {
       ...config,
       categories: config.categories.map((cat) => {
         if (cat.id !== deleteTarget.groupId) return cat;
         return {
           ...cat,
-          pairs: cat.pairs.filter((p) => p.id !== deleteTarget.pairId),
+          pairs: cat.pairs.filter((p) => p.id !== deletedId),
         };
       }),
     };
     setDeleteTarget(null);
-    persistConfig(nextConfig, 'Deleted Before & After pair');
+    persistConfig(nextConfig, 'Deleted Before & After pair', { deletedPairId: deletedId });
   };
 
-  // Convert uploaded file to optimized WebP and upload to /api/admin/upload-asset
-  const handleImageFileUpload = async (file: File, slot: 'before' | 'after') => {
+  // Convert uploaded file to optimized WebP and upload to /api/admin/transformations/upload-image
+  const handleImageFileUpload = async (file: File, slot: 'before' | 'after' | 'single') => {
     if (!editorModal) return;
+    const modalSnapshot = editorModal;
     setUploadingSlot(slot);
 
     try {
@@ -503,7 +586,7 @@ export default function GalleryEditor() {
         reader.onload = () => {
           const img = new window.Image();
           img.onload = () => {
-            const maxDim = 1400;
+            const maxDim = 1600;
             let width = img.width;
             let height = img.height;
             if (width > maxDim || height > maxDim) {
@@ -534,9 +617,9 @@ export default function GalleryEditor() {
       });
 
       const baseSlug = (
-        editorModal.pair.linkedTreatmentTitle ||
-        editorModal.pair.title ||
-        editorModal.pair.id ||
+        modalSnapshot.pair.linkedTreatmentTitle ||
+        modalSnapshot.pair.title ||
+        modalSnapshot.pair.id ||
         'before-after'
       )
         .toLowerCase()
@@ -548,29 +631,109 @@ export default function GalleryEditor() {
         fileName,
         dataUrl: webpDataUrl,
         slot,
-        pairId: editorModal.pair.id,
+        pairId: modalSnapshot.pair.id,
+        title:
+          modalSnapshot.pair.title?.trim() ||
+          (modalSnapshot.pair.linkedTreatmentTitle
+            ? `${modalSnapshot.pair.linkedTreatmentTitle} Transformation`
+            : 'Clinical Transformation'),
+        groupId: modalSnapshot.groupId,
+        linkedTreatmentId: modalSnapshot.pair.linkedTreatmentId || modalSnapshot.groupId,
+        linkedTreatmentTitle: modalSnapshot.pair.linkedTreatmentTitle,
+        duration: modalSnapshot.pair.duration,
+        sessions: modalSnapshot.pair.sessions,
+        beforeAltText: modalSnapshot.pair.beforeAltText,
+        afterAltText: modalSnapshot.pair.afterAltText,
+        singleFrameAltText: modalSnapshot.pair.singleFrameAltText,
+        seoTitle: modalSnapshot.pair.seoTitle,
+        seoKeywords: modalSnapshot.pair.seoKeywords,
       });
 
       let finalUrl = webpDataUrl;
-      if (uploaded?.url) {
+      if (uploaded?.versionedUrl) {
+        finalUrl = uploaded.versionedUrl;
+      } else if (uploaded?.url) {
         finalUrl = `${uploaded.url}?v=${Date.now()}`;
       }
 
+      const fieldName =
+        slot === 'single'
+          ? 'singleFrameImage'
+          : slot === 'before'
+          ? 'beforeImage'
+          : 'afterImage';
+      const now = Date.now();
+
+      let nextPairForConfig: BeforeAfterPair | null = null;
+      let targetGroupForConfig = modalSnapshot.groupId;
+
       setEditorModal((prev) => {
         if (!prev) return null;
+        targetGroupForConfig = prev.groupId;
+        const updatedPair: BeforeAfterPair = {
+          ...prev.pair,
+          [fieldName]: finalUrl,
+          updatedAt: now,
+        };
+        nextPairForConfig = updatedPair;
         return {
           ...prev,
-          pair: {
-            ...prev.pair,
-            [slot === 'before' ? 'beforeImage' : 'afterImage']: finalUrl,
-            updatedAt: Date.now(),
-          },
+          pair: updatedPair,
         };
       });
+
+      const pairToSave =
+        nextPairForConfig || {
+          ...modalSnapshot.pair,
+          [fieldName]: finalUrl,
+          updatedAt: now,
+        };
+
+      // Immediately upsert & persist the pair in config (both in 'create' and 'edit' modes!)
+      // so uploaded images are saved to localStorage, siteCustomizations.json, and transformationsData.ts right away
+      const latestConfig = configRef.current || getBeforeAfterGalleryConfig();
+      const nextConfig = upsertPairIntoConfig(latestConfig, targetGroupForConfig, pairToSave);
+      const slotLabel =
+        slot === 'single'
+          ? 'Single Large Frame (Transformations Page)'
+          : slot === 'before'
+          ? 'Before'
+          : 'After';
+      persistConfig(
+        nextConfig,
+        `Saved ${slotLabel} photo to /assets/transformations/`
+      );
     } catch (err) {
       console.error('Error uploading Before/After photo:', err);
     } finally {
       setUploadingSlot(null);
+    }
+  };
+
+  const handleClearModalSlot = (slot: 'before' | 'after' | 'single') => {
+    if (!editorModal) return;
+    const fieldName =
+      slot === 'single'
+        ? 'singleFrameImage'
+        : slot === 'before'
+        ? 'beforeImage'
+        : 'afterImage';
+    const updatedPair: BeforeAfterPair = {
+      ...editorModal.pair,
+      [fieldName]: '',
+      updatedAt: Date.now(),
+    };
+    setEditorModal({
+      ...editorModal,
+      pair: updatedPair,
+    });
+    const latestConfig = configRef.current || config;
+    if (
+      latestConfig &&
+      (updatedPair.beforeImage || updatedPair.afterImage || updatedPair.singleFrameImage)
+    ) {
+      const nextConfig = upsertPairIntoConfig(latestConfig, editorModal.groupId, updatedPair);
+      persistConfig(nextConfig);
     }
   };
 
@@ -600,6 +763,7 @@ export default function GalleryEditor() {
         ...pair,
         beforeAltText: autoMeta.beforeAltText,
         afterAltText: autoMeta.afterAltText,
+        singleFrameAltText: autoMeta.singleFrameAltText,
         seoTitle: autoMeta.seoTitle,
         seoKeywords: mergedKeywords,
       },
@@ -634,6 +798,7 @@ export default function GalleryEditor() {
       treatmentGroupId: groupId as ExistingTreatmentGroupId,
       beforeAltText: pair.beforeAltText?.trim() || autoMeta.beforeAltText,
       afterAltText: pair.afterAltText?.trim() || autoMeta.afterAltText,
+      singleFrameAltText: pair.singleFrameAltText?.trim() || autoMeta.singleFrameAltText,
       seoTitle: pair.seoTitle?.trim() || autoMeta.seoTitle,
       seoKeywords:
         pair.seoKeywords && pair.seoKeywords.length > 0
@@ -835,70 +1000,111 @@ export default function GalleryEditor() {
                       : 'border-slate-200/90 hover:border-[#003334]/40 hover:shadow-md'
                   }`}
                 >
-                  {/* Side-by-Side Before & After Visual Thumbnail Preview */}
-                  <div
-                    onClick={() => openEditModal(groupId, pair, 'details')}
-                    className="relative grid grid-cols-2 gap-0.5 bg-slate-100 aspect-[16/10] cursor-pointer overflow-hidden"
-                  >
-                    {/* Before Image */}
-                    <div className="relative w-full h-full bg-slate-100 overflow-hidden">
-                      {pair.beforeImage ? (
-                        <img
-                          src={pair.beforeImage}
-                          alt={pair.beforeAltText || `${pair.title} Before`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[11px] text-slate-400 font-medium">
-                          No Before
-                        </div>
-                      )}
-                      <span className="absolute bottom-2 left-2 bg-black/65 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                        Before
+                  {/* Side-by-Side Before & After OR Single Large Frame Visual Thumbnail Preview */}
+                  {pair.singleFrameImage && !pair.beforeImage && !pair.afterImage ? (
+                    <div
+                      onClick={() => openEditModal(groupId, pair, 'details')}
+                      className="relative bg-slate-100 aspect-[16/10] cursor-pointer overflow-hidden"
+                    >
+                      <img
+                        src={pair.singleFrameImage}
+                        alt={pair.singleFrameAltText || `${pair.title} Before & After`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="absolute bottom-2 left-2 bg-[#003334]/90 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded">
+                        Single Frame • Transformations Page Only
                       </span>
-                    </div>
 
-                    {/* After Image */}
-                    <div className="relative w-full h-full bg-slate-100 overflow-hidden">
-                      {pair.afterImage ? (
-                        <img
-                          src={pair.afterImage}
-                          alt={pair.afterAltText || `${pair.title} After`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[11px] text-slate-400 font-medium">
-                          No After
-                        </div>
-                      )}
-                      <span className="absolute bottom-2 right-2 bg-[#003334]/90 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                        After
-                      </span>
+                      <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 max-w-[80%]">
+                        <span className="bg-white/95 backdrop-blur-sm text-[#003334] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm truncate">
+                          {groupName}
+                        </span>
+                        {pair.featured && (
+                          <span className="bg-amber-400 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
+                            <Star className="h-2.5 w-2.5 fill-current" />
+                            Featured
+                          </span>
+                        )}
+                        {pair.hidden && (
+                          <span className="bg-slate-800/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
+                            <EyeOff className="h-2.5 w-2.5" />
+                            Hidden
+                          </span>
+                        )}
+                      </div>
                     </div>
+                  ) : (
+                    <div
+                      onClick={() => openEditModal(groupId, pair, 'details')}
+                      className="relative grid grid-cols-2 gap-0.5 bg-slate-100 aspect-[16/10] cursor-pointer overflow-hidden"
+                    >
+                      {/* Before Image */}
+                      <div className="relative w-full h-full bg-slate-100 overflow-hidden">
+                        {pair.beforeImage ? (
+                          <img
+                            src={pair.beforeImage}
+                            alt={pair.beforeAltText || `${pair.title} Before`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[11px] text-slate-400 font-medium">
+                            No Before
+                          </div>
+                        )}
+                        <span className="absolute bottom-2 left-2 bg-black/65 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                          Before
+                        </span>
+                      </div>
 
-                    {/* Top Left Group Badge + Status Pills */}
-                    <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 max-w-[80%]">
-                      <span className="bg-white/95 backdrop-blur-sm text-[#003334] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm truncate">
-                        {groupName}
-                      </span>
-                      {pair.featured && (
-                        <span className="bg-amber-400 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
-                          <Star className="h-2.5 w-2.5 fill-current" />
-                          Featured
+                      {/* After Image */}
+                      <div className="relative w-full h-full bg-slate-100 overflow-hidden">
+                        {pair.afterImage ? (
+                          <img
+                            src={pair.afterImage}
+                            alt={pair.afterAltText || `${pair.title} After`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[11px] text-slate-400 font-medium">
+                            No After
+                          </div>
+                        )}
+                        <span className="absolute bottom-2 right-2 bg-[#003334]/90 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                          After
                         </span>
-                      )}
-                      {pair.hidden && (
-                        <span className="bg-slate-800/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
-                          <EyeOff className="h-2.5 w-2.5" />
-                          Hidden
+                      </div>
+
+                      {/* Top Left Group Badge + Status Pills */}
+                      <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 max-w-[85%]">
+                        <span className="bg-white/95 backdrop-blur-sm text-[#003334] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm truncate">
+                          {groupName}
                         </span>
-                      )}
+                        {pair.singleFrameImage && (
+                          <span className="bg-[#003334] text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                            + Single Frame
+                          </span>
+                        )}
+                        {pair.featured && (
+                          <span className="bg-amber-400 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
+                            <Star className="h-2.5 w-2.5 fill-current" />
+                            Featured
+                          </span>
+                        )}
+                        {pair.hidden && (
+                          <span className="bg-slate-800/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm inline-flex items-center gap-0.5">
+                            <EyeOff className="h-2.5 w-2.5" />
+                            Hidden
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Minimal Card Body */}
                   <div className="p-4 flex items-start justify-between gap-2">
@@ -1302,205 +1508,355 @@ export default function GalleryEditor() {
                 </div>
               </div>
 
-              {/* STEP 2 — Side-by-Side Before & After Dropzones + 1-Click Swap */}
-              <div className="space-y-3">
+              {/* STEP 2 — Homepage Two-Frame Slots + Transformations Page Single Large Frame Slot */}
+              <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-[#003334] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                       2
                     </span>
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#003334]">
-                      Before & After Photos (Auto-WebP)
-                    </h5>
+                    <div>
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-[#003334]">
+                        Before & After Photos (Auto-WebP)
+                      </h5>
+                      <p className="text-[10px] text-slate-500">
+                        Upload the 2-frame pair for Homepage Before & After, the Single Large Frame for the Transformations Page alone, or both.
+                      </p>
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleModalSwapPhotos}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#003334] text-slate-700 hover:text-white text-[11px] font-bold transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-[#003334] text-slate-700 hover:text-white text-[11px] font-bold transition-all cursor-pointer shrink-0"
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" />
                     <span>Swap Before ⇄ After</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {/* BEFORE DROPZONE */}
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverSlot('before');
-                    }}
-                    onDragLeave={() => setDragOverSlot(null)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOverSlot(null);
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) handleImageFileUpload(file, 'before');
-                    }}
-                    className={`p-3 rounded-2xl border transition-all space-y-2 ${
-                      dragOverSlot === 'before'
-                        ? 'border-[#003334] bg-[#003334]/5'
-                        : 'border-slate-200 bg-slate-50/70'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
-                        Before Photo *
+                {/* 2A: Existing Two-Frame Slots (Homepage: Before & After) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      Two-Frame Slots — Homepage: Before & After
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Side-by-side comparison frames
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* BEFORE DROPZONE */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverSlot('before');
+                      }}
+                      onDragLeave={() => setDragOverSlot(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverSlot(null);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleImageFileUpload(file, 'before');
+                      }}
+                      className={`p-3 rounded-2xl border transition-all space-y-2 ${
+                        dragOverSlot === 'before'
+                          ? 'border-[#003334] bg-[#003334]/5'
+                          : 'border-slate-200 bg-slate-50/70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                          Before Photo
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {uploadingSlot === 'before' && (
+                            <span className="text-[10px] font-bold text-[#003334] animate-pulse">
+                              Converting WebP...
+                            </span>
+                          )}
+                          {editorModal.pair.beforeImage && (
+                            <button
+                              type="button"
+                              onClick={() => handleClearModalSlot('before')}
+                              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => beforeFileInputRef.current?.click()}
+                        className="aspect-[4/3] rounded-xl bg-white border border-dashed border-slate-300 hover:border-[#003334] overflow-hidden flex items-center justify-center cursor-pointer relative group"
+                      >
+                        {editorModal.pair.beforeImage ? (
+                          <>
+                            <img
+                              src={editorModal.pair.beforeImage}
+                              alt="Before preview"
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
+                              Replace Photo
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center p-3 space-y-1">
+                            <Upload className="h-5 w-5 text-slate-400 mx-auto" />
+                            <p className="text-[10px] font-bold text-slate-600">
+                              Drop or click to upload
+                            </p>
+                            <p className="text-[9px] text-slate-400">Auto-WebP</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <input
+                        ref={beforeFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageFileUpload(file, 'before');
+                          e.target.value = '';
+                        }}
+                      />
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => beforeFileInputRef.current?.click()}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-slate-700 cursor-pointer"
+                        >
+                          <Upload className="h-3 w-3" />
+                          <span>Upload</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAssetLibraryPicker('before')}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-[#003334] cursor-pointer"
+                        >
+                          <FolderOpen className="h-3 w-3" />
+                          <span>Asset Library</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* AFTER DROPZONE */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverSlot('after');
+                      }}
+                      onDragLeave={() => setDragOverSlot(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverSlot(null);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) handleImageFileUpload(file, 'after');
+                      }}
+                      className={`p-3 rounded-2xl border transition-all space-y-2 ${
+                        dragOverSlot === 'after'
+                          ? 'border-[#003334] bg-[#003334]/5'
+                          : 'border-slate-200 bg-slate-50/70'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#003334]">
+                          After Photo
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {uploadingSlot === 'after' && (
+                            <span className="text-[10px] font-bold text-[#003334] animate-pulse">
+                              Converting WebP...
+                            </span>
+                          )}
+                          {editorModal.pair.afterImage && (
+                            <button
+                              type="button"
+                              onClick={() => handleClearModalSlot('after')}
+                              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => afterFileInputRef.current?.click()}
+                        className="aspect-[4/3] rounded-xl bg-white border border-dashed border-slate-300 hover:border-[#003334] overflow-hidden flex items-center justify-center cursor-pointer relative group"
+                      >
+                        {editorModal.pair.afterImage ? (
+                          <>
+                            <img
+                              src={editorModal.pair.afterImage}
+                              alt="After preview"
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
+                              Replace Photo
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center p-3 space-y-1">
+                            <Upload className="h-5 w-5 text-slate-400 mx-auto" />
+                            <p className="text-[10px] font-bold text-slate-600">
+                              Drop or click to upload
+                            </p>
+                            <p className="text-[9px] text-slate-400">Auto-WebP</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <input
+                        ref={afterFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageFileUpload(file, 'after');
+                          e.target.value = '';
+                        }}
+                      />
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => afterFileInputRef.current?.click()}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-slate-700 cursor-pointer"
+                        >
+                          <Upload className="h-3 w-3" />
+                          <span>Upload</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAssetLibraryPicker('after')}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-[#003334] cursor-pointer"
+                        >
+                          <FolderOpen className="h-3 w-3" />
+                          <span>Asset Library</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2B: Single Large Frame Slot (Displayed on Transformations Page Alone) */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverSlot('single');
+                  }}
+                  onDragLeave={() => setDragOverSlot(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverSlot(null);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleImageFileUpload(file, 'single');
+                  }}
+                  className={`p-3.5 rounded-2xl border transition-all space-y-2.5 ${
+                    dragOverSlot === 'single'
+                      ? 'border-[#003334] bg-[#003334]/5'
+                      : 'border-[#003334]/25 bg-[#003334]/[0.03]'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#003334]">
+                        Single Large Frame — Transformations Page Only
                       </span>
-                      {uploadingSlot === 'before' && (
+                      <span className="bg-[#003334] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                        Large Frame
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {uploadingSlot === 'single' && (
                         <span className="text-[10px] font-bold text-[#003334] animate-pulse">
                           Converting WebP...
                         </span>
                       )}
-                    </div>
-
-                    <div
-                      onClick={() => beforeFileInputRef.current?.click()}
-                      className="aspect-[4/3] rounded-xl bg-white border border-dashed border-slate-300 hover:border-[#003334] overflow-hidden flex items-center justify-center cursor-pointer relative group"
-                    >
-                      {editorModal.pair.beforeImage ? (
-                        <>
-                          <img
-                            src={editorModal.pair.beforeImage}
-                            alt="Before preview"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
-                            Replace Photo
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center p-3 space-y-1">
-                          <Upload className="h-5 w-5 text-slate-400 mx-auto" />
-                          <p className="text-[10px] font-bold text-slate-600">
-                            Drop or click to upload
-                          </p>
-                          <p className="text-[9px] text-slate-400">Auto-WebP</p>
-                        </div>
+                      {editorModal.pair.singleFrameImage && (
+                        <button
+                          type="button"
+                          onClick={() => handleClearModalSlot('single')}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
+                        >
+                          Clear Single Frame
+                        </button>
                       )}
-                    </div>
-
-                    <input
-                      ref={beforeFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageFileUpload(file, 'before');
-                        e.target.value = '';
-                      }}
-                    />
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => beforeFileInputRef.current?.click()}
-                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-slate-700 cursor-pointer"
-                      >
-                        <Upload className="h-3 w-3" />
-                        <span>Upload</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openAssetLibraryPicker('before')}
-                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-[#003334] cursor-pointer"
-                      >
-                        <FolderOpen className="h-3 w-3" />
-                        <span>Asset Library</span>
-                      </button>
                     </div>
                   </div>
 
-                  {/* AFTER DROPZONE */}
+                  <p className="text-[10px] text-slate-500">
+                    Upload a single combined Before & After image to be displayed in a dedicated large frame on the Transformations Page alone.
+                  </p>
+
                   <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverSlot('after');
-                    }}
-                    onDragLeave={() => setDragOverSlot(null)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOverSlot(null);
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) handleImageFileUpload(file, 'after');
-                    }}
-                    className={`p-3 rounded-2xl border transition-all space-y-2 ${
-                      dragOverSlot === 'after'
-                        ? 'border-[#003334] bg-[#003334]/5'
-                        : 'border-slate-200 bg-slate-50/70'
-                    }`}
+                    onClick={() => singleFileInputRef.current?.click()}
+                    className="aspect-[16/9] rounded-xl bg-white border border-dashed border-slate-300 hover:border-[#003334] overflow-hidden flex items-center justify-center cursor-pointer relative group"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#003334]">
-                        After Photo *
-                      </span>
-                      {uploadingSlot === 'after' && (
-                        <span className="text-[10px] font-bold text-[#003334] animate-pulse">
-                          Converting WebP...
-                        </span>
-                      )}
-                    </div>
-
-                    <div
-                      onClick={() => afterFileInputRef.current?.click()}
-                      className="aspect-[4/3] rounded-xl bg-white border border-dashed border-slate-300 hover:border-[#003334] overflow-hidden flex items-center justify-center cursor-pointer relative group"
-                    >
-                      {editorModal.pair.afterImage ? (
-                        <>
-                          <img
-                            src={editorModal.pair.afterImage}
-                            alt="After preview"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
-                            Replace Photo
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center p-3 space-y-1">
-                          <Upload className="h-5 w-5 text-slate-400 mx-auto" />
-                          <p className="text-[10px] font-bold text-slate-600">
-                            Drop or click to upload
-                          </p>
-                          <p className="text-[9px] text-slate-400">Auto-WebP</p>
+                    {editorModal.pair.singleFrameImage ? (
+                      <>
+                        <img
+                          src={editorModal.pair.singleFrameImage}
+                          alt="Single frame Before & After preview"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold">
+                          Replace Single Large Frame Photo
                         </div>
-                      )}
-                    </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4 space-y-1">
+                        <Upload className="h-6 w-6 text-[#003334]/60 mx-auto" />
+                        <p className="text-[11px] font-bold text-slate-700">
+                          Drop or click to upload Single Large Frame (Combined Before & After)
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Displayed exclusively on the Transformations Page in a wide large frame • Auto-WebP
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                    <input
-                      ref={afterFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageFileUpload(file, 'after');
-                        e.target.value = '';
-                      }}
-                    />
+                  <input
+                    ref={singleFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageFileUpload(file, 'single');
+                      e.target.value = '';
+                    }}
+                  />
 
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => afterFileInputRef.current?.click()}
-                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-slate-700 cursor-pointer"
-                      >
-                        <Upload className="h-3 w-3" />
-                        <span>Upload</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openAssetLibraryPicker('after')}
-                        className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#003334] text-[10px] font-bold text-[#003334] cursor-pointer"
-                      >
-                        <FolderOpen className="h-3 w-3" />
-                        <span>Asset Library</span>
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => singleFileInputRef.current?.click()}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-slate-200 hover:border-[#003334] text-[11px] font-bold text-slate-700 cursor-pointer"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Upload Single Large Frame</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openAssetLibraryPicker('single')}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-slate-200 hover:border-[#003334] text-[11px] font-bold text-[#003334] cursor-pointer"
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      <span>Pick from Asset Library</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1646,7 +2002,7 @@ export default function GalleryEditor() {
                     )}
                   </div>
 
-                  {/* Auto-Filled & Editable Before / After Image Alt Text */}
+                  {/* Auto-Filled & Editable Before / After / Single Frame Image Alt Text */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200/70">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -1680,6 +2036,24 @@ export default function GalleryEditor() {
                           })
                         }
                         placeholder="After [Treatment] result at Age Reversal Clinics London"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[11px] text-slate-700"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                        Single Large Frame Alt Text (Transformations Page • Google Images)
+                      </label>
+                      <input
+                        type="text"
+                        value={editorModal.pair.singleFrameAltText || ''}
+                        onChange={(e) =>
+                          setEditorModal({
+                            ...editorModal,
+                            pair: { ...editorModal.pair, singleFrameAltText: e.target.value },
+                          })
+                        }
+                        placeholder="Before & After [Treatment] transformation at Age Reversal Clinics London"
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[11px] text-slate-700"
                       />
                     </div>
@@ -1733,7 +2107,12 @@ export default function GalleryEditor() {
                 <button
                   type="button"
                   onClick={handleSaveModalPair}
-                  disabled={!editorModal.pair.beforeImage || !editorModal.pair.afterImage}
+                  disabled={
+                    !(
+                      editorModal.pair.singleFrameImage ||
+                      (editorModal.pair.beforeImage && editorModal.pair.afterImage)
+                    )
+                  }
                   className="px-5 py-2 rounded-xl bg-[#003334] hover:bg-[#236963] disabled:opacity-45 text-white text-xs font-bold transition-all shadow-sm cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <Check className="h-3.5 w-3.5" />
@@ -1760,7 +2139,13 @@ export default function GalleryEditor() {
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h4 className="font-serif font-bold text-base text-[#003334]">
-                  Select {assetPickerSlot === 'before' ? 'Before' : 'After'} Photo from Asset Library
+                  Select{' '}
+                  {assetPickerSlot === 'single'
+                    ? 'Single Large Frame'
+                    : assetPickerSlot === 'before'
+                    ? 'Before'
+                    : 'After'}{' '}
+                  Photo from Asset Library
                 </h4>
                 <p className="text-[11px] text-slate-500">
                   Choose an existing clinic image asset
@@ -1804,16 +2189,31 @@ export default function GalleryEditor() {
                       key={`${asset.url}-${idx}`}
                       type="button"
                       onClick={() => {
+                        const fieldName =
+                          assetPickerSlot === 'single'
+                            ? 'singleFrameImage'
+                            : assetPickerSlot === 'before'
+                            ? 'beforeImage'
+                            : 'afterImage';
+                        const now = Date.now();
+                        const updatedPair: BeforeAfterPair = {
+                          ...editorModal.pair,
+                          [fieldName]: asset.url,
+                          updatedAt: now,
+                        };
                         setEditorModal({
                           ...editorModal,
-                          pair: {
-                            ...editorModal.pair,
-                            [assetPickerSlot === 'before'
-                              ? 'beforeImage'
-                              : 'afterImage']: asset.url,
-                            updatedAt: Date.now(),
-                          },
+                          pair: updatedPair,
                         });
+                        const latestConfig = configRef.current || config;
+                        if (latestConfig) {
+                          const nextConfig = upsertPairIntoConfig(
+                            latestConfig,
+                            editorModal.groupId,
+                            updatedPair
+                          );
+                          persistConfig(nextConfig);
+                        }
                         setAssetPickerSlot(null);
                       }}
                       className="group text-left rounded-xl border border-slate-200 hover:border-[#003334] overflow-hidden bg-slate-50 transition-all cursor-pointer"

@@ -141,59 +141,59 @@ export function getBundledClinicFallback(slotId: string): string {
 
   // Logo Icon
   if (cleanId === 'clinic-logo-icon') {
-    return CLINIC_LOGOS.icon;
+    return CLINIC_LOGOS.icon || '';
   }
   // Full Logo
   if (cleanId === 'clinic-logo-full') {
-    return CLINIC_LOGOS.full || CLINIC_LOGOS.icon;
+    return CLINIC_LOGOS.full || CLINIC_LOGOS.icon || '';
   }
   // Exterior Photo
   if (cleanId === 'clinic-exterior') {
-    return CLINIC_LOCATION_IMAGES['harley-street-flagship']?.primary || CLINIC_INTERIOR_PHOTOS[0];
+    return CLINIC_LOCATION_IMAGES['harley-street-flagship']?.primary || CLINIC_INTERIOR_PHOTOS[0] || '';
   }
   // OpenGraph Image
   if (cleanId === 'clinic-og-image') {
-    return CLINIC_BANNER_IMAGES.ogSocialImage || CLINIC_LOGOS.full;
+    return CLINIC_BANNER_IMAGES.ogSocialImage || CLINIC_LOGOS.full || '';
   }
   // Interior suites
   if (cleanId.startsWith('clinic-interior-')) {
+    if (CLINIC_INTERIOR_PHOTOS.length === 0) return '';
     const rawIdx = parseInt(cleanId.replace('clinic-interior-', ''), 10);
     const idx = isNaN(rawIdx) ? 0 : rawIdx % CLINIC_INTERIOR_PHOTOS.length;
-    return CLINIC_INTERIOR_PHOTOS[idx] || CLINIC_INTERIOR_PHOTOS[0];
+    return CLINIC_INTERIOR_PHOTOS[idx] || CLINIC_INTERIOR_PHOTOS[0] || '';
   }
   // Locations
   if (cleanId.startsWith('clinic-location-')) {
     const rawLoc = cleanId.replace('clinic-location-', '');
     const matched = CLINIC_LOCATION_IMAGES[rawLoc] || CLINIC_LOCATION_IMAGES[`location-${rawLoc}`];
     if (matched?.primary) return matched.primary;
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
   // Why Choose Us Pillars
   if (cleanId.startsWith('clinic-pillar-')) {
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
   // Awards
   if (cleanId.startsWith('clinic-award-')) {
     const rawAward = cleanId.replace('clinic-award-', '');
     const matched = CLINIC_AWARDS_MEDIA.find((a) => a.id === rawAward);
     if (matched?.image) return matched.image;
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
   // Our Process Steps
   if (cleanId.startsWith('clinic-process-')) {
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
   // Facility Gallery Rooms
   if (cleanId.startsWith('clinic-facility-')) {
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
   // Trust Brands
   if (cleanId.startsWith('clinic-brand-')) {
-    return `/assets/${cleanId}.webp`;
+    return '';
   }
 
-  // Universal ultimate fallback: permanent high-res brand emblem
-  return CLINIC_LOGOS.icon;
+  return CLINIC_LOGOS.icon || '';
 }
 
 /**

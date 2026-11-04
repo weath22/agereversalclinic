@@ -492,6 +492,95 @@ export default function ServiceViewDetailsEditor() {
     setIsCaseModalOpen(true);
   };
 
+  const syncTreatmentCasesToCentralGallery = (treatmentForm: TreatmentDetail) => {
+    try {
+      if (treatmentForm.customBeforeAfterPairs && treatmentForm.customBeforeAfterPairs.length > 0) {
+        const centralGallery = getBeforeAfterGalleryConfig();
+        if (centralGallery && Array.isArray(centralGallery.categories) && centralGallery.categories.length > 0) {
+          const rawId = (treatmentForm.id || selectedKey || '').toLowerCase().trim();
+          const normTitle = (treatmentForm.title || '').toLowerCase();
+          const normCategory = (treatmentForm.category || '').toLowerCase();
+
+          let matchedCat =
+            centralGallery.categories.find((c) => c.id.toLowerCase() === rawId) ||
+            centralGallery.categories.find(
+              (c) =>
+                c.name.toLowerCase() === normTitle ||
+                normTitle.includes(c.name.toLowerCase()) ||
+                c.name.toLowerCase().includes(normTitle)
+            );
+
+          if (!matchedCat) {
+            let fallbackGroupId = 'facial-skin-care';
+            if (normTitle.includes('hair') || normCategory.includes('hair')) fallbackGroupId = 'platelet-rich-plasma-prp';
+            else if (normTitle.includes('scar') || normTitle.includes('acne') || normCategory.includes('scar')) fallbackGroupId = 'co2-laser-from';
+            else if (normTitle.includes('filler') || normTitle.includes('lip') || normTitle.includes('jaw')) fallbackGroupId = 'dermal-fillers-1ml';
+            else if (normTitle.includes('body') || normTitle.includes('sculpt') || normTitle.includes('emsculpt')) fallbackGroupId = 'emscuplt-body-sculpt-and-tightening';
+            else if (normTitle.includes('profhilo')) fallbackGroupId = 'profhilo-2ml';
+            else if (normTitle.includes('morpheus')) fallbackGroupId = 'morpheus8-treatment';
+            else if (normTitle.includes('emface')) fallbackGroupId = 'emface-skin-tightening-and-lifting';
+            matchedCat =
+              centralGallery.categories.find((c) => c.id === fallbackGroupId) ||
+              centralGallery.categories[0];
+          }
+
+          const targetCatId = matchedCat.id;
+          let galleryChanged = false;
+
+          const updatedCategories = centralGallery.categories.map((cat) => {
+            if (cat.id !== targetCatId) return cat;
+            const existingPairs = [...(cat.pairs || [])];
+            treatmentForm.customBeforeAfterPairs?.forEach((customPair) => {
+              if (!customPair.beforeImage || !customPair.afterImage) return;
+              const existingIdx = existingPairs.findIndex((p) => p.id === customPair.id);
+              const mappedPair: BeforeAfterPair = {
+                id: customPair.id,
+                title: customPair.title || `${treatmentForm.title} Outcome`,
+                beforeImage: customPair.beforeImage,
+                afterImage: customPair.afterImage,
+                duration: customPair.duration || '8 Weeks',
+                sessions:
+                  typeof customPair.sessions === 'number'
+                    ? customPair.sessions
+                    : Number(customPair.sessions) || 2,
+                linkedTreatmentId: treatmentForm.id || selectedKey,
+                linkedTreatmentTitle: treatmentForm.title,
+                treatmentGroupId: cat.id as any,
+                beforeAltText:
+                  customPair.beforeAltText ||
+                  `${treatmentForm.title} Before Treatment at Age Reversal Clinics`,
+                afterAltText:
+                  customPair.afterAltText ||
+                  `${treatmentForm.title} After Treatment Result at Age Reversal Clinics`,
+                seoTitle: `${treatmentForm.title} — Before & After Results`,
+                seoKeywords: [
+                  `${treatmentForm.title.toLowerCase()} before and after`,
+                  `${cat.name.toLowerCase()} london`,
+                  'clinical transformation',
+                ],
+                updatedAt: Date.now(),
+              };
+              if (existingIdx >= 0) {
+                existingPairs[existingIdx] = { ...existingPairs[existingIdx], ...mappedPair };
+                galleryChanged = true;
+              } else {
+                existingPairs.push(mappedPair);
+                galleryChanged = true;
+              }
+            });
+            return { ...cat, pairs: existingPairs };
+          });
+
+          if (galleryChanged) {
+            saveBeforeAfterGalleryConfig({ ...centralGallery, categories: updatedCategories });
+          }
+        }
+      }
+    } catch (gSyncErr) {
+      console.warn('Could not sync custom pairs to central Before & After gallery:', gSyncErr);
+    }
+  };
+
   const handleSaveCase = () => {
     if (!formData || !editingCase) return;
     if (!editingCase.beforeImage.trim() || !editingCase.afterImage.trim()) {
@@ -506,10 +595,21 @@ export default function ServiceViewDetailsEditor() {
     } else {
       currentPairs.push(editingCase);
     }
-    handleFieldChange('customBeforeAfterPairs', currentPairs);
-    if (!formData.beforeImage) handleFieldChange('beforeImage', editingCase.beforeImage);
-    if (!formData.afterImage) handleFieldChange('afterImage', editingCase.afterImage);
-    
+    const nextFormData: TreatmentDetail = {
+      ...formData,
+      customBeforeAfterPairs: currentPairs,
+      beforeImage: formData.beforeImage || editingCase.beforeImage,
+      afterImage: formData.afterImage || editingCase.afterImage,
+    };
+    setFormData(nextFormData);
+    const updatedDb = {
+      ...db,
+      [selectedKey]: nextFormData,
+    };
+    setDb(updatedDb);
+    saveTreatmentDetailsConfig(updatedDb);
+    syncTreatmentCasesToCentralGallery(nextFormData);
+
     setIsCaseModalOpen(false);
     setEditingCase(null);
     setStatusMessage({ type: 'success', text: `Saved "${editingCase.title}" Before & After case!` });
@@ -519,7 +619,17 @@ export default function ServiceViewDetailsEditor() {
   const handleDeleteCustomCase = (id: string) => {
     if (!formData) return;
     const currentPairs = (formData.customBeforeAfterPairs || []).filter((p) => p.id !== id);
-    handleFieldChange('customBeforeAfterPairs', currentPairs);
+    const nextFormData: TreatmentDetail = {
+      ...formData,
+      customBeforeAfterPairs: currentPairs,
+    };
+    setFormData(nextFormData);
+    const updatedDb = {
+      ...db,
+      [selectedKey]: nextFormData,
+    };
+    setDb(updatedDb);
+    saveTreatmentDetailsConfig(updatedDb);
   };
 
   const handleToggleExcludeGalleryPair = (pairId: string) => {
@@ -598,67 +708,7 @@ export default function ServiceViewDetailsEditor() {
     };
     setDb(updatedDb);
     saveTreatmentDetailsConfig(updatedDb);
-
-    // Synchronize custom Before & After pairs with Central Gallery for dual-end mirroring & disk persistence
-    try {
-      if (formData.customBeforeAfterPairs && formData.customBeforeAfterPairs.length > 0) {
-        const centralGallery = getBeforeAfterGalleryConfig();
-        if (centralGallery && Array.isArray(centralGallery.categories)) {
-          const normTitle = (formData.title || '').toLowerCase();
-          const normCategory = (formData.category || '').toLowerCase();
-          let targetCatId = 'anti-aging';
-          if (normTitle.includes('hair') || normCategory.includes('hair')) targetCatId = 'clinical-hair';
-          else if (normTitle.includes('scar') || normTitle.includes('acne') || normCategory.includes('scar') || normCategory.includes('acne')) targetCatId = 'acne-scarring';
-          else if (normTitle.includes('filler') || normTitle.includes('lip') || normTitle.includes('jaw') || normCategory.includes('inject')) targetCatId = 'facial-harmony';
-          else if (normTitle.includes('body') || normTitle.includes('fat') || normCategory.includes('body') || normCategory.includes('sculpt')) targetCatId = 'body-sculpting';
-          else if (normTitle.includes('facial') || normCategory.includes('facial')) targetCatId = 'advanced-facials';
-
-          let galleryChanged = false;
-          const updatedCategories = centralGallery.categories.map((cat) => {
-            if (cat.id !== targetCatId) return cat;
-            const existingPairs = [...(cat.pairs || [])];
-            formData.customBeforeAfterPairs?.forEach((customPair) => {
-              if (!customPair.beforeImage || !customPair.afterImage) return;
-              const existingIdx = existingPairs.findIndex((p) => p.id === customPair.id);
-              const mappedPair: BeforeAfterPair = {
-                id: customPair.id,
-                title: customPair.title || `${formData.title} Outcome`,
-                beforeImage: customPair.beforeImage,
-                afterImage: customPair.afterImage,
-                duration: customPair.duration || '8 Weeks',
-                sessions: typeof customPair.sessions === 'number' ? customPair.sessions : Number(customPair.sessions) || 2,
-                linkedTreatmentId: formData.id || selectedKey,
-                linkedTreatmentTitle: formData.title,
-                treatmentGroupId: cat.id,
-                beforeAltText: customPair.beforeAltText || `${formData.title} Before Treatment at Age Reversal Clinics`,
-                afterAltText: customPair.afterAltText || `${formData.title} After Treatment Result at Age Reversal Clinics`,
-                seoTitle: `${formData.title} — Before & After Results`,
-                seoKeywords: [
-                  `${formData.title.toLowerCase()} before and after`,
-                  `${cat.name.toLowerCase()} london`,
-                  'clinical transformation'
-                ],
-                updatedAt: Date.now()
-              };
-              if (existingIdx >= 0) {
-                existingPairs[existingIdx] = { ...existingPairs[existingIdx], ...mappedPair };
-                galleryChanged = true;
-              } else {
-                existingPairs.push(mappedPair);
-                galleryChanged = true;
-              }
-            });
-            return { ...cat, pairs: existingPairs };
-          });
-
-          if (galleryChanged) {
-            saveBeforeAfterGalleryConfig({ ...centralGallery, categories: updatedCategories });
-          }
-        }
-      }
-    } catch (gSyncErr) {
-      console.warn('Could not sync custom pairs to central Before & After gallery:', gSyncErr);
-    }
+    syncTreatmentCasesToCentralGallery(formData);
 
     setStatusMessage({ type: 'success', text: `Successfully updated components & clinical parameters for ${formData.title}!` });
     setTimeout(() => setStatusMessage(null), 4000);

@@ -33,7 +33,22 @@ export default defineConfig(() => {
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      watch:
+        process.env.DISABLE_HMR === 'true'
+          ? null
+          : {
+              ignored: [
+                '**/src/data/siteCustomizations.json',
+                '**/src/data/clinicInfo.ts*',
+                '**/src/data/transformationsData.ts*',
+                '**/src/data/specialistTreatments.ts*',
+                '**/src/data/treatmentPricing.ts*',
+                '**/src/data.ts*',
+                '**/public/assets/**',
+                '**/public/uploads/**',
+                '**/*.tmp',
+              ],
+            },
     },
   };
 });

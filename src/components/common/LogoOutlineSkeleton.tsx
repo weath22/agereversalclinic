@@ -100,11 +100,13 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
   label = 'Age Reversal Clinic Brand Logo',
   logoUrl,
 }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
   const headerConfig = getHeaderConfig();
-  const brandLogoUrl =
+  const candidateLogoUrl =
     (logoUrl && !logoUrl.includes('unsplash.com') ? logoUrl : null) ||
     headerConfig?.logoUrl ||
     DEFAULT_BRAND_LOGO_URL;
+  const brandLogoUrl = imgFailed ? DEFAULT_BRAND_LOGO_URL : candidateLogoUrl;
 
   const variantStyles = VARIANT_CONFIG[variant] || VARIANT_CONFIG.gold;
   const isCustomNumeric = typeof size === 'number';
@@ -143,6 +145,9 @@ export const LogoOutlineSkeleton: React.FC<LogoOutlineSkeletonProps> = ({
           alt={label}
           decoding="async"
           referrerPolicy="no-referrer"
+          onError={() => {
+            if (!imgFailed) setImgFailed(true);
+          }}
           className="w-full h-full object-contain drop-shadow-[0_2px_12px_rgba(216,194,163,0.22)]"
           animate={
             animate

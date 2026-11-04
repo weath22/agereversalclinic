@@ -1,18 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
 interface TransformationCarouselProps {
   title: string;
   images: string[];
+  beforeImage?: string;
+  afterImage?: string;
+  singleFrameImage?: string;
+  singleFrameAltText?: string;
   beforeAltText?: string;
   afterAltText?: string;
   seoTitle?: string;
 }
 
+type FrameSlide =
+  | { type: 'single'; imageUrl: string; alt: string }
+  | { type: 'pair'; beforeUrl: string; afterUrl: string; beforeAlt: string; afterAlt: string };
+
 export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
   title,
   images,
+  beforeImage,
+  afterImage,
+  singleFrameImage,
+  singleFrameAltText,
   beforeAltText,
   afterAltText,
   seoTitle,
@@ -21,33 +33,124 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Responsive items per view: 2 on tablet/desktop, 1 on mobile
-  const [slidesToShow, setSlidesToShow] = useState(2);
+  const cleanSingleFrame = (singleFrameImage || '').trim();
+  const cleanBefore = (beforeImage || '').trim();
+  const cleanAfter = (afterImage || '').trim();
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 640) {
-        setSlidesToShow(1);
+  // Build unified single-frame slides:
+  // 1) If a dedicated singleFrameImage is set, show it as a single frame.
+  // 2) If beforeImage & afterImage are provided (two-slot pair images), combine them inside ONE single unified frame.
+  // 3) Any additional gallery images are also displayed in the single frame.
+  const frameSlides = useMemo<FrameSlide[]>(() => {
+    const resolvedBeforeAlt =
+      beforeAltText || `${title} — Before Treatment at Age Reversal Clinics London`;
+    const resolvedAfterAlt =
+      afterAltText || `${title} — After Treatment Result at Age Reversal Clinics London`;
+    const resolvedSingleAlt =
+      singleFrameAltText ||
+      beforeAltText ||
+      `${title} — Clinical Before & After Result at Age Reversal Clinics London`;
+
+    if (cleanSingleFrame) {
+      return [
+        {
+          type: 'single',
+          imageUrl: cleanSingleFrame,
+          alt: resolvedSingleAlt,
+        },
+      ];
+    }
+
+    const isPreCombinedSingleImage = (url: string) =>
+      url.includes('lexaesthetics.com/storage/');
+
+    const slides: FrameSlide[] = [];
+    const usedUrls = new Set<string>();
+
+    // If the case has a two-slot Before & After pair (and they aren't already pre-combined single images),
+    // display the pair together inside ONE single frame
+    if (
+      cleanBefore &&
+      cleanAfter &&
+      !isPreCombinedSingleImage(cleanBefore) &&
+      !isPreCombinedSingleImage(cleanAfter)
+    ) {
+      slides.push({
+        type: 'pair',
+        beforeUrl: cleanBefore,
+        afterUrl: cleanAfter,
+        beforeAlt: resolvedBeforeAlt,
+        afterAlt: resolvedAfterAlt,
+      });
+      usedUrls.add(cleanBefore);
+      usedUrls.add(cleanAfter);
+    }
+
+    const remainingImages = (images || [])
+      .map((u) => (u || '').trim())
+      .filter((u) => Boolean(u) && !usedUrls.has(u));
+
+    let i = 0;
+    while (i < remainingImages.length) {
+      const current = remainingImages[i];
+      const next = remainingImages[i + 1];
+
+      if (isPreCombinedSingleImage(current) || !next || isPreCombinedSingleImage(next)) {
+        slides.push({
+          type: 'single',
+          imageUrl: current,
+          alt: resolvedSingleAlt,
+        });
+        i += 1;
       } else {
-        setSlidesToShow(2);
+        slides.push({
+          type: 'pair',
+          beforeUrl: current,
+          afterUrl: next,
+          beforeAlt: slides.length === 0 ? resolvedBeforeAlt : `${title} — Before Result`,
+          afterAlt: slides.length === 0 ? resolvedAfterAlt : `${title} — After Result`,
+        });
+        i += 2;
       }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    }
 
-  const totalSlides = images.length;
-  const maxIndex = Math.max(0, totalSlides - slidesToShow);
+    if (slides.length === 0 && (cleanBefore || cleanAfter)) {
+      slides.push({
+        type: 'single',
+        imageUrl: cleanBefore || cleanAfter,
+        alt: resolvedSingleAlt,
+      });
+    }
 
-  // Autoplay
+    return slides;
+  }, [
+    cleanSingleFrame,
+    cleanBefore,
+    cleanAfter,
+    images,
+    title,
+    singleFrameAltText,
+    beforeAltText,
+    afterAltText,
+  ]);
+
+  const totalSlides = frameSlides.length;
+  const maxIndex = Math.max(0, totalSlides - 1);
+
   useEffect(() => {
-    if (isPaused || totalSlides <= slidesToShow) return;
+    if (currentIndex > maxIndex) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, maxIndex]);
+
+  // Autoplay when multiple single-frame slides exist
+  useEffect(() => {
+    if (isPaused || totalSlides <= 1) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, 4500);
+    }, 5000);
     return () => clearInterval(timer);
-  }, [isPaused, maxIndex, totalSlides, slidesToShow]);
+  }, [isPaused, maxIndex, totalSlides]);
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
@@ -61,8 +164,10 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
     setCurrentIndex(Math.min(index, maxIndex));
   };
 
+  if (frameSlides.length === 0) return null;
+
   return (
-    <div 
+    <div
       className="w-full text-center my-2"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -83,19 +188,19 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
         </div>
       </div>
 
-      {/* 3. Elementor Image Carousel Slider */}
-      <div className="relative -mx-4 sm:mx-auto w-[calc(100%+2rem)] sm:w-full max-w-5xl px-0 sm:px-4">
-        {/* Carousel Viewport Container */}
-        <div 
+      {/* 3. Single Unified Large Frame (Displays either a Single Frame Image or the Before & After Pair inside One Single Frame) */}
+      <div className="relative -mx-4 sm:mx-auto w-[calc(100%+2rem)] sm:w-full max-w-4xl px-0 sm:px-4">
+        <div
           ref={containerRef}
-          className="overflow-hidden rounded-none sm:rounded-2xl relative shadow-xs bg-stone-100/50 sm:bg-transparent"
+          className="overflow-hidden rounded-none sm:rounded-2xl bg-white border-y sm:border border-stone-200/90 shadow-sm relative select-none"
         >
           <motion.div
-            className="flex gap-0 sm:gap-5"
-            drag="x"
+            className="flex"
+            drag={totalSlides > 1 ? 'x' : false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.2}
             onDragEnd={(_, info) => {
+              if (totalSlides <= 1) return;
               const swipeThreshold = 50;
               if (info.offset.x < -swipeThreshold) {
                 handleNext();
@@ -104,47 +209,75 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
               }
             }}
             animate={{
-              x: `calc(-${currentIndex * (100 / slidesToShow)}% - ${currentIndex * (slidesToShow === 1 ? 0 : 1.25)}rem / ${slidesToShow})`,
+              x: `-${currentIndex * 100}%`,
             }}
             transition={{ type: 'spring', stiffness: 260, damping: 28 }}
           >
-            {images.map((imgUrl, imgIdx) => {
-              const resolvedAlt =
-                imgIdx === 0 && beforeAltText
-                  ? beforeAltText
-                  : imgIdx === 1 && afterAltText
-                  ? afterAltText
-                  : `${title} - Clinical Result ${imgIdx + 1} at Age Reversal Clinics London`;
-              const resolvedTitle = seoTitle
-                ? `${seoTitle} (${imgIdx === 0 ? 'Before' : imgIdx === 1 ? 'After' : `View ${imgIdx + 1}`})`
-                : `${title} — Age Reversal Clinics`;
-
-              return (
-                <div
-                  key={imgIdx}
-                  className="shrink-0 w-full sm:w-[calc(50%-0.625rem)] overflow-hidden rounded-none sm:rounded-xl bg-stone-100 border-y sm:border border-stone-200/80 group select-none"
-                >
-                  <div className="relative aspect-[1/1] sm:aspect-[16/11] w-full overflow-hidden">
+            {frameSlides.map((slide, slideIdx) => (
+              <div key={slideIdx} className="w-full shrink-0">
+                {slide.type === 'single' ? (
+                  <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-stone-100 group">
                     <img
-                      src={imgUrl}
-                      alt={resolvedAlt}
-                      title={resolvedTitle}
+                      src={slide.imageUrl}
+                      alt={slide.alt}
+                      title={
+                        seoTitle ||
+                        `${title} — Before & After Transformation | Age Reversal Clinics`
+                      }
                       loading="lazy"
                       decoding="async"
-                      className="w-full h-full object-cover sm:object-cover transition-transform duration-700 sm:group-hover:scale-105 pointer-events-none"
+                      className="w-full h-full object-cover transition-transform duration-700 sm:group-hover:scale-[1.02] pointer-events-none"
                     />
-                    <div className="absolute bottom-3 right-3 sm:bottom-2.5 sm:right-2.5 bg-black/70 backdrop-blur-xs text-white text-[11px] sm:text-[10px] font-sans font-medium px-2.5 py-0.5 rounded-full shadow-sm">
-                      {imgIdx + 1} / {images.length}
+                  </div>
+                ) : (
+                  /* Pair images combined inside ONE single large frame */
+                  <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] overflow-hidden bg-stone-200/80 grid grid-cols-2 gap-[2px] group">
+                    {/* Left Half of Single Frame: Before */}
+                    <div className="relative w-full h-full overflow-hidden bg-stone-100">
+                      <img
+                        src={slide.beforeUrl}
+                        alt={slide.beforeAlt}
+                        title={
+                          seoTitle
+                            ? `${seoTitle} (Before)`
+                            : `${title} — Before | Age Reversal Clinics`
+                        }
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-700 sm:group-hover:scale-[1.02] pointer-events-none"
+                      />
+                      <span className="absolute bottom-2.5 left-2.5 sm:bottom-3.5 sm:left-3.5 bg-black/70 backdrop-blur-xs text-white text-[9px] sm:text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-xs">
+                        Before
+                      </span>
+                    </div>
+
+                    {/* Right Half of Single Frame: After */}
+                    <div className="relative w-full h-full overflow-hidden bg-stone-100">
+                      <img
+                        src={slide.afterUrl}
+                        alt={slide.afterAlt}
+                        title={
+                          seoTitle
+                            ? `${seoTitle} (After)`
+                            : `${title} — After | Age Reversal Clinics`
+                        }
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover transition-transform duration-700 sm:group-hover:scale-[1.02] pointer-events-none"
+                      />
+                      <span className="absolute bottom-2.5 right-2.5 sm:bottom-3.5 sm:right-3.5 bg-[#003334]/90 backdrop-blur-xs text-white text-[9px] sm:text-[11px] font-sans font-semibold uppercase tracking-wider px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-xs">
+                        After
+                      </span>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ))}
           </motion.div>
         </div>
 
-        {/* Carousel Navigation Arrows */}
-        {totalSlides > slidesToShow && (
+        {/* Carousel Navigation Arrows (when multiple single-frame slides exist) */}
+        {totalSlides > 1 && (
           <>
             <button
               type="button"
@@ -170,7 +303,6 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
         {totalSlides > 1 && (
           <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-5 sm:mt-6">
             {Array.from({ length: totalSlides }).map((_, dotIdx) => {
-              const isActive = dotIdx === currentIndex || (slidesToShow === 2 && dotIdx === currentIndex + 1);
               const isPrimaryActive = dotIdx === currentIndex;
               return (
                 <button
@@ -181,8 +313,6 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
                   className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                     isPrimaryActive
                       ? 'w-6 sm:w-7 bg-stone-900'
-                      : isActive
-                      ? 'w-3 bg-stone-600'
                       : 'w-2.5 bg-stone-300 hover:bg-stone-400'
                   }`}
                 />
@@ -194,3 +324,4 @@ export const TransformationCarousel: React.FC<TransformationCarouselProps> = ({
     </div>
   );
 };
+

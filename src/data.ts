@@ -75,7 +75,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "lash & eyebrow",
     "duration": "45 mins",
     "description": "Bespoke brow architecture, precision tinting, lamination, and lash enhancement tailored to frame and elevate your natural facial features.",
-    "image": "/assets/treatments/lash-eyebrow.webp?v=1793132498990",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX",
     "imageAlt": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "lash & eyebrow - Specialist Care",
     "seoKeywords": [
@@ -189,7 +189,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "Aqualyx Course 3",
     "duration": "45 mins",
     "description": "Comprehensive 3-session deoxycholic acid lipolysis protocol engineered to dissolve stubborn localized fat pockets with lasting contour definition.",
-    "image": "/assets/treatments/aqualyx-course-3.webp?v=1793152243398",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBpc9iwUPHl5YjJPUY9E95ThzCowbFO32u1yMI6QpZqPrQnBL7p9nmkyqw3JRkKKEl26-mJIFP0r8QNgHxIYxWnrIiagTCmDfr3L4TeyGpRJ4Ye8dwjLxT7kUVB0sTqVntaOcMm7700Jj3-8xh75QQkY3xOMGH04owJPA05JB3wRuKL7kUttqlyk-sOqZIwumYKh7VveixAFn2QXvlC7f8-S3zwQXujNvI0qHEwsxPonmj_-kRlbSiRVOcy67FFlTBCjBFzzvhYYOQ1",
     "imageAlt": "Aqualyx Course 3 clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "Aqualyx Course 3 - Specialist Care",
     "seoKeywords": [
@@ -246,7 +246,7 @@ export const TREATMENTS: TreatmentType[] = [
     "subCategory": "Slimming pen",
     "duration": "30 mins",
     "description": "Clinically supervised metabolic weight management and appetite regulation protocol supporting sustainable body slimming.",
-    "image": "/assets/treatments/slimming-pen.webp?v=1793132821363",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC",
     "imageAlt": "Slimming pen clinical aesthetic treatment at Age Reversal Clinic",
     "seoTitle": "Slimming pen - Specialist Care",
     "seoKeywords": [
@@ -858,60 +858,298 @@ export const BRAND_PARTNERS: BrandPartner[] = [
 
 export const NEWS_ARTICLES: Article[] = [
   {
-    id: 'news-1',
-    title: 'Podiatrist Saj returns to Wimbledon to care for world’s greatest tennis superstars... feet',
-    description: 'Podiatrist Mr Saj Afzal returns to Wimbledon for a sixth year, revealing what it takes to keep the world\'s top tennis players on their feet.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXc7SORxoXUK7Kzbf256KDGjYoiGB3XeCLNYObBtlw7h8260KwmKxaiEQL7E2Wg3BTQhjpJs0Iw9GVYkNkpYhd4WPz_jdW6PA2i4yXAVvmrMoBCqMX479nyNRdb7X8GwVNjcQtb1OIG8li-NYXrs-55c2CPQIIew0siqNajiO8--wLogFbflBlElSPQ9GlaxJ2VmWkjKCbGUr2QX1FhpzqTBOU86kyynhHW4UjQMqKe-XDBVsXygiZM-ACB4nUWQl8J4dDjsBIEw',
-    date: 'July 5, 2026',
-    author: 'Mr Saj Afzal',
-    tag: 'Sports Medicine'
+    "id": "news-1",
+    "slug": "podiatrist-saj-wimbledon-sports-medicine-foot-care",
+    "type": "news",
+    "status": "published",
+    "title": "Podiatrist Saj returns to Wimbledon to care for world’s greatest tennis superstars... feet",
+    "description": "Podiatrist Mr Saj Afzal returns to Wimbledon for a sixth year, revealing what it takes to keep the world's top tennis players on their feet.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXc7SORxoXUK7Kzbf256KDGjYoiGB3XeCLNYObBtlw7h8260KwmKxaiEQL7E2Wg3BTQhjpJs0Iw9GVYkNkpYhd4WPz_jdW6PA2i4yXAVvmrMoBCqMX479nyNRdb7X8GwVNjcQtb1OIG8li-NYXrs-55c2CPQIIew0siqNajiO8--wLogFbflBlElSPQ9GlaxJ2VmWkjKCbGUr2QX1FhpzqTBOU86kyynhHW4UjQMqKe-XDBVsXygiZM-ACB4nUWQl8J4dDjsBIEw",
+    "imageAlt": "Clinical sports medicine specialist assessing athlete lower limb biomechanics",
+    "date": "July 5, 2026",
+    "publishedAt": "2026-07-05T09:00:00Z",
+    "updatedAt": "2026-07-05T09:00:00Z",
+    "readingTime": "4 min read",
+    "author": "Mr Saj Afzal",
+    "tag": "Sports Medicine",
+    "category": "Sports Medicine",
+    "seoTitle": "Wimbledon Sports Podiatry & Athlete Foot Care | Age Reversal Clinic",
+    "metaDescription": "Discover how Consultant Podiatrist Mr Saj Afzal prepares and treats elite Wimbledon tennis players using biomechanical screening and rapid recovery protocols.",
+    "focusKeywords": [
+      "sports podiatry",
+      "athlete recovery clinic",
+      "biomechanical foot care",
+      "Wimbledon medical care"
+    ],
+    "canonicalUrl": "#article-news-1",
+    "contentBlocks": [
+      {
+        "id": "b-news1-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "Precision Biomechanics on Championship Grass Courts"
+      },
+      {
+        "id": "b-news1-2",
+        "type": "paragraph",
+        "text": "Elite tennis places extraordinary lateral shear forces on the lower limbs. Every clinical assessment begins with high-resolution gait diagnostics and pressure mapping to prevent acute blister formation, tendon overload, and plantar fascia strain before players step onto Centre Court."
+      },
+      {
+        "id": "b-news1-3",
+        "type": "h3",
+        "headingLevel": "h3",
+        "heading": "Core Preventative Protocols Used During Tournament Weeks"
+      },
+      {
+        "id": "b-news1-4",
+        "type": "bullets",
+        "bulletPoints": [
+          "Custom carbon-fiber orthotic adjustments tailored to grass-court footwear.",
+          "Rapid epidermal barrier conditioning and friction-shielding taping techniques.",
+          "Post-match cryotherapy and targeted laser photobiomodulation for tissue recovery."
+        ]
+      },
+      {
+        "id": "b-news1-5",
+        "type": "callout",
+        "calloutQuote": "Our primary focus is preserving peak kinetic alignment and comfort under extreme competitive stress so athletes can perform without hesitation.",
+        "calloutAttribution": "Mr Saj Afzal, Consultant Podiatrist"
+      },
+      {
+        "id": "block-1793612033457-wvlq",
+        "type": "image",
+        "imageUrl": "/assets/blog/news-1-block-1793612033457-wvlq.webp",
+        "imageAlt": "Podiatrist Saj returns to Wimbledon to care for world’s greatest tennis superstars... feet — Sports Medicine illustration",
+        "imageCaption": ""
+      }
+    ],
+    "faqItems": [
+      {
+        "id": "faq-news1-1",
+        "question": "How often should competitive athletes undergo biomechanical foot assessments?",
+        "answer": "High-impact athletes benefit from a full biomechanical and gait review every 6 months or ahead of surface transitions."
+      }
+    ]
   },
   {
-    id: 'news-2',
-    title: 'National Clean Air Day Expert Q&A',
-    description: 'Respiratory specialist Dr Ricardo José explains how air pollution affects your lungs and shares practical steps to reduce exposure.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w',
-    date: 'June 18, 2026',
-    author: 'Dr Ricardo José',
-    tag: 'Respiratory'
+    "id": "news-2",
+    "slug": "national-clean-air-day-skin-and-respiratory-protection",
+    "type": "news",
+    "status": "published",
+    "title": "National Clean Air Day Expert Q&A",
+    "description": "Respiratory specialist Dr Ricardo José explains how air pollution affects your lungs and shares practical steps to reduce exposure.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w",
+    "imageAlt": "Medical specialist discussing environmental wellness and cellular protection",
+    "date": "June 18, 2026",
+    "publishedAt": "2026-06-18T10:00:00Z",
+    "updatedAt": "2026-06-18T10:00:00Z",
+    "readingTime": "5 min read",
+    "author": "Dr Ricardo José",
+    "tag": "Respiratory",
+    "category": "Respiratory",
+    "seoTitle": "Urban Air Pollution, Cellular Oxidative Stress & Health Q&A",
+    "metaDescription": "Learn how urban particulate matter impacts respiratory and dermal cellular health, plus clinical antioxidant strategies to reduce environmental damage.",
+    "focusKeywords": [
+      "clean air day clinic Q&A",
+      "oxidative stress protection",
+      "urban pollution health",
+      "cellular detoxification"
+    ],
+    "canonicalUrl": "#article-news-2",
+    "contentBlocks": [
+      {
+        "id": "b-news2-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "How Urban Particulate Matter Impacts Cellular Longevity"
+      },
+      {
+        "id": "b-news2-2",
+        "type": "paragraph",
+        "text": "Fine particulate matter (PM2.5) and nitrogen oxides trigger systemic oxidative cascades. Beyond respiratory irritation, environmental pollutants accelerate cellular aging and compromise natural barrier defenses."
+      },
+      {
+        "id": "b-news2-3",
+        "type": "bullets",
+        "bulletPoints": [
+          "Monitor daily Air Quality Index (AQI) before scheduling outdoor high-intensity training.",
+          "Support endogenous antioxidant reserves with clinical glutathione and vitamin C protocols.",
+          "Use medical-grade HEPA filtration in sleeping and recovery environments."
+        ]
+      }
+    ],
+    "faqItems": [
+      {
+        "id": "faq-news2-1",
+        "question": "Can antioxidant therapies help counteract urban environmental exposure?",
+        "answer": "Yes, targeted topical and systemic antioxidants help neutralize free radicals generated by urban particulate exposure."
+      }
+    ]
   },
   {
-    id: 'news-3',
-    title: 'Fundraising to honor my childhood best friend Dave and help others',
-    description: 'Fundraiser Jason Smith, in conversation with Psychologist Rupali Kulshreshtha, talk about the 321 Cycle Challenge and supporting others.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g',
-    date: 'May 24, 2026',
-    author: 'Jason Smith',
-    tag: 'Community'
+    "id": "news-3",
+    "slug": "321-cycle-challenge-community-wellness-fundraiser",
+    "type": "news",
+    "status": "published",
+    "title": "Fundraising to honor my childhood best friend Dave and help others",
+    "description": "Fundraiser Jason Smith, in conversation with Psychologist Rupali Kulshreshtha, talk about the 321 Cycle Challenge and supporting others.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g",
+    "imageAlt": "Community wellness and patient support initiative at Age Reversal Clinic",
+    "date": "May 24, 2026",
+    "publishedAt": "2026-05-24T11:30:00Z",
+    "updatedAt": "2026-05-24T11:30:00Z",
+    "readingTime": "3 min read",
+    "author": "Jason Smith",
+    "tag": "Community",
+    "category": "Community",
+    "seoTitle": "321 Cycle Challenge & Patient Support Initiative | Clinic Journal",
+    "metaDescription": "Read how the 321 Cycle Challenge brings together clinicians and patients to fund holistic psychological and physical recovery programs.",
+    "focusKeywords": [
+      "clinic community wellness",
+      "patient support fundraising",
+      "holistic recovery care"
+    ],
+    "canonicalUrl": "#article-news-3",
+    "contentBlocks": [
+      {
+        "id": "b-news3-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "Turning Personal Tribute into Lasting Patient Support"
+      },
+      {
+        "id": "b-news3-2",
+        "type": "paragraph",
+        "text": "Combining endurance cycling with mental health advocacy, the 321 Cycle Challenge raises vital awareness and direct funding for integrated patient counseling and rehabilitative care."
+      }
+    ],
+    "faqItems": []
   }
 ];
 
 export const STORY_ARTICLES: Article[] = [
   {
-    id: 'story-1',
-    title: 'Overcoming Breast Cancer: Emily’s Journey of Hope and Precision Care',
-    description: 'How rapid diagnostic breast screenings and world-class oncological care at The London Clinic gave Emily her life and peace of mind back.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUloxcWsT4NRCnTfn0RneF4Q4BwymxBAMsqFKJv9IIvSzEjhVsjT_MDtI4irgzGW0su__ZFlPbs8_2ebSsDU3aWDop2YR9ea2x21K8fdCKFFVUTyJj9U_xiYZFY63zL5Btb43hR-HaxmbiKFgUp8DqEgm5D4mrjpPpfVzplLWjcWFD75MC4S3cc8dnLB7CywLocC5PIZJPdVTfCwgrgG4WqwQZabVdZ8OAlRAeHeZCBxQt2rP-Gm1MJcgjtoht4nVH3CBwLsNAF8OI',
-    date: 'April 12, 2026',
-    author: 'Emily Watson',
-    tag: 'Breast Care'
+    "id": "story-1",
+    "slug": "emily-journey-precision-diagnostic-screening-and-care",
+    "type": "stories",
+    "status": "published",
+    "title": "Overcoming Breast Cancer: Emily’s Journey of Hope and Precision Care",
+    "description": "How rapid diagnostic breast screenings and world-class oncological care at The London Clinic gave Emily her life and peace of mind back.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUloxcWsT4NRCnTfn0RneF4Q4BwymxBAMsqFKJv9IIvSzEjhVsjT_MDtI4irgzGW0su__ZFlPbs8_2ebSsDU3aWDop2YR9ea2x21K8fdCKFFVUTyJj9U_xiYZFY63zL5Btb43hR-HaxmbiKFgUp8DqEgm5D4mrjpPpfVzplLWjcWFD75MC4S3cc8dnLB7CywLocC5PIZJPdVTfCwgrgG4WqwQZabVdZ8OAlRAeHeZCBxQt2rP-Gm1MJcgjtoht4nVH3CBwLsNAF8OI",
+    "imageAlt": "Patient story highlighting compassionate diagnostic and restorative clinical care",
+    "date": "April 12, 2026",
+    "publishedAt": "2026-04-12T08:30:00Z",
+    "updatedAt": "2026-04-12T08:30:00Z",
+    "readingTime": "5 min read",
+    "author": "Emily Watson",
+    "tag": "Breast Care",
+    "category": "Breast Care",
+    "seoTitle": "Emily’s Patient Story: Early Diagnostics & Restorative Care",
+    "metaDescription": "Read Emily’s inspiring patient journey through rapid diagnostic screening, multidisciplinary medical care, and full post-treatment restoration.",
+    "focusKeywords": [
+      "patient success story",
+      "early diagnostic screening",
+      "precision medical care",
+      "restorative aesthetics"
+    ],
+    "canonicalUrl": "#article-story-1",
+    "contentBlocks": [
+      {
+        "id": "b-story1-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "Early Detection Through Same-Day Diagnostic Pathways"
+      },
+      {
+        "id": "b-story1-2",
+        "type": "paragraph",
+        "text": "When Emily noticed a subtle change, access to immediate high-resolution imaging and consultant-led assessment eliminated weeks of uncertainty and enabled a conservative, highly targeted treatment plan."
+      },
+      {
+        "id": "b-story1-3",
+        "type": "callout",
+        "calloutQuote": "From my very first consultation, every specialist treated me as a whole person rather than a chart—restoring both my health and my confidence.",
+        "calloutAttribution": "Emily Watson, Patient"
+      }
+    ],
+    "faqItems": []
   },
   {
-    id: 'story-2',
-    title: 'Regaining Crystal Clear Vision: Robert’s Eye Centre Success Story',
-    description: 'Robert shares his experience of undergoing state-of-the-art cataract surgery and receiving premium private care from our leading consultants.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g',
-    date: 'March 3, 2026',
-    author: 'Robert Davies',
-    tag: 'Eye Centre'
+    "id": "story-2",
+    "slug": "robert-eye-centre-vision-restoration-story",
+    "type": "stories",
+    "status": "published",
+    "title": "Regaining Crystal Clear Vision: Robert’s Eye Centre Success Story",
+    "description": "Robert shares his experience of undergoing state-of-the-art cataract surgery and receiving premium private care from our leading consultants.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g",
+    "imageAlt": "Patient testimonial on precision periocular and vision restoration care",
+    "date": "March 3, 2026",
+    "publishedAt": "2026-03-03T14:00:00Z",
+    "updatedAt": "2026-03-03T14:00:00Z",
+    "readingTime": "4 min read",
+    "author": "Robert Davies",
+    "tag": "Eye Centre",
+    "category": "Eye Centre",
+    "seoTitle": "Robert’s Story: Precision Eye & Periocular Restoration",
+    "metaDescription": "Discover how micro-precision ophthalmic and periocular care restored Robert’s clarity and comfort with minimal downtime.",
+    "focusKeywords": [
+      "eye centre patient story",
+      "precision ophthalmic care",
+      "periocular rejuvenation"
+    ],
+    "canonicalUrl": "#article-story-2",
+    "contentBlocks": [
+      {
+        "id": "b-story2-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "Bespoke Lens & Periocular Assessment"
+      },
+      {
+        "id": "b-story2-2",
+        "type": "paragraph",
+        "text": "Using digital biometry and minimally invasive micro-incision protocols, Robert achieved full visual clarity within 48 hours of his procedure."
+      }
+    ],
+    "faqItems": []
   },
   {
-    id: 'story-3',
-    title: 'A New Lease on Life: Advancing Lung Diagnostics at the Clinic',
-    description: 'After years of unexplained fatigue and breathing issues, specialized pulmonary therapies provided immediate answers and lasting relief.',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w',
-    date: 'Feb 15, 2026',
-    author: 'Michael Vance',
-    tag: 'Lung Centre'
+    "id": "story-3",
+    "slug": "advancing-lung-diagnostics-and-vitality-michael-story",
+    "type": "stories",
+    "status": "published",
+    "title": "A New Lease on Life: Advancing Lung Diagnostics at the Clinic",
+    "description": "After years of unexplained fatigue and breathing issues, specialized pulmonary therapies provided immediate answers and lasting relief.",
+    "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w",
+    "imageAlt": "Patient recovery story following advanced clinical diagnostics",
+    "date": "Feb 15, 2026",
+    "publishedAt": "2026-02-15T10:00:00Z",
+    "updatedAt": "2026-02-15T10:00:00Z",
+    "readingTime": "4 min read",
+    "author": "Michael Vance",
+    "tag": "Lung Centre",
+    "category": "Lung Centre",
+    "seoTitle": "Michael’s Patient Journey: Advanced Diagnostics & Cellular Vitality",
+    "metaDescription": "How comprehensive cardiopulmonary diagnostics and tailored wellness protocols resolved chronic fatigue and restored Michael’s active lifestyle.",
+    "focusKeywords": [
+      "advanced clinical diagnostics",
+      "vitality and wellness protocol",
+      "patient recovery story"
+    ],
+    "canonicalUrl": "#article-story-3",
+    "contentBlocks": [
+      {
+        "id": "b-story3-1",
+        "type": "h2",
+        "headingLevel": "h2",
+        "heading": "Uncovering the Root Cause of Chronic Fatigue"
+      },
+      {
+        "id": "b-story3-2",
+        "type": "paragraph",
+        "text": "Comprehensive functional testing allowed our specialists to pinpoint subtle airway inflammation and design a targeted recovery regimen."
+      }
+    ],
+    "faqItems": []
   }
 ];

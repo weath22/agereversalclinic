@@ -8,22 +8,22 @@ import { WhyChooseUsConfig } from '../types';
 import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 import { getClinicSlotId } from '../utils/clinicImageHelper';
 
-// Fallback high-aesthetic UI images and badges for Why Choose Us pillars
+// Fallback badges for Why Choose Us pillars
 const PILLAR_IMAGES_FALLBACK: Record<string, { image: string; badge: string }> = {
   p1: {
-    image: '/assets/clinic-pillar-1.webp',
+    image: '',
     badge: 'Harley St Flagship'
   },
   p2: {
-    image: '/assets/clinic-pillar-2.webp',
+    image: '',
     badge: '4.9/5 ★ (2,000+ Reviews)'
   },
   p3: {
-    image: '/assets/clinic-pillar-3.webp',
+    image: '',
     badge: 'FDA-Cleared Tech'
   },
   p4: {
-    image: '/assets/clinic-pillar-4.webp',
+    image: '',
     badge: 'GMC Registered'
   }
 };

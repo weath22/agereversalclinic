@@ -46,17 +46,17 @@ export {
 
 import { CLINIC_LOCATION_IMAGES } from '../data/clinicImages';
 import { getClinicSlotId } from '../utils/clinicImageHelper';
-import location1Img from '../assets/images/clinic/locations/location1_img.jpg';
-import location2Img from '../assets/images/clinic/locations/location2_img.jpg';
+const location1Img = '';
+const location2Img = '';
 
 const clinicDevonshire = CLINIC_LOCATION_IMAGES['devonshire-place-clinic'].primary;
 const clinicHarleyStreet = CLINIC_LOCATION_IMAGES['harley-street-flagship'].primary;
 
 const DEFAULT_LOCATION_IMAGES: Record<string, string> = {
-  'location-1791722960928': '/assets/clinic-location-1791722960928.webp',
-  'location-1791728808656': '/assets/clinic-location-1791728808656.webp',
-  'loc-1': '/assets/clinic-location-1791722960928.webp',
-  'loc-2': '/assets/clinic-location-1791728808656.webp',
+  'location-1791722960928': '',
+  'location-1791728808656': '',
+  'loc-1': '',
+  'loc-2': '',
 };
 
 const LOCATION_FALLBACKS = [location1Img, location2Img, clinicHarleyStreet, clinicDevonshire];

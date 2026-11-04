@@ -289,10 +289,10 @@ export default function App() {
     seoDescription = 'Browse all aesthetic injectables, regenerative medicine, dermatology, and body contouring treatments at our London Harley Street clinic.';
     seoPath = '#explore-treatments';
   } else if (selectedArticle) {
-    seoTitle = `${selectedArticle.title} | Clinical Journal`;
-    seoDescription = selectedArticle.description || selectedArticle.title;
+    seoTitle = selectedArticle.seoTitle || `${selectedArticle.title} | Clinical Journal`;
+    seoDescription = selectedArticle.metaDescription || selectedArticle.description || selectedArticle.title;
     seoImage = selectedArticle.image;
-    seoPath = `#article-${selectedArticle.id}`;
+    seoPath = `#article-${selectedArticle.slug || selectedArticle.id}`;
   } else if (selectedTreatment) {
     const config = getTreatmentDetailsConfig();
     const lower = selectedTreatment.toLowerCase().trim();
@@ -372,7 +372,8 @@ export default function App() {
         customDescription={seoDescription}
         customImage={seoImage}
         canonicalPath={seoPath}
-        customKeywords={activeTreatmentData?.seoKeywords}
+        customKeywords={selectedArticle?.focusKeywords || activeTreatmentData?.seoKeywords}
+        articleData={selectedArticle}
         treatmentData={activeTreatmentData}
       />
       

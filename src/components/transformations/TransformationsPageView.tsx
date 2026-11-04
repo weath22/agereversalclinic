@@ -49,7 +49,10 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [activePackageModalTreatment, setActivePackageModalTreatment] = useState<TreatmentPricingItem | null>(null);
   const [activeBottomSheet, setActiveBottomSheet] = useState<{ type: 'treatments' | 'products'; caseItem: TransformationCase } | null>(null);
-  
+  const [stickyTopOffset, setStickyTopOffset] = useState<number>(0);
+  const [isPillsStuck, setIsPillsStuck] = useState<boolean>(false);
+  const pillsBarRef = React.useRef<HTMLElement | null>(null);
+
   // Connect to unified CartContext & TreatmentCartContext
   const { addToCart, openCart, totalCartCount } = useCart();
   const {
@@ -58,6 +61,49 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
     totalTreatmentCount,
   } = useTreatmentCart();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Keep sticky filter pills accessible at the very top when scrolling down,
+  // and smoothly offset below the global sticky Header when scrolling up
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let headerVisible = true;
+
+    const updateStickyPosition = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastY;
+
+      if (currentY <= 120) {
+        headerVisible = true;
+        lastY = currentY;
+      } else if (Math.abs(delta) >= 8) {
+        headerVisible = !(currentY > lastY);
+        lastY = currentY;
+      }
+
+      const siteHeader = document.querySelector('header') as HTMLElement | null;
+      const headerHeight = siteHeader ? siteHeader.offsetHeight : 0;
+      const isHeaderShown =
+        siteHeader && !siteHeader.classList.contains('-translate-y-full')
+          ? true
+          : headerVisible;
+      const targetTop = isHeaderShown ? headerHeight : 0;
+
+      setStickyTopOffset(targetTop);
+
+      if (pillsBarRef.current) {
+        const pillsRect = pillsBarRef.current.getBoundingClientRect();
+        setIsPillsStuck(pillsRect.top <= targetTop + 8 && currentY > 140);
+      }
+    };
+
+    updateStickyPosition();
+    window.addEventListener('scroll', updateStickyPosition, { passive: true });
+    window.addEventListener('resize', updateStickyPosition);
+    return () => {
+      window.removeEventListener('scroll', updateStickyPosition);
+      window.removeEventListener('resize', updateStickyPosition);
+    };
+  }, []);
 
   useEffect(() => {
     setGalleryConfig(getBeforeAfterGalleryConfig());
@@ -122,7 +168,7 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
     const defaultPairIds = new Set(['pair-1', 'pair-2', 'pair-3', 'pair-4', 'pair-5', 'pair-6', 'pair-7', 'pair-8']);
     const isUnmodifiedDefaultPair = (pair: any): boolean => {
       if (!defaultPairIds.has(pair.id)) return false;
-      if (pair.updatedAt) return false;
+      if (pair.updatedAt || pair.singleFrameImage) return false;
       const before = String(pair.beforeImage || '');
       const after = String(pair.afterImage || '');
       return (
@@ -137,32 +183,43 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
 
       return (cat.pairs || [])
         .filter((p) => !p.hidden && !defaultCaseIds.has(p.id) && !isUnmodifiedDefaultPair(p))
-        .map((pair): TransformationCase => ({
-          id: pair.id,
-          title: groupMeta?.name || pair.title,
-          category: mappedCategory,
-          tag: groupMeta?.name || cat.name,
-          patientInfo: groupMeta?.name || pair.linkedTreatmentTitle || cat.name,
-          duration: pair.duration || '8 Weeks',
-          sessions: pair.sessions || 1,
-          concern: pair.seoTitle || `${groupMeta?.name || pair.title} clinical transformation at Age Reversal Clinics.`,
-          beforeImage: pair.beforeImage,
-          afterImage: pair.afterImage,
-          galleryImages: [pair.beforeImage, pair.afterImage],
-          recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : [cat.id, 'profhilo-2ml'],
-          recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
-          treatmentGroupId: pair.treatmentGroupId || cat.id,
-          linkedTreatmentId: pair.linkedTreatmentId || cat.id,
-          beforeAltText: pair.beforeAltText,
-          afterAltText: pair.afterAltText,
-          seoTitle: pair.seoTitle,
-          seoKeywords: pair.seoKeywords,
-          featured: pair.featured,
-          updatedAt: pair.updatedAt,
-        }));
+        .map((pair): TransformationCase => {
+          const singleImg = (pair.singleFrameImage || '').trim();
+          const galleryImages = singleImg
+            ? [singleImg]
+            : [pair.beforeImage, pair.afterImage].filter(Boolean);
+          return {
+            id: pair.id,
+            title: groupMeta?.name || pair.title,
+            category: mappedCategory,
+            tag: groupMeta?.name || cat.name,
+            patientInfo: groupMeta?.name || pair.linkedTreatmentTitle || cat.name,
+            duration: pair.duration || '8 Weeks',
+            sessions: pair.sessions || 1,
+            concern: pair.seoTitle || `${groupMeta?.name || pair.title} clinical transformation at Age Reversal Clinics.`,
+            beforeImage: pair.beforeImage,
+            afterImage: pair.afterImage,
+            singleFrameImage: singleImg || undefined,
+            singleFrameAltText: pair.singleFrameAltText,
+            galleryImages,
+            recommendedTreatmentIds: pair.linkedTreatmentId ? [pair.linkedTreatmentId] : [cat.id, 'profhilo-2ml'],
+            recommendedProductIds: ['st-antioxidant-soothing-serum', 'st-antioxidant-matte-day-cream'],
+            treatmentGroupId: pair.treatmentGroupId || cat.id,
+            linkedTreatmentId: pair.linkedTreatmentId || cat.id,
+            beforeAltText: pair.beforeAltText,
+            afterAltText: pair.afterAltText,
+            seoTitle: pair.seoTitle,
+            seoKeywords: pair.seoKeywords,
+            featured: pair.featured,
+            updatedAt: pair.updatedAt,
+          };
+        });
     });
 
-    const syncedStaticCases = [...ADMIN_SYNCED_TRANSFORMATION_CASES, ...CLINICAL_TRANSFORMATION_CASES].map((c) => {
+    const activeAdminSyncedCases = (ADMIN_SYNCED_TRANSFORMATION_CASES || []).filter(
+      (c) => !c.hidden && !isUnmodifiedDefaultPair(c)
+    );
+    const syncedStaticCases = [...activeAdminSyncedCases, ...CLINICAL_TRANSFORMATION_CASES].map((c) => {
       const groupMeta = liveTreatmentGroups.find(
         (g) => g.id === c.treatmentGroupId || g.id === c.linkedTreatmentId
       );
@@ -211,6 +268,23 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
   const structuredDataJson = useMemo(() => {
     const imageObjects = filteredCases.flatMap((c) => {
       const kw = (c.seoKeywords || [c.title, c.tag, 'before and after', 'Age Reversal Clinics London']).join(', ');
+      if (c.singleFrameImage) {
+        return [
+          {
+            '@type': 'ImageObject',
+            contentUrl: c.singleFrameImage,
+            name: c.seoTitle || `${c.title} Before & After Transformation`,
+            description:
+              c.singleFrameAltText ||
+              `${c.title} Combined Before & After ${c.tag} Result at Age Reversal Clinics London`,
+            keywords: kw,
+            creator: {
+              '@type': 'MedicalBusiness',
+              name: 'Age Reversal Clinics',
+            },
+          },
+        ];
+      }
       return [
         {
           '@type': 'ImageObject',
@@ -353,25 +427,43 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
         </p>
       </section>
 
-      {/* Category Filter Pills */}
-      <section className="container mx-auto px-4 sm:px-6 md:px-8 mb-10">
-        <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar pb-2">
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-sans font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? 'bg-black text-white shadow-md border border-black'
-                    : 'bg-white text-stone-700 hover:text-black border border-[#D8C2A3]/40 hover:border-luxury-gold/70'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+      {/* Sticky Horizontally Scrollable Category Filter Pills */}
+      <section
+        ref={pillsBarRef}
+        style={{ top: `${stickyTopOffset}px` }}
+        className={`sticky z-30 mb-8 sm:mb-10 transition-all duration-300 ease-in-out ${
+          isPillsStuck
+            ? 'bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#D8C2A3]/40 shadow-xs py-3'
+            : 'bg-[#FAF8F5]/90 backdrop-blur-xs py-2.5'
+        }`}
+      >
+        <div className="container mx-auto px-4 sm:px-6 md:px-8">
+          <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={(e) => {
+                    e.currentTarget.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'nearest',
+                      inline: 'center',
+                    });
+                    setSelectedCategory(cat);
+                  }}
+                  className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-sans font-medium whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 select-none ${
+                    isSelected
+                      ? 'bg-black text-white shadow-md border border-black'
+                      : 'bg-white text-stone-700 hover:text-black border border-[#D8C2A3]/40 hover:border-luxury-gold/70'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -393,10 +485,20 @@ export const TransformationsPageView: React.FC<TransformationsPageViewProps> = (
               {/* Subtle Luxury Corner Watermark (Large Desktop only) */}
               <div className="hidden lg:block absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[#D8C2A3]/10 to-transparent pointer-events-none rounded-bl-full" />
 
-              {/* Elementor Section: Heading, Divider with Icon, and Image Carousel */}
+              {/* Elementor Section: Heading, Divider with Icon, and Single Unified Frame */}
               <TransformationCarousel
                 title={caseItem.title}
-                images={caseItem.galleryImages && caseItem.galleryImages.length > 0 ? caseItem.galleryImages : [caseItem.beforeImage, caseItem.afterImage]}
+                beforeImage={caseItem.beforeImage}
+                afterImage={caseItem.afterImage}
+                images={
+                  caseItem.singleFrameImage
+                    ? [caseItem.singleFrameImage]
+                    : caseItem.galleryImages && caseItem.galleryImages.length > 0
+                    ? caseItem.galleryImages
+                    : [caseItem.beforeImage, caseItem.afterImage].filter(Boolean)
+                }
+                singleFrameImage={caseItem.singleFrameImage}
+                singleFrameAltText={caseItem.singleFrameAltText}
                 beforeAltText={caseItem.beforeAltText}
                 afterAltText={caseItem.afterAltText}
                 seoTitle={caseItem.seoTitle}

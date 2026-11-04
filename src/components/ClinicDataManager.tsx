@@ -4,6 +4,7 @@ import {
   updateClinicData,
   saveClinicDataToFile, 
   resetClinicDataToDefault,
+  fetchRemoteClinicData,
   uploadAssetFile,
   uploadClinicSlotAsset
 } from '../lib/adminStore';
@@ -248,6 +249,10 @@ export default function ClinicDataManager() {
     try {
       const res = await saveClinicDataToFile(nextData);
       if (res.success) {
+        if (res.clinicData) {
+          dataRef.current = res.clinicData;
+          setData(res.clinicData);
+        }
         setHasUnsavedChanges(false);
         setSaveStatus({
           state: 'saved',
@@ -365,11 +370,36 @@ export default function ClinicDataManager() {
     onConfirm: () => {}
   });
 
-  // Initial load
+  // Initial load + remote server disk reconciliation
   useEffect(() => {
     const initial = getClinicData();
     dataRef.current = initial;
     setData(initial);
+
+    let isMounted = true;
+    fetchRemoteClinicData()
+      .then((remote) => {
+        if (isMounted && remote) {
+          dataRef.current = remote;
+          setData(remote);
+        }
+      })
+      .catch(() => {});
+
+    const handleClinicDataChanged = (evt: Event) => {
+      const customEvt = evt as CustomEvent<ClinicData>;
+      const updated = customEvt.detail || getClinicData();
+      if (isMounted && updated) {
+        dataRef.current = updated;
+        setData(updated);
+      }
+    };
+
+    window.addEventListener('clinic_data_changed', handleClinicDataChanged);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('clinic_data_changed', handleClinicDataChanged);
+    };
   }, []);
 
   const updateField = <K extends keyof ClinicData>(key: K, value: ClinicData[K]) => {

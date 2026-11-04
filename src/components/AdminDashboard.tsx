@@ -722,6 +722,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
             { id: 'treatment-media-studio', label: 'Treatment Media & SEO Studio', icon: Camera, badgeText: '6 Slots' },
             { id: 'treatment-pricing', label: 'Treatment Pricing & Media', icon: Sparkles },
             { id: 'edit-gallery', label: 'Before & After Gallery', icon: Image, badgeText: 'SEO' },
+            { id: 'edit-news', label: 'Blog & SEO Journal', icon: Newspaper, badgeText: 'SEO' },
             { id: 'treatment-images-hub', label: 'Treatment Images Hub', icon: Image },
             { id: 'consultations', label: 'Consultation Requests', count: consultations.length, icon: Users },
             { id: 'appointments', label: 'Faith Nzurike Slots', count: appointments.length, icon: Calendar },
@@ -826,7 +827,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                     { id: 'edit-skincare', label: 'Skincare Collection', icon: ShoppingBag },
                     { id: 'edit-trust', label: 'Trust Brands', icon: Shield },
                     { id: 'edit-accreditations', label: 'Accreditations', icon: Award },
-                    { id: 'edit-news', label: 'Latest News', icon: Newspaper },
+                    { id: 'edit-news', label: 'Blog & SEO Journal', icon: Newspaper },
                     { id: 'edit-footer', label: 'Footer Info', icon: PanelBottom },
                     { id: 'edit-floating', label: 'Floating Menu', icon: MessageCircle }
                   ].map((tab) => {
@@ -948,7 +949,7 @@ export default function AdminDashboard({ onBackToClinic }: AdminDashboardProps) 
                  activeTab === 'edit-skincare' ? 'Skincare Collection' :
                  activeTab === 'edit-trust' ? 'Trust Brands' :
                  activeTab === 'edit-accreditations' ? 'Accreditations' :
-                 activeTab === 'edit-news' ? 'Latest News' :
+                 activeTab === 'edit-news' ? 'Blog & Clinical Journal' :
                  activeTab === 'edit-footer' ? 'Footer Info' :
                  activeTab === 'edit-floating' ? 'Floating Menu' : 
                  'Next.js Migration Spec'}
