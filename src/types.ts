@@ -298,6 +298,7 @@ export interface HeroConfig {
 }
 
 export interface TreatmentMediaItem {
+  id?: string;                 // Persistent deterministic slot/media ID (e.g. service-exosome-hero)
   url: string;
   mediaType?: 'image' | 'video';
   altText: string;             // Google Image Search & accessibility SEO

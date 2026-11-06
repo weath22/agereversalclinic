@@ -218,14 +218,16 @@ export const CLINIC_DATA: ClinicData = {
     "Medical aesthetics UK",
     "Aesthetic clinics UK"
   ],
-  "ogImage": "",
+  "ogImage": "/assets/clinic-og-image.webp?v=1793630162556",
   "logo": {
-    "icon": "",
+    "icon": "/assets/clinic-logo-icon.webp?v=1793675846495",
     "alt": "Age Reversal Clinics Logo",
-    "full": ""
+    "full": "/assets/clinic-logo-full.webp?v=1793675866633"
   },
-  "exteriorPhoto": "",
-  "interiorPhotos": [],
+  "exteriorPhoto": "/assets/clinic-exterior.webp?v=1793630162480",
+  "interiorPhotos": [
+    "/assets/clinic-interior-0.webp?v=1793630162340"
+  ],
   "phone": "+44 (0) 20 7984159517",
   "email": "agereversalbeautyspa@gmail.com",
   "whatsapp": "https://wa.me/44207984159517",
@@ -265,35 +267,35 @@ export const CLINIC_DATA: ClinicData = {
     {
       "id": "location-1791722960928",
       "name": "Age Reversal Clinic",
-      "address": "Age Reversal Clinic Grove Park",
+      "address": "Brentwood Clinic: Clyde Lodge Farm, Essex, CM13 3SL",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
-      "phone": "+44 (0) 20 88572000",
+      "phone": "0208 857 2000",
       "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
       "directionsUrl": "",
       "latitude": 51.5173,
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "",
+      "image": "/assets/clinic-location-1791722960928.webp?v=1793676129435",
       "imageAlt": ""
     },
     {
       "id": "location-1791728808656",
-      "name": "374 Baring Road London UK",
-      "address": "374 Baring Road Se12 0EF",
+      "name": "Grove Park Clinic",
+      "address": "Grove Park Clinic: 374 Baring Road, Grove Park, London, SE12 OEF ",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
-      "phone": "+44 (0) 20 8857 2000",
+      "phone": "07984159517",
       "hours": "Mon – Sat: 09:00 – 19:00",
       "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
       "latitude": 51.5173,
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": false,
-      "image": "",
+      "image": "/assets/clinic-location-1791728808656.webp?v=1793676140294",
       "imageAlt": ""
     }
   ],
@@ -315,7 +317,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
         "iconName": "Building",
         "badge": "Harley St Flagship",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793630163088"
       },
       {
         "id": "p2",
@@ -323,7 +325,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
         "iconName": "Star",
         "badge": "4.9/5 ★ (2,000+ Reviews)",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793630163125"
       },
       {
         "id": "p3",
@@ -331,7 +333,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
         "iconName": "Sparkles",
         "badge": "FDA-Cleared Tech",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793630163201"
       },
       {
         "id": "p4",
@@ -339,7 +341,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "GMC-registered aesthetic doctors and clinical nurse specialists with decades of specialized international expertise.",
         "iconName": "Medal",
         "badge": "GMC Registered",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-pillar-4.webp?v=1793630163227"
       }
     ]
   },
@@ -353,7 +355,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
         "iconName": "Trophy",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-award-1.webp?v=1793640345568"
       },
       {
         "id": "award-2",
@@ -361,7 +363,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2025",
         "organization": "Global Cosmetic Congress",
         "iconName": "Sparkles",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-award-2.webp?v=1793640085858"
       },
       {
         "id": "award-3",
@@ -369,7 +371,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "British Health Standards",
         "iconName": "ShieldCheck",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-award-3.webp?v=1793630163635"
       },
       {
         "id": "award-4",
@@ -377,7 +379,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "International Laser Association",
         "iconName": "Award",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-award-4.webp?v=1793640116790"
       },
       {
         "id": "award-5",
@@ -385,7 +387,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "UK Clinical Dermatology Board",
         "iconName": "Trophy",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-award-5.webp?v=1793630163559"
       }
     ]
   },
@@ -521,25 +523,25 @@ export const CLINIC_DATA: ClinicData = {
         "id": "step-1",
         "stepNumber": "01",
         "title": "Comprehensive Consultation & Assessment",
-        "image": ""
+        "image": "/assets/clinic-process-01.webp?v=1793630163807"
       },
       {
         "id": "step-2",
         "stepNumber": "02",
         "title": "Bespoke Treatment Plan",
-        "image": ""
+        "image": "/assets/clinic-process-02.webp?v=1793639640480"
       },
       {
         "id": "step-3",
         "stepNumber": "03",
         "title": "Precision Clinical Procedure",
-        "image": ""
+        "image": "/assets/clinic-process-03.webp?v=1793630164014"
       },
       {
         "id": "step-4",
         "stepNumber": "04",
         "title": "Regenerative Aftercare & Follow-Up",
-        "image": ""
+        "image": "/assets/clinic-process-04.webp?v=1793630164097"
       }
     ]
   },
@@ -552,28 +554,28 @@ export const CLINIC_DATA: ClinicData = {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "",
+        "image": "/assets/clinic-facility-1.webp?v=1793630163684",
         "imageAlt": "Consultation Suite at Age Reversal Clinics"
       },
       {
         "id": "room-2",
         "title": "Treatment Room",
         "tag": "Clinical",
-        "image": "",
+        "image": "/assets/clinic-facility-2.webp?v=1793630163718",
         "imageAlt": "Treatment Room at Age Reversal Clinics"
       },
       {
         "id": "room-3",
         "title": "Laser & Diagnostic Suite",
         "tag": "Technology",
-        "image": "",
+        "image": "/assets/clinic-facility-3.webp?v=1793630164164",
         "imageAlt": "Laser & Diagnostic Suite at Age Reversal Clinics"
       },
       {
         "id": "room-4",
         "title": "Executive Recovery Lounge",
         "tag": "Sanctuary",
-        "image": "",
+        "image": "/assets/clinic-facility-4.webp?v=1793630163764",
         "imageAlt": "Executive Recovery Lounge at Age Reversal Clinics"
       }
     ]
@@ -586,31 +588,31 @@ export const CLINIC_DATA: ClinicData = {
         "id": "bp-1",
         "name": "Aqualyx",
         "iconType": "layers",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-brand-1.webp?v=1793639677166"
       },
       {
         "id": "bp-2",
         "name": "Azzalure",
         "iconType": "layers",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-brand-2.webp?v=1793639694774"
       },
       {
         "id": "bp-3",
         "name": "Obagi",
         "iconType": "pill",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-brand-3.webp?v=1793639706206"
       },
       {
         "id": "bp-4",
         "name": "Radiesse",
         "iconType": "shield",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-brand-4.webp?v=1793630164537"
       },
       {
         "id": "bp-5",
         "name": "Profili",
         "iconType": "instagram",
-        "imageUrl": ""
+        "imageUrl": "/assets/clinic-brand-5.webp?v=1793630164608"
       }
     ]
   },

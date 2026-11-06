@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, ChevronRight, X } from 'lucide-react';
-import { SPECIALIST_AREAS } from '../data';
+import { getMasterServices } from '../lib/adminStore';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 interface ExploreTreatmentsViewProps {
   onBookClick: (serviceName?: string) => void;
@@ -11,8 +12,9 @@ interface ExploreTreatmentsViewProps {
 
 export default function ExploreTreatmentsView({ onBookClick, onTreatmentClick, onClose }: ExploreTreatmentsViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const allAreas = getMasterServices();
 
-  const filteredAreas = SPECIALIST_AREAS.filter(area => 
+  const filteredAreas = allAreas.filter(area => 
     area.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     area.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -117,12 +119,17 @@ export default function ExploreTreatmentsView({ onBookClick, onTreatmentClick, o
                   onClick={() => onTreatmentClick(area.title)}
                   className="group bg-white rounded-xl overflow-hidden border border-silver-200 hover:border-[#003334] transition-all duration-300 cursor-pointer flex flex-col h-full shadow-sm hover:shadow-md hover:-translate-y-1"
                 >
-                  <div className="aspect-[4/3] overflow-hidden bg-silver-50">
-                    <img
+                  <div className="aspect-[4/3] overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13]">
+                    <ClinicImageWithPlaceholder
                       src={area.image}
                       alt={area.title}
+                      title={area.title}
+                      loading="lazy"
+                      logoSize="md"
+                      showBrandText={true}
+                      brandSubtext={area.title}
+                      containerClassName="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] flex items-center justify-center"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                      referrerPolicy="no-referrer"
                     />
                   </div>
                   <div className="p-6 flex-grow flex flex-col justify-between">

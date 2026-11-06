@@ -13,6 +13,7 @@ import {
   fetchPaginatedHomepageTreatmentCovers,
   fetchRemoteHomepageTreatmentCoversConfig,
 } from '../lib/adminStore';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 interface TreatmentsProps {
   onBookClick: () => void;
@@ -32,6 +33,7 @@ export default function Treatments({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [coverPage, setCoverPage] = useState(1);
   const [coversVersion, setCoversVersion] = useState(0);
+  const [isHydratingCovers, setIsHydratingCovers] = useState<boolean>(true);
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [liveTreatmentsConfig, setLiveTreatmentsConfig] = useState<TreatmentsConfig | undefined>(
     () => treatmentsConfig || getTreatmentsConfig()
@@ -50,9 +52,14 @@ export default function Treatments({
       .then(() => {
         if (mounted) {
           setCoversVersion((v) => v + 1);
+          setIsHydratingCovers(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (mounted) {
+          setIsHydratingCovers(false);
+        }
+      });
 
     const handleStoreUpdate = () => {
       setMasterServices(getMasterServices());
@@ -117,7 +124,7 @@ export default function Treatments({
         tag: branch,
         subGroupId: item.subGroupId || masterMatch?.id || staticMatch?.id || item.id,
         subCategory,
-        image: item.image || defaultTreatMatch?.image || fallbackImg,
+        image: item.image || defaultTreatMatch?.image || '',
         imageAlt:
           item.imageAlt ||
           defaultTreatMatch?.imageAlt ||
@@ -284,6 +291,7 @@ export default function Treatments({
     fetchPaginatedHomepageTreatmentCovers(queryParams)
       .then((res) => {
         if (!active) return;
+        setIsHydratingCovers(false);
         if (res.items.length > 0) {
           setRemoteCoverState({
             key: activeQueryKey,
@@ -293,7 +301,11 @@ export default function Treatments({
           });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) {
+          setIsHydratingCovers(false);
+        }
+      });
 
     return () => {
       active = false;
@@ -632,7 +644,6 @@ export default function Treatments({
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 relative w-full">
               {coversToDisplay.map((cover, idx) => {
                 const spanClass = getCoverCardSpanClass(coversToDisplay.length, idx);
-                const fallbackImage = TREATMENT_IMAGES[idx % TREATMENT_IMAGES.length];
                 const stepNum =
                   stepNumberBySubcategory.get((cover.subCategoryId || '').toLowerCase()) ||
                   stepNumberBySubcategory.get((cover.subCategoryName || '').toLowerCase()) ||
@@ -640,6 +651,18 @@ export default function Treatments({
                 const displayTitle =
                   cover.title && cover.title.trim() ? cover.title : cover.subCategoryName;
                 const displayCaption = cover.caption && cover.caption.trim() ? cover.caption : '';
+
+                // While initial remote hydration or active query fetch is in progress and this card is an unmodified seed,
+                // hold the image src empty so ClinicImageWithPlaceholder shows the Clinic Logo Placeholder
+                // instead of flashing a dummy/default seed image before the real cover image loads.
+                const isWaitingForActiveRemote =
+                  isHydratingCovers || !remoteCoverState || remoteCoverState.key !== activeQueryKey;
+                const isUnmodifiedSeed =
+                  String(cover.id || '').startsWith('cover-seed-') &&
+                  !cover.updatedAt &&
+                  !String(cover.imageUrl || '').startsWith('/assets/treatments/');
+                const resolvedCoverSrc =
+                  isWaitingForActiveRemote && isUnmodifiedSeed ? '' : cover.imageUrl || '';
 
                 return (
                   <motion.div
@@ -654,26 +677,21 @@ export default function Treatments({
                         cover.branchCategory
                       )
                     }
-                    className={`${spanClass} group relative overflow-hidden bg-orange-300/30 border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all`}
+                    className={`${spanClass} group relative overflow-hidden bg-[#181412] border border-white/80 rounded-2xl cursor-pointer shadow-[0_6px_25px_-4px_rgba(180,60,20,0.25)] hover:border-white hover:shadow-[0_12px_32px_-4px_rgba(180,60,20,0.4)] transition-all`}
                   >
-                    <img
-                      itemProp="image"
+                    <ClinicImageWithPlaceholder
+                      src={resolvedCoverSrc}
                       alt={
                         cover.altText ||
                         `${displayTitle} — ${cover.subCategoryName} at Age Reversal Clinic London`
                       }
                       title={cover.seoTitle || displayTitle}
-                      data-seo-keywords={(cover.seoKeywords || []).join(', ')}
                       loading="lazy"
-                      decoding="async"
+                      logoSize="md"
+                      showBrandText={true}
+                      brandSubtext={displayTitle}
+                      containerClassName="relative w-full h-full overflow-hidden bg-[#181412] flex items-center justify-center"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      src={
-                        cover.imageUrl ||
-                        getTreatmentImagePath(cover.subCategoryId, fallbackImage)
-                      }
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = fallbackImage;
-                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
                       <span

@@ -28,7 +28,9 @@ import {
   inferTransformationCategoryFromBranch,
   uploadAssetFile,
   listProjectAssets,
+  loadSiteCustomizations,
 } from '../lib/adminStore';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 const BRANCH_BADGE_STYLES: Record<MasterBranchCategory, string> = {
   'Face & Injectables': 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -81,11 +83,23 @@ export const MasterServicesManager: React.FC = () => {
   const [confirmResetOpen, setConfirmResetOpen] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    loadSiteCustomizations()
+      .then(() => {
+        if (mounted) {
+          setServices(getMasterServices());
+        }
+      })
+      .catch(() => {});
+
     const refresh = () => {
       setServices(getMasterServices());
     };
     window.addEventListener('master_services_updated', refresh);
-    return () => window.removeEventListener('master_services_updated', refresh);
+    return () => {
+      mounted = false;
+      window.removeEventListener('master_services_updated', refresh);
+    };
   }, []);
 
   const branchCounts = useMemo(() => {
@@ -231,7 +245,7 @@ export const MasterServicesManager: React.FC = () => {
       id: '',
       title: '',
       pricingCategory: defaultBranch,
-      image: '/assets/images/treatments/specialist-profhilo.jpg',
+      image: '',
       description: '',
       price: 'From £150',
       duration: '45–60 Mins',
@@ -246,7 +260,7 @@ export const MasterServicesManager: React.FC = () => {
       id: service.id,
       title: service.title,
       pricingCategory: branch,
-      image: service.image || '/assets/images/treatments/specialist-profhilo.jpg',
+      image: service.image || '',
       description: service.description || '',
       price: service.price || 'From £150',
       duration: service.duration || '45–60 Mins',
@@ -304,7 +318,7 @@ export const MasterServicesManager: React.FC = () => {
         counter += 1;
       }
 
-      const resolvedNewImage = modalDraft.image.trim() || '/assets/images/treatments/specialist-profhilo.jpg';
+      const resolvedNewImage = modalDraft.image.trim();
       const newService: SpecialistArea = {
         id: uniqueId,
         number: String(services.length + 1).padStart(2, '0'),
@@ -553,15 +567,16 @@ export const MasterServicesManager: React.FC = () => {
                 className="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-[#c5a880]/60 transition-all flex flex-col"
               >
                 {/* Thumbnail Image with Quick Camera Overlay */}
-                <div className="relative h-32 bg-gray-100 overflow-hidden">
-                  <img
+                <div className="relative h-32 bg-[#001a1b] overflow-hidden">
+                  <ClinicImageWithPlaceholder
                     src={service.image}
                     alt={service.title}
+                    title={service.title}
+                    loading="lazy"
+                    logoSize="sm"
+                    showBrandText={false}
+                    containerClassName="relative w-full h-full overflow-hidden bg-[#001a1b] flex items-center justify-center"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        '/assets/images/treatments/specialist-profhilo.jpg';
-                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/15" />
 
@@ -722,15 +737,16 @@ export const MasterServicesManager: React.FC = () => {
                   Cover Photo
                 </label>
                 <div className="flex items-center gap-2.5">
-                  <img
-                    src={modalDraft.image}
-                    alt={modalDraft.title || 'Preview'}
-                    className="w-14 h-14 rounded-lg object-cover border border-gray-200 shrink-0 bg-gray-50"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        '/assets/images/treatments/specialist-profhilo.jpg';
-                    }}
-                  />
+                  <div className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-[#001a1b]">
+                    <ClinicImageWithPlaceholder
+                      src={modalDraft.image}
+                      alt={modalDraft.title || 'Preview'}
+                      logoSize="xs"
+                      showBrandText={false}
+                      containerClassName="relative w-full h-full overflow-hidden bg-[#001a1b] flex items-center justify-center"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <div className="flex-1 space-y-1.5">
                     <input
                       type="text"

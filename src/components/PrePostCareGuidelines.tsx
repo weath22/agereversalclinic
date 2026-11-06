@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calendar, ShieldAlert, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ClinicalGuidanceMediaConfig } from '../types';
+import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
 
 interface PrePostCareGuidelinesProps {
   preCare: string[];
@@ -16,8 +17,19 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
   const fallbackPreUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww";
   const fallbackPostUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r";
 
-  const preMedia = clinicalGuidanceMedia?.preCareVisual || (clinicalGuidanceMedia as any)?.preCare;
-  const postMedia = clinicalGuidanceMedia?.postCareVisual || (clinicalGuidanceMedia as any)?.postCare;
+  const preMedia =
+    (clinicalGuidanceMedia?.preCare?.url ? clinicalGuidanceMedia.preCare : undefined) ||
+    (clinicalGuidanceMedia?.preCareVisual?.url ? clinicalGuidanceMedia.preCareVisual : undefined) ||
+    clinicalGuidanceMedia?.preCare ||
+    clinicalGuidanceMedia?.preCareVisual;
+  const postMedia =
+    (clinicalGuidanceMedia?.postCare?.url ? clinicalGuidanceMedia.postCare : undefined) ||
+    (clinicalGuidanceMedia?.postCareVisual?.url ? clinicalGuidanceMedia.postCareVisual : undefined) ||
+    clinicalGuidanceMedia?.postCare ||
+    clinicalGuidanceMedia?.postCareVisual;
+
+  const preId = preMedia?.id || `service-${treatmentName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-pre-care`;
+  const postId = postMedia?.id || `service-${treatmentName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-post-care`;
 
   const preUrl = preMedia?.url || fallbackPreUrl;
   const preAlt = preMedia?.altText || "Clinical Skin Prep Serum Application";
@@ -140,16 +152,19 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
               {activeTab === 'pre' ? (
                 <motion.div
                   key="pre-visual"
+                  id={preId}
+                  data-media-id={preId}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.4 }}
                   className="absolute inset-0 w-full h-full"
                 >
-                  <img
+                  <ClinicImageWithPlaceholder
                     src={preUrl}
                     alt={preAlt}
                     title={preTitle}
+                    containerClassName="relative w-full h-full overflow-hidden bg-silver-100 flex items-center justify-center"
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />
@@ -162,16 +177,19 @@ export default function PrePostCareGuidelines({ preCare, postCare, treatmentName
               ) : (
                 <motion.div
                   key="post-visual"
+                  id={postId}
+                  data-media-id={postId}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.4 }}
                   className="absolute inset-0 w-full h-full"
                 >
-                  <img
+                  <ClinicImageWithPlaceholder
                     src={postUrl}
                     alt={postAlt}
                     title={postTitle}
+                    containerClassName="relative w-full h-full overflow-hidden bg-silver-100 flex items-center justify-center"
                     className="w-full h-full object-cover brightness-[0.93] group-hover:scale-105 transition-transform duration-700"
                     referrerPolicy="no-referrer"
                   />

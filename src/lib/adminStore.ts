@@ -93,6 +93,16 @@ export async function loadSiteCustomizations(): Promise<Record<string, any> | nu
     _siteCustomizationsPromise = import('../data/siteCustomizations.json')
       .then((m) => {
         _siteCustomizationsCache = (m.default || m) as Record<string, any>;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('site_customizations_hydrated', { detail: _siteCustomizationsCache }));
+          if (_siteCustomizationsCache?.clinical_treatment_details) {
+            window.dispatchEvent(
+              new CustomEvent('treatment_details_updated', {
+                detail: getTreatmentDetailsConfig(),
+              })
+            );
+          }
+        }
         return _siteCustomizationsCache;
       })
       .catch((err) => {
@@ -597,7 +607,14 @@ export async function uploadAssetFile(
       } catch (regErr) {
         console.warn('Could not auto-register uploaded asset:', regErr);
       }
-      return { success: true, url: data.url, fileName: data.fileName || cleanFileName, version: data.version };
+      const resolvedUrl =
+        data.imagePath || (data.version ? `${data.url}?v=${data.version}` : data.url);
+      return {
+        success: true,
+        url: resolvedUrl,
+        fileName: data.fileName || cleanFileName,
+        version: data.version,
+      };
     }
     return { success: false, error: data.error || 'Failed to upload asset' };
   } catch (e) {
@@ -2770,9 +2787,11 @@ export function normalizeSpecialistServiceItem(raw: SpecialistArea, idx = 0): Sp
     inferTransformationCategoryFromBranch(pricingCategory, cleanTitle);
 
   const resolvedImage =
+    (raw.image && raw.image.trim().startsWith('/assets/') ? raw.image : '') ||
+    (fallback?.image && fallback.image.trim().startsWith('/assets/') ? fallback.image : '') ||
     raw.image ||
     fallback?.image ||
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDIxAPtwy25dyVaUdCDMYgFKwhE87Ovw-EQQpOpj1EMTR7CQdyctDfqvQxDE22j7SIGXlp65-55VaX1H_vRg7QzE0dfAPOlIveAIws39eS3n5H7bTh7s_kv7EZlEzstimdS26vu-ZS5ykgnEtm0q8DHvJZ_56xRttx7wsonwk4kIRJriAvRNSXj9NBvWwwOS3aoDkgn56aaLE0eky8ykHKvBJGZMXcvo6mW8VmnrrQYA4vM-ePWKApLHIc4H3lQEi2itJRHDA8s6XWJ';
+    '';
 
   return {
     ...fallback,
@@ -2812,19 +2831,55 @@ export function normalizeSpecialistServiceItem(raw: SpecialistArea, idx = 0): Sp
 
 export function getMasterServices(): SpecialistArea[] {
   initializeAdminStore();
+  const fileSavedMaster = getFileDefault<SpecialistArea[] | null>(MASTER_SERVICES_CONFIG_KEY, null);
   const storedMaster = getStorageItem<SpecialistArea[] | null>(
     MASTER_SERVICES_CONFIG_KEY,
-    getFileDefault<SpecialistArea[] | null>(MASTER_SERVICES_CONFIG_KEY, null)
+    fileSavedMaster
   );
 
-  if (Array.isArray(storedMaster) && storedMaster.length > 0) {
-    return storedMaster.map((item, idx) => normalizeSpecialistServiceItem(item, idx));
-  }
-
+  const fileSavedSpec = getFileDefault<SpecialistAreasConfig | null>(
+    SPECIALIST_AREAS_CONFIG_KEY,
+    null
+  );
   const storedSpec = getStorageItem<SpecialistAreasConfig>(
     SPECIALIST_AREAS_CONFIG_KEY,
-    getFileDefault(SPECIALIST_AREAS_CONFIG_KEY, DEFAULT_SPECIALIST_AREAS_CONFIG)
+    fileSavedSpec || DEFAULT_SPECIALIST_AREAS_CONFIG
   );
+
+  const fileById = new Map<string, SpecialistArea>();
+  for (const list of [fileSavedMaster, fileSavedSpec?.areas]) {
+    if (Array.isArray(list)) {
+      for (const item of list) {
+        if (item && item.id) {
+          fileById.set(String(item.id).toLowerCase(), item);
+        }
+      }
+    }
+  }
+
+  const mergeWithFileSaved = (list: SpecialistArea[]) =>
+    list.map((item, idx) => {
+      const fItem = item?.id ? fileById.get(String(item.id).toLowerCase()) : undefined;
+      const bestImage =
+        (item?.image && item.image.startsWith('/assets/') ? item.image : '') ||
+        (fItem?.image && fItem.image.startsWith('/assets/') ? fItem.image : '') ||
+        item?.image ||
+        fItem?.image ||
+        '';
+      return normalizeSpecialistServiceItem(
+        {
+          ...(fItem || {}),
+          ...item,
+          image: bestImage,
+        },
+        idx
+      );
+    });
+
+  if (Array.isArray(storedMaster) && storedMaster.length > 0) {
+    return mergeWithFileSaved(storedMaster);
+  }
+
   const legacyIds = new Set([
     'face',
     'skin',
@@ -2841,7 +2896,7 @@ export function getMasterServices(): SpecialistArea[] {
     storedSpec.areas.every((a) => legacyIds.has(a.id));
 
   const sourceList = isLegacyAreas ? DEFAULT_SPECIALIST_AREAS_CONFIG.areas : storedSpec.areas;
-  return sourceList.map((item, idx) => normalizeSpecialistServiceItem(item, idx));
+  return mergeWithFileSaved(sourceList);
 }
 
 export function getMasterServicesByBranch(): Record<MasterBranchCategory, SpecialistArea[]> {
@@ -3701,7 +3756,7 @@ export function projectHomepageTreatmentCoverItem(
           branchCategory.toLowerCase(),
           `${subCategoryName.toLowerCase()} london`,
         ];
-  const seoKeywords = Array.from(
+  const seoKeywords: string[] = Array.from(
     new Set(rawKeywords.map((k: unknown) => String(k || '').trim()).filter(Boolean))
   );
 
@@ -5406,9 +5461,26 @@ const TREATMENT_DETAILS_KEY = 'clinical_treatment_details';
 export function getTreatmentDetailsConfig(): Record<string, any> | null {
   if (typeof window === 'undefined') return null;
   try {
+    const fileDefault = getFileDefault<Record<string, any> | null>(TREATMENT_DETAILS_KEY, null);
     const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
-    if (item) return JSON.parse(item);
-    return getFileDefault(TREATMENT_DETAILS_KEY, null);
+    if (item) {
+      const parsed = JSON.parse(item);
+      if (fileDefault && typeof fileDefault === 'object' && parsed && typeof parsed === 'object') {
+        const merged: Record<string, any> = { ...fileDefault };
+        for (const [k, v] of Object.entries(parsed)) {
+          if (v && typeof v === 'object') {
+            merged[k] = {
+              ...(merged[k] && typeof merged[k] === 'object' ? merged[k] : {}),
+              ...(v as Record<string, any>),
+              id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
+            };
+          }
+        }
+        return merged;
+      }
+      return parsed;
+    }
+    return fileDefault;
   } catch (error) {
     console.error(`Error reading localStorage key "${TREATMENT_DETAILS_KEY}":`, error);
     return null;
@@ -5416,24 +5488,59 @@ export function getTreatmentDetailsConfig(): Record<string, any> | null {
 }
 
 /**
- * Defers loading and parsing siteCustomizations.json until treatment detail is requested
+ * Defers loading and parsing siteCustomizations.json and server /api/admin/config until treatment detail is requested
  */
 export async function getTreatmentDetailsConfigDeferred(): Promise<Record<string, any> | null> {
+  await loadSiteCustomizations();
   if (typeof window !== 'undefined') {
     try {
-      const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
-      if (item) return JSON.parse(item);
+      const res = await fetch('/api/admin/config');
+      if (res.ok) {
+        const json = await res.json();
+        const remoteDetails = json?.data?.[TREATMENT_DETAILS_KEY];
+        if (remoteDetails && typeof remoteDetails === 'object') {
+          if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+            _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = remoteDetails;
+          }
+          const currentLocal = getTreatmentDetailsConfig() || {};
+          const merged: Record<string, any> = { ...remoteDetails };
+          for (const [k, v] of Object.entries(currentLocal)) {
+            if (v && typeof v === 'object') {
+              merged[k] = {
+                ...(remoteDetails[k] && typeof remoteDetails[k] === 'object' ? remoteDetails[k] : {}),
+                ...(v as Record<string, any>),
+                id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
+              };
+            }
+          }
+          window.localStorage.setItem(TREATMENT_DETAILS_KEY, JSON.stringify(merged));
+          return merged;
+        }
+      }
     } catch {}
   }
-  await loadSiteCustomizations();
   return getTreatmentDetailsConfig();
 }
 
 export function saveTreatmentDetailsConfig(config: Record<string, any>): void {
-  setStorageItem(TREATMENT_DETAILS_KEY, config);
-  syncConfigToFile(TREATMENT_DETAILS_KEY, config);
+  const existing = getTreatmentDetailsConfig() || {};
+  const merged: Record<string, any> = { ...existing };
+  for (const [k, v] of Object.entries(config || {})) {
+    if (v && typeof v === 'object') {
+      merged[k] = {
+        ...(existing[k] && typeof existing[k] === 'object' ? existing[k] : {}),
+        ...(v as Record<string, any>),
+        id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
+      };
+    }
+  }
+  if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+    _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = merged;
+  }
+  setStorageItem(TREATMENT_DETAILS_KEY, merged);
+  syncConfigToFile(TREATMENT_DETAILS_KEY, merged);
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('treatment_details_updated', { detail: config }));
+    window.dispatchEvent(new CustomEvent('treatment_details_updated', { detail: merged }));
   }
 }
 

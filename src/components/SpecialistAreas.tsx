@@ -10,7 +10,9 @@ import {
   getSpecialistAreasConfig,
   normalizeMasterBranch,
   inferTransformationCategoryFromBranch,
+  loadSiteCustomizations,
 } from '../lib/adminStore';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 
 interface SpecialistAreasProps {
   onBookClick: (serviceName?: string) => void;
@@ -26,6 +28,7 @@ export default function SpecialistAreas({
   specialistAreasConfig
 }: SpecialistAreasProps) {
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isHydratingAreas, setIsHydratingAreas] = useState<boolean>(true);
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [liveAreasConfig, setLiveAreasConfig] = useState<SpecialistAreasConfig | undefined>(
     () => specialistAreasConfig || getSpecialistAreasConfig()
@@ -38,6 +41,20 @@ export default function SpecialistAreas({
   }, [specialistAreasConfig]);
 
   useEffect(() => {
+    let mounted = true;
+    loadSiteCustomizations()
+      .then(() => {
+        if (!mounted) return;
+        setMasterServices(getMasterServices());
+        setLiveAreasConfig(getSpecialistAreasConfig());
+        setIsHydratingAreas(false);
+      })
+      .catch(() => {
+        if (mounted) {
+          setIsHydratingAreas(false);
+        }
+      });
+
     const handleMasterServicesUpdate = () => {
       setMasterServices(getMasterServices());
       setLiveAreasConfig(getSpecialistAreasConfig());
@@ -46,6 +63,7 @@ export default function SpecialistAreas({
     window.addEventListener('specialist_areas_updated', handleMasterServicesUpdate);
     window.addEventListener('storage', handleMasterServicesUpdate);
     return () => {
+      mounted = false;
       window.removeEventListener('master_services_updated', handleMasterServicesUpdate);
       window.removeEventListener('specialist_areas_updated', handleMasterServicesUpdate);
       window.removeEventListener('storage', handleMasterServicesUpdate);
@@ -76,7 +94,17 @@ export default function SpecialistAreas({
         service.transformationCategory ||
         inferTransformationCategoryFromBranch(branch, service.title);
 
+      // Prefer custom uploaded /assets/ image if available
+      const customImg = [
+        service.image,
+        areaMatch?.image,
+        service.coverMedia?.url,
+        areaMatch?.coverMedia?.url,
+        staticMatch?.image,
+      ].find((u) => typeof u === 'string' && u.trim().startsWith('/assets/'));
+
       const resolvedImage =
+        customImg ||
         service.image ||
         areaMatch?.image ||
         service.coverMedia?.url ||
@@ -164,7 +192,17 @@ export default function SpecialistAreas({
           {/* Cards Grid: 2 per row on desktop screens */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-10 md:mb-14 -mx-1.5">
             <AnimatePresence mode="wait">
-              {currentTreatments.map((treatment, idx) => (
+              {currentTreatments.map((treatment, idx) => {
+                const rawImg = (treatment.image || treatment.coverMedia?.url || '').trim();
+                const isDefaultExternalSeed =
+                  rawImg &&
+                  !rawImg.startsWith('/assets/') &&
+                  !rawImg.startsWith('/uploads/') &&
+                  !rawImg.startsWith('data:');
+                const resolvedCardSrc =
+                  isHydratingAreas && isDefaultExternalSeed ? '' : rawImg;
+
+                return (
                 <motion.article
                   key={`${currentPage}-${treatment.id}`}
                   initial={{ opacity: 0, y: 12 }}
@@ -178,19 +216,21 @@ export default function SpecialistAreas({
                   }
                   className="group bg-white/98 sm:bg-white/95 sm:backdrop-blur-md overflow-hidden border border-white/40 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_8px_30px_-5px_rgba(0,0,0,0.2)] hover:shadow-2xl hover:-translate-y-1 rounded-xl transform-gpu will-change-transform"
                 >
-                  <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-luxury-secondary relative">
-                    <img
-                      src={treatment.image || treatment.coverMedia?.url}
-                      alt={treatment.coverMedia?.altText || treatment.title}
+                  <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] relative">
+                    <ClinicImageWithPlaceholder
+                      src={resolvedCardSrc}
+                      alt={treatment.coverMedia?.altText || `${treatment.title} at Age Reversal Clinic London`}
                       title={treatment.coverMedia?.seoTitle || treatment.title}
                       loading="lazy"
-                      decoding="async"
+                      logoSize="lg"
+                      showBrandText={true}
+                      brandSubtext={treatment.title}
+                      containerClassName="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] flex items-center justify-center"
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                      referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500 pointer-events-none" />
                     {treatment.category && (
-                      <span className="absolute top-3 left-3 bg-white/95 text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs">
+                      <span className="absolute top-3 left-3 z-10 bg-white/95 text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs pointer-events-none">
                         {treatment.category}
                       </span>
                     )}
@@ -212,7 +252,8 @@ export default function SpecialistAreas({
                     </div>
                   </div>
                 </motion.article>
-              ))}
+                );
+              })}
             </AnimatePresence>
           </div>
 

@@ -16,6 +16,7 @@ import {
   TreatmentTaxonomyGroup,
   TreatmentSubGroup,
 } from '../data/treatmentPricing';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 import {
   Sparkles,
   Search,
@@ -1240,13 +1241,15 @@ export default function HomepageTreatmentsEditor() {
                 >
                   <div>
                     {/* Clean Image Preview Header with Step Badge, Parent Branch, Subcategory & Upload Button */}
-                    <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden group">
-                      <img
+                    <div className="relative aspect-[16/10] bg-[#001a1b] overflow-hidden group">
+                      <ClinicImageWithPlaceholder
                         src={card.image}
                         alt={card.imageAlt || card.name}
                         title={card.seoTitle || card.name}
+                        loading="lazy"
+                        logoSize="md"
+                        containerClassName="relative w-full h-full overflow-hidden bg-[#001a1b] flex items-center justify-center"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/35" />
 

@@ -15,6 +15,7 @@ import {
 } from '../lib/adminStore';
 import { HomepageTreatmentCoverImage } from '../types';
 import { TreatmentTaxonomyGroup } from '../data/treatmentPricing';
+import { ClinicImageWithPlaceholder } from './common/ClinicImageWithPlaceholder';
 import {
   Plus,
   Search,
@@ -1072,16 +1073,23 @@ export default function HomepageTreatmentCoversEditor() {
                 }`}
               >
                 {/* Cover Thumbnail Frame */}
-                <div className="relative aspect-[4/3] w-full bg-slate-100 overflow-hidden">
-                  <img
-                    src={cover.imageUrl}
+                <div className="relative aspect-[4/3] w-full bg-[#001a1b] overflow-hidden">
+                  <ClinicImageWithPlaceholder
+                    src={
+                      isLoading &&
+                      String(cover.id || '').startsWith('cover-seed-') &&
+                      !cover.updatedAt &&
+                      !String(cover.imageUrl || '').startsWith('/assets/treatments/')
+                        ? ''
+                        : cover.imageUrl
+                    }
                     alt={cover.altText || cover.subCategoryName}
+                    title={cover.seoTitle || cover.title || cover.subCategoryName}
                     loading="lazy"
+                    logoSize="md"
+                    showBrandText={false}
+                    containerClassName="relative w-full h-full overflow-hidden bg-[#001a1b] flex items-center justify-center"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        '/assets/images/treatments/specialist-profhilo.jpg';
-                    }}
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/30 pointer-events-none" />

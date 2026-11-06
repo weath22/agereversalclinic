@@ -3,9 +3,11 @@ import { ArrowLeft, Calendar, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import { TreatmentMediaItem } from '../types';
+import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
 
 interface ServiceHeroProps {
   data: {
+    id?: string;
     category: string;
     title: string;
     imageUrl: string;
@@ -27,13 +29,18 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
   };
 
   const heroMedia = data.heroMedia;
+  const heroMediaId = heroMedia?.id || `service-${data.id || 'default'}-hero`;
   const isVideo = heroMedia?.mediaType === 'video' || !!heroMedia?.url?.match(/\.(mp4|webm|mov)(\?|$)/i);
   const mediaUrl = heroMedia?.url || data.imageUrl;
   const altText = heroMedia?.altText || `${data.title} - Age Reversal Clinic London`;
   const seoTitle = heroMedia?.seoTitle || data.title;
 
   return (
-    <section id="service-hero" className="relative bg-white overflow-hidden min-h-0 md:min-h-[calc(100vh-100px)] flex items-center pt-16 pb-12 sm:pt-20 sm:pb-14 md:pt-24 md:pb-12 border-b border-silver-150">
+    <section
+      id="service-hero"
+      data-media-id={heroMediaId}
+      className="relative bg-white overflow-hidden min-h-0 md:min-h-[calc(100vh-100px)] flex items-center pt-16 pb-12 sm:pt-20 sm:pb-14 md:pt-24 md:pb-12 border-b border-silver-150"
+    >
       {/* Mobile Full-bleed Background Image/Video */}
       <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0">
         {isVideo ? (
@@ -47,11 +54,14 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             playsInline
           />
         ) : (
-          <img
-            className="w-full h-full object-cover object-center brightness-[0.6]"
+          <ClinicImageWithPlaceholder
             src={mediaUrl}
             alt={altText}
             title={seoTitle}
+            loading="eager"
+            containerClassName="relative w-full h-full overflow-hidden bg-slate-900 flex items-center justify-center"
+            className="w-full h-full object-cover object-center brightness-[0.6]"
+            logoSize="lg"
             referrerPolicy="no-referrer"
           />
         )}
@@ -69,7 +79,11 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
       </div>
 
       {/* Desktop Full-bleed Right Half Image/Video */}
-      <div className="absolute top-0 right-0 w-1/2 h-full overflow-hidden hidden md:block z-0">
+      <div
+        id={heroMediaId}
+        data-media-id={heroMediaId}
+        className="absolute top-0 right-0 w-1/2 h-full overflow-hidden hidden md:block z-0"
+      >
         {isVideo ? (
           <video
             className="w-full h-full object-cover brightness-[0.96] contrast-[1.02]"
@@ -81,11 +95,14 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             playsInline
           />
         ) : (
-          <img
-            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
+          <ClinicImageWithPlaceholder
             src={mediaUrl}
             alt={altText}
             title={seoTitle}
+            loading="eager"
+            containerClassName="relative w-full h-full overflow-hidden bg-slate-50 flex items-center justify-center"
+            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
+            logoSize="lg"
             referrerPolicy="no-referrer"
           />
         )}

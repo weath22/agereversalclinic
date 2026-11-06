@@ -3809,6 +3809,153 @@ app.post('/api/admin/treatment-taxonomy', (req, res) => {
   }
 });
 
+// Helper: Ensure every service in clinical_treatment_details has deterministic IDs on all component media slots
+function reconcileTreatmentDetailsConfig(
+  incomingDetails: any,
+  prevDetails: any
+): Record<string, any> | null {
+  const baseObj: Record<string, any> = {};
+  if (prevDetails && typeof prevDetails === 'object') {
+    Object.assign(baseObj, prevDetails);
+  }
+  if (incomingDetails && typeof incomingDetails === 'object') {
+    for (const [k, v] of Object.entries(incomingDetails)) {
+      if (v && typeof v === 'object') {
+        baseObj[k] = {
+          ...(baseObj[k] && typeof baseObj[k] === 'object' ? baseObj[k] : {}),
+          ...(v as Record<string, any>),
+        };
+      }
+    }
+  }
+
+  const keys = Object.keys(baseObj);
+  if (keys.length === 0) return incomingDetails || prevDetails || null;
+
+  const normalizeSlotKey = (val: string) =>
+    String(val || 'service')
+      .trim()
+      .toLowerCase()
+      .replace(/@/g, '2')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'service';
+
+  for (const key of keys) {
+    const item = baseObj[key];
+    if (!item || typeof item !== 'object') continue;
+    const serviceId = normalizeSlotKey(item.id && item.id !== 'bespoke' ? item.id : key);
+    item.id = serviceId;
+
+    const heroUrl = item.heroMedia?.url || item.imageUrl || '';
+    if (heroUrl || item.heroMedia) {
+      item.imageUrl = heroUrl;
+      item.heroMedia = {
+        ...(item.heroMedia || {}),
+        id: item.heroMedia?.id || `service-${serviceId}-hero`,
+        url: heroUrl,
+        altText: item.heroMedia?.altText || `${item.title || serviceId} clinical treatment hero`,
+        seoTitle: item.heroMedia?.seoTitle || item.title || serviceId,
+        seoKeywords: Array.isArray(item.heroMedia?.seoKeywords)
+          ? item.heroMedia.seoKeywords
+          : Array.isArray(item.seoKeywords)
+          ? item.seoKeywords
+          : [],
+      };
+    }
+
+    if (item.overviewMedia && typeof item.overviewMedia === 'object') {
+      const rawFront = item.overviewMedia.frontCard?.url
+        ? item.overviewMedia.frontCard
+        : item.overviewMedia.frontImage || item.overviewMedia.frontCard;
+      const rawBack = item.overviewMedia.backCard?.url
+        ? item.overviewMedia.backCard
+        : item.overviewMedia.backImage || item.overviewMedia.backCard;
+
+      if (rawFront) {
+        const syncedFront = {
+          ...rawFront,
+          id: rawFront.id || `service-${serviceId}-overview-front`,
+          url: rawFront.url || heroUrl,
+        };
+        item.overviewMedia.frontCard = syncedFront;
+        item.overviewMedia.frontImage = syncedFront;
+      }
+      if (rawBack) {
+        const syncedBack = {
+          ...rawBack,
+          id: rawBack.id || `service-${serviceId}-overview-back`,
+          url: rawBack.url || '',
+        };
+        item.overviewMedia.backCard = syncedBack;
+        item.overviewMedia.backImage = syncedBack;
+      }
+    }
+
+    if (item.targetConcernsMedia && typeof item.targetConcernsMedia === 'object') {
+      item.targetConcernsMedia = {
+        ...item.targetConcernsMedia,
+        id: item.targetConcernsMedia.id || `service-${serviceId}-target-concerns`,
+      };
+    }
+
+    if (item.clinicalGuidanceMedia && typeof item.clinicalGuidanceMedia === 'object') {
+      const rawPre = item.clinicalGuidanceMedia.preCare?.url
+        ? item.clinicalGuidanceMedia.preCare
+        : item.clinicalGuidanceMedia.preCareVisual || item.clinicalGuidanceMedia.preCare;
+      const rawPost = item.clinicalGuidanceMedia.postCare?.url
+        ? item.clinicalGuidanceMedia.postCare
+        : item.clinicalGuidanceMedia.postCareVisual || item.clinicalGuidanceMedia.postCare;
+
+      if (rawPre) {
+        const syncedPre = {
+          ...rawPre,
+          id: rawPre.id || `service-${serviceId}-pre-care`,
+        };
+        item.clinicalGuidanceMedia.preCare = syncedPre;
+        item.clinicalGuidanceMedia.preCareVisual = syncedPre;
+      }
+      if (rawPost) {
+        const syncedPost = {
+          ...rawPost,
+          id: rawPost.id || `service-${serviceId}-post-care`,
+        };
+        item.clinicalGuidanceMedia.postCare = syncedPost;
+        item.clinicalGuidanceMedia.postCareVisual = syncedPost;
+      }
+    }
+
+    if (Array.isArray(item.additionalImages)) {
+      const cleanAdd = item.additionalImages.filter(Boolean);
+      item.additionalImages = cleanAdd;
+      const existingPortMap = new Map<string, any>();
+      if (Array.isArray(item.portfolioMedia)) {
+        for (const pm of item.portfolioMedia) {
+          if (pm?.url) existingPortMap.set(pm.url, pm);
+          if (pm?.id) existingPortMap.set(pm.id, pm);
+        }
+      }
+      item.portfolioMedia = cleanAdd.map((u: string, idx: number) => {
+        const pId = `service-${serviceId}-portfolio-${idx + 1}`;
+        const prevMeta = existingPortMap.get(u) || existingPortMap.get(pId) || {};
+        return {
+          ...prevMeta,
+          id: prevMeta.id || pId,
+          url: u,
+          altText:
+            prevMeta.altText ||
+            `${item.title || serviceId} Clinical Reference Photograph #${idx + 1}`,
+          seoTitle:
+            prevMeta.seoTitle || `${item.title || serviceId} — Reference Detail #${idx + 1}`,
+          caption: prevMeta.caption || `Reference Detail #${idx + 1}`,
+          seoKeywords: Array.isArray(prevMeta.seoKeywords) ? prevMeta.seoKeywords : [],
+        };
+      });
+    }
+  }
+
+  return baseObj;
+}
+
 // API: Get current persisted file config
 app.get('/api/admin/config', (_req, res) => {
   try {
@@ -3837,6 +3984,19 @@ app.get('/api/admin/config', (_req, res) => {
       ) {
         data.homepage_treatment_cover_images_v1 = reconciledCovers;
         modified = true;
+      }
+
+      if (data.clinical_treatment_details && typeof data.clinical_treatment_details === 'object') {
+        const reconciledDetails = reconcileTreatmentDetailsConfig(
+          data.clinical_treatment_details,
+          data.clinical_treatment_details
+        );
+        if (
+          JSON.stringify(data.clinical_treatment_details) !== JSON.stringify(reconciledDetails)
+        ) {
+          data.clinical_treatment_details = reconciledDetails;
+          modified = true;
+        }
       }
 
       if (modified) {
@@ -3870,12 +4030,26 @@ app.post('/api/admin/save-to-files', (req, res) => {
     // Services & Branches (master_services_config_v1 / homepage_specialist_areas_config_v4) never overwrites them
     const prevTreatmentsConfig = existing.homepage_treatments_config;
     const prevGalleryConfig = existing.homepage_gallery_config_v6;
+    const prevTreatmentDetails = existing.clinical_treatment_details;
     const prevServerBlogConfig = getServerBlogConfig();
 
     if (allConfigs && typeof allConfigs === 'object') {
       existing = { ...existing, ...allConfigs };
     } else if (key && data !== undefined) {
       existing[key] = data;
+    }
+
+    // Reconcile and merge clinical_treatment_details by service ID so no service's component images are ever lost
+    if (
+      (key === 'clinical_treatment_details' ||
+        Boolean(allConfigs && Object.prototype.hasOwnProperty.call(allConfigs, 'clinical_treatment_details'))) &&
+      existing.clinical_treatment_details &&
+      typeof existing.clinical_treatment_details === 'object'
+    ) {
+      existing.clinical_treatment_details = reconcileTreatmentDetailsConfig(
+        existing.clinical_treatment_details,
+        prevTreatmentDetails
+      );
     }
 
     // If Services & Branches was saved, ensure any existing custom images & SEO fields in homepage_treatments_config are preserved

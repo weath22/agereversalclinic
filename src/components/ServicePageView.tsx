@@ -5,11 +5,12 @@ import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMedia
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import {
   getTreatmentDetailsConfig,
+  getTreatmentDetailsConfigDeferred,
   loadSiteCustomizations,
   getMasterServices,
   normalizeMasterBranch,
 } from '../lib/adminStore';
-import { SpecialistArea } from '../types';
+import { SpecialistArea, TreatmentMediaItem } from '../types';
 import BeforeAfterComparisonSlider from './BeforeAfterComparisonSlider';
 import SkinLayerTargets from './SkinLayerTargets';
 import PrePostCareGuidelines from './PrePostCareGuidelines';
@@ -23,6 +24,7 @@ import ServiceBottomCTA from './ServiceBottomCTA';
 import Testimonials from './Testimonials';
 import SpecialOffers from './SpecialOffers';
 import ClinicalSEOHead from './ClinicalSEOHead';
+import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
 
 interface ServicePageViewProps {
   treatmentName: string;
@@ -32,85 +34,206 @@ interface ServicePageViewProps {
 
 export default function ServicePageView({ treatmentName, onClose, onBook }: ServicePageViewProps) {
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
+  const [detailsConfig, setDetailsConfig] = useState<Record<string, any> | null>(() =>
+    getTreatmentDetailsConfig()
+  );
 
   // Scroll to top and hydrate deferred customizations on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     loadSiteCustomizations().catch(() => {});
+    getTreatmentDetailsConfigDeferred()
+      .then((deferred) => {
+        if (deferred && typeof deferred === 'object') {
+          setDetailsConfig({ ...deferred });
+        }
+      })
+      .catch(() => {});
   }, [treatmentName]);
 
   useEffect(() => {
-    const handleMasterUpdate = () => {
+    const handleStoreUpdate = () => {
       setMasterServices(getMasterServices());
+      const latestDetails = getTreatmentDetailsConfig();
+      if (latestDetails) {
+        setDetailsConfig({ ...latestDetails });
+      }
     };
-    window.addEventListener('master_services_updated', handleMasterUpdate);
-    window.addEventListener('storage', handleMasterUpdate);
+    window.addEventListener('before_after_gallery_updated', handleStoreUpdate);
+    window.addEventListener('master_services_updated', handleStoreUpdate);
+    window.addEventListener('treatment_details_updated', handleStoreUpdate);
+    window.addEventListener('site_customizations_hydrated', handleStoreUpdate);
+    window.addEventListener('storage', handleStoreUpdate);
     return () => {
-      window.removeEventListener('master_services_updated', handleMasterUpdate);
-      window.removeEventListener('storage', handleMasterUpdate);
+      window.removeEventListener('before_after_gallery_updated', handleStoreUpdate);
+      window.removeEventListener('master_services_updated', handleStoreUpdate);
+      window.removeEventListener('treatment_details_updated', handleStoreUpdate);
+      window.removeEventListener('site_customizations_hydrated', handleStoreUpdate);
+      window.removeEventListener('storage', handleStoreUpdate);
     };
   }, []);
 
   // Resolve matching treatment metadata dynamically using key lookup + live master service branch
   const getTreatmentData = () => {
     const lowerName = treatmentName.toLowerCase().trim();
-    const config = getTreatmentDetailsConfig();
+    const slugName = lowerName.replace(/@/g, '2').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const slugKey = lowerName.replace(/[^a-z0-9]/g, '');
+    const config = detailsConfig || getTreatmentDetailsConfig();
     const db = config || TREATMENT_DETAILS_DB;
 
-    const matchedMaster = masterServices.find(
-      (s) => s.id.toLowerCase() === lowerName || s.title.toLowerCase() === lowerName
+    let matchedMaster = masterServices.find(
+      (s) =>
+        s.id.toLowerCase() === lowerName ||
+        s.id.toLowerCase() === slugName ||
+        s.title.toLowerCase() === lowerName
     );
 
-    // 1. Search CLINICAL_AREAS_DB for a matching treatment name to get its exact ID key
+    // 1. Search CLINICAL_AREAS_DB for a matching treatment name or subcategory
     let matchedId: string | null = matchedMaster?.id || null;
-    if (!matchedId) {
-      for (const area of CLINICAL_AREAS_DB) {
-        for (const cat of area.categories) {
-          const item = cat.items.find(
-            (i) => i.name.toLowerCase() === lowerName || i.id.toLowerCase() === lowerName
+    let resolvedSubCategoryId: string | undefined = matchedMaster?.id;
+    let resolvedSubCategoryName: string | undefined = matchedMaster?.title;
+    let siblingItemIds: string[] = [];
+
+    for (const area of CLINICAL_AREAS_DB) {
+      for (const cat of area.categories) {
+        if (
+          cat.id.toLowerCase() === lowerName ||
+          cat.id.toLowerCase() === slugName ||
+          cat.name.toLowerCase() === lowerName
+        ) {
+          resolvedSubCategoryId = cat.id;
+          resolvedSubCategoryName = cat.name;
+          siblingItemIds = cat.items.map((i) => i.id);
+          if (!matchedId) matchedId = cat.id;
+        }
+        const item = cat.items.find(
+          (i) =>
+            i.name.toLowerCase() === lowerName ||
+            i.id.toLowerCase() === lowerName ||
+            i.id.toLowerCase() === slugName
+        );
+        if (item) {
+          matchedId = item.id;
+          resolvedSubCategoryId = cat.id;
+          resolvedSubCategoryName = cat.name;
+          siblingItemIds = cat.items.map((i) => i.id);
+          break;
+        }
+      }
+      if (matchedId && resolvedSubCategoryId && siblingItemIds.length > 0) break;
+    }
+
+    if (!matchedMaster && resolvedSubCategoryId) {
+      matchedMaster = masterServices.find(
+        (s) => s.id.toLowerCase() === resolvedSubCategoryId!.toLowerCase()
+      );
+    }
+
+    // 2. Check if admin has saved a customized record for this exact service, its subcategory, or child item
+    let customEntry: any = null;
+    if (config && typeof config === 'object') {
+      if (matchedId && config[matchedId]) {
+        customEntry = config[matchedId];
+      } else if (config[lowerName]) {
+        customEntry = config[lowerName];
+      } else if (config[slugName]) {
+        customEntry = config[slugName];
+      } else if (config[slugKey]) {
+        customEntry = config[slugKey];
+      } else {
+        // Check by entry.id or entry.title inside config
+        const byField = Object.values(config).find((entry: any) => {
+          if (!entry || typeof entry !== 'object') return false;
+          const eId = String(entry.id || '').toLowerCase().trim();
+          const eTitle = String(entry.title || '').toLowerCase().trim();
+          return (
+            (matchedId && eId === matchedId.toLowerCase()) ||
+            eId === lowerName ||
+            eId === slugName ||
+            eTitle === lowerName
           );
-          if (item) {
-            matchedId = item.id;
-            break;
+        });
+        if (byField) {
+          customEntry = byField;
+        } else if (resolvedSubCategoryId && config[resolvedSubCategoryId]) {
+          customEntry = config[resolvedSubCategoryId];
+        } else if (siblingItemIds.length > 0) {
+          const siblingCandidates = siblingItemIds
+            .map((cid) => config[cid])
+            .filter((entry) => entry && typeof entry === 'object');
+          if (siblingCandidates.length > 0) {
+            siblingCandidates.sort(
+              (a: any, b: any) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
+            );
+            customEntry = siblingCandidates[0];
           }
         }
-        if (matchedId) break;
       }
     }
 
-    let baseDetails: any = null;
+    let baseDetails: any = customEntry;
 
-    // 2. If we found a core ID key and it exists in our customized database config
-    if (matchedId && db[matchedId]) {
-      baseDetails = db[matchedId];
-    } else if (db[lowerName]) {
-      baseDetails = db[lowerName];
-    } else {
-      const slugKey = lowerName.replace(/[^a-z0-9]/g, '');
-      if (db[slugKey]) {
-        baseDetails = db[slugKey];
-      } else if (lowerName.includes('exosome')) {
+    // 3. Fallback to keyword / static database if not found via direct/subcategory lookup
+    if (!baseDetails) {
+      const lowerProbe = `${lowerName} ${matchedId || ''} ${resolvedSubCategoryId || ''}`.toLowerCase();
+      if (lowerProbe.includes('exosome')) {
         baseDetails = db.exosome || TREATMENT_DETAILS_DB.exosome;
-      } else if (lowerName.includes('profhilo')) {
+      } else if (lowerProbe.includes('profhilo')) {
         baseDetails = db.profhilo || TREATMENT_DETAILS_DB.profhilo;
-      } else if (lowerName.includes('morpheus') || lowerName.includes('morpheus8')) {
+      } else if (lowerProbe.includes('morpheus') || lowerProbe.includes('morpheus8')) {
         baseDetails = db.morpheus8 || TREATMENT_DETAILS_DB.morpheus8;
-      } else if (lowerName.includes('ultherapy')) {
+      } else if (lowerProbe.includes('ultherapy') || lowerProbe.includes('emface')) {
         baseDetails = db.ultherapy || TREATMENT_DETAILS_DB.ultherapy;
-      } else if (lowerName.includes('polynucleotide') || lowerName.includes('salmon sperm')) {
+      } else if (lowerProbe.includes('polynucleotide') || lowerProbe.includes('salmon sperm')) {
         baseDetails = db.polynucleotide || TREATMENT_DETAILS_DB.polynucleotide;
-      } else if (lowerName.includes('lip') || lowerName.includes('lips')) {
+      } else if (lowerProbe.includes('lip') || lowerProbe.includes('lips')) {
         baseDetails = db.lip || TREATMENT_DETAILS_DB.lip;
-      } else if (lowerName.includes('buttock') || lowerName.includes('bbl') || lowerName.includes('butt')) {
+      } else if (
+        lowerProbe.includes('buttock') ||
+        lowerProbe.includes('bbl') ||
+        lowerProbe.includes('butt') ||
+        lowerProbe.includes('emsculpt')
+      ) {
         baseDetails = db.buttock || TREATMENT_DETAILS_DB.buttock;
-      } else if (lowerName.includes('bleph') || lowerName.includes('eyelid') || lowerName.includes('blepharoplasty')) {
+      } else if (
+        lowerProbe.includes('bleph') ||
+        lowerProbe.includes('eyelid') ||
+        lowerProbe.includes('blepharoplasty')
+      ) {
         baseDetails = db.blepharoplasty || TREATMENT_DETAILS_DB.blepharoplasty;
-      } else if (lowerName.includes('aqualyx') || lowerName.includes('fat dissolve')) {
+      } else if (
+        lowerProbe.includes('aqualyx') ||
+        lowerProbe.includes('fat dissolve') ||
+        lowerProbe.includes('deso')
+      ) {
         baseDetails = db.aqualyx || TREATMENT_DETAILS_DB.aqualyx;
       } else {
         baseDetails = DEFAULT_TREATMENT_DETAILS(matchedMaster?.title || treatmentName);
       }
     }
+
+    const hasCustomDetails = Boolean(
+      customEntry ||
+        baseDetails?.isCustomized ||
+        baseDetails?.updatedAt ||
+        (baseDetails?.id &&
+          baseDetails.id !== 'bespoke' &&
+          config &&
+          config[baseDetails.id])
+    );
+
+    const isDirectSubcategoryClick =
+      matchedMaster &&
+      (matchedMaster.id.toLowerCase() === lowerName ||
+        matchedMaster.id.toLowerCase() === slugName ||
+        matchedMaster.title.toLowerCase() === lowerName);
+
+    const effectiveId =
+      (customEntry?.id && customEntry.id !== 'bespoke' ? customEntry.id : null) ||
+      matchedId ||
+      (isDirectSubcategoryClick ? matchedMaster?.id : null) ||
+      (baseDetails?.id && baseDetails.id !== 'bespoke' ? baseDetails.id : null) ||
+      slugName;
 
     if (matchedMaster) {
       const liveBranch = normalizeMasterBranch(
@@ -119,22 +242,56 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       );
       return {
         ...baseDetails,
-        id: matchedMaster.id || baseDetails.id,
-        title: matchedMaster.title || baseDetails.title,
+        id: effectiveId,
+        title: hasCustomDetails
+          ? baseDetails.title || treatmentName || matchedMaster.title
+          : isDirectSubcategoryClick
+          ? matchedMaster.title || baseDetails.title
+          : treatmentName || matchedMaster.title || baseDetails.title,
+        subCategoryId: resolvedSubCategoryId || matchedMaster.id,
+        subCategoryName: resolvedSubCategoryName || matchedMaster.title,
         category: liveBranch,
         pricingCategory: liveBranch,
-        description: matchedMaster.description || baseDetails.description,
-        imageUrl: matchedMaster.image || baseDetails.imageUrl,
-        price: matchedMaster.price || baseDetails.price,
-        procedureTime: matchedMaster.duration || baseDetails.procedureTime,
+        description: hasCustomDetails
+          ? baseDetails.description || matchedMaster.description
+          : matchedMaster.description || baseDetails.description,
+        imageUrl: hasCustomDetails
+          ? baseDetails.heroMedia?.url || baseDetails.imageUrl || matchedMaster.image
+          : baseDetails.heroMedia?.url || matchedMaster.image || baseDetails.imageUrl,
+        price: hasCustomDetails
+          ? baseDetails.price || matchedMaster.price
+          : matchedMaster.price || baseDetails.price,
+        procedureTime: hasCustomDetails
+          ? baseDetails.procedureTime || matchedMaster.duration
+          : matchedMaster.duration || baseDetails.procedureTime,
       };
     }
 
-    return baseDetails;
+    return {
+      ...baseDetails,
+      id: effectiveId,
+      title: (hasCustomDetails && baseDetails.title) || treatmentName || baseDetails.title,
+      subCategoryId: resolvedSubCategoryId,
+      subCategoryName: resolvedSubCategoryName,
+    };
   };
 
   const rawData = getTreatmentData();
   const data = populateTreatmentMediaDefaults(rawData);
+  const portfolioItems: TreatmentMediaItem[] =
+    data.portfolioMedia && data.portfolioMedia.length > 0
+      ? data.portfolioMedia.filter((m) => m && m.url)
+      : (data.additionalImages || [])
+          .filter(Boolean)
+          .map((imgUrl: string, idx: number) => ({
+            id: `service-${data.id}-portfolio-${idx}`,
+            url: imgUrl,
+            mediaType: 'image' as const,
+            altText: `${data.title} Gallery Reference ${idx + 1}`,
+            seoTitle: `${data.title} - Portfolio Reference #${idx + 1}`,
+            seoKeywords: data.seoKeywords || [],
+            caption: `Reference Detail #${idx + 1}`,
+          }));
 
   // Animation variants
   const pageVariants = {
@@ -152,9 +309,9 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
     >
       {/* 1. Google SEO & Schema.org JSON-LD structured data export (Task 5.3) */}
       <ClinicalSEOHead
-        customTitle={`${data.title} | ${data.category}`}
-        customDescription={data.description}
-        customImage={data.coverMedia?.url || data.imageUrl}
+        customTitle={data.seoMetaTitle || `${data.title} | ${data.category}`}
+        customDescription={data.seoMetaDescription || data.description}
+        customImage={data.heroMedia?.url || data.coverMedia?.url || data.imageUrl}
         canonicalPath={`#treatment-${data.id}`}
         customKeywords={data.seoKeywords}
         treatmentData={data}
@@ -185,21 +342,21 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
           <TargetConcerns data={data} />
 
           {/* Section 3.2: Clinical Before/After Comparison - Spacious Full Showcase */}
-          <div className="pt-16 border-t border-silver-100 max-w-6xl mx-auto w-full">
-            <BeforeAfterComparisonSlider
-              beforeImage={data.beforeImage}
-              afterImage={data.afterImage}
-              treatmentName={data.title}
-              treatmentId={data.id}
-              treatmentCategory={data.category}
-              clinicalComparisonMedia={data.clinicalComparisonMedia}
-              customBeforeAfterPairs={data.customBeforeAfterPairs}
-              excludedGalleryPairIds={data.excludedGalleryPairIds}
-            />
-          </div>
+          <BeforeAfterComparisonSlider
+            beforeImage={data.beforeImage}
+            afterImage={data.afterImage}
+            treatmentName={data.title}
+            treatmentId={data.id}
+            treatmentCategory={data.category}
+            subCategoryId={(rawData as any).subCategoryId}
+            subCategoryName={(rawData as any).subCategoryName}
+            clinicalComparisonMedia={data.clinicalComparisonMedia}
+            customBeforeAfterPairs={data.customBeforeAfterPairs}
+            excludedGalleryPairIds={data.excludedGalleryPairIds}
+          />
 
           {/* Section 3.2.5: Additional Clinical Gallery Showcase */}
-          {data.additionalImages && data.additionalImages.length > 0 && (
+          {portfolioItems.length > 0 && (
             <div className="pt-16 border-t border-silver-100 max-w-6xl mx-auto w-full">
               <div className="flex flex-col items-center text-center space-y-2 mb-8">
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#c5a880] block">
@@ -215,25 +372,27 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {data.additionalImages.map((imgUrl: string, idx: number) => (
+                {portfolioItems.map((item, idx) => (
                   <motion.div 
-                    key={idx}
+                    key={item.id || `portfolio-${idx}`}
+                    id={item.id}
+                    data-media-id={item.id}
                     whileHover={{ scale: 1.02 }}
                     className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col space-y-3 group cursor-pointer"
                   >
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-100">
-                      <img 
-                        src={imgUrl} 
-                        alt={`${data.title} Gallery Reference ${idx + 1}`} 
+                      <ClinicImageWithPlaceholder
+                        src={item.url}
+                        alt={item.altText || `${data.title} Gallery Reference ${idx + 1}`}
+                        title={item.seoTitle || data.title}
+                        containerClassName="w-full h-full"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        skeletonVariant="light"
                         referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&q=80&w=800';
-                        }}
                       />
                     </div>
-                    <div className="text-[11px] font-mono font-bold uppercase text-slate-400 tracking-wider text-center">
-                      Reference Detail #{idx + 1}
+                    <div className="text-[11px] font-mono font-bold uppercase text-slate-400 tracking-wider text-center truncate px-2">
+                      {item.caption || `Reference Detail #${idx + 1}`}
                     </div>
                   </motion.div>
                 ))}

@@ -70,6 +70,18 @@ export interface ClinicImageWithPlaceholderProps {
    */
   fetchPriority?: 'high' | 'low' | 'auto';
   /**
+   * Image decoding hint
+   */
+  decoding?: 'sync' | 'async' | 'auto';
+  /**
+   * Referrer policy for image requests
+   */
+  referrerPolicy?: React.HTMLAttributeReferrerPolicy;
+  /**
+   * Skeleton theme variant
+   */
+  skeletonVariant?: 'gold' | 'light' | 'dark';
+  /**
    * Children overlay elements (e.g. gradient scrims, badges, buttons)
    */
   children?: React.ReactNode;

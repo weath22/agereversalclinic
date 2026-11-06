@@ -1,8 +1,10 @@
 import { Shield, CheckCircle2 } from 'lucide-react';
 import { TreatmentMediaItem } from '../types';
+import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
 
 interface TargetConcernsProps {
   data: {
+    id?: string;
     title: string;
     concerns: string[];
     targetConcernsMedia?: TreatmentMediaItem;
@@ -12,6 +14,7 @@ interface TargetConcernsProps {
 export default function TargetConcerns({ data }: TargetConcernsProps) {
   const fallbackUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR";
   const media = data.targetConcernsMedia;
+  const mediaId = media?.id || `service-${data.id || 'default'}-target-concerns`;
   const mediaUrl = media?.url || fallbackUrl;
   const altText = media?.altText || `${data.title} diagnostic technology - High-precision targeted aesthetic treatment technology`;
   const seoTitle = media?.seoTitle || data.title;
@@ -40,11 +43,16 @@ export default function TargetConcerns({ data }: TargetConcernsProps) {
 
           {/* Right: Modern Aesthetic/Technology Closeup card */}
           <div className="md:col-span-4">
-            <div className="relative aspect-[4/3] md:aspect-square w-full rounded-xl overflow-hidden border border-silver-200 bg-silver-50 group shadow-sm">
-              <img
+            <div
+              id={mediaId}
+              data-media-id={mediaId}
+              className="relative aspect-[4/3] md:aspect-square w-full rounded-xl overflow-hidden border border-silver-200 bg-silver-50 group shadow-sm"
+            >
+              <ClinicImageWithPlaceholder
                 src={mediaUrl}
                 alt={altText}
                 title={seoTitle}
+                containerClassName="relative w-full h-full overflow-hidden bg-silver-50 flex items-center justify-center"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 referrerPolicy="no-referrer"
               />
