@@ -317,7 +317,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
         "iconName": "Building",
         "badge": "Harley St Flagship",
-        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793630163088"
+        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793946629282"
       },
       {
         "id": "p2",
@@ -325,7 +325,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
         "iconName": "Star",
         "badge": "4.9/5 ★ (2,000+ Reviews)",
-        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793630163125"
+        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793945264186"
       },
       {
         "id": "p3",
@@ -333,7 +333,7 @@ export const CLINIC_DATA: ClinicData = {
         "description": "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
         "iconName": "Sparkles",
         "badge": "FDA-Cleared Tech",
-        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793630163201"
+        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793945860934"
       },
       {
         "id": "p4",
@@ -355,7 +355,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-1.webp?v=1793640345568"
+        "imageUrl": "/assets/clinic-award-1.webp?v=1793943326466"
       },
       {
         "id": "award-2",
@@ -371,7 +371,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "British Health Standards",
         "iconName": "ShieldCheck",
-        "imageUrl": "/assets/clinic-award-3.webp?v=1793630163635"
+        "imageUrl": "/assets/clinic-award-3.webp?v=1793943342158"
       },
       {
         "id": "award-4",
@@ -379,7 +379,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "International Laser Association",
         "iconName": "Award",
-        "imageUrl": "/assets/clinic-award-4.webp?v=1793640116790"
+        "imageUrl": "/assets/clinic-award-4.webp?v=1793943308020"
       },
       {
         "id": "award-5",
@@ -387,7 +387,7 @@ export const CLINIC_DATA: ClinicData = {
         "year": "2024",
         "organization": "UK Clinical Dermatology Board",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-5.webp?v=1793630163559"
+        "imageUrl": "/assets/clinic-award-5.webp?v=1793943355804"
       }
     ]
   },

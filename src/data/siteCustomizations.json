@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-11-05T17:41:07.339Z",
+  "lastSynced": "2026-11-06T06:30:34.358Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "/assets/clinic-logo-icon.webp?v=1793675846495",
@@ -24,7 +24,7 @@
         "description": "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
         "iconName": "Building",
         "badge": "Harley St Flagship",
-        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793630163088"
+        "imageUrl": "/assets/clinic-pillar-1.webp?v=1793946629282"
       },
       {
         "id": "p2",
@@ -32,7 +32,7 @@
         "description": "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
         "iconName": "Star",
         "badge": "4.9/5 ★ (2,000+ Reviews)",
-        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793630163125"
+        "imageUrl": "/assets/clinic-pillar-2.webp?v=1793945264186"
       },
       {
         "id": "p3",
@@ -40,7 +40,7 @@
         "description": "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
         "iconName": "Sparkles",
         "badge": "FDA-Cleared Tech",
-        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793630163201"
+        "imageUrl": "/assets/clinic-pillar-3.webp?v=1793945860934"
       },
       {
         "id": "p4",
@@ -62,7 +62,7 @@
         "year": "2025",
         "organization": "Aesthetic Medicine Awards",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-1.webp?v=1793640345568"
+        "imageUrl": "/assets/clinic-award-1.webp?v=1793943326466"
       },
       {
         "id": "award-2",
@@ -78,7 +78,7 @@
         "year": "2024",
         "organization": "British Health Standards",
         "iconName": "ShieldCheck",
-        "imageUrl": "/assets/clinic-award-3.webp?v=1793630163635"
+        "imageUrl": "/assets/clinic-award-3.webp?v=1793943342158"
       },
       {
         "id": "award-4",
@@ -86,7 +86,7 @@
         "year": "2024",
         "organization": "International Laser Association",
         "iconName": "Award",
-        "imageUrl": "/assets/clinic-award-4.webp?v=1793640116790"
+        "imageUrl": "/assets/clinic-award-4.webp?v=1793943308020"
       },
       {
         "id": "award-5",
@@ -94,7 +94,7 @@
         "year": "2024",
         "organization": "UK Clinical Dermatology Board",
         "iconName": "Trophy",
-        "imageUrl": "/assets/clinic-award-5.webp?v=1793630163559"
+        "imageUrl": "/assets/clinic-award-5.webp?v=1793943355804"
       }
     ]
   },
@@ -621,7 +621,7 @@
         "faqItems": []
       }
     ],
-    "updatedAt": "2026-11-05T17:41:07.328Z"
+    "updatedAt": "2026-11-06T05:38:35.478Z"
   },
   "homepage_footer_config": {
     "address": "123 Medical Plaza, London W1G 8JZ",
@@ -897,7 +897,7 @@
           "description": "Situated in the heart of London on Harley Street, offering unparalleled luxury, privacy, and clinical excellence.",
           "iconName": "Building",
           "badge": "Harley St Flagship",
-          "imageUrl": "/assets/clinic-pillar-1.webp?v=1793630163088"
+          "imageUrl": "/assets/clinic-pillar-1.webp?v=1793946629282"
         },
         {
           "id": "p2",
@@ -905,7 +905,7 @@
           "description": "Exceptional transformations with a verified 4.9/5 star rating from over 2,000 genuine patient reviews.",
           "iconName": "Star",
           "badge": "4.9/5 ★ (2,000+ Reviews)",
-          "imageUrl": "/assets/clinic-pillar-2.webp?v=1793630163125"
+          "imageUrl": "/assets/clinic-pillar-2.webp?v=1793945264186"
         },
         {
           "id": "p3",
@@ -913,7 +913,7 @@
           "description": "Equipped with gold-standard FDA-cleared RF, ultrasound, and picosecond medical laser treatment suites.",
           "iconName": "Sparkles",
           "badge": "FDA-Cleared Tech",
-          "imageUrl": "/assets/clinic-pillar-3.webp?v=1793630163201"
+          "imageUrl": "/assets/clinic-pillar-3.webp?v=1793945860934"
         },
         {
           "id": "p4",
@@ -935,7 +935,7 @@
           "year": "2025",
           "organization": "Aesthetic Medicine Awards",
           "iconName": "Trophy",
-          "imageUrl": "/assets/clinic-award-1.webp?v=1793640345568"
+          "imageUrl": "/assets/clinic-award-1.webp?v=1793943326466"
         },
         {
           "id": "award-2",
@@ -951,7 +951,7 @@
           "year": "2024",
           "organization": "British Health Standards",
           "iconName": "ShieldCheck",
-          "imageUrl": "/assets/clinic-award-3.webp?v=1793630163635"
+          "imageUrl": "/assets/clinic-award-3.webp?v=1793943342158"
         },
         {
           "id": "award-4",
@@ -959,7 +959,7 @@
           "year": "2024",
           "organization": "International Laser Association",
           "iconName": "Award",
-          "imageUrl": "/assets/clinic-award-4.webp?v=1793640116790"
+          "imageUrl": "/assets/clinic-award-4.webp?v=1793943308020"
         },
         {
           "id": "award-5",
@@ -967,7 +967,7 @@
           "year": "2024",
           "organization": "UK Clinical Dermatology Board",
           "iconName": "Trophy",
-          "imageUrl": "/assets/clinic-award-5.webp?v=1793630163559"
+          "imageUrl": "/assets/clinic-award-5.webp?v=1793943355804"
         }
       ]
     },
@@ -8762,6 +8762,51 @@
   },
   "central_clinic_media_assets": [
     {
+      "id": "asset-1793943486241-289",
+      "name": "clinic-pillar-3.webp",
+      "url": "/assets/clinic-pillar-3.webp",
+      "mediaType": "image",
+      "size": 541167,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "clinic-pillar-3 - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-11-06T05:38:06.241Z"
+    },
+    {
+      "id": "asset-1793943355933-366",
+      "name": "clinic-award-5.webp",
+      "url": "/assets/clinic-award-5.webp",
+      "mediaType": "image",
+      "size": 90776,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "clinic-award-5 - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-11-06T05:35:55.933Z"
+    },
+    {
+      "id": "asset-1793943342331-916",
+      "name": "clinic-award-3.webp",
+      "url": "/assets/clinic-award-3.webp",
+      "mediaType": "image",
+      "size": 90776,
+      "location": "Local Disk / Server Asset",
+      "category": "Uploads",
+      "altText": "clinic-award-3 - Age Reversal Clinic London",
+      "seoKeywords": [
+        "anti-aging clinic london",
+        "cellular skin regeneration"
+      ],
+      "createdAt": "2026-11-06T05:35:42.331Z"
+    },
+    {
       "id": "asset-1793898501960-776",
       "name": "Ombré brows.jpg",
       "url": "/assets/treatments/ombr--brows-1793898501554.webp",
@@ -12249,6 +12294,6 @@
         "updatedAt": 1793793570217
       }
     ],
-    "updatedAt": "2026-11-05T17:41:07.273Z"
+    "updatedAt": "2026-11-06T05:38:35.403Z"
   }
 }
