@@ -36,7 +36,6 @@
           "title": "Clinical Transformation",
           "treatmentGroupId": "facial-skin-care",
           "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
           "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793670395086.webp?v=1793670395089",
           "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793670407456.webp?v=1793670407457",
           "singleFrameImage": "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928",
@@ -58,14 +57,13 @@
           "sessions": 1,
           "featured": false,
           "hidden": true,
-          "updatedAt": 1793900445147
+          "updatedAt": 1794059759619
         },
         {
           "id": "pair-1793724538573",
           "title": "Clinical Transformation",
           "treatmentGroupId": "facial-skin-care",
           "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
           "beforeImage": "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
           "afterImage": "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773",
           "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
@@ -86,14 +84,13 @@
           "sessions": 1,
           "featured": false,
           "hidden": true,
-          "updatedAt": 1793900450740
+          "updatedAt": 1794059764677
         },
         {
           "id": "pair-1793719815460",
           "title": "Clinical Transformation",
           "treatmentGroupId": "facial-skin-care",
           "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
           "beforeImage": "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
           "afterImage": "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247",
           "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
@@ -114,7 +111,7 @@
           "sessions": 1,
           "featured": false,
           "hidden": true,
-          "updatedAt": 1793900457122
+          "updatedAt": 1794059769815
         },
         {
           "id": "pair-1",

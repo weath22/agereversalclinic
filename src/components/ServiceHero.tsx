@@ -11,6 +11,7 @@ interface ServiceHeroProps {
     category: string;
     title: string;
     imageUrl: string;
+    badgeText?: string;
     price?: string;
     heroMedia?: TreatmentMediaItem;
   };
@@ -152,8 +153,10 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             className="mb-6 md:mb-8 flex items-center gap-3"
           >
             <div className="border-l-2 border-rose-gold pl-3 sm:pl-4">
-              <span className="text-[9px] sm:text-[10px] font-extrabold text-white/70 md:text-silver-400 uppercase tracking-widest block">Clinical Excellence</span>
-              <span className="text-base sm:text-lg font-semibold text-white md:text-silver-900">Starting from {data.price || '$150'}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-white/70 md:text-silver-400 uppercase tracking-widest block">
+                {data.badgeText || 'Clinical Excellence'}
+              </span>
+              <span className="text-base sm:text-lg font-semibold text-white md:text-silver-900">Starting from {data.price || '£150'}</span>
             </div>
           </motion.div>
 

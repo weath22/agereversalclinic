@@ -247,7 +247,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     ],
     "featured": false,
     "hidden": true,
-    "updatedAt": 1793900445147
+    "updatedAt": 1794059759619
   },
   {
     "id": "pair-1793724538573",
@@ -290,7 +290,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     ],
     "featured": false,
     "hidden": true,
-    "updatedAt": 1793900450740
+    "updatedAt": 1794059764677
   },
   {
     "id": "pair-1793719815460",
@@ -333,7 +333,7 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     ],
     "featured": false,
     "hidden": true,
-    "updatedAt": 1793900457122
+    "updatedAt": 1794059769815
   },
   {
     "id": "pair-1",

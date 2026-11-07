@@ -41,11 +41,16 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
   // Scroll to top and hydrate deferred customizations on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
+    const immediate = getTreatmentDetailsConfig();
+    if (immediate && typeof immediate === 'object') {
+      setDetailsConfig({ ...immediate });
+    }
     loadSiteCustomizations().catch(() => {});
     getTreatmentDetailsConfigDeferred()
       .then((deferred) => {
-        if (deferred && typeof deferred === 'object') {
-          setDetailsConfig({ ...deferred });
+        const latest = getTreatmentDetailsConfig() || deferred;
+        if (latest && typeof latest === 'object') {
+          setDetailsConfig({ ...latest });
         }
       })
       .catch(() => {});
@@ -75,7 +80,11 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
   // Resolve matching treatment metadata dynamically using key lookup + live master service branch
   const getTreatmentData = () => {
-    const lowerName = treatmentName.toLowerCase().trim();
+    const cleanedName = treatmentName
+      .replace(/\s*\([£$€]\s*\d[^)]*\)\s*$/, '')
+      .trim();
+    const lowerName = cleanedName.toLowerCase();
+    const rawLowerName = treatmentName.toLowerCase().trim();
     const slugName = lowerName.replace(/@/g, '2').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const slugKey = lowerName.replace(/[^a-z0-9]/g, '');
     const config = detailsConfig || getTreatmentDetailsConfig();
@@ -85,7 +94,8 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       (s) =>
         s.id.toLowerCase() === lowerName ||
         s.id.toLowerCase() === slugName ||
-        s.title.toLowerCase() === lowerName
+        s.title.toLowerCase() === lowerName ||
+        s.title.toLowerCase() === rawLowerName
     );
 
     // 1. Search CLINICAL_AREAS_DB for a matching treatment name or subcategory
@@ -96,22 +106,29 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
     for (const area of CLINICAL_AREAS_DB) {
       for (const cat of area.categories) {
+        const catIdLower = cat.id.toLowerCase();
+        const catNameLower = cat.name.toLowerCase();
         if (
-          cat.id.toLowerCase() === lowerName ||
-          cat.id.toLowerCase() === slugName ||
-          cat.name.toLowerCase() === lowerName
+          catIdLower === lowerName ||
+          catIdLower === slugName ||
+          catNameLower === lowerName ||
+          catNameLower === rawLowerName
         ) {
           resolvedSubCategoryId = cat.id;
           resolvedSubCategoryName = cat.name;
           siblingItemIds = cat.items.map((i) => i.id);
           if (!matchedId) matchedId = cat.id;
         }
-        const item = cat.items.find(
-          (i) =>
-            i.name.toLowerCase() === lowerName ||
-            i.id.toLowerCase() === lowerName ||
-            i.id.toLowerCase() === slugName
-        );
+        const item = cat.items.find((i) => {
+          const itemIdLower = i.id.toLowerCase();
+          const itemNameLower = i.name.toLowerCase();
+          return (
+            itemNameLower === lowerName ||
+            itemNameLower === rawLowerName ||
+            itemIdLower === lowerName ||
+            itemIdLower === slugName
+          );
+        });
         if (item) {
           matchedId = item.id;
           resolvedSubCategoryId = cat.id;
@@ -131,18 +148,18 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
     // 2. Check if admin has saved a customized record for this exact service, its subcategory, or child item
     let customEntry: any = null;
+    let directCandidate: any = null;
     if (config && typeof config === 'object') {
-      if (matchedId && config[matchedId]) {
-        customEntry = config[matchedId];
-      } else if (config[lowerName]) {
-        customEntry = config[lowerName];
-      } else if (config[slugName]) {
-        customEntry = config[slugName];
-      } else if (config[slugKey]) {
-        customEntry = config[slugKey];
-      } else {
-        // Check by entry.id or entry.title inside config
-        const byField = Object.values(config).find((entry: any) => {
+      const isEntryCustomized = (e: any) =>
+        Boolean(e && typeof e === 'object' && (e.isCustomized || Number(e.updatedAt) > 0));
+
+      directCandidate =
+        (matchedId && config[matchedId]) ||
+        config[lowerName] ||
+        config[rawLowerName] ||
+        config[slugName] ||
+        config[slugKey] ||
+        Object.values(config).find((entry: any) => {
           if (!entry || typeof entry !== 'object') return false;
           const eId = String(entry.id || '').toLowerCase().trim();
           const eTitle = String(entry.title || '').toLowerCase().trim();
@@ -150,24 +167,64 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
             (matchedId && eId === matchedId.toLowerCase()) ||
             eId === lowerName ||
             eId === slugName ||
-            eTitle === lowerName
+            eTitle === lowerName ||
+            eTitle === rawLowerName
           );
         });
-        if (byField) {
-          customEntry = byField;
-        } else if (resolvedSubCategoryId && config[resolvedSubCategoryId]) {
-          customEntry = config[resolvedSubCategoryId];
-        } else if (siblingItemIds.length > 0) {
-          const siblingCandidates = siblingItemIds
-            .map((cid) => config[cid])
-            .filter((entry) => entry && typeof entry === 'object');
-          if (siblingCandidates.length > 0) {
-            siblingCandidates.sort(
-              (a: any, b: any) => (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0)
-            );
-            customEntry = siblingCandidates[0];
+
+      const subCatCandidate =
+        resolvedSubCategoryId && config[resolvedSubCategoryId]
+          ? config[resolvedSubCategoryId]
+          : null;
+
+      const siblingCandidates = siblingItemIds
+        .map((cid) => config[cid])
+        .filter((entry) => entry && typeof entry === 'object')
+        .sort((a: any, b: any) => {
+          const aCustom = isEntryCustomized(a) ? 1 : 0;
+          const bCustom = isEntryCustomized(b) ? 0 : 0; // wait: fix below
+          if (aCustom !== (isEntryCustomized(b) ? 1 : 0)) {
+            return (isEntryCustomized(b) ? 1 : 0) - aCustom;
           }
+          return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0);
+        });
+      const bestSibling = siblingCandidates[0] || null;
+
+      // Pick the most recently updated customized record across direct, subcategory, and sibling
+      const customizedPool = [
+        { entry: directCandidate, priority: 3, isDirect: true },
+        { entry: subCatCandidate, priority: 2, isDirect: false },
+        { entry: bestSibling, priority: 1, isDirect: false },
+      ]
+        .filter((c) => isEntryCustomized(c.entry))
+        .sort((a, b) => {
+          const timeDiff = (Number(b.entry.updatedAt) || 0) - (Number(a.entry.updatedAt) || 0);
+          if (timeDiff !== 0) return timeDiff;
+          return b.priority - a.priority;
+        });
+
+      if (customizedPool.length > 0) {
+        const winner = customizedPool[0];
+        if (directCandidate && !winner.isDirect) {
+          const defaultWinnerTitle = TREATMENT_DETAILS_DB[winner.entry.id]?.title;
+          const wasWinnerTitleEdited =
+            Boolean(winner.entry.title) &&
+            Boolean(defaultWinnerTitle) &&
+            winner.entry.title !== defaultWinnerTitle;
+
+          customEntry = {
+            ...directCandidate,
+            ...winner.entry,
+            id: directCandidate.id || winner.entry.id,
+            title: wasWinnerTitleEdited
+              ? winner.entry.title
+              : directCandidate.title || cleanedName || winner.entry.title,
+          };
+        } else {
+          customEntry = winner.entry;
         }
+      } else {
+        customEntry = directCandidate || subCatCandidate || bestSibling || null;
       }
     }
 
@@ -179,36 +236,36 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       if (lowerProbe.includes('exosome')) {
         baseDetails = db.exosome || TREATMENT_DETAILS_DB.exosome;
       } else if (lowerProbe.includes('profhilo')) {
-        baseDetails = db.profhilo || TREATMENT_DETAILS_DB.profhilo;
+        baseDetails = db['profhilo-2ml'] || db.profhilo || TREATMENT_DETAILS_DB.profhilo;
       } else if (lowerProbe.includes('morpheus') || lowerProbe.includes('morpheus8')) {
-        baseDetails = db.morpheus8 || TREATMENT_DETAILS_DB.morpheus8;
+        baseDetails = db['morpheus8-treatment'] || db.morpheus8 || TREATMENT_DETAILS_DB.morpheus8;
       } else if (lowerProbe.includes('ultherapy') || lowerProbe.includes('emface')) {
-        baseDetails = db.ultherapy || TREATMENT_DETAILS_DB.ultherapy;
+        baseDetails = db['emface-skin-tightening-and-lifting'] || db.ultherapy || TREATMENT_DETAILS_DB.ultherapy;
       } else if (lowerProbe.includes('polynucleotide') || lowerProbe.includes('salmon sperm')) {
-        baseDetails = db.polynucleotide || TREATMENT_DETAILS_DB.polynucleotide;
+        baseDetails = db['salmon-sperm-injection'] || db.polynucleotide || TREATMENT_DETAILS_DB.polynucleotide;
       } else if (lowerProbe.includes('lip') || lowerProbe.includes('lips')) {
-        baseDetails = db.lip || TREATMENT_DETAILS_DB.lip;
+        baseDetails = db['dermal-fillers-1ml'] || db.lip || TREATMENT_DETAILS_DB.lip;
       } else if (
         lowerProbe.includes('buttock') ||
         lowerProbe.includes('bbl') ||
         lowerProbe.includes('butt') ||
         lowerProbe.includes('emsculpt')
       ) {
-        baseDetails = db.buttock || TREATMENT_DETAILS_DB.buttock;
+        baseDetails = db['emscuplt-body-sculpt-and-tightening'] || db.buttock || TREATMENT_DETAILS_DB.buttock;
       } else if (
         lowerProbe.includes('bleph') ||
         lowerProbe.includes('eyelid') ||
         lowerProbe.includes('blepharoplasty')
       ) {
-        baseDetails = db.blepharoplasty || TREATMENT_DETAILS_DB.blepharoplasty;
+        baseDetails = db['endolift-fiber-lift'] || db.blepharoplasty || TREATMENT_DETAILS_DB.blepharoplasty;
       } else if (
         lowerProbe.includes('aqualyx') ||
         lowerProbe.includes('fat dissolve') ||
         lowerProbe.includes('deso')
       ) {
-        baseDetails = db.aqualyx || TREATMENT_DETAILS_DB.aqualyx;
+        baseDetails = db['aqualyx-course-3'] || db.aqualyx || TREATMENT_DETAILS_DB.aqualyx;
       } else {
-        baseDetails = DEFAULT_TREATMENT_DETAILS(matchedMaster?.title || treatmentName);
+        baseDetails = DEFAULT_TREATMENT_DETAILS(matchedMaster?.title || cleanedName);
       }
     }
 
@@ -226,11 +283,12 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       matchedMaster &&
       (matchedMaster.id.toLowerCase() === lowerName ||
         matchedMaster.id.toLowerCase() === slugName ||
-        matchedMaster.title.toLowerCase() === lowerName);
+        matchedMaster.title.toLowerCase() === lowerName ||
+        matchedMaster.title.toLowerCase() === rawLowerName);
 
     const effectiveId =
-      (customEntry?.id && customEntry.id !== 'bespoke' ? customEntry.id : null) ||
       matchedId ||
+      (customEntry?.id && customEntry.id !== 'bespoke' ? customEntry.id : null) ||
       (isDirectSubcategoryClick ? matchedMaster?.id : null) ||
       (baseDetails?.id && baseDetails.id !== 'bespoke' ? baseDetails.id : null) ||
       slugName;
@@ -244,13 +302,15 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
         ...baseDetails,
         id: effectiveId,
         title: hasCustomDetails
-          ? baseDetails.title || treatmentName || matchedMaster.title
+          ? baseDetails.title || cleanedName || matchedMaster.title
           : isDirectSubcategoryClick
           ? matchedMaster.title || baseDetails.title
-          : treatmentName || matchedMaster.title || baseDetails.title,
+          : cleanedName || matchedMaster.title || baseDetails.title,
         subCategoryId: resolvedSubCategoryId || matchedMaster.id,
         subCategoryName: resolvedSubCategoryName || matchedMaster.title,
-        category: liveBranch,
+        category: hasCustomDetails
+          ? baseDetails.category || liveBranch
+          : liveBranch,
         pricingCategory: liveBranch,
         description: hasCustomDetails
           ? baseDetails.description || matchedMaster.description
@@ -270,7 +330,7 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
     return {
       ...baseDetails,
       id: effectiveId,
-      title: (hasCustomDetails && baseDetails.title) || treatmentName || baseDetails.title,
+      title: (hasCustomDetails && baseDetails.title) || cleanedName || baseDetails.title,
       subCategoryId: resolvedSubCategoryId,
       subCategoryName: resolvedSubCategoryName,
     };

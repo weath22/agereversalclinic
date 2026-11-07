@@ -66,7 +66,7 @@ export const ADMIN_SYNCED_TREATMENT_COVERS: HomepageTreatmentCoverImage[] = [
     "showInDefaultGrid": false,
     "hidden": false,
     "order": 3,
-    "updatedAt": 1793900042964
+    "updatedAt": 1793947257822
   },
   {
     "id": "cover-seed-men-and-kids",
@@ -583,6 +583,6 @@ export const ADMIN_SYNCED_TREATMENT_COVERS: HomepageTreatmentCoverImage[] = [
     "showInDefaultGrid": true,
     "hidden": false,
     "order": 28,
-    "updatedAt": 1793793570217
+    "updatedAt": 1793947255201
   }
 ];

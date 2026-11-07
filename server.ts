@@ -51,6 +51,8 @@ const treatmentPricingPath = path.resolve(__dirname, 'src/data/treatmentPricing.
 const transformationsDataPath = path.resolve(__dirname, 'src/data/transformationsData.ts');
 const specialistTreatmentsPath = path.resolve(__dirname, 'src/data/specialistTreatments.ts');
 const treatmentCoversDataPath = path.resolve(__dirname, 'src/data/treatmentCoversData.ts');
+const blogDataPath = path.resolve(__dirname, 'src/data/blogData.ts');
+const serviceComponentsDataPath = path.resolve(__dirname, 'src/data/serviceComponentsData.ts');
 const dataTsPath = path.resolve(__dirname, 'src/data.ts');
 
 // Serve uploaded and static assets from public/assets (and dist/assets in production)
@@ -1837,8 +1839,11 @@ function projectServerBlogPostCard(article: any) {
   };
 }
 
-function syncBlogArticlesDataTs(newsArticles: any[], storyArticles: any[]): void {
-  if (!fs.existsSync(dataTsPath)) return;
+function syncBlogArticlesDataTs(
+  newsArticles: any[],
+  storyArticles: any[],
+  meta?: { heading?: string; description?: string; updatedAt?: string }
+): void {
   try {
     const cleanNews = (Array.isArray(newsArticles) ? newsArticles : []).map((a, idx) =>
       normalizeServerArticle(a, 'news', idx)
@@ -1846,47 +1851,76 @@ function syncBlogArticlesDataTs(newsArticles: any[], storyArticles: any[]): void
     const cleanStories = (Array.isArray(storyArticles) ? storyArticles : []).map((a, idx) =>
       normalizeServerArticle(a, 'stories', idx)
     );
+    const existingDisk = readBlogArticlesFromDataTsDisk();
+    const sectionMeta = {
+      heading: meta?.heading || existingDisk.heading || 'Latest News & Insights',
+      description:
+        meta?.description ||
+        existingDisk.description ||
+        'Stay informed on the latest clinical advancements.',
+      updatedAt: meta?.updatedAt || new Date().toISOString(),
+    };
 
-    const existingContent = fs.readFileSync(dataTsPath, 'utf-8');
-    const newsStartMarker = 'export const NEWS_ARTICLES: Article[] =';
-    const storyStartMarker = 'export const STORY_ARTICLES: Article[] =';
-    const newsIdx = existingContent.indexOf(newsStartMarker);
+    const fileContent =
+      `import { Article } from '../types';\n\n` +
+      `export interface BlogSectionConfigData {\n` +
+      `  heading: string;\n` +
+      `  description: string;\n` +
+      `  updatedAt?: string;\n` +
+      `}\n\n` +
+      `export const BLOG_SECTION_CONFIG: BlogSectionConfigData = ${JSON.stringify(sectionMeta, null, 2)};\n\n` +
+      `export const NEWS_ARTICLES: Article[] = ${JSON.stringify(cleanNews, null, 2)};\n\n` +
+      `export const STORY_ARTICLES: Article[] = ${JSON.stringify(cleanStories, null, 2)};\n`;
 
-    if (newsIdx !== -1 && existingContent.includes(storyStartMarker)) {
-      const updatedTs =
-        existingContent.slice(0, newsIdx) +
-        `${newsStartMarker} ${JSON.stringify(cleanNews, null, 2)};\n\n` +
-        `${storyStartMarker} ${JSON.stringify(cleanStories, null, 2)};\n`;
-      if (updatedTs !== existingContent) {
-        fs.writeFileSync(dataTsPath, updatedTs, 'utf-8');
-        console.log(
-          `[Admin] Synced ${cleanNews.length} news & ${cleanStories.length} story articles directly to ${dataTsPath}`
-        );
-      }
+    const currentContent = fs.existsSync(blogDataPath)
+      ? fs.readFileSync(blogDataPath, 'utf-8')
+      : '';
+    if (fileContent !== currentContent) {
+      fs.writeFileSync(blogDataPath, fileContent, 'utf-8');
+      console.log(
+        `[Admin] Synced ${cleanNews.length} news & ${cleanStories.length} story articles directly to ${blogDataPath}`
+      );
     }
   } catch (err) {
-    console.warn('[Admin] Could not sync blog articles to src/data.ts:', err);
+    console.warn('[Admin] Could not sync blog articles to src/data/blogData.ts:', err);
   }
 }
 
 /**
- * Dynamically reads NEWS_ARTICLES and STORY_ARTICLES from src/data.ts on disk
- * so that if a user copies and pastes an updated src/data.ts file to replace the old one,
+ * Dynamically reads BLOG_SECTION_CONFIG, NEWS_ARTICLES and STORY_ARTICLES from src/data/blogData.ts on disk
+ * (with fallback to src/data.ts) so that if a user copies and pastes an updated src/data/blogData.ts file,
  * the server immediately sees the new articles and images without needing a server restart.
  */
 function readBlogArticlesFromDataTsDisk(): {
+  heading?: string;
+  description?: string;
   newsArticles: any[];
   storyArticles: any[];
 } {
-  if (!fs.existsSync(dataTsPath)) {
+  const targetFile = fs.existsSync(blogDataPath) ? blogDataPath : dataTsPath;
+  if (!fs.existsSync(targetFile)) {
     return { newsArticles: NEWS_ARTICLES, storyArticles: STORY_ARTICLES };
   }
   try {
-    const content = fs.readFileSync(dataTsPath, 'utf-8');
+    const content = fs.readFileSync(targetFile, 'utf-8');
+    const configMarker = 'export const BLOG_SECTION_CONFIG: BlogSectionConfigData =';
     const newsStartMarker = 'export const NEWS_ARTICLES: Article[] =';
     const storyStartMarker = 'export const STORY_ARTICLES: Article[] =';
+    const configIdx = content.indexOf(configMarker);
     const newsIdx = content.indexOf(newsStartMarker);
     const storyIdx = content.indexOf(storyStartMarker);
+
+    let parsedMeta: any = {};
+    if (configIdx !== -1 && newsIdx !== -1 && newsIdx > configIdx) {
+      try {
+        const metaRaw = content
+          .slice(configIdx + configMarker.length, newsIdx)
+          .trim()
+          .replace(/;\s*$/, '');
+        parsedMeta = JSON.parse(metaRaw);
+      } catch {}
+    }
+
     if (newsIdx !== -1 && storyIdx !== -1 && storyIdx > newsIdx) {
       const newsRaw = content
         .slice(newsIdx + newsStartMarker.length, storyIdx)
@@ -1899,11 +1933,16 @@ function readBlogArticlesFromDataTsDisk(): {
       const parsedNews = JSON.parse(newsRaw);
       const parsedStories = JSON.parse(storyRaw);
       if (Array.isArray(parsedNews) && Array.isArray(parsedStories)) {
-        return { newsArticles: parsedNews, storyArticles: parsedStories };
+        return {
+          heading: parsedMeta?.heading,
+          description: parsedMeta?.description,
+          newsArticles: parsedNews,
+          storyArticles: parsedStories,
+        };
       }
     }
   } catch {
-    // Fallback if src/data.ts uses non-JSON TS syntax
+    // Fallback if file uses non-JSON TS syntax
   }
   return { newsArticles: NEWS_ARTICLES, storyArticles: STORY_ARTICLES };
 }
@@ -1926,13 +1965,45 @@ function countLocalBlogAssets(article: any): number {
   return count;
 }
 
+const LEGACY_DUMMY_BLOG_SLUGS = new Set([
+  'podiatrist-saj-wimbledon-sports-medicine-foot-care',
+  'national-clean-air-day-skin-and-respiratory-protection',
+  '321-cycle-challenge-community-wellness-fundraiser',
+  'emily-journey-precision-diagnostic-screening-and-care',
+  'robert-eye-centre-vision-restoration-story',
+  'advancing-lung-diagnostics-and-vitality-michael-story',
+]);
+
+const LEGACY_DUMMY_BLOG_TITLES = new Set([
+  "podiatrist saj returns to wimbledon to care for world’s greatest tennis superstars... feet",
+  "podiatrist saj returns to wimbledon to care for world's greatest tennis superstars... feet",
+  'national clean air day expert q&a',
+  'fundraising to honor my childhood best friend dave and help others',
+  "overcoming breast cancer: emily’s journey of hope and precision care",
+  "overcoming breast cancer: emily's journey of hope and precision care",
+  "regaining crystal clear vision: robert’s eye centre success story",
+  "regaining crystal clear vision: robert's eye centre success story",
+  'a new lease on life: advancing lung diagnostics at the clinic',
+]);
+
+function isLegacyDummyBlogArticle(article: any): boolean {
+  if (!article || typeof article !== 'object') return true;
+  const slug = String(article.slug || '').trim().toLowerCase();
+  const title = String(article.title || '').trim().toLowerCase();
+  return LEGACY_DUMMY_BLOG_SLUGS.has(slug) || LEGACY_DUMMY_BLOG_TITLES.has(title);
+}
+
 function reconcileBlogArticleLists(
   primaryList: any[],
   secondaryList: any[],
   defaultType: 'news' | 'stories'
 ): any[] {
-  const pArr = Array.isArray(primaryList) ? primaryList : [];
-  const sArr = Array.isArray(secondaryList) ? secondaryList : [];
+  const pArr = (Array.isArray(primaryList) ? primaryList : []).filter(
+    (a) => !isLegacyDummyBlogArticle(a)
+  );
+  const sArr = (Array.isArray(secondaryList) ? secondaryList : []).filter(
+    (a) => !isLegacyDummyBlogArticle(a)
+  );
   if (pArr.length === 0) {
     return sArr.map((a, idx) => normalizeServerArticle(a, defaultType, idx));
   }
@@ -2043,19 +2114,20 @@ function getServerBlogConfig(): {
     }
   }
 
-  let dataTsMtime = 0;
-  if (fs.existsSync(dataTsPath)) {
+  let blogDataMtime = 0;
+  const activeBlogFile = fs.existsSync(blogDataPath) ? blogDataPath : dataTsPath;
+  if (fs.existsSync(activeBlogFile)) {
     try {
-      dataTsMtime = fs.statSync(dataTsPath).mtimeMs || 0;
+      blogDataMtime = fs.statSync(activeBlogFile).mtimeMs || 0;
     } catch {}
   }
 
   const diskDataTs = readBlogArticlesFromDataTsDisk();
-  const hasSavedNews = Array.isArray(rawConfig?.newsArticles) && rawConfig.newsArticles.length > 0;
-  const hasSavedStories = Array.isArray(rawConfig?.storyArticles) && rawConfig.storyArticles.length > 0;
+  const hasSavedNews = Array.isArray(rawConfig?.newsArticles);
+  const hasSavedStories = Array.isArray(rawConfig?.storyArticles);
 
-  // If the user pasted/updated src/data.ts more recently than siteCustomizations.json, treat src/data.ts as primary
-  const dataTsIsNewer = dataTsMtime > customizationsMtime + 500;
+  // If the user pasted/updated src/data/blogData.ts more recently than siteCustomizations.json, treat src/data/blogData.ts as primary
+  const dataTsIsNewer = blogDataMtime > customizationsMtime + 500;
 
   const newsPrimary = !hasSavedNews || dataTsIsNewer ? diskDataTs.newsArticles : rawConfig.newsArticles;
   const newsSecondary = !hasSavedNews || dataTsIsNewer ? rawConfig?.newsArticles || [] : diskDataTs.newsArticles;
@@ -2064,8 +2136,16 @@ function getServerBlogConfig(): {
   const storySecondary = !hasSavedStories || dataTsIsNewer ? rawConfig?.storyArticles || [] : diskDataTs.storyArticles;
 
   return {
-    heading: rawConfig?.heading || 'Latest News & Insights',
-    description: rawConfig?.description || 'Stay informed on the latest clinical advancements.',
+    heading:
+      (dataTsIsNewer ? diskDataTs.heading : rawConfig?.heading) ||
+      diskDataTs.heading ||
+      rawConfig?.heading ||
+      'Latest News & Insights',
+    description:
+      (dataTsIsNewer ? diskDataTs.description : rawConfig?.description) ||
+      diskDataTs.description ||
+      rawConfig?.description ||
+      'Stay informed on the latest clinical advancements.',
     newsArticles: reconcileBlogArticleLists(newsPrimary, newsSecondary, 'news'),
     storyArticles: reconcileBlogArticleLists(storyPrimary, storySecondary, 'stories'),
   };
@@ -2150,7 +2230,11 @@ function persistServerBlogConfig(config: {
   existing.lastSynced = updatedAt;
 
   fs.writeFileSync(customizationsPath, JSON.stringify(existing, null, 2), 'utf-8');
-  syncBlogArticlesDataTs(cleanNews, cleanStories);
+  syncBlogArticlesDataTs(cleanNews, cleanStories, {
+    heading: savedPayload.heading,
+    description: savedPayload.description,
+    updatedAt: savedPayload.updatedAt,
+  });
 
   return savedPayload;
 }
@@ -3809,28 +3893,140 @@ app.post('/api/admin/treatment-taxonomy', (req, res) => {
   }
 });
 
+// Helper: Read persisted Service Component details directly from src/data/serviceComponentsData.ts
+function readServiceComponentsFromDataTsDisk(): {
+  components: Record<string, any>;
+  mtimeMs: number;
+} {
+  try {
+    if (!fs.existsSync(serviceComponentsDataPath)) {
+      return { components: {}, mtimeMs: 0 };
+    }
+    const stat = fs.statSync(serviceComponentsDataPath);
+    const content = fs.readFileSync(serviceComponentsDataPath, 'utf-8');
+    const marker = 'export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = ';
+    const startIdx = content.indexOf(marker);
+    if (startIdx === -1) {
+      return { components: {}, mtimeMs: stat.mtimeMs };
+    }
+    const jsonStart = startIdx + marker.length;
+    const endIdx = content.lastIndexOf(';');
+    if (endIdx <= jsonStart) {
+      return { components: {}, mtimeMs: stat.mtimeMs };
+    }
+    const rawJson = content.slice(jsonStart, endIdx).trim();
+    const parsed = JSON.parse(rawJson);
+    if (parsed && typeof parsed === 'object') {
+      return { components: parsed, mtimeMs: stat.mtimeMs };
+    }
+  } catch (err) {
+    console.warn('[Admin] Could not parse src/data/serviceComponentsData.ts:', err);
+  }
+  return { components: {}, mtimeMs: 0 };
+}
+
+// Helper: Persist Service Component details directly to src/data/serviceComponentsData.ts
+function syncServiceComponentsDataTs(detailsMap: Record<string, any> | null | undefined): void {
+  try {
+    if (!detailsMap || typeof detailsMap !== 'object') return;
+    const nowIso = new Date().toISOString();
+    const tsContent = `import type { TreatmentDetail } from '../components/treatments/treatmentData';
+
+/**
+ * Dedicated Service Components Data File (Single Source of Truth)
+ * ============================================================================
+ * This file stores ONLY the pure data for all Service Page Components edited
+ * in the Admin "Service Component Editor" (Hero & Banner, Overview & Dual Media
+ * Cards, Clinical Expectations, Dermal Layer Profiler, Before & After Comparisons,
+ * Target Concerns, Pre/Post-Care Guidelines, Media Portfolio, and Component SEO).
+ *
+ * All helper logic and TypeScript interfaces live separately in:
+ * src/components/treatments/treatmentData.ts
+ */
+export const SERVICE_COMPONENTS_UPDATED_AT = ${JSON.stringify(nowIso)};
+
+export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = ${JSON.stringify(
+      detailsMap,
+      null,
+      2
+    )};
+`;
+    writeFileAtomicallySync(serviceComponentsDataPath, tsContent);
+    console.log(
+      `[Admin] Synced ${Object.keys(detailsMap).length} service component records to src/data/serviceComponentsData.ts`
+    );
+  } catch (err) {
+    console.error('[Admin] Failed to sync src/data/serviceComponentsData.ts:', err);
+  }
+}
+
 // Helper: Ensure every service in clinical_treatment_details has deterministic IDs on all component media slots
+// and preserves the newest customization per service ID across disk and incoming payloads.
 function reconcileTreatmentDetailsConfig(
   incomingDetails: any,
   prevDetails: any
 ): Record<string, any> | null {
+  const { components: diskTsComponents, mtimeMs: tsMtime } = readServiceComponentsFromDataTsDisk();
+  const jsonMtime = fs.existsSync(customizationsPath)
+    ? fs.statSync(customizationsPath).mtimeMs
+    : 0;
+
   const baseObj: Record<string, any> = {};
-  if (prevDetails && typeof prevDetails === 'object') {
-    Object.assign(baseObj, prevDetails);
-  }
-  if (incomingDetails && typeof incomingDetails === 'object') {
-    for (const [k, v] of Object.entries(incomingDetails)) {
-      if (v && typeof v === 'object') {
-        baseObj[k] = {
-          ...(baseObj[k] && typeof baseObj[k] === 'object' ? baseObj[k] : {}),
-          ...(v as Record<string, any>),
-        };
+
+  const mergeEntryIntoBase = (k: string, candidate: any, preferCandidateOnTie: boolean) => {
+    if (!candidate || typeof candidate !== 'object') return;
+    const existing = baseObj[k];
+    if (!existing || typeof existing !== 'object') {
+      baseObj[k] = { ...candidate };
+      return;
+    }
+    const existingTime = Number(existing.updatedAt) || 0;
+    const candidateTime = Number(candidate.updatedAt) || 0;
+    const existingCustom = Boolean(existing.isCustomized || existingTime > 0);
+    const candidateCustom = Boolean(candidate.isCustomized || candidateTime > 0);
+
+    // Never let an uncustomized default template overwrite a customized service record
+    if (existingCustom && !candidateCustom) {
+      return;
+    }
+    if (!existingCustom && candidateCustom) {
+      baseObj[k] = { ...existing, ...candidate };
+      return;
+    }
+    if (candidateTime > existingTime || (candidateTime === existingTime && preferCandidateOnTie)) {
+      baseObj[k] = { ...existing, ...candidate };
+    }
+  };
+
+  // Seed from whichever disk file is older first, then newer disk file, then incoming payload
+  if (tsMtime > jsonMtime) {
+    if (prevDetails && typeof prevDetails === 'object') {
+      for (const [k, v] of Object.entries(prevDetails)) {
+        mergeEntryIntoBase(k, v, true);
+      }
+    }
+    for (const [k, v] of Object.entries(diskTsComponents)) {
+      mergeEntryIntoBase(k, v, true);
+    }
+  } else {
+    for (const [k, v] of Object.entries(diskTsComponents)) {
+      mergeEntryIntoBase(k, v, true);
+    }
+    if (prevDetails && typeof prevDetails === 'object') {
+      for (const [k, v] of Object.entries(prevDetails)) {
+        mergeEntryIntoBase(k, v, true);
       }
     }
   }
 
+  if (incomingDetails && typeof incomingDetails === 'object') {
+    for (const [k, v] of Object.entries(incomingDetails)) {
+      mergeEntryIntoBase(k, v, true);
+    }
+  }
+
   const keys = Object.keys(baseObj);
-  if (keys.length === 0) return incomingDetails || prevDetails || null;
+  if (keys.length === 0) return incomingDetails || prevDetails || {};
 
   const normalizeSlotKey = (val: string) =>
     String(val || 'service')
@@ -3986,17 +4182,17 @@ app.get('/api/admin/config', (_req, res) => {
         modified = true;
       }
 
-      if (data.clinical_treatment_details && typeof data.clinical_treatment_details === 'object') {
-        const reconciledDetails = reconcileTreatmentDetailsConfig(
-          data.clinical_treatment_details,
-          data.clinical_treatment_details
-        );
-        if (
-          JSON.stringify(data.clinical_treatment_details) !== JSON.stringify(reconciledDetails)
-        ) {
-          data.clinical_treatment_details = reconciledDetails;
-          modified = true;
-        }
+      const reconciledDetails = reconcileTreatmentDetailsConfig(
+        data.clinical_treatment_details,
+        data.clinical_treatment_details
+      );
+      if (
+        reconciledDetails &&
+        JSON.stringify(data.clinical_treatment_details) !== JSON.stringify(reconciledDetails)
+      ) {
+        data.clinical_treatment_details = reconciledDetails;
+        syncServiceComponentsDataTs(reconciledDetails);
+        modified = true;
       }
 
       if (modified) {
@@ -4039,7 +4235,7 @@ app.post('/api/admin/save-to-files', (req, res) => {
       existing[key] = data;
     }
 
-    // Reconcile and merge clinical_treatment_details by service ID so no service's component images are ever lost
+    // Reconcile and merge clinical_treatment_details by service ID so no service's component details or images are ever lost
     if (
       (key === 'clinical_treatment_details' ||
         Boolean(allConfigs && Object.prototype.hasOwnProperty.call(allConfigs, 'clinical_treatment_details'))) &&
@@ -4050,6 +4246,7 @@ app.post('/api/admin/save-to-files', (req, res) => {
         existing.clinical_treatment_details,
         prevTreatmentDetails
       );
+      syncServiceComponentsDataTs(existing.clinical_treatment_details);
     }
 
     // If Services & Branches was saved, ensure any existing custom images & SEO fields in homepage_treatments_config are preserved
@@ -4229,7 +4426,11 @@ app.post('/api/admin/save-to-files', (req, res) => {
           storyArticles: cleanStories,
           updatedAt: new Date().toISOString(),
         };
-        syncBlogArticlesDataTs(cleanNews, cleanStories);
+        syncBlogArticlesDataTs(cleanNews, cleanStories, {
+          heading: existing.homepage_latest_news_config.heading,
+          description: existing.homepage_latest_news_config.description,
+          updatedAt: existing.homepage_latest_news_config.updatedAt,
+        });
       }
     }
 

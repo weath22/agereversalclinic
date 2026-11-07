@@ -277,16 +277,20 @@ export default function Header({
   const handleProcedureClick = (procName: string, branchCategory?: string) => {
     setHoveredItem(null);
     setIsMobileMenuOpen(false);
-    const cleanProcName = procName.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    const cleanProcName = procName
+      .replace(/\s*\([£$€]\s*\d[^)]*\)\s*$/, '')
+      .trim();
+    const fallbackNoParens = cleanProcName.replace(/\s*\([^)]*\)\s*$/, '').trim();
     const matchedMaster = masterServices.find(
       (s) =>
         s.title.toLowerCase() === procName.toLowerCase() ||
-        s.title.toLowerCase() === cleanProcName.toLowerCase()
+        s.title.toLowerCase() === cleanProcName.toLowerCase() ||
+        s.title.toLowerCase() === fallbackNoParens.toLowerCase()
     );
     const resolvedBranch = matchedMaster
       ? normalizeMasterBranch(matchedMaster.pricingCategory || matchedMaster.category, matchedMaster.title)
       : branchCategory;
-    const resolvedTitle = matchedMaster ? matchedMaster.title : procName;
+    const resolvedTitle = matchedMaster ? matchedMaster.title : cleanProcName;
 
     if (onTreatmentClick) {
       onTreatmentClick(resolvedTitle, resolvedBranch);

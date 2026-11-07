@@ -187,7 +187,10 @@ type AssetPickerTarget =
   | { slot: 'portfolio-replace'; index: number };
 
 export default function ServiceViewDetailsEditor() {
-  const [db, setDb] = useState<Record<string, TreatmentDetail>>({});
+  const [db, setDb] = useState<Record<string, TreatmentDetail>>(() => {
+    const loaded = getTreatmentDetailsConfig();
+    return loaded ? { ...TREATMENT_DETAILS_DB, ...loaded } : { ...TREATMENT_DETAILS_DB };
+  });
   const [selectedKey, setSelectedKey] = useState<string>('botox-1-area');
   const [formData, setFormData] = useState<TreatmentDetail | null>(null);
 
@@ -339,14 +342,12 @@ export default function ServiceViewDetailsEditor() {
       isCustomized: true,
     } as TreatmentDetail;
     setFormData(populated);
-    setDb((prevDb) => {
-      const updatedDb = {
-        ...prevDb,
-        [selectedKey]: populated,
-      };
-      saveTreatmentDetailsConfig(updatedDb);
-      return updatedDb;
-    });
+    const updatedDb = {
+      ...db,
+      [selectedKey]: populated,
+    };
+    setDb(updatedDb);
+    saveTreatmentDetailsConfig(updatedDb);
     if (toastMsg) {
       showToast(toastMsg);
     }
@@ -493,6 +494,7 @@ export default function ServiceViewDetailsEditor() {
 
   // Tree expanded state
   const [expandedAreas, setExpandedAreas] = useState<Record<string, boolean>>({
+    'face-injectables': true,
     face: true,
     body: false,
     buttocks: false,
@@ -506,20 +508,53 @@ export default function ServiceViewDetailsEditor() {
 
   // Load database from adminStore / localStorage or default db + deferred server sync
   useEffect(() => {
+    const mergeDetailsPreservingEdits = (
+      prev: Record<string, TreatmentDetail>,
+      incoming: Record<string, any> | null | undefined
+    ): Record<string, TreatmentDetail> => {
+      const next: Record<string, TreatmentDetail> = { ...TREATMENT_DETAILS_DB, ...prev };
+      if (!incoming || typeof incoming !== 'object') return next;
+      for (const [k, v] of Object.entries(incoming)) {
+        if (!v || typeof v !== 'object') continue;
+        const prevEntry = prev[k];
+        const prevTime = Number((prevEntry as any)?.updatedAt) || 0;
+        const incTime = Number((v as any).updatedAt) || 0;
+        const prevCustom = Boolean((prevEntry as any)?.isCustomized || prevTime > 0);
+        const incCustom = Boolean((v as any).isCustomized || incTime > 0);
+
+        if (prevCustom && !incCustom) continue;
+        if (!prevCustom && incCustom) {
+          next[k] = v as TreatmentDetail;
+          continue;
+        }
+        if (incTime >= prevTime) {
+          next[k] = v as TreatmentDetail;
+        }
+      }
+      return next;
+    };
+
     const loaded = getTreatmentDetailsConfig();
     if (loaded) {
-      setDb({ ...TREATMENT_DETAILS_DB, ...loaded });
-    } else {
-      setDb(TREATMENT_DETAILS_DB);
+      setDb((prev) => mergeDetailsPreservingEdits(prev, loaded));
     }
 
     getTreatmentDetailsConfigDeferred()
       .then((deferred) => {
         if (deferred && typeof deferred === 'object') {
-          setDb((prev) => ({ ...TREATMENT_DETAILS_DB, ...prev, ...deferred }));
+          setDb((prev) => mergeDetailsPreservingEdits(prev, deferred));
         }
       })
       .catch(() => {});
+
+    const handleHydrated = () => {
+      const latest = getTreatmentDetailsConfig();
+      if (latest) {
+        setDb((prev) => mergeDetailsPreservingEdits(prev, latest));
+      }
+    };
+    window.addEventListener('site_customizations_hydrated', handleHydrated);
+    return () => window.removeEventListener('site_customizations_hydrated', handleHydrated);
   }, []);
 
   // Listen for Before & After Gallery updates
@@ -549,6 +584,10 @@ export default function ServiceViewDetailsEditor() {
     } else {
       let foundName = selectedKey;
       let foundCategory = 'General Practice';
+      let foundPrice: string | undefined;
+      let foundTime: string | undefined;
+      let foundDesc: string | undefined;
+      let foundBadge: string | undefined;
       let parentCatId: string | undefined;
       let childItemIds: string[] = [];
 
@@ -559,12 +598,22 @@ export default function ServiceViewDetailsEditor() {
             foundCategory = area.name;
             parentCatId = cat.id;
             childItemIds = cat.items.map((item) => item.id);
+            if (cat.items.length > 0) {
+              foundPrice = cat.items[0].price;
+              foundTime = cat.items[0].time;
+              foundDesc = cat.items[0].desc;
+              foundBadge = cat.items[0].badge;
+            }
             break;
           }
           const matchedItem = cat.items.find((item) => item.id === selectedKey);
           if (matchedItem) {
             foundName = matchedItem.name;
             foundCategory = cat.name;
+            foundPrice = matchedItem.price;
+            foundTime = matchedItem.time;
+            foundDesc = matchedItem.desc;
+            foundBadge = matchedItem.badge;
             parentCatId = cat.id;
             childItemIds = cat.items.map((item) => item.id);
             break;
@@ -609,6 +658,14 @@ export default function ServiceViewDetailsEditor() {
       baseCopy.id = selectedKey;
       baseCopy.title = foundName;
       baseCopy.category = foundCategory;
+      if (!templateSource) {
+        if (foundPrice) baseCopy.price = foundPrice;
+        if (foundTime) baseCopy.procedureTime = foundTime;
+        if (foundDesc) baseCopy.description = foundDesc;
+        if (foundBadge) baseCopy.badgeText = foundBadge;
+      } else if (foundPrice && !templateSource.isCustomized) {
+        baseCopy.price = foundPrice;
+      }
       if (!baseCopy.additionalImages) baseCopy.additionalImages = [];
       if (!baseCopy.customBeforeAfterPairs) baseCopy.customBeforeAfterPairs = [];
       if (!baseCopy.excludedGalleryPairIds) baseCopy.excludedGalleryPairIds = [];
@@ -1347,19 +1404,14 @@ export default function ServiceViewDetailsEditor() {
       customBeforeAfterPairs: currentPairs,
       beforeImage: formData.beforeImage || editingCase.beforeImage,
       afterImage: formData.afterImage || editingCase.afterImage,
+      updatedAt: Date.now(),
+      isCustomized: true,
     };
-    setFormData(nextFormData);
-    const updatedDb = {
-      ...db,
-      [selectedKey]: nextFormData,
-    };
-    setDb(updatedDb);
-    saveTreatmentDetailsConfig(updatedDb);
+    commitAndPersistFormData(nextFormData, `Saved "${editingCase.title}"`);
     syncTreatmentCasesToCentralGallery(nextFormData);
 
     setIsCaseModalOpen(false);
     setEditingCase(null);
-    showToast(`Saved "${editingCase.title}"`);
   };
 
   const handleDeleteCustomCase = (id: string) => {
@@ -1368,15 +1420,10 @@ export default function ServiceViewDetailsEditor() {
     const nextFormData: TreatmentDetail = {
       ...formData,
       customBeforeAfterPairs: currentPairs,
+      updatedAt: Date.now(),
+      isCustomized: true,
     };
-    setFormData(nextFormData);
-    const updatedDb = {
-      ...db,
-      [selectedKey]: nextFormData,
-    };
-    setDb(updatedDb);
-    saveTreatmentDetailsConfig(updatedDb);
-    showToast('Removed custom case');
+    commitAndPersistFormData(nextFormData, 'Removed custom case');
   };
 
   const handleToggleExcludeGalleryPair = (pairId: string) => {
@@ -1483,7 +1530,11 @@ export default function ServiceViewDetailsEditor() {
   // Save changes to active database
   const handleSave = () => {
     if (!formData) return;
-    const populated = populateTreatmentMediaDefaults({ ...formData, id: selectedKey });
+    const populated = {
+      ...populateTreatmentMediaDefaults({ ...formData, id: selectedKey }),
+      updatedAt: Date.now(),
+      isCustomized: true,
+    } as TreatmentDetail;
     setFormData(populated);
     const updatedDb = {
       ...db,
@@ -1505,9 +1556,13 @@ export default function ServiceViewDetailsEditor() {
       onConfirm: () => {
         const defaultData = TREATMENT_DETAILS_DB[selectedKey];
         if (defaultData) {
+          const restored = {
+            ...JSON.parse(JSON.stringify(defaultData)),
+            updatedAt: Date.now(),
+          };
           const updatedDb = {
             ...db,
-            [selectedKey]: JSON.parse(JSON.stringify(defaultData)),
+            [selectedKey]: restored,
           };
           setDb(updatedDb);
           saveTreatmentDetailsConfig(updatedDb);
@@ -1535,8 +1590,8 @@ export default function ServiceViewDetailsEditor() {
     key: string,
     title: string,
     category: string
-  ): TreatmentDetail =>
-    populateTreatmentMediaDefaults({
+  ): TreatmentDetail => ({
+    ...populateTreatmentMediaDefaults({
       id: key,
       title,
       category,
@@ -1563,7 +1618,10 @@ export default function ServiceViewDetailsEditor() {
         'Wear mineral SPF 50+ daily.',
       ],
       additionalImages: [],
-    });
+    }),
+    updatedAt: Date.now(),
+    isCustomized: true,
+  });
 
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2035,11 +2093,15 @@ export default function ServiceViewDetailsEditor() {
                 setFormData((prev) => {
                   if (!prev) return prev;
                   const nextImages = [...(prev.additionalImages || []), url];
-                  const nextData = populateTreatmentMediaDefaults({
-                    ...prev,
-                    id: selectedKey,
-                    additionalImages: nextImages,
-                  });
+                  const nextData: TreatmentDetail = {
+                    ...populateTreatmentMediaDefaults({
+                      ...prev,
+                      id: selectedKey,
+                      additionalImages: nextImages,
+                    }),
+                    updatedAt: Date.now(),
+                    isCustomized: true,
+                  };
                   setDb((prevDb) => {
                     const updatedDb = { ...prevDb, [selectedKey]: nextData };
                     saveTreatmentDetailsConfig(updatedDb);
@@ -2071,11 +2133,15 @@ export default function ServiceViewDetailsEditor() {
                   if (!prev) return prev;
                   const next = [...(prev.additionalImages || [])];
                   next[targetIdx] = url;
-                  const nextData = populateTreatmentMediaDefaults({
-                    ...prev,
-                    id: selectedKey,
-                    additionalImages: next,
-                  });
+                  const nextData: TreatmentDetail = {
+                    ...populateTreatmentMediaDefaults({
+                      ...prev,
+                      id: selectedKey,
+                      additionalImages: next,
+                    }),
+                    updatedAt: Date.now(),
+                    isCustomized: true,
+                  };
                   setDb((prevDb) => {
                     const updatedDb = { ...prevDb, [selectedKey]: nextData };
                     saveTreatmentDetailsConfig(updatedDb);
@@ -2733,9 +2799,15 @@ export default function ServiceViewDetailsEditor() {
                       <button
                         type="button"
                         onClick={() =>
-                          handleFieldChange(
-                            'profilerEnabled',
-                            formData.profilerEnabled === false ? true : false
+                          commitAndPersistFormData(
+                            {
+                              ...formData,
+                              profilerEnabled:
+                                formData.profilerEnabled === false ? true : false,
+                            },
+                            formData.profilerEnabled === false
+                              ? 'Dermal Profiler enabled'
+                              : 'Dermal Profiler hidden'
                           )
                         }
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer ${
@@ -2780,8 +2852,14 @@ export default function ServiceViewDetailsEditor() {
                               key={opt.id}
                               type="button"
                               onClick={() => {
-                                handleFieldChange('targetLayer', opt.id);
-                                handleFieldChange('targetLayerDepth', opt.depth);
+                                commitAndPersistFormData(
+                                  {
+                                    ...formData,
+                                    targetLayer: opt.id,
+                                    targetLayerDepth: opt.depth,
+                                  },
+                                  `Saved target layer: ${opt.label}`
+                                );
                               }}
                               className={`p-3 rounded-xl border text-left transition-colors cursor-pointer ${
                                 isSelected
@@ -3764,7 +3842,10 @@ export default function ServiceViewDetailsEditor() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsHeroEditModalOpen(false)}
+              onClick={() => {
+                commitAndPersistFormData(formData, 'Saved Hero details');
+                setIsHeroEditModalOpen(false);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             />
             <motion.div
@@ -3777,7 +3858,10 @@ export default function ServiceViewDetailsEditor() {
                 <h4 className="text-sm font-bold text-[#003334]">Edit Hero Banner Details</h4>
                 <button
                   type="button"
-                  onClick={() => setIsHeroEditModalOpen(false)}
+                  onClick={() => {
+                    commitAndPersistFormData(formData, 'Saved Hero details');
+                    setIsHeroEditModalOpen(false);
+                  }}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
                 >
                   <X className="w-4 h-4" />
@@ -3856,7 +3940,10 @@ export default function ServiceViewDetailsEditor() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOverviewTextModalOpen(false)}
+              onClick={() => {
+                commitAndPersistFormData(formData, 'Saved Overview text');
+                setIsOverviewTextModalOpen(false);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             />
             <motion.div
@@ -3871,7 +3958,10 @@ export default function ServiceViewDetailsEditor() {
                 </h4>
                 <button
                   type="button"
-                  onClick={() => setIsOverviewTextModalOpen(false)}
+                  onClick={() => {
+                    commitAndPersistFormData(formData, 'Saved Overview text');
+                    setIsOverviewTextModalOpen(false);
+                  }}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
                 >
                   <X className="w-4 h-4" />
@@ -3930,7 +4020,10 @@ export default function ServiceViewDetailsEditor() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsExpectationsModalOpen(false)}
+              onClick={() => {
+                commitAndPersistFormData(formData, 'Saved Clinical Expectations');
+                setIsExpectationsModalOpen(false);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             />
             <motion.div
@@ -3943,7 +4036,10 @@ export default function ServiceViewDetailsEditor() {
                 <h4 className="text-sm font-bold text-[#003334]">Edit Clinical Expectations</h4>
                 <button
                   type="button"
-                  onClick={() => setIsExpectationsModalOpen(false)}
+                  onClick={() => {
+                    commitAndPersistFormData(formData, 'Saved Clinical Expectations');
+                    setIsExpectationsModalOpen(false);
+                  }}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
                 >
                   <X className="w-4 h-4" />
@@ -4046,7 +4142,10 @@ export default function ServiceViewDetailsEditor() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsProfilerModalOpen(false)}
+              onClick={() => {
+                commitAndPersistFormData(formData, 'Saved Dermal Profiler specs');
+                setIsProfilerModalOpen(false);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             />
             <motion.div
@@ -4064,7 +4163,10 @@ export default function ServiceViewDetailsEditor() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsProfilerModalOpen(false)}
+                  onClick={() => {
+                    commitAndPersistFormData(formData, 'Saved Dermal Profiler specs');
+                    setIsProfilerModalOpen(false);
+                  }}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-400"
                 >
                   <X className="w-4 h-4" />

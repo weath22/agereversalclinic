@@ -295,12 +295,25 @@ export default function App() {
     seoPath = `#article-${selectedArticle.slug || selectedArticle.id}`;
   } else if (selectedTreatment) {
     const config = getTreatmentDetailsConfig();
-    const lower = selectedTreatment.toLowerCase().trim();
-    const activeTreatment = config ? (config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower)) : null;
-    seoTitle = `${selectedTreatment} | Treatment Details & Packages`;
-    seoDescription = activeTreatment?.description || `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${selectedTreatment} at Age Reversal Clinics.`;
-    seoPath = `#treatment-${selectedTreatment.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    if (activeTreatment?.imageUrl) seoImage = activeTreatment.imageUrl;
+    const cleaned = selectedTreatment.replace(/\s*\([£$€]\s*\d[^)]*\)\s*$/, '').trim();
+    const lower = cleaned.toLowerCase();
+    const slug = lower.replace(/@/g, '2').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const activeTreatment = config
+      ? config[lower] ||
+        config[slug] ||
+        Object.values(config).find(
+          (t: any) =>
+            String(t?.title || '').toLowerCase() === lower ||
+            String(t?.id || '').toLowerCase() === lower ||
+            String(t?.id || '').toLowerCase() === slug
+        )
+      : null;
+    seoTitle = activeTreatment?.seoMetaTitle || `${activeTreatment?.title || cleaned} | Treatment Details & Packages`;
+    seoDescription = activeTreatment?.seoMetaDescription || activeTreatment?.description || `Discover clinical protocols, procedure times, downtime, expected benefits, and pricing packages for ${cleaned} at Age Reversal Clinics.`;
+    seoPath = `#treatment-${slug}`;
+    if (activeTreatment?.heroMedia?.url || activeTreatment?.imageUrl) {
+      seoImage = activeTreatment.heroMedia?.url || activeTreatment.imageUrl;
+    }
   } else if (isAboutOpen) {
     seoTitle = 'About Our Clinic | Medical Heritage & Philosophy';
     seoDescription = 'Learn about Age Reversal Clinics, our GMC-registered doctors, London Harley Street heritage, and clinical philosophy.';
@@ -327,8 +340,18 @@ export default function App() {
   if (selectedTreatment) {
     const config = getTreatmentDetailsConfig();
     if (config) {
-      const lower = selectedTreatment.toLowerCase().trim();
-      activeTreatmentData = config[lower] || Object.values(config).find((t: any) => t.title.toLowerCase() === lower || t.id.toLowerCase() === lower);
+      const cleaned = selectedTreatment.replace(/\s*\([£$€]\s*\d[^)]*\)\s*$/, '').trim();
+      const lower = cleaned.toLowerCase();
+      const slug = lower.replace(/@/g, '2').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      activeTreatmentData =
+        config[lower] ||
+        config[slug] ||
+        Object.values(config).find(
+          (t: any) =>
+            String(t?.title || '').toLowerCase() === lower ||
+            String(t?.id || '').toLowerCase() === lower ||
+            String(t?.id || '').toLowerCase() === slug
+        );
     }
   }
 

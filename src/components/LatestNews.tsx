@@ -118,9 +118,9 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
       limit: PUBLIC_POSTS_PER_PAGE,
       sort: 'newest',
     });
-    if (remoteRes && Array.isArray(remoteRes.items) && remoteRes.items.length > 0) {
+    if (remoteRes && Array.isArray(remoteRes.items)) {
       setCards(remoteRes.items);
-      setTotalPages(Math.max(1, remoteRes.totalPages));
+      setTotalPages(Math.max(1, remoteRes.totalPages || 1));
       if (remoteRes.heading) setHeading(remoteRes.heading);
       if (remoteRes.description) setDescription(remoteRes.description);
     }
@@ -237,81 +237,94 @@ export default function LatestNews({ onArticleClick }: LatestNewsProps = {}) {
         </div>
 
         {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
-          {displayedCards.map((article, index) => (
-            <motion.article
-              key={`${activeTab}-${article.id}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.05, ease: 'easeOut' }}
-              onClick={() => handleCardSelect(article)}
-              className="flex flex-col bg-white/98 rounded-2xl sm:rounded-[22px] md:rounded-[24px] overflow-hidden border border-[#e8dcc8] shadow-[0_8px_30px_-8px_rgba(216,194,163,0.3)] hover:shadow-xl hover:border-luxury-gold hover:-translate-y-1 transition-all duration-300 group cursor-pointer transform-gpu will-change-transform"
-            >
-              {/* Image Container */}
-              <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-[#faf7f2] relative">
-                <ArticleCoverMedia
-                  src={article.image}
-                  alt={article.imageAlt || article.title}
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
-                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 md:top-5 md:left-5 bg-white/95 text-luxury-text font-sans font-medium text-[9px] sm:text-[10px] tracking-[0.12em] uppercase px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs border border-[#e8dcc8]">
-                  {article.category || article.tag}
+        {displayedCards.length === 0 ? (
+          <div className="bg-white/80 rounded-2xl border border-[#e8dcc8] p-10 text-center max-w-xl mx-auto">
+            <p className="font-serif text-lg text-luxury-text mb-1">
+              No {activeTab === 'news' ? 'news articles' : 'patient stories'} published yet
+            </p>
+            <p className="font-sans text-xs text-luxury-subtext">
+              New clinical insights and updates will appear here once published.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
+            {displayedCards.map((article, index) => (
+              <motion.article
+                key={`${activeTab}-${article.id}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: index * 0.05, ease: 'easeOut' }}
+                onClick={() => handleCardSelect(article)}
+                className="flex flex-col bg-white/98 rounded-2xl sm:rounded-[22px] md:rounded-[24px] overflow-hidden border border-[#e8dcc8] shadow-[0_8px_30px_-8px_rgba(216,194,163,0.3)] hover:shadow-xl hover:border-luxury-gold hover:-translate-y-1 transition-all duration-300 group cursor-pointer transform-gpu will-change-transform"
+              >
+                {/* Image Container */}
+                <div className="aspect-[16/9] sm:aspect-[16/10] overflow-hidden bg-[#faf7f2] relative">
+                  <ArticleCoverMedia
+                    src={article.image}
+                    alt={article.imageAlt || article.title}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+                  <div className="absolute top-3 left-3 sm:top-4 sm:left-4 md:top-5 md:left-5 bg-white/95 text-luxury-text font-sans font-medium text-[9px] sm:text-[10px] tracking-[0.12em] uppercase px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full shadow-xs border border-[#e8dcc8]">
+                    {article.category || article.tag}
+                  </div>
                 </div>
-              </div>
 
-              {/* Content Box */}
-              <div className="p-4 sm:p-6 md:p-8 flex flex-col flex-grow justify-between">
-                <div>
-                  {/* Meta */}
-                  <div className="flex items-center gap-3 sm:gap-4 text-luxury-muted font-sans text-[11px] sm:text-xs mb-2.5 sm:mb-4 font-normal tracking-wide">
-                    <span className="flex items-center gap-1 sm:gap-1.5">
-                      <Calendar
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold"
-                        strokeWidth={1.75}
-                      />
-                      {article.date}
-                    </span>
-                    <span className="flex items-center gap-1 sm:gap-1.5">
-                      <User
-                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold"
-                        strokeWidth={1.75}
-                      />
-                      {article.author}
-                    </span>
+                {/* Content Box */}
+                <div className="p-4 sm:p-6 md:p-8 flex flex-col flex-grow justify-between">
+                  <div>
+                    {/* Meta */}
+                    <div className="flex items-center gap-3 sm:gap-4 text-luxury-muted font-sans text-[11px] sm:text-xs mb-2.5 sm:mb-4 font-normal tracking-wide">
+                      <span className="flex items-center gap-1 sm:gap-1.5">
+                        <Calendar
+                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold"
+                          strokeWidth={1.75}
+                        />
+                        {article.date}
+                      </span>
+                      <span className="flex items-center gap-1 sm:gap-1.5">
+                        <User
+                          className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold"
+                          strokeWidth={1.75}
+                        />
+                        {article.author}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif font-normal text-base sm:text-lg md:text-xl text-luxury-text mb-3 sm:mb-4 leading-snug group-hover:text-luxury-subtext transition-colors duration-300 line-clamp-2 md:line-clamp-none">
+                      {article.title}
+                    </h3>
                   </div>
 
-                  <h3 className="font-serif font-normal text-base sm:text-lg md:text-xl text-luxury-text mb-3 sm:mb-4 leading-snug group-hover:text-luxury-subtext transition-colors duration-300 line-clamp-2 md:line-clamp-none">
-                    {article.title}
-                  </h3>
+                  {/* CTA button */}
+                  <div className="pt-1 sm:pt-2">
+                    <button className="bg-black text-white hover:bg-neutral-900 border border-luxury-gold/40 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full font-sans font-medium tracking-wide text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all duration-300 w-fit cursor-pointer shadow-xs">
+                      <span>Find out more</span>
+                      <ArrowRight
+                        className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold group-hover:translate-x-1 transition-transform duration-300"
+                        strokeWidth={1.75}
+                      />
+                    </button>
+                  </div>
                 </div>
-
-                {/* CTA button */}
-                <div className="pt-1 sm:pt-2">
-                  <button className="bg-black text-white hover:bg-neutral-900 border border-luxury-gold/40 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full font-sans font-medium tracking-wide text-[11px] sm:text-xs flex items-center gap-1.5 sm:gap-2 transition-all duration-300 w-fit cursor-pointer shadow-xs">
-                    <span>Find out more</span>
-                    <ArrowRight
-                      className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-luxury-gold group-hover:translate-x-1 transition-transform duration-300"
-                      strokeWidth={1.75}
-                    />
-                  </button>
-                </div>
-              </div>
-            </motion.article>
-          ))}
-        </div>
+              </motion.article>
+            ))}
+          </div>
+        )}
 
         {/* Global Pagination Component */}
-        <div className="pt-8 sm:pt-12 md:pt-16 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.max(1, totalPages)}
-            onPageChange={(nextPage) => {
-              setCurrentPage(nextPage);
-              const el = document.getElementById('latest-news');
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
-          />
-        </div>
+        {displayedCards.length > 0 && (
+          <div className="pt-8 sm:pt-12 md:pt-16 flex justify-center">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, totalPages)}
+              onPageChange={(nextPage) => {
+                setCurrentPage(nextPage);
+                const el = document.getElementById('latest-news');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

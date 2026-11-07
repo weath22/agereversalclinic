@@ -43,7 +43,8 @@ import {
   HomepageTreatmentCoverImage,
   HomepageTreatmentCoversConfig
 } from '../types';
-import { TREATMENTS, NEWS_ARTICLES, STORY_ARTICLES } from '../data';
+import { TREATMENTS } from '../data';
+import { BLOG_SECTION_CONFIG, NEWS_ARTICLES, STORY_ARTICLES } from '../data/blogData';
 import {
   CLINIC_DATA,
   ClinicData,
@@ -80,9 +81,11 @@ import { CLINICAL_AREAS_DB, findTreatmentInDB } from '../data/clinicalTreatments
 import { ALL_SPECIALIST_TREATMENTS } from '../data/specialistTreatments';
 import { ADMIN_SYNCED_TRANSFORMATION_CASES } from '../data/transformationsData';
 import { ADMIN_SYNCED_TREATMENT_COVERS } from '../data/treatmentCoversData';
+import { ADMIN_SYNCED_SERVICE_COMPONENTS } from '../data/serviceComponentsData';
 // Lazy / deferred cache for siteCustomizations.json (Task 1.2: Isolate Admin Store & Mock DB Payloads)
 let _siteCustomizationsCache: Record<string, any> | null = null;
 let _siteCustomizationsPromise: Promise<Record<string, any> | null> | null = null;
+let _treatmentDetailsMemoryCache: Record<string, any> | null = null;
 
 /**
  * Lazily loads and parses siteCustomizations.json only when requested (e.g. by admin studio or treatment views)
@@ -444,20 +447,20 @@ function setStorageItem<T>(key: string, value: T, skipFileSync: boolean = false)
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
-    // Asynchronously write changes directly to project source files on server disk
-    if (
-      !skipFileSync &&
-      (key === CLINIC_INFO_DATA_KEY ||
-        key.startsWith('homepage_') ||
-        key.startsWith('profile_') ||
-        key.startsWith('clinical_') ||
-        key.startsWith('master_') ||
-        key.startsWith('treatment_'))
-    ) {
-      syncConfigToFile(key, value);
-    }
   } catch (error) {
-    console.error(`Error setting localStorage key "${key}":`, error);
+    console.warn(`LocalStorage quota reached for key "${key}", persisting directly to disk files:`, error);
+  }
+  // Always write changes directly to project source files on server disk even if localStorage quota is full
+  if (
+    !skipFileSync &&
+    (key === CLINIC_INFO_DATA_KEY ||
+      key.startsWith('homepage_') ||
+      key.startsWith('profile_') ||
+      key.startsWith('clinical_') ||
+      key.startsWith('master_') ||
+      key.startsWith('treatment_'))
+  ) {
+    syncConfigToFile(key, value);
   }
 }
 
@@ -5363,6 +5366,34 @@ function mergeTwoClientArticleLists(
   return merged;
 }
 
+const CLIENT_LEGACY_DUMMY_BLOG_SLUGS = new Set([
+  'podiatrist-saj-wimbledon-sports-medicine-foot-care',
+  'national-clean-air-day-skin-and-respiratory-protection',
+  '321-cycle-challenge-community-wellness-fundraiser',
+  'emily-journey-precision-diagnostic-screening-and-care',
+  'robert-eye-centre-vision-restoration-story',
+  'advancing-lung-diagnostics-and-vitality-michael-story',
+]);
+
+const CLIENT_LEGACY_DUMMY_BLOG_TITLES = new Set([
+  "podiatrist saj returns to wimbledon to care for world’s greatest tennis superstars... feet",
+  "podiatrist saj returns to wimbledon to care for world's greatest tennis superstars... feet",
+  'national clean air day expert q&a',
+  'fundraising to honor my childhood best friend dave and help others',
+  "overcoming breast cancer: emily’s journey of hope and precision care",
+  "overcoming breast cancer: emily's journey of hope and precision care",
+  "regaining crystal clear vision: robert’s eye centre success story",
+  "regaining crystal clear vision: robert's eye centre success story",
+  'a new lease on life: advancing lung diagnostics at the clinic',
+]);
+
+function isClientLegacyDummyBlogArticle(article: any): boolean {
+  if (!article || typeof article !== 'object') return true;
+  const slug = String(article.slug || '').trim().toLowerCase();
+  const title = String(article.title || '').trim().toLowerCase();
+  return CLIENT_LEGACY_DUMMY_BLOG_SLUGS.has(slug) || CLIENT_LEGACY_DUMMY_BLOG_TITLES.has(title);
+}
+
 export function getLatestNewsConfig(): LatestNewsConfig {
   initializeAdminStore();
   const fileDefault = getFileDefault<LatestNewsConfig | null>(LATEST_NEWS_CONFIG_KEY, null);
@@ -5371,39 +5402,52 @@ export function getLatestNewsConfig(): LatestNewsConfig {
     null
   );
 
-  // Reconcile src/data.ts (NEWS_ARTICLES / STORY_ARTICLES) with siteCustomizations.json first,
-  // then reconcile with localStorage so pasting an updated src/data.ts or siteCustomizations.json
-  // immediately reflects without stale localStorage overwriting it.
-  const codebaseNews = mergeTwoClientArticleLists(
-    NEWS_ARTICLES,
-    Array.isArray(fileDefault?.newsArticles) ? fileDefault.newsArticles : [],
+  const cleanCodebaseNews = mergeTwoClientArticleLists(
+    NEWS_ARTICLES.filter((a) => !isClientLegacyDummyBlogArticle(a)),
+    (Array.isArray(fileDefault?.newsArticles) ? fileDefault.newsArticles : []).filter(
+      (a) => !isClientLegacyDummyBlogArticle(a)
+    ),
     'news'
   );
-  const codebaseStories = mergeTwoClientArticleLists(
-    STORY_ARTICLES,
-    Array.isArray(fileDefault?.storyArticles) ? fileDefault.storyArticles : [],
+  const cleanCodebaseStories = mergeTwoClientArticleLists(
+    STORY_ARTICLES.filter((a) => !isClientLegacyDummyBlogArticle(a)),
+    (Array.isArray(fileDefault?.storyArticles) ? fileDefault.storyArticles : []).filter(
+      (a) => !isClientLegacyDummyBlogArticle(a)
+    ),
     'stories'
   );
 
-  const hasStoredNews = Array.isArray(stored?.newsArticles) && stored.newsArticles.length > 0;
-  const hasStoredStories = Array.isArray(stored?.storyArticles) && stored.storyArticles.length > 0;
+  const storedNewsClean = Array.isArray(stored?.newsArticles)
+    ? stored.newsArticles.filter((a) => !isClientLegacyDummyBlogArticle(a))
+    : null;
+  const storedStoriesClean = Array.isArray(stored?.storyArticles)
+    ? stored.storyArticles.filter((a) => !isClientLegacyDummyBlogArticle(a))
+    : null;
 
-  const resolvedNews = hasStoredNews
-    ? mergeTwoClientArticleLists(stored!.newsArticles, codebaseNews, 'news')
-    : codebaseNews;
-  const resolvedStories = hasStoredStories
-    ? mergeTwoClientArticleLists(stored!.storyArticles, codebaseStories, 'stories')
-    : codebaseStories;
+  const resolvedNews =
+    storedNewsClean !== null
+      ? mergeTwoClientArticleLists(storedNewsClean, cleanCodebaseNews, 'news')
+      : cleanCodebaseNews;
+  const resolvedStories =
+    storedStoriesClean !== null
+      ? mergeTwoClientArticleLists(storedStoriesClean, cleanCodebaseStories, 'stories')
+      : cleanCodebaseStories;
 
   const resolvedConfig: LatestNewsConfig = {
-    heading: stored?.heading || fileDefault?.heading || DEFAULT_LATEST_NEWS_CONFIG.heading,
+    heading:
+      stored?.heading ||
+      BLOG_SECTION_CONFIG?.heading ||
+      fileDefault?.heading ||
+      DEFAULT_LATEST_NEWS_CONFIG.heading,
     description:
-      stored?.description || fileDefault?.description || DEFAULT_LATEST_NEWS_CONFIG.description,
+      stored?.description ||
+      BLOG_SECTION_CONFIG?.description ||
+      fileDefault?.description ||
+      DEFAULT_LATEST_NEWS_CONFIG.description,
     newsArticles: resolvedNews,
     storyArticles: resolvedStories,
   };
 
-  // Auto-heal localStorage if reconciled config has newer/recovered articles from src/data.ts or siteCustomizations.json
   if (typeof window !== 'undefined') {
     try {
       const currentRaw = window.localStorage.getItem(LATEST_NEWS_CONFIG_KEY);
@@ -5421,12 +5465,12 @@ export function saveLatestNewsConfig(config: LatestNewsConfig): LatestNewsConfig
   const normalized: LatestNewsConfig & { updatedAt: string } = {
     heading: config.heading || DEFAULT_LATEST_NEWS_CONFIG.heading,
     description: config.description || DEFAULT_LATEST_NEWS_CONFIG.description,
-    newsArticles: (Array.isArray(config.newsArticles) ? config.newsArticles : []).map((a, idx) =>
-      normalizeBlogArticle({ ...a, type: 'news' }, 'news', idx)
-    ),
-    storyArticles: (Array.isArray(config.storyArticles) ? config.storyArticles : []).map((a, idx) =>
-      normalizeBlogArticle({ ...a, type: 'stories' }, 'stories', idx)
-    ),
+    newsArticles: (Array.isArray(config.newsArticles) ? config.newsArticles : [])
+      .filter((a) => !isClientLegacyDummyBlogArticle(a))
+      .map((a, idx) => normalizeBlogArticle({ ...a, type: 'news' }, 'news', idx)),
+    storyArticles: (Array.isArray(config.storyArticles) ? config.storyArticles : [])
+      .filter((a) => !isClientLegacyDummyBlogArticle(a))
+      .map((a, idx) => normalizeBlogArticle({ ...a, type: 'stories' }, 'stories', idx)),
     updatedAt: new Date().toISOString(),
   };
   setStorageItem(LATEST_NEWS_CONFIG_KEY, normalized);
@@ -5458,32 +5502,67 @@ export function saveFloatingMenuConfig(config: FloatingMenuConfig): FloatingMenu
 
 const TREATMENT_DETAILS_KEY = 'clinical_treatment_details';
 
+function mergeTreatmentDetailMaps(
+  ...maps: Array<Record<string, any> | null | undefined>
+): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const map of maps) {
+    if (!map || typeof map !== 'object') continue;
+    for (const [k, v] of Object.entries(map)) {
+      if (!v || typeof v !== 'object') continue;
+      const existing = result[k];
+      const nextId = (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k;
+      if (!existing || typeof existing !== 'object') {
+        result[k] = { ...(v as Record<string, any>), id: nextId };
+        continue;
+      }
+      const existingTime = Number(existing.updatedAt) || 0;
+      const incomingTime = Number((v as any).updatedAt) || 0;
+      const existingCustom = Boolean(existing.isCustomized || existingTime > 0);
+      const incomingCustom = Boolean((v as any).isCustomized || incomingTime > 0);
+
+      // Never allow an uncustomized default template to overwrite a customized service record
+      if (existingCustom && !incomingCustom) {
+        continue;
+      }
+      if (!existingCustom && incomingCustom) {
+        result[k] = { ...existing, ...(v as Record<string, any>), id: nextId };
+        continue;
+      }
+      if (incomingTime >= existingTime) {
+        result[k] = { ...existing, ...(v as Record<string, any>), id: nextId };
+      }
+    }
+  }
+  return result;
+}
+
 export function getTreatmentDetailsConfig(): Record<string, any> | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return ADMIN_SYNCED_SERVICE_COMPONENTS && Object.keys(ADMIN_SYNCED_SERVICE_COMPONENTS).length > 0
+      ? { ...ADMIN_SYNCED_SERVICE_COMPONENTS }
+      : null;
+  }
   try {
     const fileDefault = getFileDefault<Record<string, any> | null>(TREATMENT_DETAILS_KEY, null);
-    const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
-    if (item) {
-      const parsed = JSON.parse(item);
-      if (fileDefault && typeof fileDefault === 'object' && parsed && typeof parsed === 'object') {
-        const merged: Record<string, any> = { ...fileDefault };
-        for (const [k, v] of Object.entries(parsed)) {
-          if (v && typeof v === 'object') {
-            merged[k] = {
-              ...(merged[k] && typeof merged[k] === 'object' ? merged[k] : {}),
-              ...(v as Record<string, any>),
-              id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
-            };
-          }
-        }
-        return merged;
+    let parsedLocal: Record<string, any> | null = null;
+    try {
+      const item = window.localStorage.getItem(TREATMENT_DETAILS_KEY);
+      if (item) {
+        parsedLocal = JSON.parse(item);
       }
-      return parsed;
-    }
-    return fileDefault;
+    } catch {}
+
+    const merged = mergeTreatmentDetailMaps(
+      ADMIN_SYNCED_SERVICE_COMPONENTS,
+      fileDefault,
+      parsedLocal,
+      _treatmentDetailsMemoryCache
+    );
+    return Object.keys(merged).length > 0 ? merged : fileDefault || parsedLocal || null;
   } catch (error) {
-    console.error(`Error reading localStorage key "${TREATMENT_DETAILS_KEY}":`, error);
-    return null;
+    console.error(`Error reading key "${TREATMENT_DETAILS_KEY}":`, error);
+    return _treatmentDetailsMemoryCache || ADMIN_SYNCED_SERVICE_COMPONENTS || null;
   }
 }
 
@@ -5499,21 +5578,20 @@ export async function getTreatmentDetailsConfigDeferred(): Promise<Record<string
         const json = await res.json();
         const remoteDetails = json?.data?.[TREATMENT_DETAILS_KEY];
         if (remoteDetails && typeof remoteDetails === 'object') {
-          if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
-            _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = remoteDetails;
-          }
           const currentLocal = getTreatmentDetailsConfig() || {};
-          const merged: Record<string, any> = { ...remoteDetails };
-          for (const [k, v] of Object.entries(currentLocal)) {
-            if (v && typeof v === 'object') {
-              merged[k] = {
-                ...(remoteDetails[k] && typeof remoteDetails[k] === 'object' ? remoteDetails[k] : {}),
-                ...(v as Record<string, any>),
-                id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
-              };
-            }
+          const merged = mergeTreatmentDetailMaps(
+            ADMIN_SYNCED_SERVICE_COMPONENTS,
+            remoteDetails,
+            currentLocal,
+            _treatmentDetailsMemoryCache
+          );
+          _treatmentDetailsMemoryCache = merged;
+          if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
+            _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = merged;
           }
-          window.localStorage.setItem(TREATMENT_DETAILS_KEY, JSON.stringify(merged));
+          try {
+            window.localStorage.setItem(TREATMENT_DETAILS_KEY, JSON.stringify(merged));
+          } catch {}
           return merged;
         }
       }
@@ -5524,20 +5602,17 @@ export async function getTreatmentDetailsConfigDeferred(): Promise<Record<string
 
 export function saveTreatmentDetailsConfig(config: Record<string, any>): void {
   const existing = getTreatmentDetailsConfig() || {};
-  const merged: Record<string, any> = { ...existing };
-  for (const [k, v] of Object.entries(config || {})) {
-    if (v && typeof v === 'object') {
-      merged[k] = {
-        ...(existing[k] && typeof existing[k] === 'object' ? existing[k] : {}),
-        ...(v as Record<string, any>),
-        id: (v as any).id && (v as any).id !== 'bespoke' ? (v as any).id : k,
-      };
-    }
-  }
+  const merged = mergeTreatmentDetailMaps(
+    ADMIN_SYNCED_SERVICE_COMPONENTS,
+    existing,
+    _treatmentDetailsMemoryCache,
+    config
+  );
+  _treatmentDetailsMemoryCache = merged;
   if (_siteCustomizationsCache && typeof _siteCustomizationsCache === 'object') {
     _siteCustomizationsCache[TREATMENT_DETAILS_KEY] = merged;
   }
-  setStorageItem(TREATMENT_DETAILS_KEY, merged);
+  setStorageItem(TREATMENT_DETAILS_KEY, merged, true);
   syncConfigToFile(TREATMENT_DETAILS_KEY, merged);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('treatment_details_updated', { detail: merged }));

@@ -267,7 +267,7 @@ export const CLINIC_DATA: ClinicData = {
     {
       "id": "location-1791722960928",
       "name": "Age Reversal Clinic",
-      "address": "Brentwood Clinic: Clyde Lodge Farm, Essex, CM13 3SL",
+      "address": "374 Baring Road, Grove Park, London, SE12 0EF",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
@@ -283,8 +283,8 @@ export const CLINIC_DATA: ClinicData = {
     },
     {
       "id": "location-1791728808656",
-      "name": "Grove Park Clinic",
-      "address": "Grove Park Clinic: 374 Baring Road, Grove Park, London, SE12 OEF ",
+      "name": "Clyde Lodge London UK",
+      "address": "Clyde Lodge Farm, Essex, CM13 3SL",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
@@ -294,7 +294,7 @@ export const CLINIC_DATA: ClinicData = {
       "latitude": 51.5173,
       "longitude": -0.1472,
       "parkingAvailable": false,
-      "wheelchairAccessible": false,
+      "wheelchairAccessible": true,
       "image": "/assets/clinic-location-1791728808656.webp?v=1793676140294",
       "imageAlt": ""
     }
