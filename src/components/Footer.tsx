@@ -82,7 +82,7 @@ export default function Footer() {
         }}
       />
 
-      <div className="container mx-auto px-4 md:px-8 relative z-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 relative z-10">
         
         {/* Main Footer Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 justify-between items-start gap-12 mb-16 md:mb-20">

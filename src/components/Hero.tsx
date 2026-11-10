@@ -220,7 +220,7 @@ export default function Hero({ onBookClick, onExploreClick, onPricingClick, onTr
         <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-r from-transparent to-luxury-primary pointer-events-none" />
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 relative z-10 flex flex-col md:flex-row min-h-0 md:min-h-[calc(100vh-140px)] items-center gap-6 md:gap-12 py-2 md:py-4">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 relative z-10 flex flex-col md:flex-row min-h-0 md:min-h-[calc(100vh-140px)] items-center gap-6 md:gap-12 py-2 md:py-4">
         
         {/* Left Column: Heading and Description */}
         <motion.div 

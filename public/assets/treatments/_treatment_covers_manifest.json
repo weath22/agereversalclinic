@@ -5,7 +5,7 @@
       "subCategoryId": "lash-eyebrow",
       "subCategoryName": "lash & eyebrow",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-lash-eyebrow.webp?v=1793789247413",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX",
       "title": "lash & eyebrow",
       "caption": "45 mins",
       "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
@@ -18,15 +18,14 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 1,
-      "updatedAt": 1793789277151
+      "order": 1
     },
     {
       "id": "cover-seed-body-waxing",
       "subCategoryId": "body-waxing",
       "subCategoryName": "body waxing",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-body-waxing.webp?v=1793898829156",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
       "title": "body waxing",
       "caption": "30 - 60 mins",
       "altText": "body waxing clinical aesthetic treatment at Age Reversal Clinic",
@@ -39,15 +38,14 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 2,
-      "updatedAt": 1793898832349
+      "order": 2
     },
     {
       "id": "cover-seed-ladies-girls-cut-collors-treatments",
       "subCategoryId": "ladies-girls-cut-collors-treatments",
       "subCategoryName": "Ladies & Girls Cut, Collors, Treatments",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-ladies-girls-cut-collors-treatments.webp?v=1793900040362",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCauimUjLiG4FTybnhAOQgEeV5EX6ZPVafVgrL3ZQsSct4k3azc70DZOUL83NrLvzdJb2f8vDkSR-JW3kDIXtIlaDRE7geAe7clP3VWiV3uUxojtpMPuJEi5OqDgxLNHx9CkD10MbA89eiJWjBKIGS_6wyql817jtfy9hiYYvBvNSkfl-hWqMAYjqlQY60-eyfLsAJrUNmaucXp2XyxxJ3g8KII7-qGALB6o42Cwv1YMd51LLVpOMqPrCEUk2hzlWKV6lTlxBcieuUH",
       "title": "Ladies & Girls Cut, Collors, Treatments",
       "caption": "60 - 120 mins",
       "altText": "Ladies & Girls Cut, Collors, Treatments clinical aesthetic treatment at Age Reversal Clinic",
@@ -58,17 +56,16 @@
         "ladies & girls cut, collors, treatments",
         "clinical aesthetic treatments"
       ],
-      "showInDefaultGrid": false,
+      "showInDefaultGrid": true,
       "hidden": false,
-      "order": 3,
-      "updatedAt": 1793947257822
+      "order": 3
     },
     {
       "id": "cover-seed-men-and-kids",
       "subCategoryId": "men-and-kids",
       "subCategoryName": "Men and Kids",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-men-and-kids.webp?v=1793899706037",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSewylSW1YbrYNaLbxZiwxQF6qhQmFTupVXlyUicJq7mls_9KiS0PKgUNmGBOXbGpaLuWRlegLQQDTQbvbNoC7CkLSz2F7KwNAc-d1s8luKt2R6VcojE1oK87g_TmfoFqurEFqbHSXUephHqQH3cIeAEMpzhaqXbEjIVKRBDAQMypjwZ3r-r3Um4iGWAwLDcARQTOD0Hw6TZmIYW9jH-_qH3xAxZVfPts2b6Qg_4UdK0nwL7q9pfmgOvUiiwB4ATkn09Vp0ctO6w",
       "title": "Men and Kids",
       "caption": "30 - 45 mins",
       "altText": "Men and Kids clinical aesthetic treatment at Age Reversal Clinic",
@@ -81,15 +78,14 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 4,
-      "updatedAt": 1793899709278
+      "order": 4
     },
     {
       "id": "cover-seed-men-kids-services",
       "subCategoryId": "men-kids-services",
       "subCategoryName": "Men / kids services",
       "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-seed-men-kids-services.webp?v=1793899812306",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuA4fJHIJX0K1v-oz5txqtrtxpaIViJ65RYhXP0GvCvV9X-BUkcVQEzgBqKS8YzsomPWnOJfJG0bHH7KhmjwFqawKN0Ss4I6mWbR3ZNdU44GSg2NLrvKAwaRieRBsOOT7KE8OriZhzgqvAFhE2KvoiitHEBwjWSBKT4Y81onojL9xa2DBvQY3ooaY_hI5oMtsQHGTkAhp4nYkzSmtJGApHA0MjH-_XS-vhuGsAAtT9vX_mD_3h-ImzrSsTJQk47WHJvD5amFx30t_g",
       "title": "Men / kids services",
       "caption": "45 mins",
       "altText": "Men / kids services clinical aesthetic treatment at Age Reversal Clinic",
@@ -102,15 +98,14 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 5,
-      "updatedAt": 1793899816423
+      "order": 5
     },
     {
       "id": "cover-seed-facial-skin-care",
       "subCategoryId": "facial-skin-care",
       "subCategoryName": "Facial skin care",
       "branchCategory": "Advanced Facials",
-      "imageUrl": "/assets/treatments/cover-seed-facial-skin-care.webp?v=1793833440801",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuB2a_0Datjn8f2On3mNF7IY6_QgXkw0AQl1Il2WqYPqYqTU7wUKYRpJUg2xdA_d0B8SfBpbvVzzYOczvA85hXWv6hkb0snKG0UXUjP3EUDr0nkt_A_nINJJOIpGcQ2X_iD94V14qlhvJmRUp8In6cOEtlONSRSf5Kpdd8uA6VUX3SFIaBku4xsVbSvg9fE6K0FWVX-QGNWmY4jhYY70yZCEdfN_V3cezSz0jiycoy31X-hMxrw-bNoMrpEVo43FV1z8TnWKiqVpTdlK",
       "title": "Facial skin care",
       "caption": "60 mins",
       "altText": "Facial skin care clinical aesthetic treatment at Age Reversal Clinic",
@@ -123,15 +118,14 @@
       ],
       "showInDefaultGrid": true,
       "hidden": false,
-      "order": 6,
-      "updatedAt": 1793833447189
+      "order": 6
     },
     {
       "id": "cover-seed-aqualyx-course-3",
       "subCategoryId": "aqualyx-course-3",
       "subCategoryName": "Aqualyx Course 3",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-aqualyx-course-3.webp?v=1793845427455",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBpc9iwUPHl5YjJPUY9E95ThzCowbFO32u1yMI6QpZqPrQnBL7p9nmkyqw3JRkKKEl26-mJIFP0r8QNgHxIYxWnrIiagTCmDfr3L4TeyGpRJ4Ye8dwjLxT7kUVB0sTqVntaOcMm7700Jj3-8xh75QQkY3xOMGH04owJPA05JB3wRuKL7kUttqlyk-sOqZIwumYKh7VveixAFn2QXvlC7f8-S3zwQXujNvI0qHEwsxPonmj_-kRlbSiRVOcy67FFlTBCjBFzzvhYYOQ1",
       "title": "Aqualyx Course 3",
       "caption": "45 mins",
       "altText": "Aqualyx Course 3 clinical aesthetic treatment at Age Reversal Clinic",
@@ -144,15 +138,14 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 7,
-      "updatedAt": 1793845430988
+      "order": 7
     },
     {
       "id": "cover-seed-deso-face-and-body-course-of-1",
       "subCategoryId": "deso-face-and-body-course-of-1",
       "subCategoryName": "Deso Face and body Course of 1",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-deso-face-and-body-course-of-1.webp?v=1793845937648",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
       "title": "Deso Face and body Course of 1",
       "caption": "45 mins",
       "altText": "Deso Face and body Course of 1 clinical aesthetic treatment at Age Reversal Clinic",
@@ -165,15 +158,14 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 8,
-      "updatedAt": 1793845941826
+      "order": 8
     },
     {
       "id": "cover-seed-deso-face-and-body-course-of-3",
       "subCategoryId": "deso-face-and-body-course-of-3",
       "subCategoryName": "Deso Face and body Course of 3",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-deso-face-and-body-course-of-3.webp?v=1793841964619",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW",
       "title": "Deso Face and body Course of 3",
       "caption": "45 mins",
       "altText": "Deso Face and body Course of 3 clinical aesthetic treatment at Age Reversal Clinic",
@@ -186,15 +178,14 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 9,
-      "updatedAt": 1793841968260
+      "order": 9
     },
     {
       "id": "cover-seed-slimming-pen",
       "subCategoryId": "slimming-pen",
       "subCategoryName": "Slimming pen",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-slimming-pen.webp?v=1793840661571",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC",
       "title": "Slimming pen",
       "caption": "30 mins",
       "altText": "Slimming pen clinical aesthetic treatment at Age Reversal Clinic",
@@ -207,8 +198,7 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 10,
-      "updatedAt": 1793840666506
+      "order": 10
     },
     {
       "id": "cover-seed-platelet-rich-plasma-prp",
@@ -235,7 +225,7 @@
       "subCategoryId": "co2-laser-from",
       "subCategoryName": "Co@ Laser from",
       "branchCategory": "Advanced Facials",
-      "imageUrl": "/assets/treatments/cover-seed-co2-laser-from.webp?v=1793833493085",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
       "title": "Co@ Laser from",
       "caption": "60 mins",
       "altText": "Co@ Laser from clinical aesthetic treatment at Age Reversal Clinic",
@@ -248,8 +238,7 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 12,
-      "updatedAt": 1793833507141
+      "order": 12
     },
     {
       "id": "cover-seed-endolift-fiber-lift",
@@ -316,7 +305,7 @@
       "subCategoryId": "tattoo-removal",
       "subCategoryName": "Tattoo removal",
       "branchCategory": "Advanced Facials",
-      "imageUrl": "/assets/treatments/cover-seed-tattoo-removal.webp?v=1793834294711",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUloxcWsT4NRCnTfn0RneF4Q4BwymxBAMsqFKJv9IIvSzEjhVsjT_MDtI4irgzGW0su__ZFlPbs8_2ebSsDU3aWDop2YR9ea2x21K8fdCKFFVUTyJj9U_xiYZFY63zL5Btb43hR-HaxmbiKFgUp8DqEgm5D4mrjpPpfVzplLWjcWFD75MC4S3cc8dnLB7CywLocC5PIZJPdVTfCwgrgG4WqwQZabVdZ8OAlRAeHeZCBxQt2rP-Gm1MJcgjtoht4nVH3CBwLsNAF8OI",
       "title": "Tattoo removal",
       "caption": "30 - 45 mins",
       "altText": "Tattoo removal clinical aesthetic treatment at Age Reversal Clinic",
@@ -329,15 +318,14 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 16,
-      "updatedAt": 1793834305787
+      "order": 16
     },
     {
       "id": "cover-seed-morpheus8-treatment",
       "subCategoryId": "morpheus8-treatment",
       "subCategoryName": "Morpheus8 treatment",
       "branchCategory": "Advanced Facials",
-      "imageUrl": "/assets/treatments/cover-seed-morpheus8-treatment.webp?v=1793834036050",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuAOtBKp33pnPLoKpvckXkiIS-1G2cj7yNpUXZYP7v7nB3HgYFreRRFM-F6UZt2uwFsUMzf2u0m_0SvHcja7AjjBjq8B4mo1Gk_Y3ihgY2qmmbr1Vc48W8QizQ3BLTsaPHv9ojoje0Q8wG64F4zjwPy98roZuGAorsk2N5TxRUibfaZ4gZ7L9r7cFXGqA6jBiryjo3-fh10ZWdkryws_w14ASGtvXypafuUczwEFeVz6SywQsQKFg--N76UkgP9d4Um3Q5Snz8eG_XyS",
       "title": "Morpheus8 treatment",
       "caption": "60 mins",
       "altText": "Morpheus8 treatment clinical aesthetic treatment at Age Reversal Clinic",
@@ -350,8 +338,7 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 17,
-      "updatedAt": 1793834040320
+      "order": 17
     },
     {
       "id": "cover-seed-emface-skin-tightening-and-lifting",
@@ -378,7 +365,7 @@
       "subCategoryId": "emscuplt-body-sculpt-and-tightening",
       "subCategoryName": "Emscuplt body sculpt and tightening",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-emscuplt-body-sculpt-and-tightening.webp?v=1793846355749",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXc7SORxoXUK7Kzbf256KDGjYoiGB3XeCLNYObBtlw7h8260KwmKxaiEQL7E2Wg3BTQhjpJs0Iw9GVYkNkpYhd4WPz_jdW6PA2i4yXAVvmrMoBCqMX479nyNRdb7X8GwVNjcQtb1OIG8li-NYXrs-55c2CPQIIew0siqNajiO8--wLogFbflBlElSPQ9GlaxJ2VmWkjKCbGUr2QX1FhpzqTBOU86kyynhHW4UjQMqKe-XDBVsXygiZM-ACB4nUWQl8J4dDjsBIEw",
       "title": "Emscuplt body sculpt and tightening",
       "caption": "30 - 45 mins",
       "altText": "Emscuplt body sculpt and tightening clinical aesthetic treatment at Age Reversal Clinic",
@@ -391,15 +378,14 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 19,
-      "updatedAt": 1793846363549
+      "order": 19
     },
     {
       "id": "cover-seed-body-slimming-fat-loss-cellulite-reduction",
       "subCategoryId": "body-slimming-fat-loss-cellulite-reduction",
       "subCategoryName": "Body slimming for fat and loss Cellulite reduction",
       "branchCategory": "Body Sculpting",
-      "imageUrl": "/assets/treatments/cover-seed-body-slimming-fat-loss-cellulite-reduction.webp?v=1793843206563",
+      "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuClIGVnrpyhbZbn4skniRN95s8fe43niaHTpE2PHrPr4EAZc-kvyMu1k6JL4FcYCAw-SE1G2rBygkpuYimKkujZ8Ch9rHKJwqguHanaAZbAL8-ujTZWI6ThpC_rihPWbmp-seHAxJjDCFpT3JHdZknmaCVpfRjqS3n6DVdZCyDo4SBhN_q4D4NflwD5qBwDUw7uXpgpjXln7PkJWypOLjdKW-xVYzB53vh6hXOmAgbAecmaayoHjY2ZousTGNq_zRShg3Go2f8V0O4R",
       "title": "Body slimming for fat and loss Cellulite reduction",
       "caption": "60 mins",
       "altText": "Body slimming for fat and loss Cellulite reduction clinical aesthetic treatment at Age Reversal Clinic",
@@ -412,8 +398,7 @@
       ],
       "showInDefaultGrid": false,
       "hidden": false,
-      "order": 20,
-      "updatedAt": 1793843211235
+      "order": 20
     },
     {
       "id": "cover-seed-anti-wrinkles-injection",
@@ -515,71 +500,7 @@
       "hidden": false,
       "order": 25,
       "updatedAt": 1793787442073
-    },
-    {
-      "id": "cover-lash-eyebrow-1793789332130-1",
-      "subCategoryId": "lash-eyebrow",
-      "subCategoryName": "lash & eyebrow",
-      "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789332130-1.webp?v=1793789332281",
-      "title": "lash & eyebrow",
-      "caption": "45 mins",
-      "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
-      "seoTitle": "lash & eyebrow - Specialist Care",
-      "seoKeywords": [
-        "anti-aging clinic london",
-        "hair & beauty",
-        "lash & eyebrow",
-        "clinical aesthetic treatments"
-      ],
-      "showInDefaultGrid": false,
-      "hidden": false,
-      "order": 26,
-      "updatedAt": 1793789347309
-    },
-    {
-      "id": "cover-lash-eyebrow-1793789299701-1",
-      "subCategoryId": "lash-eyebrow",
-      "subCategoryName": "lash & eyebrow",
-      "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-lash-eyebrow-1793789299701-1.webp?v=1793789299856",
-      "title": "lash & eyebrow",
-      "caption": "45 mins",
-      "altText": "lash & eyebrow clinical aesthetic treatment at Age Reversal Clinic",
-      "seoTitle": "lash & eyebrow - Specialist Care",
-      "seoKeywords": [
-        "anti-aging clinic london",
-        "hair & beauty",
-        "lash & eyebrow",
-        "clinical aesthetic treatments"
-      ],
-      "showInDefaultGrid": false,
-      "hidden": false,
-      "order": 27,
-      "updatedAt": 1793789345461
-    },
-    {
-      "id": "cover-ladies-girls-cut-collors-treatments-1793793450085-1",
-      "subCategoryId": "ladies-girls-cut-collors-treatments",
-      "subCategoryName": "Ladies & Girls Cut, Collors, Treatments",
-      "branchCategory": "Hair & Beauty",
-      "imageUrl": "/assets/treatments/cover-ladies-girls-cut-collors-treatments-1793793450085-1.webp?v=1793793450349",
-      "title": "Ladies & Girls Cut, Collors, Treatments",
-      "caption": "45 - 60 Mins",
-      "altText": "Ladies & Girls Cut, Collors, Treatments — Ladies & Girls Cut, Collors, Treatments (Hair & Beauty) at Age Reversal Clinic London",
-      "seoTitle": "Ladies & Girls Cut, Collors, Treatments | Ladies & Girls Cut, Collors, Treatments — Age Reversal Clinic",
-      "seoKeywords": [
-        "ladies & girls cut, collors, treatments",
-        "hair & beauty",
-        "ladies & girls cut, collors, treatments london",
-        "age reversal clinic treatment",
-        "medical aesthetics london"
-      ],
-      "showInDefaultGrid": true,
-      "hidden": false,
-      "order": 28,
-      "updatedAt": 1793947255201
     }
   ],
-  "updatedAt": "2026-11-07T14:24:02.375Z"
+  "updatedAt": "2026-11-04T11:23:16.755Z"
 }

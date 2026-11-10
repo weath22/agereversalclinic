@@ -283,7 +283,7 @@ export const CLINIC_DATA: ClinicData = {
     },
     {
       "id": "location-1791728808656",
-      "name": "Clyde Lodge London UK",
+      "name": "374 Baring Road London UK",
       "address": "Clyde Lodge Farm, Essex, CM13 3SL",
       "city": "London",
       "postalCode": "",

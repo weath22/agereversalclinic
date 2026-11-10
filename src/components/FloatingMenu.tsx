@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { getFloatingMenuConfig, getChatSessions, saveChatSessions } from '../lib/adminStore';
-import { ChatSession, ChatMessage } from '../types';
-import { Phone, MessageCircle, MapPin, Mail, MessageSquare, X, Send, Headset } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getFloatingMenuConfig } from '../lib/adminStore';
+import { Phone, MessageCircle, MapPin, Mail, MessageSquare, X, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CLINIC_INFO } from '../data/clinicInfo';
 
@@ -16,74 +15,53 @@ export default function FloatingMenu() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: "welcome-init", text: config.welcomeMessage || "Hello! How can we help you today?", isUser: false, timestamp: new Date().toISOString() }
-  ]);
-  const [inputValue, setInputValue] = useState("");
 
-  
-  const [sessionId, setSessionId] = useState<string>('');
-  
+  // Hide the default LeadConnector floating bubble inside its Shadow DOM and sync open/close state
   useEffect(() => {
-    // Check for existing session ID in localStorage
-    let storedSessionId = window.localStorage.getItem('current_client_chat_session_id');
-    if (!storedSessionId) {
-      storedSessionId = Date.now().toString();
-      window.localStorage.setItem('current_client_chat_session_id', storedSessionId);
-    }
-    setSessionId(storedSessionId);
-    
-    // Poll for messages to receive replies from admin
-    const interval = setInterval(() => {
-      const sessions = getChatSessions();
-      const mySession = sessions.find(s => s.id === storedSessionId);
-      if (mySession) {
-        setMessages(mySession.messages);
+    const styleShadowRoot = () => {
+      const chatWidgetEl = document.querySelector('chat-widget') as (HTMLElement & { shadowRoot: ShadowRoot | null }) | null;
+      if (chatWidgetEl && chatWidgetEl.shadowRoot) {
+        if (!chatWidgetEl.shadowRoot.getElementById('arc-custom-lc-launcher-override')) {
+          const styleEl = document.createElement('style');
+          styleEl.id = 'arc-custom-lc-launcher-override';
+          styleEl.textContent = `
+            .lc_text-widget--bubble,
+            #lc_text-widget--btn,
+            .lc_text-widget--prompt {
+              display: none !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+              width: 0 !important;
+              height: 0 !important;
+            }
+            .lc_text-widget {
+              padding-bottom: 76px !important;
+              right: 24px !important;
+            }
+          `;
+          chatWidgetEl.shadowRoot.appendChild(styleEl);
+        }
       }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || !sessionId) return;
-    
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text: inputValue,
-      isUser: true,
-      timestamp: new Date().toISOString()
+      const lcWidget = (window as unknown as {
+        leadConnector?: {
+          chatWidget?: {
+            isActive?: () => boolean;
+          };
+        };
+      })?.leadConnector?.chatWidget;
+
+      if (lcWidget && typeof lcWidget.isActive === 'function') {
+        const active = Boolean(lcWidget.isActive());
+        setIsChatOpen(active);
+      }
     };
-    
-    const newMessages = [...messages, newMessage];
-    setMessages(newMessages);
-    setInputValue("");
-    
-    // Save to global admin store
-    const sessions = getChatSessions();
-    const existingSessionIndex = sessions.findIndex(s => s.id === sessionId);
-    
-    if (existingSessionIndex >= 0) {
-      sessions[existingSessionIndex].messages = newMessages;
-      sessions[existingSessionIndex].lastUpdated = newMessage.timestamp;
-      sessions[existingSessionIndex].unreadCountAdmin += 1;
-    } else {
-      sessions.push({
-        id: sessionId,
-        clientName: 'Visitor ' + sessionId.substring(sessionId.length - 4),
-        messages: [{
-          id: 'welcome-' + sessionId,
-          text: config.welcomeMessage || "Hello! How can we help you today?",
-          isUser: false,
-          timestamp: new Date().toISOString()
-        }, newMessage],
-        lastUpdated: newMessage.timestamp,
-        unreadCountAdmin: 1
-      });
-    }
-    saveChatSessions(sessions);
-  };
 
+    styleShadowRoot();
+    const interval = window.setInterval(styleShadowRoot, 250);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const activePhone = config?.phone || CLINIC_INFO.primaryPhone;
   const activeEmail = config?.email || CLINIC_INFO.primaryEmail;
@@ -117,68 +95,68 @@ export default function FloatingMenu() {
     }
   ];
 
+  const openHqChatWidget = () => {
+    setIsOpen(false);
+    // Wake up LeadConnector loader if it hasn't initialized yet
+    window.dispatchEvent(new Event('scroll'));
+
+    const tryOpen = (attemptsLeft: number) => {
+      const lcWidget = (window as unknown as {
+        leadConnector?: {
+          chatWidget?: {
+            openWidget?: () => void;
+            isActive?: () => boolean;
+          };
+        };
+      })?.leadConnector?.chatWidget;
+
+      if (lcWidget && typeof lcWidget.openWidget === 'function') {
+        lcWidget.openWidget();
+        setIsChatOpen(true);
+        return;
+      }
+
+      const chatWidgetEl = document.querySelector('chat-widget') as (HTMLElement & { shadowRoot: ShadowRoot | null }) | null;
+      const shadowBtn = chatWidgetEl?.shadowRoot?.getElementById('lc_text-widget--btn');
+      if (shadowBtn) {
+        shadowBtn.click();
+        setIsChatOpen(true);
+        return;
+      }
+
+      if (attemptsLeft > 0) {
+        window.setTimeout(() => tryOpen(attemptsLeft - 1), 150);
+      }
+    };
+
+    tryOpen(30);
+  };
+
+  const closeHqChatWidget = () => {
+    const lcWidget = (window as unknown as {
+      leadConnector?: {
+        chatWidget?: {
+          closeWidget?: () => void;
+          isActive?: () => boolean;
+        };
+      };
+    })?.leadConnector?.chatWidget;
+
+    if (lcWidget && typeof lcWidget.closeWidget === 'function') {
+      lcWidget.closeWidget();
+    } else {
+      const chatWidgetEl = document.querySelector('chat-widget') as (HTMLElement & { shadowRoot: ShadowRoot | null }) | null;
+      const shadowBtn = chatWidgetEl?.shadowRoot?.getElementById('lc_text-widget--btn');
+      if (shadowBtn) {
+        shadowBtn.click();
+      }
+    }
+    setIsChatOpen(false);
+  };
+
   return (
-    <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40 flex flex-col items-end">
-      
-      {/* Live Chat Window */}
-      <AnimatePresence>
-        {isChatOpen && config.enableChat && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 mb-4 bg-white rounded-2xl shadow-2xl flex flex-col border border-silver-200 w-72 sm:w-80 h-96 overflow-hidden origin-bottom-right"
-          >
-            {/* Header */}
-            <div className="bg-[#003334] text-white p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Headset className="w-5 h-5" />
-                <span className="font-bold text-sm tracking-wider">Customer Support</span>
-              </div>
-              <button 
-                onClick={() => setIsChatOpen(false)}
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-silver-50">
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.isUser ? 'bg-[#003334] text-white rounded-br-sm' : 'bg-white text-silver-800 shadow-sm border border-silver-100 rounded-bl-sm'}`}>
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Input */}
-            <div className="p-3 bg-white border-t border-silver-200">
-              <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Type a message..."
-                  className="flex-1 bg-silver-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#003334] text-silver-900"
-                />
-                <button
-                  type="submit"
-                  disabled={!inputValue.trim()}
-                  className="w-9 h-9 rounded-full bg-[#003334] text-white flex items-center justify-center shrink-0 disabled:opacity-50 transition-opacity"
-                >
-                  <Send className="w-4 h-4 -ml-0.5" />
-                </button>
-              </form>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Action Buttons */}
+    <div className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 flex flex-col items-end">
+      {/* Floating Action Buttons (Call Now, WhatsApp, Location, Email Us) */}
       <AnimatePresence>
         {isOpen && !isChatOpen && (
           <motion.div
@@ -207,7 +185,7 @@ export default function FloatingMenu() {
       <div className="flex items-center space-x-3">
         {!isOpen && !isChatOpen && config.enableChat && (
           <div 
-            onClick={() => setIsChatOpen(true)}
+            onClick={openHqChatWidget}
             className="flex items-center bg-white border border-silver-200 rounded-full h-14 px-4 shadow-2xl w-[55vw] sm:w-[240px] max-w-[240px] cursor-text hover:scale-[1.02] active:scale-95 transition-all"
           >
             <span className="text-silver-400 text-sm flex-1 text-left truncate">Type a message...</span>
@@ -220,7 +198,7 @@ export default function FloatingMenu() {
         <button
           onClick={() => {
             if (isChatOpen) {
-              setIsChatOpen(false);
+              closeHqChatWidget();
             } else {
               setIsOpen(!isOpen);
             }

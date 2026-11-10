@@ -331,7 +331,7 @@ export default function Header({
     <header className={`sticky top-0 left-0 right-0 w-full self-start z-50 transition-transform duration-300 ease-in-out ${
       isVisible ? 'translate-y-0' : '-translate-y-full'
     } ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md py-3 border-b border-luxury-border/60' : 'bg-white py-3 lg:py-4.5 shadow-xs border-b border-luxury-border/40'}`}>
-      <div className="container mx-auto px-4 md:px-8 flex justify-between items-center">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 flex justify-between items-center">
         {/* Logo & Brand */}
         <a href="#home" onClick={() => handleNavClick('home')} className="flex items-center space-x-3 group">
           <div className="h-10 sm:h-11 lg:h-12 w-10 sm:w-11 lg:w-12 shrink-0 flex items-center justify-center">

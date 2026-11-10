@@ -22,6 +22,7 @@ import LocationsAndConsultation from './components/LocationsAndConsultation';
 import StayInformed from './components/StayInformed';
 import SocialVideoShowcase from './components/SocialVideoShowcase';
 import FloatingMenu from './components/FloatingMenu';
+import Script from './components/Script';
 import Footer from './components/Footer';
 import ClinicalSEOHead from './components/ClinicalSEOHead';
 import { UniversalCartDrawer } from './components/shop/ShopCartDrawer';
@@ -701,8 +702,15 @@ export default function App() {
         <Footer />
       </div>
 
-      {/* 16. Persistent side action menu */}
+      {/* 16. Floating Quick Actions (Call, WhatsApp, Location, Email) & Live Chat Widget */}
       <FloatingMenu />
+      <Script
+        id="lead-connector-chat"
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="69dcc812d69ee89417ca9c3c"
+        strategy="afterInteractive"
+      />
 
       {/* 17. Universal Shopping Bag & Cart Drawer (Mounted at Root) */}
       <UniversalCartDrawer />
