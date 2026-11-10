@@ -1,18 +1,17 @@
-import { TreatmentDetail } from '../components/treatments/treatmentData';
+import type { TreatmentDetail } from '../components/treatments/treatmentData';
 
 /**
- * Dedicated Service Components Data File
+ * Dedicated Service Components Data File (Single Source of Truth)
  * ============================================================================
- * This file stores all customized Service Page Component details edited in the
- * Admin "Service Component Editor" (Hero & Banner, Overview & Dual Media Cards,
- * Clinical Expectations, Dermal Layer Profiler, Before & After Comparisons,
+ * This file stores ONLY the pure data for all Service Page Components edited
+ * in the Admin "Service Component Editor" (Hero & Banner, Overview & Dual Media
+ * Cards, Clinical Expectations, Dermal Layer Profiler, Before & After Comparisons,
  * Target Concerns, Pre/Post-Care Guidelines, Media Portfolio, and Component SEO).
  *
- * Whenever you edit or save any service component in the Admin Studio, this file
- * is automatically updated on disk. You can safely copy and paste this file
- * between environments without overwriting other project data files.
+ * All helper logic and TypeScript interfaces live separately in:
+ * src/components/treatments/treatmentData.ts
  */
-export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-07T03:46:04.568Z";
+export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-10T13:59:47.732Z";
 
 export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = {
   "exosome": {
@@ -1860,7 +1859,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "collagen bio-remodeling",
       "non-surgical dermal lift",
-      "medical grade pre-care protocol"
+      "medical grade pre-care protocol",
+      "vertical comparison before and after",
+      "clinical hair restoration london",
+      "age reversal clinics results"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
@@ -2242,8 +2244,9 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     "portfolioMedia": [],
     "customBeforeAfterPairs": [],
     "excludedGalleryPairIds": [],
-    "updatedAt": 1794023153426,
-    "isCustomized": true
+    "updatedAt": 1794047017372,
+    "isCustomized": true,
+    "profilerEnabled": false
   },
   "prp-facial-treatment": {
     "id": "prp-facial-treatment",
@@ -2923,7 +2926,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "salmon dna injection london",
       "anti-aging clinic london",
       "collagen bio-remodeling",
-      "atrophic scar healing"
+      "atrophic scar healing",
+      "salmon sperm injection before and after",
+      "polynucleotides london",
+      "skin texture repair"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX",
@@ -3333,7 +3339,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "micro-focused ultrasound",
       "anti-aging clinic london",
       "jawline definition",
-      "neck skin tightening"
+      "neck skin tightening",
+      "emface skin tightening and lifting before and after london",
+      "non-surgical facelift results",
+      "facial lifting clinic"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDXfD3Ny6lT_nplOKArSn9UMyYjV0kJxgwTv9M46cSVVZDZx4FzrO_KNbY_f56HXoovg-u_7fjsySFcPxQ7aeoCXyvpaZ8HoTR8WN4CJkI3i-hDY4Lls42VtrUVSEPHmoxhgjLGWk4dRU-Qmj_2OwZBLCiE32cpKU8YYbUtLJDGZAXTURhZpoMdkpSlRNh0lSS9O8ggHCc2_L8UEMkieEVJ-m29SbD9ArZaSF8SJeSBfmidviqvhTE9kC6xU0258PUF2vcEPwtX8tXW",
@@ -7099,7 +7108,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "collagen bio-remodeling",
       "non-surgical dermal lift",
-      "medical grade pre-care protocol"
+      "medical grade pre-care protocol",
+      "advanced aesthetics before and after",
+      "facial harmony & injectables london",
+      "age reversal clinics results"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
@@ -9205,7 +9217,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "skin laxity treatment",
       "anti-aging clinic london",
       "glow and hydration booster",
-      "crepey skin repair"
+      "crepey skin repair",
+      "anti-aging - 8 wks before and after",
+      "anti-aging rejuvenation london",
+      "age reversal clinics results"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzrmp3whmfv7pLv3Fr-yjXcn5qQ71pKNkDzY9EledCrI80O0nFvETqMzSq0ftkBSWkU80dIxXn9lMsY8Yb-RpPpIPDRIo33mpcKERZMozFUrbPLy5p-hjFgLE2ZYAovAxiNtaTJQkLQ7QLJlLviEbGrGDrQ0Arccq3tYHauA6Y-BAm5tbswnCb8TIQrvlY9OgNHBw4j5yK_PHikIG4gOgGR6Nnw94baPdBheg7SY9Qd3LEc5fu0tqKkNAPsMTs3Zg0pHxVdOxxcrRC",
@@ -12483,7 +12498,18 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "collagen bio-remodeling",
       "non-surgical dermal lift",
-      "medical grade pre-care protocol"
+      "medical grade pre-care protocol",
+      "before and after eyebrow wax london",
+      "eyebrow wax before and after",
+      "age reversal clinics eyebrow wax results",
+      "lash & eyebrow results london",
+      "anti-aging clinic london",
+      "hair & beauty",
+      "lash & eyebrow",
+      "clinical aesthetic treatments",
+      "skin treatment - 12 wks before and after",
+      "anti-aging rejuvenation london",
+      "age reversal clinics results"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
@@ -15648,7 +15674,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "collagen bio-remodeling",
       "non-surgical dermal lift",
-      "medical grade pre-care protocol"
+      "medical grade pre-care protocol",
+      "laser therapy & skin revision before and after",
+      "acne & scarring london",
+      "age reversal clinics results"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
@@ -17123,7 +17152,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "acne scar revision",
       "non-surgical dermal lift",
-      "radiofrequency skin tightening"
+      "radiofrequency skin tightening",
+      "morpheus8 treatment before and after london",
+      "jawline tightening results",
+      "rf microneedling london"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuAOtBKp33pnPLoKpvckXkiIS-1G2cj7yNpUXZYP7v7nB3HgYFreRRFM-F6UZt2uwFsUMzf2u0m_0SvHcja7AjjBjq8B4mo1Gk_Y3ihgY2qmmbr1Vc48W8QizQ3BLTsaPHv9ojoje0Q8wG64F4zjwPy98roZuGAorsk2N5TxRUibfaZ4gZ7L9r7cFXGqA6jBiryjo3-fh10ZWdkryws_w14ASGtvXypafuUczwEFeVz6SywQsQKFg--N76UkgP9d4Um3Q5Snz8eG_XyS",

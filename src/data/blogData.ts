@@ -9,7 +9,7 @@ export interface BlogSectionConfigData {
 export const BLOG_SECTION_CONFIG: BlogSectionConfigData = {
   "heading": "Latest News & Insights",
   "description": "Stay informed on the latest clinical advancements.",
-  "updatedAt": "2026-11-09T10:13:00.285Z"
+  "updatedAt": "2026-11-10T13:59:48.212Z"
 };
 
 export const NEWS_ARTICLES: Article[] = [
