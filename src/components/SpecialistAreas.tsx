@@ -21,13 +21,82 @@ interface SpecialistAreasProps {
   specialistAreasConfig?: SpecialistAreasConfig;
 }
 
-export default function SpecialistAreas({
-  onBookClick,
+export interface SpecialistAreaCardProps {
+  treatment: SpecialistTreatment;
+  idx: number;
+  isHydratingAreas?: boolean;
+  onTreatmentClick?: (treatmentName: string, branchCategory?: string) => void;
+  onBookClick?: (serviceName?: string) => void;
+}
+
+export function SpecialistAreaCard({
+  treatment,
+  idx,
+  isHydratingAreas = false,
   onTreatmentClick,
-  onExploreAllClick,
-  specialistAreasConfig
-}: SpecialistAreasProps) {
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  onBookClick,
+}: SpecialistAreaCardProps) {
+  const rawImg = (treatment.image || treatment.coverMedia?.url || '').trim();
+  const isDefaultExternalSeed =
+    rawImg &&
+    !rawImg.startsWith('/assets/') &&
+    !rawImg.startsWith('/uploads/') &&
+    !rawImg.startsWith('data:');
+  const resolvedCardSrc = isHydratingAreas && isDefaultExternalSeed ? '' : rawImg;
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.35, delay: idx * 0.05, ease: 'easeOut' }}
+      onClick={() =>
+        onTreatmentClick
+          ? onTreatmentClick(treatment.title, treatment.pricingCategory)
+          : onBookClick?.(treatment.title)
+      }
+      className="group bg-white/98 sm:bg-white/95 sm:backdrop-blur-md overflow-hidden border border-white/40 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_8px_30px_-5px_rgba(0,0,0,0.2)] hover:shadow-2xl hover:-translate-y-1 rounded-xl transform-gpu will-change-transform"
+    >
+      <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] relative">
+        <ClinicImageWithPlaceholder
+          src={resolvedCardSrc}
+          alt={treatment.coverMedia?.altText || `${treatment.title} at Age Reversal Clinic London`}
+          title={treatment.coverMedia?.seoTitle || treatment.title}
+          loading="lazy"
+          logoSize="lg"
+          showBrandText={true}
+          brandSubtext={treatment.title}
+          containerClassName="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] flex items-center justify-center"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500 pointer-events-none" />
+        {treatment.category && (
+          <span className="absolute top-3 left-3 z-10 bg-white/95 text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs pointer-events-none">
+            {treatment.category}
+          </span>
+        )}
+      </div>
+      <div className="p-3.5 sm:p-6 md:p-7 flex-grow flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-center mb-2 sm:mb-3">
+            <h3 className="font-serif font-normal text-base sm:text-xl text-luxury-text group-hover:text-luxury-subtext transition-colors leading-tight">
+              {treatment.title}
+            </h3>
+            <ChevronRight
+              className="h-4 w-4 text-luxury-muted group-hover:translate-x-1 transition-transform shrink-0"
+              strokeWidth={1.5}
+            />
+          </div>
+          <p className="font-sans text-xs sm:text-sm text-luxury-subtext font-light leading-relaxed line-clamp-3">
+            {treatment.description}
+          </p>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+export function useResolvedSpecialistTreatments(specialistAreasConfig?: SpecialistAreasConfig) {
   const [isHydratingAreas, setIsHydratingAreas] = useState<boolean>(true);
   const [masterServices, setMasterServices] = useState<SpecialistArea[]>(() => getMasterServices());
   const [liveAreasConfig, setLiveAreasConfig] = useState<SpecialistAreasConfig | undefined>(
@@ -135,6 +204,18 @@ export default function SpecialistAreas({
     });
   }, [masterServices, liveAreasConfig]);
 
+  return { treatmentsList, isHydratingAreas };
+}
+
+export default function SpecialistAreas({
+  onBookClick,
+  onTreatmentClick,
+  onExploreAllClick,
+  specialistAreasConfig
+}: SpecialistAreasProps) {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const { treatmentsList, isHydratingAreas } = useResolvedSpecialistTreatments(specialistAreasConfig);
+
   const itemsPerPage = 4;
   const totalPages = Math.ceil(treatmentsList.length / itemsPerPage) || 1;
 
@@ -192,68 +273,16 @@ export default function SpecialistAreas({
           {/* Cards Grid: 2 per row on desktop screens */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-10 md:mb-14 -mx-1.5">
             <AnimatePresence mode="wait">
-              {currentTreatments.map((treatment, idx) => {
-                const rawImg = (treatment.image || treatment.coverMedia?.url || '').trim();
-                const isDefaultExternalSeed =
-                  rawImg &&
-                  !rawImg.startsWith('/assets/') &&
-                  !rawImg.startsWith('/uploads/') &&
-                  !rawImg.startsWith('data:');
-                const resolvedCardSrc =
-                  isHydratingAreas && isDefaultExternalSeed ? '' : rawImg;
-
-                return (
-                <motion.article
+              {currentTreatments.map((treatment, idx) => (
+                <SpecialistAreaCard
                   key={`${currentPage}-${treatment.id}`}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, delay: idx * 0.05, ease: 'easeOut' }}
-                  onClick={() =>
-                    onTreatmentClick
-                      ? onTreatmentClick(treatment.title, treatment.pricingCategory)
-                      : onBookClick(treatment.title)
-                  }
-                  className="group bg-white/98 sm:bg-white/95 sm:backdrop-blur-md overflow-hidden border border-white/40 hover:border-white transition-all duration-300 cursor-pointer flex flex-col h-full shadow-[0_8px_30px_-5px_rgba(0,0,0,0.2)] hover:shadow-2xl hover:-translate-y-1 rounded-xl transform-gpu will-change-transform"
-                >
-                  <div className="aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/9] overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] relative">
-                    <ClinicImageWithPlaceholder
-                      src={resolvedCardSrc}
-                      alt={treatment.coverMedia?.altText || `${treatment.title} at Age Reversal Clinic London`}
-                      title={treatment.coverMedia?.seoTitle || treatment.title}
-                      loading="lazy"
-                      logoSize="lg"
-                      showBrandText={true}
-                      brandSubtext={treatment.title}
-                      containerClassName="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0e141b] via-[#141b24] to-[#0a0e13] flex items-center justify-center"
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500 pointer-events-none" />
-                    {treatment.category && (
-                      <span className="absolute top-3 left-3 z-10 bg-white/95 text-luxury-text text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full border border-luxury-border shadow-xs pointer-events-none">
-                        {treatment.category}
-                      </span>
-                    )}
-                  </div>
-                  <div className="p-3.5 sm:p-6 md:p-7 flex-grow flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-center mb-2 sm:mb-3">
-                        <h3 className="font-serif font-normal text-base sm:text-xl text-luxury-text group-hover:text-luxury-subtext transition-colors leading-tight">
-                          {treatment.title}
-                        </h3>
-                        <ChevronRight
-                          className="h-4 w-4 text-luxury-muted group-hover:translate-x-1 transition-transform shrink-0"
-                          strokeWidth={1.5}
-                        />
-                      </div>
-                      <p className="font-sans text-xs sm:text-sm text-luxury-subtext font-light leading-relaxed line-clamp-3">
-                        {treatment.description}
-                      </p>
-                    </div>
-                  </div>
-                </motion.article>
-                );
-              })}
+                  treatment={treatment}
+                  idx={idx}
+                  isHydratingAreas={isHydratingAreas}
+                  onTreatmentClick={onTreatmentClick}
+                  onBookClick={onBookClick}
+                />
+              ))}
             </AnimatePresence>
           </div>
 

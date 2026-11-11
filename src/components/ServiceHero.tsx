@@ -47,7 +47,7 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
       <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0">
         {isVideo ? (
           <video
-            className="w-full h-full object-cover object-center brightness-[0.6]"
+            className="w-full h-full object-cover object-center"
             src={mediaUrl}
             poster={heroMedia?.videoPoster}
             autoPlay={heroMedia?.autoPlay ?? true}
@@ -62,13 +62,13 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             title={seoTitle}
             loading="eager"
             containerClassName="relative w-full h-full overflow-hidden bg-slate-900 flex items-center justify-center"
-            className="w-full h-full object-cover object-center brightness-[0.6]"
+            className="w-full h-full object-cover object-center"
             logoSize="lg"
             referrerPolicy="no-referrer"
           />
         )}
-        {/* Dark gradient overlay for mobile text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/65 pointer-events-none" />
+        {/* Lighter gradient overlay for mobile text legibility without heavy black fade */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-black/35 pointer-events-none" />
       </div>
 
       {/* Breadcrumb Path */}
@@ -88,7 +88,7 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
       >
         {isVideo ? (
           <video
-            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02]"
+            className="w-full h-full object-cover"
             src={mediaUrl}
             poster={heroMedia?.videoPoster}
             autoPlay={heroMedia?.autoPlay ?? true}
@@ -103,14 +103,13 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
             title={seoTitle}
             loading="eager"
             containerClassName="relative w-full h-full overflow-hidden bg-slate-50 flex items-center justify-center"
-            className="w-full h-full object-cover brightness-[0.96] contrast-[1.02] transition-transform duration-10000 hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-10000 hover:scale-105"
             logoSize="lg"
             referrerPolicy="no-referrer"
           />
         )}
         {/* Subtle overlay for beautiful text blend and professional appearance */}
         <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent w-32 pointer-events-none" />
-        <div className="absolute inset-0 bg-black/5 pointer-events-none" />
       </div>
 
       {/* Decorative background gradient on the left half (Desktop only) */}
@@ -137,7 +136,7 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
 
           <motion.h1 
             variants={textVariants}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white md:text-silver-900 leading-tight mb-3 sm:mb-4 md:mb-6 chrome-text drop-shadow-sm md:drop-shadow-none"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white md:text-silver-900 leading-tight mb-3 sm:mb-4 md:mb-6 drop-shadow-md md:drop-shadow-none"
           >
             {data.title}
           </motion.h1>

@@ -84,7 +84,12 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                 : fullDetails.image && !fullDetails.image.includes('unsplash.com')
                 ? fullDetails.image
                 : '',
-            coverMedia: treatment.coverMedia || fullDetails.coverMedia,
+            coverMedia: fullDetails.coverMedia || (treatment.coverMedia ? {
+              url: treatment.coverMedia.url || '',
+              altText: treatment.coverMedia.altText || '',
+              seoTitle: treatment.coverMedia.seoTitle || '',
+              seoKeywords: [],
+            } : undefined),
             updatedAt: treatment.updatedAt || fullDetails.updatedAt,
           });
         }
@@ -221,7 +226,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                 <div className="space-y-0 pb-2">
                   {/* Treatment Title Header & Unique Package Procedure/Downtime */}
                   <div className="relative pb-1.5 pt-1 lg:pb-0 lg:pt-3">
-                    <p className="no-margin text-sm sm:text-base text-noir-900 font-medium">
+                    <p className="no-margin text-base sm:text-lg text-noir-900 font-semibold">
                       {treatment.title}
                     </p>
                     {/* Unique Procedure & Downtime for the active package selection */}
@@ -309,7 +314,7 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                             {/* Top Row: Session Title, Badges, and Per-Session Price */}
                             <div className="flex items-start justify-between w-full gap-2">
                               <div className="space-y-0.5">
-                                <div className="no-margin flex items-center text-sm sm:text-base font-medium text-noir-900">
+                                <div className="no-margin flex items-center text-base sm:text-[17px] font-semibold text-noir-900">
                                   <span>
                                     {pkg.sessions} {pkg.sessions === 1 ? 'session' : 'sessions'}
                                   </span>
@@ -366,9 +371,15 @@ export const PackageSelectModal: React.FC<PackageSelectModalProps> = ({
                             </div>
 
                             {/* Package-specific details*/}
-                            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500 mt-1 flex-wrap">
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-stone-700 mt-1 flex-wrap">
                               {pkg.description && (
-                                <span className="text-stone-500 italic line-clamp-1">{pkg.description}</span>
+                                <span
+                                  className={`text-stone-700 font-semibold not-italic ${
+                                    isBenefitsOpen ? 'break-words' : 'line-clamp-1'
+                                  }`}
+                                >
+                                  {pkg.description}
+                                </span>
                               )}
                             </div>
 

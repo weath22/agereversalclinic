@@ -397,7 +397,14 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
           {/* 4. Treatment Pricing & Package Selector */}
           <div className="pt-8 pb-4 border-t border-silver-150 max-w-5xl mx-auto w-full">
-            <ServiceBottomCTA data={data} onBook={onBook} />
+            <ServiceBottomCTA
+              data={{
+                ...data,
+                subCategoryId: (rawData as any).subCategoryId,
+                subCategoryName: (rawData as any).subCategoryName,
+              }}
+              onBook={onBook}
+            />
           </div>
 
           {/* Section 3.1.5: How It Works? Dynamic Vertical Timeline */}

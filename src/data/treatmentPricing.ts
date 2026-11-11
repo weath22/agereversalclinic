@@ -231,11 +231,18 @@ export function inferTreatmentSubGroup(item: {
 
   // 1. Face & Injectables
   if (cat.includes('face') || cat.includes('inject')) {
+    if (id.startsWith('filler-') || combined.includes('nasolabial')) {
+      return {
+        subGroupId: 'dermal-fillers-1ml',
+        subCategory: 'Dermal Fillers-1ml',
+        parentCategory: 'Face & Injectables',
+      };
+    }
     if (
       combined.includes('botox') ||
       combined.includes('wrinkle') ||
       id.startsWith('botox-') ||
-      combined.includes('smile') ||
+      combined.includes('gummy smile') ||
       combined.includes('puppet') ||
       combined.includes('neck bands') ||
       combined.includes('jaw slimming') ||
@@ -249,7 +256,6 @@ export function inferTreatmentSubGroup(item: {
     }
     if (
       combined.includes('filler') ||
-      id.startsWith('filler-') ||
       combined.includes('lip') ||
       combined.includes('cheek') ||
       combined.includes('rhinoplasty') ||
@@ -396,7 +402,7 @@ export function inferTreatmentSubGroup(item: {
         parentCategory: 'Hair & Beauty',
       };
     }
-    if (combined.includes('men') || combined.includes('kid')) {
+    if (/\b(men|mens|men's|kid|kids|boys)\b/i.test(combined)) {
       if (id === 'men-and-kids') {
         return {
           subGroupId: 'men-and-kids',
