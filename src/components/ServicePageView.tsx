@@ -1,7 +1,7 @@
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMediaDefaults } from './treatments/treatmentData';
+import { TREATMENT_DETAILS_DB, DEFAULT_TREATMENT_DETAILS, populateTreatmentMediaDefaults, cleanServiceImageUrl } from './treatments/treatmentData';
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import {
   getTreatmentDetailsConfig,
@@ -316,8 +316,12 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
           ? baseDetails.description || matchedMaster.description
           : matchedMaster.description || baseDetails.description,
         imageUrl: hasCustomDetails
-          ? baseDetails.heroMedia?.url || baseDetails.imageUrl || matchedMaster.image
-          : baseDetails.heroMedia?.url || matchedMaster.image || baseDetails.imageUrl,
+          ? cleanServiceImageUrl(baseDetails.heroMedia?.url) ||
+            cleanServiceImageUrl(baseDetails.imageUrl) ||
+            cleanServiceImageUrl(matchedMaster.image)
+          : cleanServiceImageUrl(baseDetails.heroMedia?.url) ||
+            cleanServiceImageUrl(matchedMaster.image) ||
+            cleanServiceImageUrl(baseDetails.imageUrl),
         price: hasCustomDetails
           ? baseDetails.price || matchedMaster.price
           : matchedMaster.price || baseDetails.price,
@@ -340,8 +344,9 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
   const data = populateTreatmentMediaDefaults(rawData);
   const portfolioItems: TreatmentMediaItem[] =
     data.portfolioMedia && data.portfolioMedia.length > 0
-      ? data.portfolioMedia.filter((m) => m && m.url)
+      ? data.portfolioMedia.filter((m) => m && cleanServiceImageUrl(m.url))
       : (data.additionalImages || [])
+          .map((imgUrl: string) => cleanServiceImageUrl(imgUrl))
           .filter(Boolean)
           .map((imgUrl: string, idx: number) => ({
             id: `service-${data.id}-portfolio-${idx}`,
@@ -384,6 +389,9 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
       <section id="clinical-details-section" className="bg-white py-16 md:py-24 border-b border-silver-150 relative z-10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-16">
           
+          {/* Section 3.0: Clinical Expectations Quick Facts (Directly below Hero) */}
+          <ClinicalExpectations data={data} />
+
           {/* Section 3.1: Scientific Profile & Overview (Full Width row) */}
           <ServiceOverview data={data} />
 
@@ -394,9 +402,6 @@ export default function ServicePageView({ treatmentName, onClose, onBook }: Serv
 
           {/* Section 3.1.5: How It Works? Dynamic Vertical Timeline */}
           <HowItWorksTimeline treatmentId={data.id} />
-
-          {/* Section 3.2: Clinical Expectations Quick Facts */}
-          <ClinicalExpectations data={data} />
 
           {/* Section 3.3: Target Concerns (Full Width row) */}
           <TargetConcerns data={data} />

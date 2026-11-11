@@ -16,6 +16,7 @@ import { EXISTING_BEFORE_AFTER_TREATMENT_GROUPS } from '../data/transformationsD
 import { CLINICAL_AREAS_DB } from '../data/clinicalTreatments';
 import Pagination from './Pagination';
 import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
+import { cleanServiceImageUrl } from './treatments/treatmentData';
 
 interface BeforeAfterComparisonSliderProps {
   beforeImage: string;
@@ -249,12 +250,14 @@ export default function BeforeAfterComparisonSlider({
         .filter(Boolean)
         .join(' • ');
 
-      const cleanSingle = (p.singleFrameImage || '').trim();
+      const cleanSingle = cleanServiceImageUrl(p.singleFrameImage);
+      const cleanBefore = cleanServiceImageUrl(p.beforeImage);
+      const cleanAfter = cleanServiceImageUrl(p.afterImage);
 
       return {
         id: p.id,
-        before: p.beforeImage || cleanSingle,
-        after: p.afterImage || cleanSingle,
+        before: cleanBefore || cleanSingle,
+        after: cleanAfter || cleanSingle,
         singleFrameImage: cleanSingle || undefined,
         singleFrameAltText:
           p.singleFrameAltText ||
@@ -282,7 +285,6 @@ export default function BeforeAfterComparisonSlider({
 
     // Custom before/after cases configured directly on this treatment in ServiceViewDetailsEditor
     const customResolved: ResolvedSliderPair[] = (customBeforeAfterPairs || [])
-      .filter((cp) => (cp.beforeImage && cp.afterImage) || cp.singleFrameImage)
       .map((cp) => {
         const durationBadge = [
           cp.duration,
@@ -293,12 +295,14 @@ export default function BeforeAfterComparisonSlider({
           .filter(Boolean)
           .join(' • ');
 
-        const cleanSingle = (cp.singleFrameImage || '').trim();
+        const cleanSingle = cleanServiceImageUrl(cp.singleFrameImage);
+        const cleanBefore = cleanServiceImageUrl(cp.beforeImage);
+        const cleanAfter = cleanServiceImageUrl(cp.afterImage);
 
         return {
           id: cp.id,
-          before: cp.beforeImage || cleanSingle,
-          after: cp.afterImage || cleanSingle,
+          before: cleanBefore || cleanSingle,
+          after: cleanAfter || cleanSingle,
           singleFrameImage: cleanSingle || undefined,
           label: cp.title || `${treatmentName} Clinical Case`,
           durationBadge: durationBadge || undefined,
@@ -316,7 +320,8 @@ export default function BeforeAfterComparisonSlider({
               ? cp.seoKeywords
               : [`${treatmentName.toLowerCase()} before and after`],
         };
-      });
+      })
+      .filter((cp) => (cp.before && cp.after) || cp.singleFrameImage);
 
     // Separate buckets:
     // A) Exact Treatment Name matches
@@ -335,8 +340,11 @@ export default function BeforeAfterComparisonSlider({
         subCategoryCompacts.has(catCompact);
 
       (cat.pairs || []).forEach((p) => {
-        const hasSplitImages = Boolean(p.beforeImage && p.afterImage);
-        const hasSingleFrame = Boolean(p.singleFrameImage && p.singleFrameImage.trim());
+        const cleanBefore = cleanServiceImageUrl(p.beforeImage);
+        const cleanAfter = cleanServiceImageUrl(p.afterImage);
+        const cleanSingle = cleanServiceImageUrl(p.singleFrameImage);
+        const hasSplitImages = Boolean(cleanBefore && cleanAfter);
+        const hasSingleFrame = Boolean(cleanSingle);
         if (
           p.hidden ||
           (!hasSplitImages && !hasSingleFrame) ||
@@ -410,8 +418,23 @@ export default function BeforeAfterComparisonSlider({
       }
     }
 
-    // Dynamic only: if no image pair is available from this treatment or its subcategory,
-    // return [] so no empty frames display.
+    // 3. If no real image pair exists yet, return a single comparison frame with empty URLs
+    // so the Before & After cards display the brand logo placeholder until a real image is added.
+    if (uniqueResult.length === 0) {
+      return [
+        {
+          id: `placeholder-${rawIdSlug || nameSlug || 'default'}`,
+          before: '',
+          after: '',
+          label: `${treatmentName} Clinical Case`,
+          beforeAltText: `${treatmentName} Before Treatment at Age Reversal Clinics London`,
+          afterAltText: `${treatmentName} After Treatment Result at Age Reversal Clinics London`,
+          seoTitle: `${treatmentName} — Before & After Result | Age Reversal Clinics`,
+          seoKeywords: [`${treatmentName.toLowerCase()} before and after`],
+        },
+      ];
+    }
+
     return uniqueResult;
   }, [
     galleryConfig,

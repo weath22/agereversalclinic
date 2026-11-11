@@ -207,6 +207,44 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
 
 export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
   {
+    "id": "pair-1",
+    "title": "Facial skin care",
+    "category": "Skin Texture & Scars",
+    "tag": "Facial skin care",
+    "patientInfo": "Facial skin care",
+    "duration": "12 Weeks",
+    "sessions": 3,
+    "concern": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
+    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
+    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO",
+    "galleryImages": [
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO"
+    ],
+    "recommendedTreatmentIds": [
+      "facial-skin-care"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "facial-skin-care",
+    "linkedTreatmentId": "facial-skin-care",
+    "linkedTreatmentTitle": "Facial skin care",
+    "beforeAltText": "Skin Treatment - 12 Wks Before Anti-Aging Rejuvenation Treatment at Age Reversal Clinics London",
+    "afterAltText": "Skin Treatment - 12 Wks After Anti-Aging Rejuvenation Treatment Result at Age Reversal Clinics London",
+    "singleFrameAltText": "Facial skin care Before & After Transformation at Age Reversal Clinics London",
+    "seoTitle": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
+    "seoKeywords": [
+      "skin treatment - 12 wks before and after",
+      "anti-aging rejuvenation london",
+      "age reversal clinics results"
+    ],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1793722234602
+  },
+  {
     "id": "pair-1793724383033",
     "title": "Clinical Transformation",
     "category": "Skin Texture & Scars",
@@ -336,44 +374,6 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "updatedAt": 1794059769815
   },
   {
-    "id": "pair-1",
-    "title": "Facial skin care",
-    "category": "Skin Texture & Scars",
-    "tag": "Facial skin care",
-    "patientInfo": "Facial skin care",
-    "duration": "12 Weeks",
-    "sessions": 3,
-    "concern": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
-    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
-    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO",
-    "galleryImages": [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO"
-    ],
-    "recommendedTreatmentIds": [
-      "facial-skin-care"
-    ],
-    "recommendedProductIds": [
-      "st-antioxidant-soothing-serum",
-      "st-antioxidant-matte-day-cream"
-    ],
-    "treatmentGroupId": "facial-skin-care",
-    "linkedTreatmentId": "facial-skin-care",
-    "linkedTreatmentTitle": "Facial skin care",
-    "beforeAltText": "Skin Treatment - 12 Wks Before Anti-Aging Rejuvenation Treatment at Age Reversal Clinics London",
-    "afterAltText": "Skin Treatment - 12 Wks After Anti-Aging Rejuvenation Treatment Result at Age Reversal Clinics London",
-    "singleFrameAltText": "Facial skin care Before & After Transformation at Age Reversal Clinics London",
-    "seoTitle": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
-    "seoKeywords": [
-      "skin treatment - 12 wks before and after",
-      "anti-aging rejuvenation london",
-      "age reversal clinics results"
-    ],
-    "featured": false,
-    "hidden": false,
-    "updatedAt": 1793722234602
-  },
-  {
     "id": "pair-4",
     "title": "Vertical Comparison",
     "category": "Hair Density",
@@ -410,6 +410,49 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "featured": false,
     "hidden": false,
     "updatedAt": 1792683065640
+  },
+  {
+    "id": "pair-1794324207595",
+    "title": "Bunny Lines Anti-Wrinkle Transformation",
+    "category": "Hair Density",
+    "tag": "Platelet-Rich Plasma (PRP)",
+    "patientInfo": "Bunny Lines Anti-Wrinkle",
+    "duration": "6 Weeks • 3 Sessions",
+    "sessions": 3,
+    "concern": "Bunny Lines Anti-Wrinkle Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "beforeImage": "",
+    "afterImage": "",
+    "singleFrameImage": "/assets/transformations/pair-1794324207595-single.webp?v=1794324230447",
+    "galleryImages": [
+      "/assets/transformations/pair-1794324207595-single.webp?v=1794324230447"
+    ],
+    "recommendedTreatmentIds": [
+      "botox-bunny-lines"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "platelet-rich-plasma-prp",
+    "linkedTreatmentId": "botox-bunny-lines",
+    "linkedTreatmentTitle": "Bunny Lines Anti-Wrinkle",
+    "beforeAltText": "Before Bunny Lines Anti-Wrinkle treatment at Age Reversal Clinics London — baseline clinical photography",
+    "afterAltText": "After Bunny Lines Anti-Wrinkle treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
+    "singleFrameAltText": "Before & After Bunny Lines Anti-Wrinkle transformation (6 Weeks • 3 Sessions) at Age Reversal Clinics London — full clinical comparison frame",
+    "seoTitle": "Bunny Lines Anti-Wrinkle Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
+    "seoKeywords": [
+      "before and after bunny lines anti-wrinkle london",
+      "bunny lines anti-wrinkle before and after",
+      "age reversal clinics bunny lines anti-wrinkle results",
+      "platelet-rich plasma (prp) results london",
+      "anti-aging clinic london",
+      "face & injectables",
+      "platelet-rich plasma (prp)",
+      "clinical aesthetic treatments"
+    ],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1794324287512
   },
   {
     "id": "pair-2",

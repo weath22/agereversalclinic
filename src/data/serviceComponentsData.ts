@@ -11,7 +11,7 @@ import type { TreatmentDetail } from '../components/treatments/treatmentData';
  * All helper logic and TypeScript interfaces live separately in:
  * src/components/treatments/treatmentData.ts
  */
-export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-10T13:59:47.732Z";
+export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-10T15:59:23.803Z";
 
 export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = {
   "exosome": {
@@ -2039,7 +2039,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     "title": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment",
     "category": "Platelet-Rich Plasma (PRP)",
     "description": " platelets packed with bioactive growth factors injected into the scalp to awaken dormant follicles and treat hair thinning.",
-    "imageUrl": "/assets/service-prp-hair-loss-hero.webp?v=1794020885511",
+    "imageUrl": "/assets/service-prp-hair-loss-hero.webp?v=1794323476172",
     "badgeText": "For Hair Loss £150",
     "procedureTime": "45 Mins",
     "comfortLevel": "Mild (Comfort strategies customized dynamically)",
@@ -2076,7 +2076,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "medical grade pre-care protocol"
     ],
     "coverMedia": {
-      "url": "/assets/service-prp-hair-loss-hero.webp?v=1794020885511",
+      "url": "/assets/service-prp-hair-loss-hero.webp?v=1794323476172",
       "mediaType": "image",
       "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment specialized clinical protocol at Age Reversal Clinic",
       "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment",
@@ -2089,7 +2089,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "id": "service-prp-hair-loss-cover"
     },
     "heroMedia": {
-      "url": "/assets/service-prp-hair-loss-hero.webp?v=1794020885511",
+      "url": "/assets/service-prp-hair-loss-hero.webp?v=1794323476172",
       "mediaType": "image",
       "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment advanced clinical treatment hero presentation",
       "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment - Age Reversal Clinic London",
@@ -2104,7 +2104,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     },
     "overviewMedia": {
       "backCard": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+        "url": "/assets/service-prp-hair-loss-overview-back.webp?v=1794323736544",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment scientific procedural and diagnostic profile framing",
         "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment Diagnostic Framing",
@@ -2112,10 +2112,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular skin regeneration",
           "anti-wrinkle clinic london"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-overview-back"
+        "id": "service-prp-hair-loss-overview-back"
       },
       "backImage": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+        "url": "/assets/service-prp-hair-loss-overview-back.webp?v=1794323736544",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment scientific procedural and diagnostic profile framing",
         "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment Diagnostic Framing",
@@ -2123,10 +2123,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular skin regeneration",
           "anti-wrinkle clinic london"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-overview-back"
+        "id": "service-prp-hair-loss-overview-back"
       },
       "frontCard": {
-        "url": "/assets/service-prp-hair-loss-overview-front.webp?v=1794023153395",
+        "url": "/assets/service-prp-hair-loss-overview-front.webp?v=1794323492218",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment clinical protocol execution closeup",
         "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment Focal Procedure",
@@ -2137,7 +2137,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
         "id": "service-prp-hair-loss-overview-front"
       },
       "frontImage": {
-        "url": "/assets/service-prp-hair-loss-overview-front.webp?v=1794023153395",
+        "url": "/assets/service-prp-hair-loss-overview-front.webp?v=1794323492218",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment clinical protocol execution closeup",
         "seoTitle": "Platelet-Rich Plasma (PRP) for Hair Loss Treatment Focal Procedure",
@@ -2149,7 +2149,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       }
     },
     "targetConcernsMedia": {
-      "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+      "url": "/assets/service-prp-hair-loss-target-concerns.webp?v=1794323757364",
       "mediaType": "image",
       "altText": "High-precision targeted aesthetic treatment technology for Platelet-Rich Plasma (PRP) for Hair Loss Treatment",
       "seoTitle": "Targeted Bio-Calibration Diagnosis",
@@ -2161,7 +2161,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
         "non-surgical dermal lift",
         "medical grade pre-care protocol"
       ],
-      "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-target-concerns"
+      "id": "service-prp-hair-loss-target-concerns"
     },
     "clinicalComparisonMedia": {
       "before": {
@@ -2188,7 +2188,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     },
     "clinicalGuidanceMedia": {
       "preCare": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww",
+        "url": "/assets/service-prp-hair-loss-pre-care.webp?v=1794323783197",
         "mediaType": "image",
         "altText": "Clinical Skin Prep Serum Application - Epidermal Prime & Hydration",
         "seoTitle": "Clinical Skin Prep Protocol",
@@ -2198,10 +2198,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "serum application protocol",
           "medical grade pre-care protocol"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-pre-care"
+        "id": "service-prp-hair-loss-pre-care"
       },
       "preCareVisual": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww",
+        "url": "/assets/service-prp-hair-loss-pre-care.webp?v=1794323783197",
         "mediaType": "image",
         "altText": "Clinical Skin Prep Serum Application - Epidermal Prime & Hydration",
         "seoTitle": "Clinical Skin Prep Protocol",
@@ -2211,10 +2211,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "serum application protocol",
           "medical grade pre-care protocol"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-pre-care"
+        "id": "service-prp-hair-loss-pre-care"
       },
       "postCare": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+        "url": "/assets/service-prp-hair-loss-post-care.webp?v=1794323898711",
         "mediaType": "image",
         "altText": "Clinical Recovery Spa Sanctuary - Cellular Healing & Protection",
         "seoTitle": "Clinical Recovery Protocol",
@@ -2224,10 +2224,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular healing",
           "clinical skin recovery"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-post-care"
+        "id": "service-prp-hair-loss-post-care"
       },
       "postCareVisual": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+        "url": "/assets/service-prp-hair-loss-post-care.webp?v=1794323898711",
         "mediaType": "image",
         "altText": "Clinical Recovery Spa Sanctuary - Cellular Healing & Protection",
         "seoTitle": "Clinical Recovery Protocol",
@@ -2237,14 +2237,14 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular healing",
           "clinical skin recovery"
         ],
-        "id": "service-platelet-rich-plasma-prp-for-hair-loss-treatment-post-care"
+        "id": "service-prp-hair-loss-post-care"
       }
     },
     "additionalImages": [],
     "portfolioMedia": [],
     "customBeforeAfterPairs": [],
     "excludedGalleryPairIds": [],
-    "updatedAt": 1794047017372,
+    "updatedAt": 1794323898721,
     "isCustomized": true,
     "profilerEnabled": false
   },
@@ -2253,7 +2253,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     "title": "Platelet-Rich Plasma (PRP) Facial Treatment",
     "category": "Platelet-Rich Plasma (PRP)",
     "description": "Autologous platelet micro-infusion across the face (Vampire Facial) to stimulate collagen synthesis, tighten pores, and brighten skin tone.",
-    "imageUrl": "/assets/service-prp-facial-treatment-hero.webp?v=1794020911309",
+    "imageUrl": "/assets/service-prp-facial-treatment-hero.webp?v=1794324699734",
     "badgeText": "Facial Treatment - from £120",
     "procedureTime": "45 Mins",
     "comfortLevel": "Mild (Comfort strategies customized dynamically)",
@@ -2266,8 +2266,8 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "Individualized aesthetic goals"
     ],
     "price": "£120",
-    "targetLayer": "Dermis",
-    "targetLayerDepth": "1.5mm",
+    "targetLayer": "Subdermal Adipose",
+    "targetLayerDepth": "3.0mm - 4.5mm",
     "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA8w5MUbCUhigRp4G10Px53i8pM5LlPXvGok1IMI9tfPVLc1vPbTXcVizuY0a7FUgMrFcm5L98Xs08D0hvgofos7jAy5TEpvRQ5GUJujJE3GWRiouw0s3B4jpkYJR1db0qtpsv5PiCal39YMEe8CP8Li6KnJE7SBhxHHvQI0MpV_RQ_WsP_BgTECwTD-00SRwlUlXxGleuIxhDX_blQ-Ag2NwFFNL2KuDaxg70V9SPTKSLIA4t_0TiZoJNr76f5Abg9KOBOgS9YLhX",
     "afterImage": "https://lh3.googleusercontent.com/aida/AP1WRLvqxcEGQQ_IhoxgMvHSmKkYhPqRrkLJbd4aNWGnzzPwueuS6A3G74wZmnU_Hszij8lbZ_G-BM7TofkWvfNmxb5v-n6NZKTD2y6YJX9HJIGyfX7RFL06HUfYV1tHDe31Ik1sCKpcTGj8y7wMb2ffsYOi9avp82xO6uR5VoFRJumpJ84CAuwDKN60xo7T90ejJ_ZZ09Y-n7t90lzl3KlWyHZMF26scGeieRwTxo7LbSa6ilxXfJcles_mHZY",
     "preCare": [
@@ -2290,7 +2290,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "medical grade pre-care protocol"
     ],
     "coverMedia": {
-      "url": "/assets/service-prp-facial-treatment-hero.webp?v=1794020911309",
+      "url": "/assets/service-prp-facial-treatment-hero.webp?v=1794324699734",
       "mediaType": "image",
       "altText": "Platelet-Rich Plasma (PRP) Facial Treatment specialized clinical protocol at Age Reversal Clinic",
       "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment",
@@ -2303,7 +2303,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "id": "service-prp-facial-treatment-cover"
     },
     "heroMedia": {
-      "url": "/assets/service-prp-facial-treatment-hero.webp?v=1794020911309",
+      "url": "/assets/service-prp-facial-treatment-hero.webp?v=1794324699734",
       "mediaType": "image",
       "altText": "Platelet-Rich Plasma (PRP) Facial Treatment advanced clinical treatment hero presentation",
       "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment - Age Reversal Clinic London",
@@ -2318,7 +2318,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     },
     "overviewMedia": {
       "backCard": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+        "url": "/assets/service-prp-facial-treatment-overview-back.webp?v=1794325788323",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) Facial Treatment scientific procedural and diagnostic profile framing",
         "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment Diagnostic Framing",
@@ -2326,10 +2326,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular skin regeneration",
           "anti-wrinkle clinic london"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-overview-back"
+        "id": "service-prp-facial-treatment-overview-back"
       },
       "backImage": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR",
+        "url": "/assets/service-prp-facial-treatment-overview-back.webp?v=1794325788323",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) Facial Treatment scientific procedural and diagnostic profile framing",
         "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment Diagnostic Framing",
@@ -2337,10 +2337,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular skin regeneration",
           "anti-wrinkle clinic london"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-overview-back"
+        "id": "service-prp-facial-treatment-overview-back"
       },
       "frontCard": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+        "url": "/assets/service-prp-facial-treatment-overview-front.webp?v=1794324715442",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) Facial Treatment clinical protocol execution closeup",
         "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment Focal Procedure",
@@ -2348,10 +2348,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "collagen bio-remodeling",
           "non-surgical dermal lift"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-overview-front"
+        "id": "service-prp-facial-treatment-overview-front"
       },
       "frontImage": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+        "url": "/assets/service-prp-facial-treatment-overview-front.webp?v=1794324715442",
         "mediaType": "image",
         "altText": "Platelet-Rich Plasma (PRP) Facial Treatment clinical protocol execution closeup",
         "seoTitle": "Platelet-Rich Plasma (PRP) Facial Treatment Focal Procedure",
@@ -2359,7 +2359,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "collagen bio-remodeling",
           "non-surgical dermal lift"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-overview-front"
+        "id": "service-prp-facial-treatment-overview-front"
       }
     },
     "targetConcernsMedia": {
@@ -2402,7 +2402,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     },
     "clinicalGuidanceMedia": {
       "preCare": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww",
+        "url": "/assets/service-prp-facial-treatment-pre-care.webp?v=1794325968137",
         "mediaType": "image",
         "altText": "Clinical Skin Prep Serum Application - Epidermal Prime & Hydration",
         "seoTitle": "Clinical Skin Prep Protocol",
@@ -2412,10 +2412,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "serum application protocol",
           "medical grade pre-care protocol"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-pre-care"
+        "id": "service-prp-facial-treatment-pre-care"
       },
       "preCareVisual": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww",
+        "url": "/assets/service-prp-facial-treatment-pre-care.webp?v=1794325968137",
         "mediaType": "image",
         "altText": "Clinical Skin Prep Serum Application - Epidermal Prime & Hydration",
         "seoTitle": "Clinical Skin Prep Protocol",
@@ -2425,10 +2425,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "serum application protocol",
           "medical grade pre-care protocol"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-pre-care"
+        "id": "service-prp-facial-treatment-pre-care"
       },
       "postCare": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+        "url": "/assets/service-prp-facial-treatment-post-care.webp?v=1794325983251",
         "mediaType": "image",
         "altText": "Clinical Recovery Spa Sanctuary - Cellular Healing & Protection",
         "seoTitle": "Clinical Recovery Protocol",
@@ -2438,10 +2438,10 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular healing",
           "clinical skin recovery"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-post-care"
+        "id": "service-prp-facial-treatment-post-care"
       },
       "postCareVisual": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r",
+        "url": "/assets/service-prp-facial-treatment-post-care.webp?v=1794325983251",
         "mediaType": "image",
         "altText": "Clinical Recovery Spa Sanctuary - Cellular Healing & Protection",
         "seoTitle": "Clinical Recovery Protocol",
@@ -2451,22 +2451,23 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
           "cellular healing",
           "clinical skin recovery"
         ],
-        "id": "service-platelet-rich-plasma-prp-facial-treatment-post-care"
+        "id": "service-prp-facial-treatment-post-care"
       }
     },
     "additionalImages": [],
     "portfolioMedia": [],
     "customBeforeAfterPairs": [],
     "excludedGalleryPairIds": [],
-    "updatedAt": 1794020914614,
-    "isCustomized": true
+    "updatedAt": 1794326081642,
+    "isCustomized": true,
+    "profilerEnabled": false
   },
   "prp-cosmetic-injection": {
     "id": "prp-cosmetic-injection",
     "title": "PRP Cosmetic Injection",
     "category": "Platelet-Rich Plasma (PRP)",
     "description": "High-density platelet injection targeting delicate under-eye hollows, smile creases, or scars for natural autologous volume and repair.",
-    "imageUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+    "imageUrl": "/assets/service-prp-cosmetic-injection-hero.webp?v=1794326346520",
     "badgeText": "Cosmetic Injection",
     "procedureTime": "30 Mins",
     "comfortLevel": "Mild (Comfort strategies customized dynamically)",
@@ -2503,7 +2504,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "medical grade pre-care protocol"
     ],
     "coverMedia": {
-      "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+      "url": "/assets/service-prp-cosmetic-injection-hero.webp?v=1794326346520",
       "mediaType": "image",
       "altText": "PRP Cosmetic Injection specialized clinical protocol at Age Reversal Clinic",
       "seoTitle": "PRP Cosmetic Injection",
@@ -2516,7 +2517,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "id": "service-prp-cosmetic-injection-cover"
     },
     "heroMedia": {
-      "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+      "url": "/assets/service-prp-cosmetic-injection-hero.webp?v=1794326346520",
       "mediaType": "image",
       "altText": "PRP Cosmetic Injection advanced clinical treatment hero presentation",
       "seoTitle": "PRP Cosmetic Injection - Age Reversal Clinic London",
@@ -2553,7 +2554,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
         "id": "service-prp-cosmetic-injection-overview-back"
       },
       "frontCard": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+        "url": "/assets/service-prp-cosmetic-injection-overview-front.webp?v=1794326363506",
         "mediaType": "image",
         "altText": "PRP Cosmetic Injection clinical protocol execution closeup",
         "seoTitle": "PRP Cosmetic Injection Focal Procedure",
@@ -2564,7 +2565,7 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
         "id": "service-prp-cosmetic-injection-overview-front"
       },
       "frontImage": {
-        "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",
+        "url": "/assets/service-prp-cosmetic-injection-overview-front.webp?v=1794326363506",
         "mediaType": "image",
         "altText": "PRP Cosmetic Injection clinical protocol execution closeup",
         "seoTitle": "PRP Cosmetic Injection Focal Procedure",
@@ -2670,7 +2671,9 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
     "additionalImages": [],
     "portfolioMedia": [],
     "customBeforeAfterPairs": [],
-    "excludedGalleryPairIds": []
+    "excludedGalleryPairIds": [],
+    "updatedAt": 1794326363523,
+    "isCustomized": true
   },
   "endolift-fiber-lift": {
     "id": "endolift-fiber-lift",
@@ -3961,7 +3964,15 @@ export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = 
       "anti-wrinkle clinic london",
       "collagen bio-remodeling",
       "non-surgical dermal lift",
-      "medical grade pre-care protocol"
+      "medical grade pre-care protocol",
+      "before and after bunny lines anti-wrinkle london",
+      "bunny lines anti-wrinkle before and after",
+      "age reversal clinics bunny lines anti-wrinkle results",
+      "platelet-rich plasma (prp) results london",
+      "anti-aging clinic london",
+      "face & injectables",
+      "platelet-rich plasma (prp)",
+      "clinical aesthetic treatments"
     ],
     "coverMedia": {
       "url": "https://lh3.googleusercontent.com/aida-public/AB6AXuD0sGBWhyvflKKvPKdNj9eTy54fC48-JeBgjZKNpiFsfm5GPsH22DxfzanRDBWS6t55bXcWKOjgOqIsqlmeaYRkXfOm_34vmiaqGCOiG6frIQ6lgsfQ1SK38rV8reNQxw2gaK5cbvht1BZL0sbw78SliDjayEPSBPV1ruNcJDL_3fTwp7tSkRliTiXkNU3NvSGLVZenP6kPpqYUALPaAIH5mXlF9ZEIx-MrSgU7Xj4QfBa6iA8A5U8mrOKjPAqIlH1NRfLek5EGyZL4",

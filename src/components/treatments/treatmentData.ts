@@ -89,16 +89,28 @@ export function getServiceComponentSlotId(serviceId: string, slot: string): stri
   return `service-${cleanServiceId}-${cleanSlot}`;
 }
 
-// Shared Clinical Visual Assets used only when initializing a brand-new custom service slot
+/**
+ * Strips dummy AI/Unsplash placeholder URLs so only real uploaded or configured
+ * clinical assets are rendered; empty strings trigger the brand logo placeholder.
+ */
+export function cleanServiceImageUrl(url?: string): string {
+  const trimmed = String(url || '').trim();
+  if (
+    !trimmed ||
+    trimmed.startsWith('https://lh3.googleusercontent.com/aida') ||
+    trimmed.includes('unsplash.com')
+  ) {
+    return '';
+  }
+  return trimmed;
+}
+
+// Empty defaults so unpopulated slots display the brand logo placeholder instead of dummy photos
 const SHARED_VISUALS = {
-  skinPrepSerum:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCsOTiAGYh3ZwZLqmHi8Bd0PxiStRtDizSpt6aZQOiK4iam0dZNqvgoDcfmzHEkdw6mxDAltrHWXCEqzKTpdFl7drjTkTldDHYHS19rTfI3aMfrTYEaIKS6vy5bkKPtVv1Wn8FKQCPeWz0LyspMn2th2S-EoEh_TS53HeNobPGv6iVP9P9wl0AxaswPrtfge5U2Civ1crVVE43ElCUJGP4nRTvCsneftVBNtdu7FdK2Mfx34MvrZv7PdtoPppdCt08IShs0_ObNd4Ww',
-  recoverySanctuary:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBSuX4N3W4HsBUVW26Q5OmLoAQ6Qb3YNjGLg-8ofLrexbiVkt9Bw3a-hZGo93hvhun_nSrHqCNi3Y5dogbCEj0SZxTRz-sOlVnxvBLspr1iawH4StCpKMYzlZa2c5iu51J2sWJaCaBH4gkePN6MKNHwqw5U0h9utD-dO4ITw_Vg6XigW_70VQLdpHS7J9wIeuS2h2KizeqPqRTBI2Gt33cgzvC1_8crav5umAayG7FFLJ6XuHbKCfKJC5Auo3j7pI-IyKcihptQMM8r',
-  diagnosticCloseup:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR',
-  overviewBack:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR'
+  skinPrepSerum: '',
+  recoverySanctuary: '',
+  diagnosticCloseup: '',
+  overviewBack: ''
 };
 
 /**
@@ -131,51 +143,61 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
         ];
 
   const primaryImage =
-    item.heroMedia?.url || item.imageUrl || SHARED_VISUALS.diagnosticCloseup;
-  const beforeImg = item.beforeImage || primaryImage;
-  const afterImg = item.afterImage || primaryImage;
+    cleanServiceImageUrl(item.heroMedia?.url) || cleanServiceImageUrl(item.imageUrl);
+  const beforeImg =
+    cleanServiceImageUrl(item.clinicalComparisonMedia?.before?.url) ||
+    cleanServiceImageUrl(item.beforeImage);
+  const afterImg =
+    cleanServiceImageUrl(item.clinicalComparisonMedia?.after?.url) ||
+    cleanServiceImageUrl(item.afterImage);
 
-  const rawFront = item.overviewMedia?.frontCard?.url
-    ? item.overviewMedia.frontCard
+  const rawFront = cleanServiceImageUrl(item.overviewMedia?.frontCard?.url)
+    ? item.overviewMedia?.frontCard
     : item.overviewMedia?.frontImage || item.overviewMedia?.frontCard;
-  const rawBack = item.overviewMedia?.backCard?.url
-    ? item.overviewMedia.backCard
+  const rawBack = cleanServiceImageUrl(item.overviewMedia?.backCard?.url)
+    ? item.overviewMedia?.backCard
     : item.overviewMedia?.backImage || item.overviewMedia?.backCard;
+
+  const frontCardUrl = cleanServiceImageUrl(rawFront?.url);
+  const backCardUrl = cleanServiceImageUrl(rawBack?.url);
 
   const frontCard: TreatmentMediaItem = {
     ...(rawFront || {
-      url: primaryImage,
+      url: frontCardUrl,
       mediaType: 'image',
       altText: `${item.title} clinical protocol execution closeup`,
       seoTitle: `${item.title} Focal Procedure`,
       seoKeywords: defaultSeoKeywords.slice(2, 4),
     }),
     id: rawFront?.id || getServiceComponentSlotId(serviceId, 'overview-front'),
-    url: rawFront?.url || primaryImage,
+    url: frontCardUrl,
   };
 
   const backCard: TreatmentMediaItem = {
     ...(rawBack || {
-      url: SHARED_VISUALS.overviewBack,
+      url: backCardUrl,
       mediaType: 'image',
       altText: `${item.title} scientific procedural and diagnostic profile framing`,
       seoTitle: `${item.title} Diagnostic Framing`,
       seoKeywords: defaultSeoKeywords.slice(0, 2),
     }),
     id: rawBack?.id || getServiceComponentSlotId(serviceId, 'overview-back'),
-    url: rawBack?.url || SHARED_VISUALS.overviewBack,
+    url: backCardUrl,
   };
 
-  const rawPre = item.clinicalGuidanceMedia?.preCare?.url
-    ? item.clinicalGuidanceMedia.preCare
+  const rawPre = cleanServiceImageUrl(item.clinicalGuidanceMedia?.preCare?.url)
+    ? item.clinicalGuidanceMedia?.preCare
     : item.clinicalGuidanceMedia?.preCareVisual || item.clinicalGuidanceMedia?.preCare;
-  const rawPost = item.clinicalGuidanceMedia?.postCare?.url
-    ? item.clinicalGuidanceMedia.postCare
+  const rawPost = cleanServiceImageUrl(item.clinicalGuidanceMedia?.postCare?.url)
+    ? item.clinicalGuidanceMedia?.postCare
     : item.clinicalGuidanceMedia?.postCareVisual || item.clinicalGuidanceMedia?.postCare;
+
+  const preCareUrl = cleanServiceImageUrl(rawPre?.url);
+  const postCareUrl = cleanServiceImageUrl(rawPost?.url);
 
   const preCareMedia: TreatmentMediaItem = {
     ...(rawPre || {
-      url: SHARED_VISUALS.skinPrepSerum,
+      url: preCareUrl,
       mediaType: 'image',
       altText: 'Clinical Skin Prep Serum Application - Epidermal Prime & Hydration',
       seoTitle: 'Clinical Skin Prep Protocol',
@@ -187,12 +209,12 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
       ],
     }),
     id: rawPre?.id || getServiceComponentSlotId(serviceId, 'pre-care'),
-    url: rawPre?.url || SHARED_VISUALS.skinPrepSerum,
+    url: preCareUrl,
   };
 
   const postCareMedia: TreatmentMediaItem = {
     ...(rawPost || {
-      url: SHARED_VISUALS.recoverySanctuary,
+      url: postCareUrl,
       mediaType: 'image',
       altText: 'Clinical Recovery Spa Sanctuary - Cellular Healing & Protection',
       seoTitle: 'Clinical Recovery Protocol',
@@ -200,17 +222,18 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
       seoKeywords: ['post-care recovery', 'cellular healing', 'clinical skin recovery'],
     }),
     id: rawPost?.id || getServiceComponentSlotId(serviceId, 'post-care'),
-    url: rawPost?.url || SHARED_VISUALS.recoverySanctuary,
+    url: postCareUrl,
   };
 
   const rawAdditional = Array.isArray(item.additionalImages)
-    ? item.additionalImages.filter(Boolean)
+    ? item.additionalImages.map((u) => cleanServiceImageUrl(u)).filter(Boolean)
     : [];
   const existingPortfolioByIdOrUrl = new Map<string, TreatmentMediaItem>();
   if (Array.isArray(item.portfolioMedia)) {
     item.portfolioMedia.forEach((pm) => {
-      if (pm?.url) existingPortfolioByIdOrUrl.set(pm.url, pm);
-      if (pm?.id) existingPortfolioByIdOrUrl.set(pm.id, pm);
+      const cleanedPmUrl = cleanServiceImageUrl(pm?.url);
+      if (cleanedPmUrl) existingPortfolioByIdOrUrl.set(cleanedPmUrl, { ...pm, url: cleanedPmUrl });
+      if (pm?.id) existingPortfolioByIdOrUrl.set(pm.id, { ...pm, url: cleanedPmUrl });
     });
   }
 
@@ -235,14 +258,19 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
     };
   });
 
+  const coverUrl = cleanServiceImageUrl(item.coverMedia?.url) || primaryImage;
+  const targetConcernsUrl = cleanServiceImageUrl(item.targetConcernsMedia?.url);
+
   return {
     ...item,
     id: serviceId,
     imageUrl: primaryImage,
+    beforeImage: beforeImg,
+    afterImage: afterImg,
     seoKeywords: defaultSeoKeywords,
     coverMedia: {
       ...(item.coverMedia || {
-        url: primaryImage,
+        url: coverUrl,
         mediaType: 'image',
         altText: `${item.title} specialized clinical protocol at Age Reversal Clinic`,
         seoTitle: item.title,
@@ -250,7 +278,7 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
         caption: item.badgeText || 'Specialist Protocol',
       }),
       id: item.coverMedia?.id || getServiceComponentSlotId(serviceId, 'cover'),
-      url: item.coverMedia?.id ? item.coverMedia.url : item.coverMedia?.url || primaryImage,
+      url: coverUrl,
     },
     heroMedia: {
       ...(item.heroMedia || {
@@ -261,7 +289,7 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
         seoKeywords: defaultSeoKeywords,
       }),
       id: item.heroMedia?.id || getServiceComponentSlotId(serviceId, 'hero'),
-      url: item.heroMedia?.url || primaryImage,
+      url: primaryImage,
     },
     overviewMedia: {
       backCard,
@@ -271,7 +299,7 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
     },
     targetConcernsMedia: {
       ...(item.targetConcernsMedia || {
-        url: SHARED_VISUALS.diagnosticCloseup,
+        url: targetConcernsUrl,
         mediaType: 'image',
         altText: `High-precision targeted aesthetic treatment technology for ${item.title}`,
         seoTitle: 'Targeted Bio-Calibration Diagnosis',
@@ -281,7 +309,7 @@ export function populateTreatmentMediaDefaults(item: TreatmentDetail): Treatment
       id:
         item.targetConcernsMedia?.id ||
         getServiceComponentSlotId(serviceId, 'target-concerns'),
-      url: item.targetConcernsMedia?.url || SHARED_VISUALS.diagnosticCloseup,
+      url: targetConcernsUrl,
     },
     clinicalComparisonMedia: {
       before: {

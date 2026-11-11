@@ -3,6 +3,8 @@ import { TESTIMONIALS } from '../data';
 import { Star, Instagram, Facebook } from 'lucide-react';
 import { motion } from 'motion/react';
 import Pagination from './Pagination';
+import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
+import { cleanServiceImageUrl } from './treatments/treatmentData';
 
 interface TestimonialsProps {
   treatmentId?: string;
@@ -69,11 +71,15 @@ export default function Testimonials({ treatmentId, category }: TestimonialsProp
               <div>
                 <div className="flex items-start sm:items-center justify-between gap-2.5 sm:gap-3 mb-3.5 sm:mb-6">
                   <div className="flex items-center space-x-2.5 sm:space-x-3.5 md:space-x-4 min-w-0 flex-1">
-                    <img
-                      alt={testimonial.name}
-                      className="w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
-                      src={testimonial.image}
-                    />
+                    <div className="w-10 h-10 sm:w-13 sm:h-13 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-white">
+                      <ClinicImageWithPlaceholder
+                        alt={testimonial.name}
+                        src={cleanServiceImageUrl(testimonial.image)}
+                        containerClassName="relative w-full h-full overflow-hidden bg-white flex items-center justify-center"
+                        className="w-full h-full object-cover"
+                        logoSize="xs"
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm sm:text-base md:text-lg font-bold text-silver-900 truncate leading-tight">{testimonial.name}</h3>
                       <p className="text-[10px] sm:text-[11px] md:text-xs text-silver-500 font-semibold uppercase tracking-wider mt-0.5 truncate">

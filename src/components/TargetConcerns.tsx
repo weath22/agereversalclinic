@@ -1,6 +1,7 @@
-import { Shield, CheckCircle2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { TreatmentMediaItem } from '../types';
 import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
+import { cleanServiceImageUrl } from './treatments/treatmentData';
 
 interface TargetConcernsProps {
   data: {
@@ -12,54 +13,67 @@ interface TargetConcernsProps {
 }
 
 export default function TargetConcerns({ data }: TargetConcernsProps) {
-  const fallbackUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDK134gv5bOV1d7aZiP1QG_u9fKjKQ1_jlRBXLR-E5Cst7nSdtayh9Zwkvuuhz3dP6vySkKzLGjdMYc8iMIRXdyhsx9jSRhWuZ2Ko5pQgUihbuqwfdTwbjxtShh29W1LrCfdefV754VZMLFcfswtICdzLfdn_ds83B85z662-e6K50qYlBWu8V0jz2Pz3aPok1SLdWcBBObR9QvnsdqE0Ur7_jkggwLIa4QxTmWu7HNm99XuxZ6eHxCoiVQwYKiqsYRa9CxFNwuAhuR";
   const media = data.targetConcernsMedia;
   const mediaId = media?.id || `service-${data.id || 'default'}-target-concerns`;
-  const mediaUrl = media?.url || fallbackUrl;
-  const altText = media?.altText || `${data.title} diagnostic technology - High-precision targeted aesthetic treatment technology`;
+  const mediaUrl = cleanServiceImageUrl(media?.url);
+  const altText =
+    media?.altText ||
+    `${data.title} diagnostic technology - High-precision targeted aesthetic treatment technology`;
   const seoTitle = media?.seoTitle || data.title;
-  const caption = media?.caption || "Targeted Bio-Calibration";
+  const caption = media?.caption || 'Targeted Bio-Calibration';
 
   return (
-    <div id="target-concerns" className="max-w-5xl mx-auto w-full pt-6">
-      <div className="space-y-6">
-        <h3 className="text-xs font-extrabold uppercase tracking-widest text-silver-800 flex items-center space-x-2">
-          <Shield className="h-4 w-4 text-rose-gold" />
-          <span>Target Concerns</span>
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-          {/* Left: Concerns List */}
-          <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div id="target-concerns" className="max-w-5xl lg:max-w-6xl mx-auto w-full pt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+        {/* Left Column: Editorial Header & Clean Structured Concerns List */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="space-y-2 border-b border-silver-150 pb-4">
+            <span className="text-[10px] font-black tracking-widest uppercase text-rose-gold block">
+              Clinical Indications
+            </span>
+            <h3 className="text-2xl md:text-3xl font-serif font-bold text-silver-950 tracking-tight">
+              Target Concerns
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
             {data.concerns.map((concern, idx) => (
-              <div key={idx} className="flex items-start space-x-3 group p-2.5 rounded-lg hover:bg-silver-50/50 transition-colors">
-                <CheckCircle2 className="h-4 w-4 text-rose-gold shrink-0 mt-0.5" />
-                <span className="text-xs md:text-sm text-silver-600 leading-normal font-medium">
+              <div
+                key={idx}
+                className="flex items-start gap-3.5 py-3.5 border-b border-silver-100 group transition-colors"
+              >
+                <span className="w-5 h-5 rounded-full bg-rose-gold/10 text-rose-gold-dark flex items-center justify-center shrink-0 mt-0.5 transition-colors group-hover:bg-rose-gold group-hover:text-white">
+                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                </span>
+                <span className="text-sm md:text-[15px] text-silver-700 group-hover:text-silver-950 leading-snug font-medium transition-colors">
                   {concern}
                 </span>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Right: Modern Aesthetic/Technology Closeup card */}
-          <div className="md:col-span-4">
+        {/* Right Column: Clean Framing for Clinical Media / Logo Placeholder */}
+        <div className="lg:col-span-5">
+          <div className="space-y-2.5">
             <div
               id={mediaId}
               data-media-id={mediaId}
-              className="relative aspect-[4/3] md:aspect-square w-full rounded-xl overflow-hidden border border-silver-200 bg-silver-50 group shadow-sm"
+              className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden border border-silver-150 bg-slate-50 shadow-[0_12px_36px_rgba(0,0,0,0.06)] group"
             >
               <ClinicImageWithPlaceholder
                 src={mediaUrl}
                 alt={altText}
                 title={seoTitle}
-                containerClassName="relative w-full h-full overflow-hidden bg-silver-50 flex items-center justify-center"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                containerClassName="relative w-full h-full overflow-hidden bg-slate-50 flex items-center justify-center"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-              <div className="absolute bottom-2.5 left-2.5 right-2.5 text-[9px] font-bold text-white tracking-wide uppercase text-center bg-black/45 backdrop-blur-xs py-1 rounded">
-                {caption}
-              </div>
+            </div>
+            <div className="flex items-center justify-between px-1 text-[11px] text-silver-400 font-medium tracking-wide">
+              <span>{caption}</span>
+              <span aria-hidden="true">·</span>
+              <span className="truncate max-w-[60%] text-right">{data.title}</span>
             </div>
           </div>
         </div>

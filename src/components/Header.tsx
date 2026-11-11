@@ -52,6 +52,7 @@ interface NavItem {
   href?: string;
   isMega?: boolean;
   hideOnDesktop?: boolean;
+  hideBelow1230?: boolean;
   imageUrl?: string;
   megaColumns?: MegaColumn[];
   procedures?: { name: string; desc?: string; id?: string; categoryFilter?: string }[];
@@ -202,6 +203,13 @@ export default function Header({
         desktopName = 'Beauty';
       }
 
+      const isAdvancedFacialsOrBeauty =
+        branch.id === 'advanced-facials' ||
+        lowerBranchName === 'advanced facials' ||
+        branch.id === 'hair-beauty' ||
+        lowerBranchName === 'hair & beauty' ||
+        lowerBranchName === 'beauty';
+
       return {
         name: branch.name,
         desktopName,
@@ -210,6 +218,7 @@ export default function Header({
         branchCategory: branch.name as MasterBranchCategory,
         isMega: true,
         hideOnDesktop: isIvDripsBranch,
+        hideBelow1230: isAdvancedFacialsOrBeauty,
         imageUrl:
           BRANCH_PREVIEW_IMAGES[branch.id] ||
           'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=400&q=80',
@@ -370,7 +379,7 @@ export default function Header({
               return (
                 <div
                   key={item.id}
-                  className="relative py-2"
+                  className={`relative py-2 ${item.hideBelow1230 ? 'hidden min-[1230px]:block' : ''}`}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
                 >

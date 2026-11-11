@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 
 import { TreatmentMediaItem } from '../types';
 import ClinicImageWithPlaceholder from './common/ClinicImageWithPlaceholder';
+import { cleanServiceImageUrl } from './treatments/treatmentData';
 
 interface ServiceHeroProps {
   data: {
@@ -31,8 +32,8 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
 
   const heroMedia = data.heroMedia;
   const heroMediaId = heroMedia?.id || `service-${data.id || 'default'}-hero`;
-  const isVideo = heroMedia?.mediaType === 'video' || !!heroMedia?.url?.match(/\.(mp4|webm|mov)(\?|$)/i);
-  const mediaUrl = heroMedia?.url || data.imageUrl;
+  const mediaUrl = cleanServiceImageUrl(heroMedia?.url) || cleanServiceImageUrl(data.imageUrl);
+  const isVideo = Boolean(mediaUrl) && (heroMedia?.mediaType === 'video' || !!mediaUrl.match(/\.(mp4|webm|mov)(\?|$)/i));
   const altText = heroMedia?.altText || `${data.title} - Age Reversal Clinic London`;
   const seoTitle = heroMedia?.seoTitle || data.title;
 
@@ -115,7 +116,7 @@ export default function ServiceHero({ data, onClose, onBook }: ServiceHeroProps)
       {/* Decorative background gradient on the left half (Desktop only) */}
       <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-silver-50/30 to-white pointer-events-none hidden md:block z-0" />
 
-      <div className="container mx-auto px-4 md:px-8 relative z-10 flex flex-col md:flex-row min-h-0 md:min-h-[calc(100vh-140px)] items-center gap-8 md:gap-12 pt-6 pb-2 md:py-8">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 relative z-10 flex flex-col md:flex-row min-h-0 md:min-h-[calc(100vh-140px)] items-center gap-8 md:gap-12 pt-6 pb-2 md:py-8">
         
         {/* Left Column: Heading, Category, Call to action */}
         <motion.div 
