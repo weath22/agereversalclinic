@@ -7,6 +7,7 @@ import SpecialistAreas from './components/SpecialistAreas';
 import WhyChooseUs from './components/WhyChooseUs';
 import Services from './components/Services';
 import Treatments from './components/Treatments';
+import TreatmentPricingShowcase from './components/TreatmentPricingShowcase';
 import Process from './components/Process';
 import FacilityInteriors from './components/FacilityInteriors';
 import BeforeAfterGallery from './components/BeforeAfterGallery';
@@ -616,6 +617,17 @@ export default function App() {
                 onBookClick={() => handleScrollToBooking('General Rejuvenation Consultation')} 
                 onTreatmentClick={(name) => setSelectedTreatment(name)}
                 treatmentsConfig={treatmentsConfig}
+              />
+            </div>
+
+            {/* 5.5 Paginated Treatment Pricing Cards Showcase */}
+            <div className="relative isolate">
+              <TreatmentPricingShowcase
+                onViewAllPricingClick={(categoryFilter) => {
+                  setPricingCategoryFilter(categoryFilter);
+                  setIsPricingOpen(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
             </div>
 
