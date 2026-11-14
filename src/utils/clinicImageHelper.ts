@@ -67,7 +67,8 @@ export type ClinicSlotCategory =
   | 'pillar'
   | 'process'
   | 'facility'
-  | 'brand';
+  | 'brand'
+  | 'social-video';
 
 /**
  * Generate a predictable permanent slot ID for any clinic section
@@ -111,6 +112,10 @@ export function getClinicSlotId(category: ClinicSlotCategory, idOrIndex?: string
     case 'brand': {
       const cleanBrandId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-brand-|brand-|bp-)/, '');
       return `clinic-brand-${cleanBrandId}`;
+    }
+    case 'social-video': {
+      const cleanVideoId = normalizeClinicSlotId(String(idOrIndex || '1')).replace(/^(clinic-social-video-|social-video-|reel-)/, '');
+      return `clinic-social-video-${cleanVideoId}`;
     }
     default:
       return normalizeClinicSlotId(String(idOrIndex || 'clinic-asset'));

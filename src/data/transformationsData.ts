@@ -207,44 +207,6 @@ export const CLINICAL_TRANSFORMATION_CASES: TransformationCase[] = [
 
 export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
   {
-    "id": "pair-1",
-    "title": "Facial skin care",
-    "category": "Skin Texture & Scars",
-    "tag": "Facial skin care",
-    "patientInfo": "Facial skin care",
-    "duration": "12 Weeks",
-    "sessions": 3,
-    "concern": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
-    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
-    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO",
-    "galleryImages": [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO"
-    ],
-    "recommendedTreatmentIds": [
-      "facial-skin-care"
-    ],
-    "recommendedProductIds": [
-      "st-antioxidant-soothing-serum",
-      "st-antioxidant-matte-day-cream"
-    ],
-    "treatmentGroupId": "facial-skin-care",
-    "linkedTreatmentId": "facial-skin-care",
-    "linkedTreatmentTitle": "Facial skin care",
-    "beforeAltText": "Skin Treatment - 12 Wks Before Anti-Aging Rejuvenation Treatment at Age Reversal Clinics London",
-    "afterAltText": "Skin Treatment - 12 Wks After Anti-Aging Rejuvenation Treatment Result at Age Reversal Clinics London",
-    "singleFrameAltText": "Facial skin care Before & After Transformation at Age Reversal Clinics London",
-    "seoTitle": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
-    "seoKeywords": [
-      "skin treatment - 12 wks before and after",
-      "anti-aging rejuvenation london",
-      "age reversal clinics results"
-    ],
-    "featured": false,
-    "hidden": false,
-    "updatedAt": 1793722234602
-  },
-  {
     "id": "pair-1793724383033",
     "title": "Clinical Transformation",
     "category": "Skin Texture & Scars",
@@ -374,42 +336,42 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "updatedAt": 1794059769815
   },
   {
-    "id": "pair-4",
-    "title": "Vertical Comparison",
-    "category": "Hair Density",
-    "tag": "Platelet-Rich Plasma (PRP)",
-    "patientInfo": "Platelet-Rich Plasma (PRP)",
-    "duration": "20 Weeks",
-    "sessions": 4,
-    "concern": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
-    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
-    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd",
+    "id": "pair-1",
+    "title": "Facial skin care",
+    "category": "Skin Texture & Scars",
+    "tag": "Facial skin care",
+    "patientInfo": "Facial skin care",
+    "duration": "12 Weeks",
+    "sessions": 3,
+    "concern": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
+    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
+    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO",
     "galleryImages": [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd"
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuB6YRX4oWEimDRlPfT4ZvP49QVjagike9HlAOT7FsLhwf61UL4dCKCGWr1FS7SmMqMhd9VheV3RuR4bKmR_H3dRMFEAxUvuwj56dIFiriv8niGvOiz7XVef6Gjx4h3iHxaFayLl_g4p2ViKYOGEKxMw4bAR7W5VL-rkDMyy7LQjrabplnGUsrY6j9fECzUiFYmk_OZ_-hBZJAePOaKJjK0lqqjd7ahusnbsXJYKmIG5Rs5lmafypBuU_b9wqYQQG0v8O8BfCz2mokhu",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAtnTWTfvtjmgPs1n1Q2b5gdUnZqNuGV3e-_ZLF0KZFSWWrFhA3eAIX2iTTuaY-hDvVwQ5PKReB6fFMP3tq1WnzmcGJr11CXLsLkYmYd8zLGLdL5zETq6wohVWzqLcykLevZUPnJ_LG55HukqRiTUllO8pE80UJFXvPUytiYATX5fbzVCDVz_cqX20l_6dKdFzb4UaffXMlUAbDiZwQL531mZiVM9lUuSozSA_-uLXJhit8mpHzT04T8XOmmy7yIYQyPOkWqJTIqPfO"
     ],
     "recommendedTreatmentIds": [
-      "platelet-rich-plasma-prp"
+      "facial-skin-care"
     ],
     "recommendedProductIds": [
       "st-antioxidant-soothing-serum",
       "st-antioxidant-matte-day-cream"
     ],
-    "treatmentGroupId": "platelet-rich-plasma-prp",
-    "linkedTreatmentId": "platelet-rich-plasma-prp",
-    "linkedTreatmentTitle": "Platelet-Rich Plasma (PRP)",
-    "beforeAltText": "Vertical Comparison Before Clinical Hair Restoration Treatment at Age Reversal Clinics London",
-    "afterAltText": "Vertical Comparison After Clinical Hair Restoration Treatment Result at Age Reversal Clinics London",
-    "singleFrameAltText": "Vertical Comparison Before & After Transformation at Age Reversal Clinics London",
-    "seoTitle": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
+    "treatmentGroupId": "facial-skin-care",
+    "linkedTreatmentId": "facial-skin-care",
+    "linkedTreatmentTitle": "Facial skin care",
+    "beforeAltText": "Skin Treatment - 12 Wks Before Anti-Aging Rejuvenation Treatment at Age Reversal Clinics London",
+    "afterAltText": "Skin Treatment - 12 Wks After Anti-Aging Rejuvenation Treatment Result at Age Reversal Clinics London",
+    "singleFrameAltText": "Facial skin care Before & After Transformation at Age Reversal Clinics London",
+    "seoTitle": "Skin Treatment - 12 Wks — Before & After Result | Age Reversal Clinics",
     "seoKeywords": [
-      "vertical comparison before and after",
-      "clinical hair restoration london",
+      "skin treatment - 12 wks before and after",
+      "anti-aging rejuvenation london",
       "age reversal clinics results"
     ],
     "featured": false,
     "hidden": false,
-    "updatedAt": 1792683065640
+    "updatedAt": 1793722234602
   },
   {
     "id": "pair-1794324207595",
@@ -453,6 +415,44 @@ export const ADMIN_SYNCED_TRANSFORMATION_CASES: TransformationCase[] = [
     "featured": false,
     "hidden": false,
     "updatedAt": 1794324287512
+  },
+  {
+    "id": "pair-4",
+    "title": "Vertical Comparison",
+    "category": "Hair Density",
+    "tag": "Platelet-Rich Plasma (PRP)",
+    "patientInfo": "Platelet-Rich Plasma (PRP)",
+    "duration": "20 Weeks",
+    "sessions": 4,
+    "concern": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
+    "beforeImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
+    "afterImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd",
+    "galleryImages": [
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAt4dLQWWadBxtTzBpplagu2J9MUvwKtNJkgViQjChgH82bAH_iO6gF6p-TSVCSZ2jViPeml_xgEZ7Iq6F_NEVjRCtxJ7KhPFDOYT5byV1VJXaplQwCg6QybxEWi8wHT_QpGlWU8xBqFyhtpBZao172mEYVtF0UVKABJBqCwM5SU30IS2ON1eLnGldXQRWwBGjBQU7aTfniH71oyqdfhnTK_-tGbm5YfhUmEG8QjW9Nsh3NLL2fC3UAJ83TDu-VoVMkNkLRQQdclSVR",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAkakM8tbhNmtYeKmoQBAAzTei0SDwQVg3jf4IfrTGNP8I8WmzYu8BL-eZUD6ccSBm9fY3UgWCvjrJX1rBeyzCvPpnD3Fa7-r7rI5pw8wP459wQIwtGxvpKIrc7paJJ_LgbbcH6SrOD3cwg6mM0x7ZahhhPNgqR7PkR4wXem9rqOpBJQQq8lP3Zmij233vHOLihq3N7Pxxs00WXjWevFzHxFsHzlNU6_pv9H7yfM-0JpAPd-C0UGYVLJ7BZ6WyP8HWAt41DR1q8v6Hd"
+    ],
+    "recommendedTreatmentIds": [
+      "platelet-rich-plasma-prp"
+    ],
+    "recommendedProductIds": [
+      "st-antioxidant-soothing-serum",
+      "st-antioxidant-matte-day-cream"
+    ],
+    "treatmentGroupId": "platelet-rich-plasma-prp",
+    "linkedTreatmentId": "platelet-rich-plasma-prp",
+    "linkedTreatmentTitle": "Platelet-Rich Plasma (PRP)",
+    "beforeAltText": "Vertical Comparison Before Clinical Hair Restoration Treatment at Age Reversal Clinics London",
+    "afterAltText": "Vertical Comparison After Clinical Hair Restoration Treatment Result at Age Reversal Clinics London",
+    "singleFrameAltText": "Vertical Comparison Before & After Transformation at Age Reversal Clinics London",
+    "seoTitle": "Vertical Comparison — Before & After Result | Age Reversal Clinics",
+    "seoKeywords": [
+      "vertical comparison before and after",
+      "clinical hair restoration london",
+      "age reversal clinics results"
+    ],
+    "featured": false,
+    "hidden": false,
+    "updatedAt": 1792683065640
   },
   {
     "id": "pair-2",

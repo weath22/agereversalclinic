@@ -29,8 +29,14 @@ import {
   ClinicFacilityGallerySection,
   ClinicTrustBrandItem,
   ClinicTrustBrandsSection,
-  ClinicAccreditationsSection
+  ClinicAccreditationsSection,
+  ClinicSocialVideoItem
 } from '../data/clinicInfo';
+import {
+  parseSocialVideoUrl,
+  resolveSocialVideoMetadata,
+  normalizeSocialVideoItem
+} from '../utils/socialVideoHelper';
 
 const DAY_LABELS: { day: number; short: string }[] = [
   { day: 1, short: 'Mon' },
@@ -327,6 +333,7 @@ export default function ClinicDataManager() {
     | 'facilityRoom'
     | 'processStep'
     | 'trustBrand'
+    | 'socialVideo'
     | 'keywords'
     | 'accreditations'
     | 'payments'
@@ -349,6 +356,11 @@ export default function ClinicDataManager() {
   const [newStepKeywordInput, setNewStepKeywordInput] = useState('');
   const [editingBrandIndex, setEditingBrandIndex] = useState<number | null>(null);
   const [brandDraft, setBrandDraft] = useState<ClinicTrustBrandItem | null>(null);
+  const [editingSocialVideoIndex, setEditingSocialVideoIndex] = useState<number | null>(null);
+  const [socialVideoDraft, setSocialVideoDraft] = useState<ClinicSocialVideoItem | null>(null);
+  const [quickSocialVideoUrl, setQuickSocialVideoUrl] = useState('');
+  const [quickSocialVideoHandle, setQuickSocialVideoHandle] = useState('');
+  const [isResolvingSocialVideo, setIsResolvingSocialVideo] = useState(false);
   const [seoInputDrafts, setSeoInputDrafts] = useState<Record<string, string>>({});
   const [newDoctorTimeSlot, setNewDoctorTimeSlot] = useState('');
   const [newDefaultTimeSlot, setNewDefaultTimeSlot] = useState('');
@@ -1010,6 +1022,163 @@ export default function ClinicDataManager() {
         };
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
         void persistClinicDataImmediately(nextData, `Deleted facility suite "${itemName}" and updated clinicInfo.ts!`);
+      },
+    });
+  };
+
+  // Social Video Showcase (TikTok / YouTube / Direct Video) management
+  const openEditSocialVideoModal = (index: number) => {
+    const target = (data.socialVideos || [])[index];
+    if (!target) return;
+    setEditingSocialVideoIndex(index);
+    setSocialVideoDraft({
+      id: target.id || `social-video-${index + 1}`,
+      videoUrl: target.videoUrl || '',
+      handle: target.handle || '@agereversalclinics',
+      title: target.title || '',
+      posterUrl: target.posterUrl || '',
+      platform: target.platform || parseSocialVideoUrl(target.videoUrl || '').platform,
+    });
+    setModalType('socialVideo');
+  };
+
+  const openNewSocialVideoModal = () => {
+    const nextIdx = (data.socialVideos?.length || 0) + 1;
+    setEditingSocialVideoIndex(null);
+    setSocialVideoDraft({
+      id: `social-video-${Date.now()}-${nextIdx}`,
+      videoUrl: '',
+      handle: '@agereversalclinics',
+      title: '',
+      posterUrl: '',
+      platform: 'tiktok',
+    });
+    setModalType('socialVideo');
+  };
+
+  const handleAutoResolveDraftUrl = async (rawUrl: string) => {
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return;
+    setIsResolvingSocialVideo(true);
+    try {
+      const resolved = await resolveSocialVideoMetadata(trimmed);
+      setSocialVideoDraft((prev) => {
+        if (!prev) return prev;
+        const nextHandle =
+          prev.handle && prev.handle !== '@agereversalclinics'
+            ? prev.handle
+            : resolved.handle || prev.handle || '@agereversalclinics';
+        return {
+          ...prev,
+          videoUrl: resolved.canonicalUrl || trimmed,
+          platform: resolved.platform,
+          posterUrl: prev.posterUrl?.trim() ? prev.posterUrl : resolved.posterUrl || '',
+          handle: nextHandle,
+          title: prev.title?.trim() ? prev.title : resolved.title || '',
+        };
+      });
+    } finally {
+      setIsResolvingSocialVideo(false);
+    }
+  };
+
+  const handleQuickAddSocialVideo = async () => {
+    const trimmedUrl = quickSocialVideoUrl.trim();
+    if (!trimmedUrl) return;
+    setIsResolvingSocialVideo(true);
+    setSaveStatus({ state: 'saving', message: 'Resolving TikTok / YouTube stream metadata...' });
+    try {
+      const resolved = await resolveSocialVideoMetadata(trimmedUrl);
+      const currentList = [...(dataRef.current.socialVideos || [])];
+      const nextIdx = currentList.length + 1;
+      const customHandle = quickSocialVideoHandle.trim();
+      const normalized = normalizeSocialVideoItem(
+        {
+          id: `social-video-${Date.now()}-${nextIdx}`,
+          videoUrl: resolved.canonicalUrl || trimmedUrl,
+          handle: customHandle || resolved.handle || '@agereversalclinics',
+          title: resolved.title || '',
+          posterUrl: resolved.posterUrl || '',
+          platform: resolved.platform,
+        },
+        currentList.length
+      );
+      currentList.push(normalized);
+      const nextData: ClinicData = {
+        ...dataRef.current,
+        socialVideos: currentList,
+      };
+      setQuickSocialVideoUrl('');
+      setQuickSocialVideoHandle('');
+      await persistClinicDataImmediately(
+        nextData,
+        `Added ${normalized.platform?.toUpperCase() || 'Social'} video (${normalized.handle}) to clinicInfo.ts!`
+      );
+    } finally {
+      setIsResolvingSocialVideo(false);
+    }
+  };
+
+  const saveSocialVideoDraft = async () => {
+    if (!socialVideoDraft || !socialVideoDraft.videoUrl.trim()) return;
+    setIsResolvingSocialVideo(true);
+    try {
+      const resolved = await resolveSocialVideoMetadata(socialVideoDraft.videoUrl.trim());
+      const currentList = [...(dataRef.current.socialVideos || [])];
+      const targetIdx =
+        editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
+          ? editingSocialVideoIndex
+          : currentList.length;
+      const normalized = normalizeSocialVideoItem(
+        {
+          ...socialVideoDraft,
+          id: socialVideoDraft.id || `social-video-${targetIdx + 1}`,
+          videoUrl: resolved.canonicalUrl || socialVideoDraft.videoUrl.trim(),
+          posterUrl: socialVideoDraft.posterUrl?.trim() || resolved.posterUrl || '',
+          handle: socialVideoDraft.handle?.trim() || resolved.handle || '@agereversalclinics',
+          title: socialVideoDraft.title?.trim() || resolved.title || '',
+          platform: resolved.platform,
+        },
+        targetIdx
+      );
+      if (editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0) {
+        currentList[editingSocialVideoIndex] = normalized;
+      } else {
+        currentList.push(normalized);
+      }
+      const nextData: ClinicData = {
+        ...dataRef.current,
+        socialVideos: currentList,
+      };
+      setModalType(null);
+      setSocialVideoDraft(null);
+      await persistClinicDataImmediately(
+        nextData,
+        `Saved ${normalized.platform?.toUpperCase() || 'Social'} video (${normalized.handle}) to clinicInfo.ts!`
+      );
+    } finally {
+      setIsResolvingSocialVideo(false);
+    }
+  };
+
+  const deleteSocialVideo = (index: number) => {
+    const item = (data.socialVideos || [])[index];
+    const itemLabel = item?.title || item?.handle || `Video #${index + 1}`;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remove Social Video',
+      message: `Are you sure you want to remove "${itemLabel}" from the Footer Social Video Showcase?`,
+      onConfirm: () => {
+        const nextList = (dataRef.current.socialVideos || []).filter((_, idx) => idx !== index);
+        const nextData: ClinicData = {
+          ...dataRef.current,
+          socialVideos: nextList,
+        };
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        void persistClinicDataImmediately(
+          nextData,
+          `Removed social video "${itemLabel}" and updated clinicInfo.ts!`
+        );
       },
     });
   };
@@ -1930,6 +2099,188 @@ export default function ClinicDataManager() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Footer Social Video Showcase — TikTok & YouTube Streams (CLINIC_DATA.socialVideos) */}
+                <div className="col-span-full pt-6 border-t border-slate-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold uppercase text-[#c5a880] tracking-wider">
+                        Footer Social Video Showcase (CLINIC_DATA.socialVideos)
+                      </span>
+                      <h3 className="text-sm font-bold text-[#003334]">
+                        TikTok &amp; YouTube Video Streams ({(data.socialVideos || []).length})
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Add your own TikTok video URLs, YouTube Shorts / video links, or direct MP4 URLs to stream directly in the footer showcase.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openNewSocialVideoModal}
+                      className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#003334] hover:bg-[#002627] text-white rounded-lg cursor-pointer self-start sm:self-auto shrink-0"
+                    >
+                      + Add Social Video
+                    </button>
+                  </div>
+
+                  {/* Quick Paste Bar for TikTok / YouTube URLs */}
+                  <div className="p-3.5 bg-slate-100/80 border border-slate-200 rounded-xl space-y-2.5">
+                    <div className="text-[11px] font-bold uppercase text-slate-700">
+                      Quick Add TikTok or YouTube Video URL
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
+                      <div className="md:col-span-7">
+                        <input
+                          type="url"
+                          value={quickSocialVideoUrl}
+                          onChange={(e) => setQuickSocialVideoUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && quickSocialVideoUrl.trim()) {
+                              e.preventDefault();
+                              void handleQuickAddSocialVideo();
+                            }
+                          }}
+                          placeholder="Paste TikTok URL (https://www.tiktok.com/@user/video/...) or YouTube Shorts / Watch URL..."
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <input
+                          type="text"
+                          value={quickSocialVideoHandle}
+                          onChange={(e) => setQuickSocialVideoHandle(e.target.value)}
+                          placeholder="@handle (optional, auto-detected)"
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
+                        />
+                      </div>
+                      <div className="md:col-span-2 flex">
+                        <button
+                          type="button"
+                          onClick={() => void handleQuickAddSocialVideo()}
+                          disabled={!quickSocialVideoUrl.trim() || isResolvingSocialVideo}
+                          className="w-full px-3 py-2 bg-[#003334] hover:bg-[#002627] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+                        >
+                          {isResolvingSocialVideo ? 'Adding...' : '+ Add Stream'}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Supports <strong>TikTok</strong> (`tiktok.com/@.../video/...` or `vm.tiktok.com/...`), <strong>YouTube Shorts &amp; Videos</strong> (`youtube.com/shorts/...`, `youtube.com/watch?v=...`, `youtu.be/...`), or direct `.mp4` links. Cover thumbnails and `@handle` are fetched automatically.
+                    </div>
+                  </div>
+
+                  {/* Social Video Cards Grid */}
+                  {(data.socialVideos || []).length === 0 ? (
+                    <div className="border border-dashed border-slate-300 bg-white rounded-xl p-6 text-center space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                        No Social Showcase Videos Configured Yet
+                      </div>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        Paste your TikTok or YouTube video links above (or click <strong>+ Add Social Video</strong>) to stream your clinic&apos;s own social videos above the footer.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                      {(data.socialVideos || []).map((video, vIdx) => {
+                        const parsed = parseSocialVideoUrl(video.videoUrl || '');
+                        const platformLabel = (video.platform || parsed.platform || 'video').toUpperCase();
+                        const effectivePoster = video.posterUrl || parsed.autoPosterUrl || '';
+                        const videoSlotId = getClinicSlotId('social-video', video.id || vIdx + 1);
+                        return (
+                          <div
+                            key={video.id || vIdx}
+                            className="border border-slate-200 bg-white rounded-xl p-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-all"
+                          >
+                            <div>
+                              <div className="relative mb-2">
+                                <AdminSlotThumbnail
+                                  src={effectivePoster}
+                                  slotId={effectivePoster.startsWith('/assets/') ? videoSlotId : undefined}
+                                  alt={video.title || video.handle || `Social Video ${vIdx + 1}`}
+                                  className="w-full h-36"
+                                  showStatusLabel={true}
+                                />
+                                <span
+                                  className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-white text-[9px] font-bold uppercase tracking-wider ${
+                                    platformLabel === 'TIKTOK'
+                                      ? 'bg-black/85 border border-white/20'
+                                      : platformLabel === 'YOUTUBE'
+                                      ? 'bg-rose-600/90'
+                                      : 'bg-slate-900/80'
+                                  }`}
+                                >
+                                  {platformLabel} #{vIdx + 1}
+                                </span>
+                              </div>
+                              <div className="font-bold text-slate-900 text-xs truncate">
+                                {video.handle || parsed.autoHandle || '@agereversalclinics'}
+                              </div>
+                              {video.title && (
+                                <div className="text-[11px] text-slate-600 truncate mt-0.5" title={video.title}>
+                                  {video.title}
+                                </div>
+                              )}
+                              <div
+                                className="text-[10px] font-mono text-slate-400 truncate mt-0.5"
+                                title={video.videoUrl}
+                              >
+                                {video.videoUrl}
+                              </div>
+                            </div>
+
+                            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditSocialVideoModal(vIdx)}
+                                  className="px-2 py-1 text-[10px] uppercase font-bold bg-slate-100 hover:bg-slate-200 text-slate-900 rounded cursor-pointer"
+                                >
+                                  Edit URL
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    triggerImageUpload(
+                                      async (newUrl, fileName) => {
+                                        const currentVideos = [...(dataRef.current.socialVideos || [])];
+                                        currentVideos[vIdx] = {
+                                          ...currentVideos[vIdx],
+                                          id: video.id || `social-video-${vIdx + 1}`,
+                                          posterUrl: newUrl,
+                                        };
+                                        const nextData: ClinicData = {
+                                          ...dataRef.current,
+                                          socialVideos: currentVideos,
+                                        };
+                                        await persistClinicDataImmediately(
+                                          nextData,
+                                          `Uploaded cover thumbnail "${fileName || video.handle}" & saved to ${newUrl}!`
+                                        );
+                                      },
+                                      `social_video_cover_${vIdx}`,
+                                      video.posterUrl,
+                                      videoSlotId
+                                    );
+                                  }}
+                                  className="text-[10px] uppercase font-bold text-[#003334] hover:underline cursor-pointer"
+                                >
+                                  Cover Img
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => deleteSocialVideo(vIdx)}
+                                className="text-[10px] uppercase font-bold text-rose-600 hover:text-rose-800 cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
@@ -3409,6 +3760,8 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? 'Our Process Step Editor'
                     : modalType === 'trustBrand'
                     ? 'Trust Brand Partner Editor'
+                    : modalType === 'socialVideo'
+                    ? 'Footer Social Video Stream Editor'
                     : 'Item Array Editor'}
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-[#003334]">
@@ -3426,6 +3779,8 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? (editingStepIndex !== null ? 'Edit Process Step' : 'Add Process Step')
                     : modalType === 'trustBrand'
                     ? (editingBrandIndex !== null ? 'Edit Brand Partner' : 'Add Brand Partner')
+                    : modalType === 'socialVideo'
+                    ? (editingSocialVideoIndex !== null ? 'Edit Social Video (TikTok / YouTube)' : 'Add Social Video (TikTok / YouTube)')
                     : modalType === 'keywords' ? 'Edit Brand Keywords'
                     : modalType === 'accreditations' ? 'Edit Accreditations'
                     : modalType === 'payments' ? 'Edit Payment Methods'
@@ -4563,6 +4918,146 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 </div>
               )}
 
+              {/* EDIT SOCIAL VIDEO (TIKTOK / YOUTUBE / MP4) FORM */}
+              {modalType === 'socialVideo' && socialVideoDraft && (
+                <div className="space-y-3.5 text-xs">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="font-bold uppercase text-slate-700">
+                        TikTok / YouTube / Direct Video URL
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void handleAutoResolveDraftUrl(socialVideoDraft.videoUrl)}
+                        disabled={!socialVideoDraft.videoUrl.trim() || isResolvingSocialVideo}
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-teal-50 text-[#003334] border border-teal-200 hover:bg-teal-100 disabled:opacity-50 rounded cursor-pointer"
+                      >
+                        {isResolvingSocialVideo ? 'Fetching...' : 'Auto-Fetch Details'}
+                      </button>
+                    </div>
+                    <input
+                      type="url"
+                      value={socialVideoDraft.videoUrl}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const parsed = parseSocialVideoUrl(val);
+                        setSocialVideoDraft({
+                          ...socialVideoDraft,
+                          videoUrl: val,
+                          platform: parsed.platform,
+                          posterUrl: socialVideoDraft.posterUrl || parsed.autoPosterUrl,
+                          handle:
+                            socialVideoDraft.handle && socialVideoDraft.handle !== '@agereversalclinics'
+                              ? socialVideoDraft.handle
+                              : parsed.autoHandle || socialVideoDraft.handle || '@agereversalclinics',
+                        });
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value.trim()) {
+                          void handleAutoResolveDraftUrl(e.target.value);
+                        }
+                      }}
+                      placeholder="https://www.tiktok.com/@username/video/... or https://www.youtube.com/shorts/..."
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                    <p className="text-[11px] text-slate-500">
+                      Paste a TikTok video link, YouTube Shorts / Watch link, or direct MP4 URL.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Creator / Clinic Handle</label>
+                      <input
+                        type="text"
+                        value={socialVideoDraft.handle || ''}
+                        onChange={(e) => setSocialVideoDraft({ ...socialVideoDraft, handle: e.target.value })}
+                        placeholder="@agereversalclinics"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold uppercase text-slate-700">Video Caption / Title (Optional)</label>
+                      <input
+                        type="text"
+                        value={socialVideoDraft.title || ''}
+                        onChange={(e) => setSocialVideoDraft({ ...socialVideoDraft, title: e.target.value })}
+                        placeholder="e.g. Harley Street Skin Rejuvenation"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold uppercase text-slate-700">
+                        Cover Thumbnail Image (Auto-filled or Custom Upload)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetIdx =
+                            editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
+                              ? editingSocialVideoIndex
+                              : dataRef.current.socialVideos?.length || 0;
+                          const vidId = socialVideoDraft.id || `social-video-${targetIdx + 1}`;
+                          const slotId = getClinicSlotId('social-video', vidId);
+                          triggerImageUpload(
+                            async (newUrl) => {
+                              setSocialVideoDraft((prev) =>
+                                prev ? { ...prev, posterUrl: newUrl } : prev
+                              );
+                            },
+                            'social_video_modal_cover',
+                            socialVideoDraft.posterUrl,
+                            slotId
+                          );
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                      >
+                        {socialVideoDraft.posterUrl ? 'Replace Cover File' : '+ Upload Cover'}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={socialVideoDraft.posterUrl || ''}
+                        onChange={(e) => setSocialVideoDraft({ ...socialVideoDraft, posterUrl: e.target.value })}
+                        placeholder="Auto-fetched from YouTube/TikTok or upload custom cover image..."
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                      />
+                      {socialVideoDraft.posterUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setSocialVideoDraft({ ...socialVideoDraft, posterUrl: '' })}
+                          className="px-2 py-2 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 rounded-lg cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <AdminSlotImageFieldPreview
+                      value={
+                        socialVideoDraft.posterUrl ||
+                        parseSocialVideoUrl(socialVideoDraft.videoUrl).autoPosterUrl
+                      }
+                      slotId={
+                        socialVideoDraft.posterUrl?.startsWith('/assets/')
+                          ? getClinicSlotId(
+                              'social-video',
+                              socialVideoDraft.id ||
+                                (editingSocialVideoIndex !== null
+                                  ? `social-video-${editingSocialVideoIndex + 1}`
+                                  : 'new')
+                            )
+                          : undefined
+                      }
+                      label={socialVideoDraft.handle || 'Video Cover Preview'}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* EDIT ARRAY ITEMS */}
               {modalType !== 'location' &&
                 modalType !== 'pillar' &&
@@ -4570,7 +5065,8 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 modalType !== 'doctor' &&
                 modalType !== 'facilityRoom' &&
                 modalType !== 'processStep' &&
-                modalType !== 'trustBrand' && (
+                modalType !== 'trustBrand' &&
+                modalType !== 'socialVideo' && (
                 <div className="space-y-4">
                   {modalType === 'interiorPhotos' && (
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
@@ -4711,11 +5207,14 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                     ? saveStepDraft
                     : modalType === 'trustBrand'
                     ? saveBrandDraft
+                    : modalType === 'socialVideo'
+                    ? () => void saveSocialVideoDraft()
                     : saveArrayDraft
                 }
-                className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#003334] hover:bg-[#002627] text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
+                disabled={isResolvingSocialVideo}
+                className="px-4 sm:px-5 py-1.5 sm:py-2 bg-[#003334] hover:bg-[#002627] disabled:opacity-50 text-white text-xs font-bold uppercase rounded-lg cursor-pointer"
               >
-                Apply Changes
+                {isResolvingSocialVideo ? 'Saving...' : 'Apply Changes'}
               </button>
             </div>
 

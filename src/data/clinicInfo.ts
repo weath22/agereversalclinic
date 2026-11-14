@@ -145,6 +145,15 @@ export interface ClinicAccreditationsSection {
   seoKeywords?: string[];
 }
 
+export interface ClinicSocialVideoItem {
+  id: string;
+  videoUrl: string;
+  handle?: string;
+  title?: string;
+  posterUrl?: string;
+  platform?: 'tiktok' | 'youtube' | 'video';
+}
+
 export interface ClinicData {
   name: string;
   tagline: string;
@@ -160,6 +169,7 @@ export interface ClinicData {
   };
   exteriorPhoto?: string;
   interiorPhotos?: string[];
+  socialVideos?: ClinicSocialVideoItem[];
 
   phone: string;
   email: string;

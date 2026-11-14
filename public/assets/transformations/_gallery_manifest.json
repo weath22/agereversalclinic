@@ -53,91 +53,6 @@
           "featured": false,
           "hidden": false,
           "updatedAt": 1793722234602
-        },
-        {
-          "id": "pair-1793724383033",
-          "title": "Clinical Transformation",
-          "treatmentGroupId": "facial-skin-care",
-          "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
-          "beforeImage": "/assets/transformations/ba-eyebrow-wax-before-1793670395086.webp?v=1793670395089",
-          "afterImage": "/assets/transformations/ba-eyebrow-wax-after-1793670407456.webp?v=1793670407457",
-          "singleFrameImage": "/assets/transformations/pair-1793724383033-single.webp?v=1793724446928",
-          "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
-          "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
-          "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-          "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
-          "seoKeywords": [
-            "before and after eyebrow wax london",
-            "eyebrow wax before and after",
-            "age reversal clinics eyebrow wax results",
-            "lash & eyebrow results london",
-            "anti-aging clinic london",
-            "hair & beauty",
-            "lash & eyebrow",
-            "clinical aesthetic treatments"
-          ],
-          "duration": "8 Weeks",
-          "sessions": 1,
-          "featured": false,
-          "hidden": true,
-          "updatedAt": 1794059759619
-        },
-        {
-          "id": "pair-1793724538573",
-          "title": "Clinical Transformation",
-          "treatmentGroupId": "facial-skin-care",
-          "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
-          "beforeImage": "/assets/transformations/pair-1793724538573-before.webp?v=1793724556260",
-          "afterImage": "/assets/transformations/pair-1793724538573-after.webp?v=1793724565773",
-          "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
-          "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
-          "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-          "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
-          "seoKeywords": [
-            "before and after eyebrow wax london",
-            "eyebrow wax before and after",
-            "age reversal clinics eyebrow wax results",
-            "lash & eyebrow results london",
-            "anti-aging clinic london",
-            "hair & beauty",
-            "lash & eyebrow",
-            "clinical aesthetic treatments"
-          ],
-          "duration": "8 Weeks",
-          "sessions": 1,
-          "featured": false,
-          "hidden": true,
-          "updatedAt": 1794059764677
-        },
-        {
-          "id": "pair-1793719815460",
-          "title": "Clinical Transformation",
-          "treatmentGroupId": "facial-skin-care",
-          "linkedTreatmentId": "facial-skin-care",
-          "linkedTreatmentTitle": "Facial skin care",
-          "beforeImage": "/assets/transformations/pair-1793719815460-before.webp?v=1793719827879",
-          "afterImage": "/assets/transformations/pair-1793719815460-after.webp?v=1793719837247",
-          "beforeAltText": "Before Eyebrow Wax treatment at Age Reversal Clinics London — baseline clinical photography",
-          "afterAltText": "After Eyebrow Wax treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
-          "singleFrameAltText": "Clinical Transformation Before & After Transformation at Age Reversal Clinics London",
-          "seoTitle": "Eyebrow Wax Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
-          "seoKeywords": [
-            "before and after eyebrow wax london",
-            "eyebrow wax before and after",
-            "age reversal clinics eyebrow wax results",
-            "lash & eyebrow results london",
-            "anti-aging clinic london",
-            "hair & beauty",
-            "lash & eyebrow",
-            "clinical aesthetic treatments"
-          ],
-          "duration": "8 Weeks",
-          "sessions": 1,
-          "featured": false,
-          "hidden": true,
-          "updatedAt": 1794059769815
         }
       ]
     },
@@ -186,35 +101,6 @@
           "hidden": false,
           "updatedAt": 1792683065640,
           "singleFrameAltText": "Vertical Comparison Before & After Transformation at Age Reversal Clinics London"
-        },
-        {
-          "id": "pair-1794324207595",
-          "title": "Bunny Lines Anti-Wrinkle Transformation",
-          "treatmentGroupId": "platelet-rich-plasma-prp",
-          "linkedTreatmentId": "botox-bunny-lines",
-          "linkedTreatmentTitle": "Bunny Lines Anti-Wrinkle",
-          "beforeImage": "",
-          "afterImage": "",
-          "singleFrameImage": "/assets/transformations/pair-1794324207595-single.webp?v=1794324230447",
-          "beforeAltText": "Before Bunny Lines Anti-Wrinkle treatment at Age Reversal Clinics London — baseline clinical photography",
-          "afterAltText": "After Bunny Lines Anti-Wrinkle treatment result (6 Weeks • 3 Sessions) at Age Reversal Clinics London — verified transformation",
-          "singleFrameAltText": "Before & After Bunny Lines Anti-Wrinkle transformation (6 Weeks • 3 Sessions) at Age Reversal Clinics London — full clinical comparison frame",
-          "seoTitle": "Bunny Lines Anti-Wrinkle Before & After Results (6 Weeks • 3 Sessions) | Age Reversal Clinics London",
-          "seoKeywords": [
-            "before and after bunny lines anti-wrinkle london",
-            "bunny lines anti-wrinkle before and after",
-            "age reversal clinics bunny lines anti-wrinkle results",
-            "platelet-rich plasma (prp) results london",
-            "anti-aging clinic london",
-            "face & injectables",
-            "platelet-rich plasma (prp)",
-            "clinical aesthetic treatments"
-          ],
-          "duration": "6 Weeks • 3 Sessions",
-          "sessions": 3,
-          "featured": false,
-          "hidden": false,
-          "updatedAt": 1794324287512
         }
       ]
     },
@@ -276,8 +162,8 @@
           "duration": "8 Weeks",
           "sessions": 3,
           "featured": false,
-          "hidden": true,
-          "updatedAt": 1793900426645
+          "hidden": false,
+          "updatedAt": 1793722234604
         }
       ]
     },
@@ -315,8 +201,8 @@
           "duration": "12 Weeks",
           "sessions": 3,
           "featured": false,
-          "hidden": true,
-          "updatedAt": 1793900430694
+          "hidden": false,
+          "updatedAt": 1793722234604
         }
       ]
     },
@@ -344,8 +230,8 @@
           "duration": "16 Weeks",
           "sessions": 3,
           "featured": false,
-          "hidden": true,
-          "updatedAt": 1793900437440
+          "hidden": false,
+          "updatedAt": 1793722234604
         }
       ]
     },

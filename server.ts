@@ -2571,6 +2571,15 @@ export interface ClinicAccreditationsSection {
   seoKeywords?: string[];
 }
 
+export interface ClinicSocialVideoItem {
+  id: string;
+  videoUrl: string;
+  handle?: string;
+  title?: string;
+  posterUrl?: string;
+  platform?: 'tiktok' | 'youtube' | 'video';
+}
+
 export interface ClinicData {
   name: string;
   tagline: string;
@@ -2586,6 +2595,7 @@ export interface ClinicData {
   };
   exteriorPhoto?: string;
   interiorPhotos?: string[];
+  socialVideos?: ClinicSocialVideoItem[];
 
   phone: string;
   email: string;
@@ -3056,6 +3066,15 @@ const reconcileClinicDataWithDisk = (primary?: Record<string, any> | null, secon
       ...(p.socials || {}),
     },
     interiorPhotos: rawInteriorPhotos,
+    socialVideos: Array.isArray(p.socialVideos)
+      ? p.socialVideos
+      : Array.isArray(s.socialVideos)
+      ? s.socialVideos
+      : Array.isArray(diskTs.socialVideos)
+      ? diskTs.socialVideos
+      : Array.isArray((CLINIC_DATA as any).socialVideos)
+      ? (CLINIC_DATA as any).socialVideos
+      : [],
     locations,
     whyChooseUs: {
       ...(CLINIC_DATA.whyChooseUs || {}),
@@ -3313,6 +3332,14 @@ const collectClinicDataAssetUrls = (clinicData: any): string[] => {
     for (const brand of clinicData.trustBrandsSection.brands) {
       if (!brand || typeof brand !== 'object') continue;
       pushIfString(brand.imageUrl);
+    }
+  }
+
+  if (Array.isArray(clinicData.socialVideos)) {
+    for (const video of clinicData.socialVideos) {
+      if (!video || typeof video !== 'object') continue;
+      pushIfString(video.posterUrl);
+      pushIfString(video.videoUrl);
     }
   }
 
@@ -3632,6 +3659,165 @@ app.get('/api/admin/clinic-info', (_req, res) => {
 // POST /api/admin/clinic-data & POST /api/admin/save-clinic-info
 app.post('/api/admin/clinic-data', handleSaveClinicData);
 app.post('/api/admin/save-clinic-info', handleSaveClinicData);
+
+// GET /api/social-video/resolve?url=...
+// Resolves TikTok (including short links like vm.tiktok.com) and YouTube Shorts / Watch URLs into streamable IDs, thumbnails, and handles
+app.get('/api/social-video/resolve', async (req, res) => {
+  const rawUrl = String(req.query.url || '').trim();
+  if (!rawUrl) {
+    return res.status(400).json({ success: false, error: 'Missing url parameter' });
+  }
+
+  try {
+    let resolvedUrl = rawUrl;
+
+    // 1. If it is a short TikTok link (vm.tiktok.com, vt.tiktok.com, tiktok.com/t/...), follow redirect to get canonical /@user/video/ID URL
+    if (/tiktok\.com/i.test(resolvedUrl) && !/\/(?:video|photo)\/\d+/i.test(resolvedUrl)) {
+      try {
+        const redirectRes = await fetch(resolvedUrl, {
+          method: 'HEAD',
+          redirect: 'follow',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          },
+        });
+        if (redirectRes.url) {
+          resolvedUrl = redirectRes.url;
+        }
+      } catch {
+        // fallback to GET if HEAD is blocked
+        try {
+          const getRes = await fetch(resolvedUrl, {
+            method: 'GET',
+            redirect: 'follow',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+          });
+          if (getRes.url) {
+            resolvedUrl = getRes.url;
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // 2. Check YouTube
+    const ytMatch =
+      resolvedUrl.match(/(?:youtube\.com|youtu\.be)\/shorts\/([a-zA-Z0-9_-]{11})/i) ||
+      resolvedUrl.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/i) ||
+      (resolvedUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/i) && /youtube\.com/i.test(resolvedUrl)
+        ? resolvedUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/i)
+        : null) ||
+      resolvedUrl.match(/youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{11})/i);
+
+    if (ytMatch?.[1]) {
+      const videoId = ytMatch[1];
+      const isShorts = /\/shorts\//i.test(resolvedUrl);
+      const canonicalUrl = isShorts
+        ? `https://www.youtube.com/shorts/${videoId}`
+        : `https://www.youtube.com/watch?v=${videoId}`;
+      let posterUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      let handle = '';
+      let title = '';
+
+      try {
+        const oembedRes = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`
+        );
+        if (oembedRes.ok) {
+          const oembed: any = await oembedRes.json();
+          if (oembed.thumbnail_url) posterUrl = oembed.thumbnail_url;
+          if (oembed.title) title = String(oembed.title);
+          if (oembed.author_name) {
+            handle = `@${String(oembed.author_name).replace(/\s+/g, '').replace(/^@/, '')}`;
+          }
+        }
+      } catch {
+        // ignore oEmbed network failure
+      }
+
+      return res.json({
+        success: true,
+        platform: 'youtube',
+        videoId,
+        canonicalUrl,
+        posterUrl,
+        handle,
+        title,
+      });
+    }
+
+    // 3. Check TikTok
+    if (/tiktok\.com/i.test(resolvedUrl)) {
+      const stdMatch = resolvedUrl.match(/tiktok\.com\/@([^/?#]+)\/(?:video|photo)\/(\d{10,25})/i);
+      const embedMatch = resolvedUrl.match(/tiktok\.com\/(?:player\/v1|embed(?:\/v2)?|v)\/(\d{10,25})/i);
+      const digitsMatch = resolvedUrl.match(/\/(\d{15,22})(?:[/?#]|$)/);
+
+      let videoId = stdMatch?.[2] || embedMatch?.[1] || digitsMatch?.[1] || '';
+      let handle = stdMatch?.[1] ? `@${stdMatch[1].replace(/^@/, '')}` : '';
+      let posterUrl = '';
+      let title = '';
+
+      try {
+        const oembedTarget =
+          videoId && handle
+            ? `https://www.tiktok.com/${handle}/video/${videoId}`
+            : resolvedUrl.split('?')[0];
+        const oembedRes = await fetch(
+          `https://www.tiktok.com/oembed?url=${encodeURIComponent(oembedTarget)}`,
+          {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+          }
+        );
+        if (oembedRes.ok) {
+          const oembed: any = await oembedRes.json();
+          if (oembed.thumbnail_url) posterUrl = String(oembed.thumbnail_url);
+          if (oembed.title) title = String(oembed.title);
+          if (oembed.embed_product_id && !videoId) {
+            videoId = String(oembed.embed_product_id);
+          }
+          if (!handle && (oembed.author_unique_id || oembed.author_name)) {
+            const rawAuthor = oembed.author_unique_id || oembed.author_name;
+            handle = `@${String(rawAuthor).replace(/\s+/g, '').replace(/^@/, '')}`;
+          }
+        }
+      } catch {
+        // ignore oEmbed failure
+      }
+
+      const canonicalUrl =
+        videoId && handle
+          ? `https://www.tiktok.com/${handle}/video/${videoId}`
+          : resolvedUrl.split('?')[0];
+
+      return res.json({
+        success: true,
+        platform: 'tiktok',
+        videoId,
+        canonicalUrl,
+        posterUrl,
+        handle,
+        title,
+      });
+    }
+
+    return res.json({
+      success: true,
+      platform: 'video',
+      videoId: '',
+      canonicalUrl: resolvedUrl,
+      posterUrl: '',
+      handle: '',
+      title: '',
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: String(err) });
+  }
+});
 
 // Helper to resolve active treatment catalog on the server (customizations override or default TREATMENT_PRICING_DATA)
 const getServerTreatmentCatalog = (): any[] => {

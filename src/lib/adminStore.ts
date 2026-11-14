@@ -5994,6 +5994,11 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
         : fileInteriorPhotos.length > 0
         ? fileInteriorPhotos
         : [],
+    socialVideos: Array.isArray(CLINIC_DATA.socialVideos)
+      ? CLINIC_DATA.socialVideos
+      : Array.isArray(fileDefault?.socialVideos)
+      ? fileDefault.socialVideos
+      : [],
     locations: (
       Array.isArray(CLINIC_DATA.locations) && CLINIC_DATA.locations.length > 0
         ? CLINIC_DATA.locations
@@ -6225,6 +6230,9 @@ function mergeWithBakedInClinicData(candidate?: Partial<ClinicData> | null): Cli
       candidateInteriorPhotos.length > 0
         ? candidateInteriorPhotos
         : base.interiorPhotos || [],
+    socialVideos: Array.isArray(candidate.socialVideos)
+      ? candidate.socialVideos
+      : base.socialVideos || [],
     locations: (
       Array.isArray(candidate.locations) && candidate.locations.length > 0
         ? candidate.locations
