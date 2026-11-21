@@ -11,7 +11,7 @@ import type { TreatmentDetail } from '../components/treatments/treatmentData';
  * All helper logic and TypeScript interfaces live separately in:
  * src/components/treatments/treatmentData.ts
  */
-export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-21T15:30:52.610Z";
+export const SERVICE_COMPONENTS_UPDATED_AT = "2026-11-21T15:35:24.551Z";
 
 export const ADMIN_SYNCED_SERVICE_COMPONENTS: Record<string, TreatmentDetail> = {
   "exosome": {

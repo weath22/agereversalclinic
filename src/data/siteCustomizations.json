@@ -1,5 +1,5 @@
 {
-  "lastSynced": "2026-11-21T15:30:53.039Z",
+  "lastSynced": "2026-11-21T15:35:24.972Z",
   "note": "Pre-deployment configuration file updated directly by the Admin UI.",
   "homepage_header_config": {
     "logoUrl": "/assets/clinic-logo-icon.webp?v=1793675846495",
@@ -1193,7 +1193,7 @@
       }
     ],
     "storyArticles": [],
-    "updatedAt": "2026-11-21T15:30:53.021Z"
+    "updatedAt": "2026-11-21T15:35:24.956Z"
   },
   "homepage_footer_config": {
     "address": "123 Medical Plaza, London W1G 8JZ",
@@ -1238,9 +1238,9 @@
   "homepage_floating_menu_config": {
     "phone": "020 7123 4567",
     "email": "contact@agereversalclinic.com",
-    "address": "Age Reversal Clinic UK",
+    "address": "123 Medical Plaza, London",
     "enableChat": true,
-    "welcomeMessage": "Hello! Welcome to Age Reversal Clinic 👋🏻 Chat Us On Whatsapp by Clicking the message on the left"
+    "welcomeMessage": "Hello! How can we help you today?"
   },
   "profile_page_config": {
     "roleTag": "Lead Consultant",
@@ -1774,7 +1774,24 @@
       "description": "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
       "seoKeywords": []
     },
-    "socialVideos": []
+    "socialVideos": [
+      {
+        "id": "social-video-1795275149440-1",
+        "videoUrl": "https://www.instagram.com/reel/DEH18J_N4OZ/",
+        "handle": "@agereversalclinics",
+        "title": "",
+        "posterUrl": "",
+        "platform": "instagram"
+      },
+      {
+        "id": "social-video-1795275296437-2",
+        "videoUrl": "https://www.instagram.com/p/DfaItynu3N8/",
+        "handle": "@agereversalclinics",
+        "title": "",
+        "posterUrl": "",
+        "platform": "instagram"
+      }
+    ]
   },
   "clinical_protocols_config": {
     "protocols": {
@@ -36913,6 +36930,6 @@
         "updatedAt": 1793947255201
       }
     ],
-    "updatedAt": "2026-11-21T15:30:52.966Z"
+    "updatedAt": "2026-11-21T15:35:24.905Z"
   }
 }

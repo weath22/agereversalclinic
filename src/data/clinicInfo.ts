@@ -632,7 +632,24 @@ export const CLINIC_DATA: ClinicData = {
     "description": "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
     "seoKeywords": []
   },
-  "socialVideos": []
+  "socialVideos": [
+    {
+      "id": "social-video-1795275149440-1",
+      "videoUrl": "https://www.instagram.com/reel/DEH18J_N4OZ/",
+      "handle": "@agereversalclinics",
+      "title": "",
+      "posterUrl": "",
+      "platform": "instagram"
+    },
+    {
+      "id": "social-video-1795275296437-2",
+      "videoUrl": "https://www.instagram.com/p/DfaItynu3N8/",
+      "handle": "@agereversalclinics",
+      "title": "",
+      "posterUrl": "",
+      "platform": "instagram"
+    }
+  ]
 };
 
 /**
