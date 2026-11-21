@@ -105,29 +105,29 @@ export default function FacilityInteriors() {
       id="facility" 
       aria-label={`${galleryEyebrow} - ${galleryHeading}`}
       data-seo-keywords={galleryKeywords.join(', ')}
-      className="py-16 md:py-24 relative overflow-hidden border-t border-silver-200 bg-cover bg-center bg-no-repeat bg-[url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=1920')]"
+      className="py-16 sm:py-20 md:py-24 lg:py-28 relative overflow-hidden border-t border-silver-200 bg-cover bg-center bg-no-repeat bg-[url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&q=80&w=1920')]"
     >
       {/* Luxurious overlay to keep text and gallery items beautifully legible while letting London's classic architecture shine through clearly */}
       <div className="absolute inset-0 bg-white/45" />
       
-      <div className="container mx-auto px-4 md:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10">
         {galleryKeywords.length > 0 && (
           <span className="sr-only">{galleryKeywords.join(', ')}</span>
         )}
         
         {/* Header Section */}
-        <div className="text-center mb-12 md:mb-16 max-w-2xl mx-auto">
-          <span className="text-xs font-bold text-[#003334] uppercase tracking-[0.25em] block mb-3">
+        <div className="text-center mb-10 sm:mb-12 md:mb-14 lg:mb-16 max-w-2xl mx-auto">
+          <span className="text-[11px] md:text-xs font-bold text-[#003334] uppercase tracking-[0.25em] block mb-3">
             {galleryEyebrow}
           </span>
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-silver-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl font-serif font-bold text-silver-900 mb-4">
             {galleryHeading}
           </h2>
           <div className="w-16 h-0.5 bg-rose-gold mx-auto" />
         </div>
 
-        {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Gallery Grid — 2 cols on tablet (sm/md) for balanced suite cards, 4 cols on desktop (lg+) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 md:gap-6 lg:gap-6 xl:gap-8 max-w-6xl lg:max-w-7xl mx-auto items-stretch">
           {facilityItems.map((facility, index) => (
             <motion.div 
               key={facility.id}
@@ -135,11 +135,11 @@ export default function FacilityInteriors() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
               transition={{ delay: index * 0.1 }}
-              className="flex flex-col group cursor-pointer bg-white/75 hover:bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-white/60 hover:shadow-lg transition-all duration-300 shadow-sm"
+              className="flex flex-col justify-between h-full group cursor-pointer bg-white/75 hover:bg-white/95 backdrop-blur-md p-3.5 sm:p-4 md:p-4 lg:p-3.5 xl:p-4 rounded-2xl border border-white/60 hover:shadow-lg transition-all duration-300 shadow-sm"
               onClick={() => openLightbox(index)}
             >
               {/* Image Box */}
-              <div className="aspect-[4/3] rounded-xl overflow-hidden mb-4 bg-silver-100 border border-silver-200/50 relative">
+              <div className="aspect-[4/3] rounded-xl overflow-hidden mb-3.5 sm:mb-4 bg-silver-100 border border-silver-200/50 relative">
                 <ClinicImageWithPlaceholder 
                   src={facility.image}
                   slotId={getClinicSlotId('facility', facility.id || index + 1)}
@@ -159,16 +159,16 @@ export default function FacilityInteriors() {
               </div>
 
               {/* Text Meta */}
-              <div className="flex justify-between items-start mt-1 px-1">
-                <div>
-                  <h3 className="text-base font-bold text-silver-900 group-hover:text-black transition-colors leading-snug">
+              <div className="flex justify-between items-start gap-2 mt-auto pt-1 px-0.5 sm:px-1">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base md:text-base lg:text-[15px] xl:text-base font-bold text-silver-900 group-hover:text-black transition-colors leading-snug">
                     {facility.title}
                   </h3>
                   <span className="text-[10px] text-silver-500 font-bold uppercase tracking-wider block mt-1">
                     {facility.tag}
                   </span>
                 </div>
-                <span className="text-silver-400 group-hover:text-rose-gold transition-colors duration-300 pt-0.5">
+                <span className="text-silver-400 group-hover:text-rose-gold transition-colors duration-300 pt-0.5 shrink-0">
                   <ArrowUpRight className="h-4.5 w-4.5 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </span>
               </div>
@@ -179,12 +179,12 @@ export default function FacilityInteriors() {
         {/* Interactive Lightbox Overlay */}
         <AnimatePresence>
           {activeLightboxIndex !== null && facilityItems[activeLightboxIndex] && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 sm:p-6 md:p-8">
               
               {/* Close Button */}
               <button 
                 onClick={closeLightbox}
-                className="absolute top-6 right-6 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20"
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20 cursor-pointer"
                 aria-label="Close Lightbox"
               >
                 <X className="h-6 w-6" />
@@ -193,7 +193,7 @@ export default function FacilityInteriors() {
               {/* Left Selector */}
               <button 
                 onClick={showPrev}
-                className="absolute left-4 md:left-8 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20"
+                className="absolute left-3 sm:left-5 md:left-8 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20 cursor-pointer"
                 aria-label="Previous Image"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -206,7 +206,7 @@ export default function FacilityInteriors() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
-                className="max-w-4xl w-full flex flex-col items-center relative z-10"
+                className="max-w-4xl w-full flex flex-col items-center relative z-10 px-8 sm:px-12"
               >
                 <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-2 max-h-[75vh] flex items-center justify-center">
                   <ClinicImageWithPlaceholder 
@@ -216,19 +216,19 @@ export default function FacilityInteriors() {
                     slotId={getClinicSlotId('facility', facilityItems[activeLightboxIndex].id || activeLightboxIndex + 1)}
                     logoSize="xl"
                     showBrandText={true}
-                    containerClassName="flex items-center justify-center min-w-[280px] min-h-[280px] bg-transparent"
+                    containerClassName="flex items-center justify-center min-w-[240px] sm:min-w-[280px] min-h-[240px] sm:min-h-[280px] bg-transparent"
                   />
                 </div>
                 
                 {/* Meta details below image */}
-                <div className="text-center mt-6 text-white">
+                <div className="text-center mt-5 sm:mt-6 text-white">
                   <span className="text-xs uppercase tracking-[0.2em] text-rose-gold font-bold block mb-1">
                     {facilityItems[activeLightboxIndex].tag}
                   </span>
-                  <h4 className="text-2xl font-serif font-bold">
+                  <h4 className="text-xl sm:text-2xl font-serif font-bold">
                     {facilityItems[activeLightboxIndex].title}
                   </h4>
-                  <p className="text-xs text-silver-400 mt-2">
+                  <p className="text-xs text-silver-400 mt-2 tabular-nums">
                     {activeLightboxIndex + 1} / {facilityItems.length}
                   </p>
                 </div>
@@ -237,7 +237,7 @@ export default function FacilityInteriors() {
               {/* Right Selector */}
               <button 
                 onClick={showNext}
-                className="absolute right-4 md:right-8 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20"
+                className="absolute right-3 sm:right-5 md:right-8 text-white bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors z-20 cursor-pointer"
                 aria-label="Next Image"
               >
                 <ChevronRight className="h-6 w-6" />

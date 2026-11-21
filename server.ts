@@ -3661,15 +3661,83 @@ app.post('/api/admin/clinic-data', handleSaveClinicData);
 app.post('/api/admin/save-clinic-info', handleSaveClinicData);
 
 // GET /api/social-video/resolve?url=...
-// Resolves TikTok (including short links like vm.tiktok.com) and YouTube Shorts / Watch URLs into streamable IDs, thumbnails, and handles
+// Resolves Instagram Reels/Posts, TikTok (including short links like vm.tiktok.com), and YouTube Shorts / Watch URLs into streamable IDs, thumbnails, and handles
 app.get('/api/social-video/resolve', async (req, res) => {
-  const rawUrl = String(req.query.url || '').trim();
+  let rawUrl = String(req.query.url || '').trim();
   if (!rawUrl) {
     return res.status(400).json({ success: false, error: 'Missing url parameter' });
   }
 
+  // Unwrap <iframe src="..."> or <blockquote data-instgrm-permalink="..."> if user pasted embed HTML
+  const igPermalink = rawUrl.match(/data-instgrm-permalink=["']([^"']+)["']/i);
+  const iframeSrc = rawUrl.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (igPermalink?.[1]) {
+    rawUrl = igPermalink[1].trim();
+  } else if (iframeSrc?.[1]) {
+    rawUrl = iframeSrc[1].trim();
+  }
+
   try {
     let resolvedUrl = rawUrl;
+
+    // 0. Check Instagram Reel / Post / TV
+    const igMatch = resolvedUrl.match(
+      /(?:instagram\.com|instagr\.am)\/(?:([a-zA-Z0-9._]+)\/)?(reel|reels|p|tv)\/([a-zA-Z0-9_-]+)/i
+    );
+    if (igMatch?.[3]) {
+      const rawUser = igMatch[1];
+      const reserved = new Set(['reel', 'reels', 'p', 'tv', 'stories', 'explore', 'accounts']);
+      let handle =
+        rawUser && !reserved.has(rawUser.toLowerCase())
+          ? `@${rawUser.replace(/^@/, '')}`
+          : '';
+      const rawType = igMatch[2].toLowerCase();
+      const postType = rawType === 'p' ? 'p' : rawType === 'tv' ? 'tv' : 'reel';
+      const shortcode = igMatch[3];
+      const canonicalUrl = `https://www.instagram.com/${postType}/${shortcode}/`;
+      let posterUrl = '';
+      let title = '';
+
+      // Attempt to extract thumbnail image & author handle from Instagram embed HTML
+      try {
+        const embedPageRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/captioned/`, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            Accept: 'text/html,application/xhtml+xml',
+          },
+        });
+        if (embedPageRes.ok) {
+          const html = await embedPageRes.text();
+          // Extract EmbeddedMediaImage src="..."
+          const mediaImgMatch =
+            html.match(/class=["'][^"']*EmbeddedMediaImage[^"']*["'][^>]+src=["']([^"']+)["']/i) ||
+            html.match(/src=["']([^"']+)["'][^>]+class=["'][^"']*EmbeddedMediaImage[^"']*["']/i);
+          if (mediaImgMatch?.[1]) {
+            posterUrl = mediaImgMatch[1].replace(/&amp;/g, '&');
+          }
+          // Extract username from EmbedHeader
+          if (!handle) {
+            const userMatch = html.match(/class=["'][^"']*UsernameText[^"']*["'][^>]*>([^<]+)</i);
+            if (userMatch?.[1]) {
+              handle = `@${userMatch[1].trim().replace(/^@/, '')}`;
+            }
+          }
+        }
+      } catch {
+        // ignore embed scrape error
+      }
+
+      return res.json({
+        success: true,
+        platform: 'instagram',
+        videoId: shortcode,
+        canonicalUrl,
+        posterUrl,
+        handle,
+        title,
+      });
+    }
 
     // 1. If it is a short TikTok link (vm.tiktok.com, vt.tiktok.com, tiktok.com/t/...), follow redirect to get canonical /@user/video/ID URL
     if (/tiktok\.com/i.test(resolvedUrl) && !/\/(?:video|photo)\/\d+/i.test(resolvedUrl)) {
@@ -3816,6 +3884,44 @@ app.get('/api/social-video/resolve', async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+// GET /api/social-video/video-proxy?url=...
+// Lightweight Range-supporting proxy for direct video URLs (e.g. Cloudflare R2) so the browser can extract a first-frame thumbnail onto <canvas> without CORS errors
+app.get('/api/social-video/video-proxy', async (req, res) => {
+  const targetUrl = String(req.query.url || '').trim();
+  if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+    return res.status(400).send('Invalid video url');
+  }
+  try {
+    const headers: Record<string, string> = {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    };
+    if (req.headers.range) {
+      headers['Range'] = String(req.headers.range);
+    }
+    const upstream = await fetch(targetUrl, { headers, redirect: 'follow' });
+    if (!upstream.ok && upstream.status !== 206) {
+      return res.status(upstream.status).send('Failed to fetch upstream video');
+    }
+
+    res.status(upstream.status);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const contentType = upstream.headers.get('content-type') || 'video/mp4';
+    res.setHeader('Content-Type', contentType);
+    const contentRange = upstream.headers.get('content-range');
+    if (contentRange) res.setHeader('Content-Range', contentRange);
+    const acceptRanges = upstream.headers.get('accept-ranges');
+    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
+    const contentLength = upstream.headers.get('content-length');
+    if (contentLength) res.setHeader('Content-Length', contentLength);
+
+    const arrayBuffer = await upstream.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    return res.status(500).send(String(err));
   }
 });
 

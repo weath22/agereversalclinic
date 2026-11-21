@@ -35,7 +35,9 @@ import {
 import {
   parseSocialVideoUrl,
   resolveSocialVideoMetadata,
-  normalizeSocialVideoItem
+  normalizeSocialVideoItem,
+  captureVideoFirstFrameThumbnail,
+  PREVIEW_LOOP_DURATION_SECONDS
 } from '../utils/socialVideoHelper';
 
 const DAY_LABELS: { day: number; short: string }[] = [
@@ -603,8 +605,44 @@ export default function ClinicDataManager() {
   };
 
   const handleSaveToFile = async () => {
+    let targetData = dataRef.current;
+    // If the user pasted a video URL into the Quick Add input and clicked top "Save to clinicInfo.ts", include it automatically
+    const pendingQuickUrl = quickSocialVideoUrl.trim();
+    if (pendingQuickUrl) {
+      setIsResolvingSocialVideo(true);
+      try {
+        const currentList = [...(targetData.socialVideos || [])];
+        const nextIdx = currentList.length + 1;
+        const newVidId = `social-video-${Date.now()}-${nextIdx}`;
+        const slotId = getClinicSlotId('social-video', newVidId);
+        const resolved = await resolveSocialVideoMetadata(pendingQuickUrl, {
+          slotId,
+          uploadFirstFrameToAssets: true,
+        });
+        const normalized = normalizeSocialVideoItem(
+          {
+            id: newVidId,
+            videoUrl: resolved.canonicalUrl || pendingQuickUrl,
+            handle: quickSocialVideoHandle.trim() || resolved.handle || '@agereversalclinics',
+            title: resolved.title || '',
+            posterUrl: resolved.posterUrl || '',
+            platform: resolved.platform,
+          },
+          currentList.length
+        );
+        currentList.push(normalized);
+        targetData = {
+          ...targetData,
+          socialVideos: currentList,
+        };
+        setQuickSocialVideoUrl('');
+        setQuickSocialVideoHandle('');
+      } finally {
+        setIsResolvingSocialVideo(false);
+      }
+    }
     await persistClinicDataImmediately(
-      dataRef.current,
+      targetData,
       'Saved to src/data/clinicInfo.ts & siteCustomizations.json successfully!'
     );
   };
@@ -1056,12 +1094,21 @@ export default function ClinicDataManager() {
     setModalType('socialVideo');
   };
 
-  const handleAutoResolveDraftUrl = async (rawUrl: string) => {
+  const handleAutoResolveDraftUrl = async (rawUrl: string, forceNewThumbnail: boolean = false) => {
     const trimmed = rawUrl.trim();
     if (!trimmed) return;
     setIsResolvingSocialVideo(true);
     try {
-      const resolved = await resolveSocialVideoMetadata(trimmed);
+      const targetIdx =
+        editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
+          ? editingSocialVideoIndex
+          : dataRef.current.socialVideos?.length || 0;
+      const vidId = socialVideoDraft?.id || `social-video-${targetIdx + 1}`;
+      const slotId = getClinicSlotId('social-video', vidId);
+      const resolved = await resolveSocialVideoMetadata(trimmed, {
+        slotId,
+        uploadFirstFrameToAssets: true,
+      });
       setSocialVideoDraft((prev) => {
         if (!prev) return prev;
         const nextHandle =
@@ -1072,7 +1119,10 @@ export default function ClinicDataManager() {
           ...prev,
           videoUrl: resolved.canonicalUrl || trimmed,
           platform: resolved.platform,
-          posterUrl: prev.posterUrl?.trim() ? prev.posterUrl : resolved.posterUrl || '',
+          posterUrl:
+            !forceNewThumbnail && prev.posterUrl?.trim()
+              ? prev.posterUrl
+              : resolved.posterUrl || prev.posterUrl || '',
           handle: nextHandle,
           title: prev.title?.trim() ? prev.title : resolved.title || '',
         };
@@ -1086,15 +1136,23 @@ export default function ClinicDataManager() {
     const trimmedUrl = quickSocialVideoUrl.trim();
     if (!trimmedUrl) return;
     setIsResolvingSocialVideo(true);
-    setSaveStatus({ state: 'saving', message: 'Resolving TikTok / YouTube stream metadata...' });
+    setSaveStatus({
+      state: 'saving',
+      message: 'Generating 1st-frame thumbnail & resolving stream metadata...',
+    });
     try {
-      const resolved = await resolveSocialVideoMetadata(trimmedUrl);
       const currentList = [...(dataRef.current.socialVideos || [])];
       const nextIdx = currentList.length + 1;
+      const newVidId = `social-video-${Date.now()}-${nextIdx}`;
+      const slotId = getClinicSlotId('social-video', newVidId);
+      const resolved = await resolveSocialVideoMetadata(trimmedUrl, {
+        slotId,
+        uploadFirstFrameToAssets: true,
+      });
       const customHandle = quickSocialVideoHandle.trim();
       const normalized = normalizeSocialVideoItem(
         {
-          id: `social-video-${Date.now()}-${nextIdx}`,
+          id: newVidId,
           videoUrl: resolved.canonicalUrl || trimmedUrl,
           handle: customHandle || resolved.handle || '@agereversalclinics',
           title: resolved.title || '',
@@ -1112,7 +1170,7 @@ export default function ClinicDataManager() {
       setQuickSocialVideoHandle('');
       await persistClinicDataImmediately(
         nextData,
-        `Added ${normalized.platform?.toUpperCase() || 'Social'} video (${normalized.handle}) to clinicInfo.ts!`
+        `Added ${normalized.platform?.toUpperCase() || 'Social'} video (${normalized.handle}) with thumbnail & 5s preview loop to clinicInfo.ts!`
       );
     } finally {
       setIsResolvingSocialVideo(false);
@@ -1123,16 +1181,21 @@ export default function ClinicDataManager() {
     if (!socialVideoDraft || !socialVideoDraft.videoUrl.trim()) return;
     setIsResolvingSocialVideo(true);
     try {
-      const resolved = await resolveSocialVideoMetadata(socialVideoDraft.videoUrl.trim());
       const currentList = [...(dataRef.current.socialVideos || [])];
       const targetIdx =
         editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
           ? editingSocialVideoIndex
           : currentList.length;
+      const vidId = socialVideoDraft.id || `social-video-${targetIdx + 1}`;
+      const slotId = getClinicSlotId('social-video', vidId);
+      const resolved = await resolveSocialVideoMetadata(socialVideoDraft.videoUrl.trim(), {
+        slotId,
+        uploadFirstFrameToAssets: !socialVideoDraft.posterUrl?.trim(),
+      });
       const normalized = normalizeSocialVideoItem(
         {
           ...socialVideoDraft,
-          id: socialVideoDraft.id || `social-video-${targetIdx + 1}`,
+          id: vidId,
           videoUrl: resolved.canonicalUrl || socialVideoDraft.videoUrl.trim(),
           posterUrl: socialVideoDraft.posterUrl?.trim() || resolved.posterUrl || '',
           handle: socialVideoDraft.handle?.trim() || resolved.handle || '@agereversalclinics',
@@ -2101,7 +2164,7 @@ export default function ClinicDataManager() {
                   </div>
                 </div>
 
-                {/* Footer Social Video Showcase — TikTok & YouTube Streams (CLINIC_DATA.socialVideos) */}
+                {/* Footer Social Video Showcase — Instagram, TikTok & YouTube Streams (CLINIC_DATA.socialVideos) */}
                 <div className="col-span-full pt-6 border-t border-slate-200 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
@@ -2109,10 +2172,10 @@ export default function ClinicDataManager() {
                         Footer Social Video Showcase (CLINIC_DATA.socialVideos)
                       </span>
                       <h3 className="text-sm font-bold text-[#003334]">
-                        TikTok &amp; YouTube Video Streams ({(data.socialVideos || []).length})
+                        Instagram, TikTok &amp; YouTube Video Streams ({(data.socialVideos || []).length})
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Add your own TikTok video URLs, YouTube Shorts / video links, or direct MP4 URLs to stream directly in the footer showcase.
+                        Paste an Instagram Reel/Post link, TikTok link, YouTube Shorts/Watch link, raw &lt;iframe&gt; embed code, or Cloudflare R2 MP4 URL.
                       </p>
                     </div>
                     <button
@@ -2124,15 +2187,15 @@ export default function ClinicDataManager() {
                     </button>
                   </div>
 
-                  {/* Quick Paste Bar for TikTok / YouTube URLs */}
+                  {/* Quick Paste Bar for Instagram / TikTok / YouTube URLs or Embed Codes */}
                   <div className="p-3.5 bg-slate-100/80 border border-slate-200 rounded-xl space-y-2.5">
                     <div className="text-[11px] font-bold uppercase text-slate-700">
-                      Quick Add TikTok or YouTube Video URL
+                      Quick Add Instagram Reel, TikTok, YouTube URL, or &lt;iframe&gt; Embed Code
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5">
                       <div className="md:col-span-7">
                         <input
-                          type="url"
+                          type="text"
                           value={quickSocialVideoUrl}
                           onChange={(e) => setQuickSocialVideoUrl(e.target.value)}
                           onKeyDown={(e) => {
@@ -2141,7 +2204,7 @@ export default function ClinicDataManager() {
                               void handleQuickAddSocialVideo();
                             }
                           }}
-                          placeholder="Paste TikTok URL (https://www.tiktok.com/@user/video/...) or YouTube Shorts / Watch URL..."
+                          placeholder="Paste Instagram Reel (instagram.com/reel/...), TikTok, YouTube Shorts, or <iframe> code..."
                           className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm font-medium text-slate-900 focus:outline-none focus:border-[#003334]"
                         />
                       </div>
@@ -2166,8 +2229,77 @@ export default function ClinicDataManager() {
                       </div>
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      Supports <strong>TikTok</strong> (`tiktok.com/@.../video/...` or `vm.tiktok.com/...`), <strong>YouTube Shorts &amp; Videos</strong> (`youtube.com/shorts/...`, `youtube.com/watch?v=...`, `youtu.be/...`), or direct `.mp4` links. Cover thumbnails and `@handle` are fetched automatically.
+                      Supports <strong>Instagram Reels &amp; Posts</strong> (`instagram.com/reel/...` or `instagram.com/p/...`), <strong>TikTok</strong> (`tiktok.com/@.../video/...`), <strong>YouTube Shorts &amp; Videos</strong> (`youtube.com/shorts/...`), raw <strong>&lt;iframe&gt; / Embed Codes</strong>, or <strong>Cloudflare R2 `.mp4`</strong> links. You do not need to manually write an iframe — just paste the post link!
                     </div>
+
+                    {/* Live Preview when a URL is typed into Quick Add before clicking + Add Stream */}
+                    {quickSocialVideoUrl.trim() && (() => {
+                      const quickParsed = parseSocialVideoUrl(quickSocialVideoUrl.trim());
+                      return (
+                        <div className="mt-2 pt-3 border-t border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-teal-200">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-20 h-28 rounded-lg overflow-hidden bg-slate-950 border border-slate-300 shrink-0 relative">
+                              {quickParsed.platform === 'instagram' && quickParsed.videoId ? (
+                                <iframe
+                                  src={quickParsed.embedPreviewUrl}
+                                  title="Instagram Live Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                  className="w-full h-full border-0 pointer-events-none"
+                                />
+                              ) : quickParsed.platform === 'youtube' && quickParsed.videoId ? (
+                                <iframe
+                                  src={quickParsed.embedPreviewUrl}
+                                  title="YouTube Live Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  className="w-full h-full border-0 pointer-events-none"
+                                />
+                              ) : quickParsed.platform === 'tiktok' && quickParsed.videoId ? (
+                                <iframe
+                                  src={quickParsed.embedPreviewUrl}
+                                  title="TikTok Live Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  className="w-full h-full border-0 pointer-events-none"
+                                />
+                              ) : quickParsed.platform === 'video' ? (
+                                <video
+                                  src={`${quickParsed.canonicalUrl}#t=0.05,${PREVIEW_LOOP_DURATION_SECONDS}`}
+                                  autoPlay
+                                  muted
+                                  loop
+                                  playsInline
+                                  preload="metadata"
+                                  onTimeUpdate={(e) => {
+                                    if (e.currentTarget.currentTime >= PREVIEW_LOOP_DURATION_SECONDS) {
+                                      e.currentTarget.currentTime = 0;
+                                    }
+                                  }}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[9px] text-amber-300 font-bold uppercase text-center p-1">
+                                  Click + Add Stream to resolve short link
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Ready to Add ({quickParsed.platform.toUpperCase()} &middot; 1st-Frame Thumbnail + 5s Loop)
+                              </span>
+                              <div className="text-xs font-bold text-slate-900 mt-1 truncate">
+                                {quickSocialVideoHandle.trim() || quickParsed.autoHandle || '@agereversalclinics'}
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate max-w-md">
+                                Click <strong>+ Add Stream</strong> (or <strong>Save to clinicInfo.ts</strong>) to auto-generate the 1st-frame thumbnail and publish with the 5s preview loop.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Social Video Cards Grid */}
@@ -2177,7 +2309,7 @@ export default function ClinicDataManager() {
                         No Social Showcase Videos Configured Yet
                       </div>
                       <p className="text-xs text-slate-500 max-w-md mx-auto">
-                        Paste your TikTok or YouTube video links above (or click <strong>+ Add Social Video</strong>) to stream your clinic&apos;s own social videos above the footer.
+                        Paste your Instagram Reel, TikTok, YouTube, or Cloudflare R2 video links above and click <strong>+ Add Stream</strong> to auto-generate a 1st-frame thumbnail and 5s preview loop.
                       </p>
                     </div>
                   ) : (
@@ -2193,17 +2325,73 @@ export default function ClinicDataManager() {
                             className="border border-slate-200 bg-white rounded-xl p-2.5 text-xs flex flex-col justify-between hover:border-slate-300 transition-all"
                           >
                             <div>
-                              <div className="relative mb-2">
-                                <AdminSlotThumbnail
-                                  src={effectivePoster}
-                                  slotId={effectivePoster.startsWith('/assets/') ? videoSlotId : undefined}
-                                  alt={video.title || video.handle || `Social Video ${vIdx + 1}`}
-                                  className="w-full h-36"
-                                  showStatusLabel={true}
-                                />
+                              {/* Live Direct Video Stream Preview inside Admin Visual Assets Card */}
+                              <div className="relative mb-2 w-full h-56 rounded-lg overflow-hidden bg-slate-950 border border-slate-200">
+                                {effectivePoster && (
+                                  <img
+                                    src={effectivePoster}
+                                    alt={video.title || video.handle || `Social Video ${vIdx + 1}`}
+                                    className="absolute inset-0 w-full h-full object-cover opacity-80"
+                                  />
+                                )}
+                                {parsed.platform === 'instagram' && parsed.videoId ? (
+                                  <iframe
+                                    src={parsed.embedPreviewUrl}
+                                    title={video.title || `Instagram Stream ${vIdx + 1}`}
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    className="relative z-10 w-full h-full border-0"
+                                  />
+                                ) : parsed.platform === 'youtube' && parsed.videoId ? (
+                                  <iframe
+                                    src={parsed.embedPreviewUrl}
+                                    title={video.title || `YouTube Stream ${vIdx + 1}`}
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="relative z-10 w-full h-full border-0"
+                                  />
+                                ) : parsed.platform === 'tiktok' && parsed.videoId ? (
+                                  <iframe
+                                    src={parsed.embedPreviewUrl}
+                                    title={video.title || `TikTok Stream ${vIdx + 1}`}
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="relative z-10 w-full h-full border-0"
+                                  />
+                                ) : parsed.platform === 'video' && video.videoUrl ? (
+                                  <video
+                                    src={`${parsed.canonicalUrl}#t=0.05,${PREVIEW_LOOP_DURATION_SECONDS}`}
+                                    poster={effectivePoster || undefined}
+                                    autoPlay
+                                    muted
+                                    loop
+                                    playsInline
+                                    preload="metadata"
+                                    onTimeUpdate={(e) => {
+                                      if (e.currentTarget.currentTime >= PREVIEW_LOOP_DURATION_SECONDS) {
+                                        e.currentTarget.currentTime = 0;
+                                      }
+                                    }}
+                                    className="relative z-10 w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-3 text-center text-white/80">
+                                    <span className="text-[11px] font-bold uppercase text-amber-300">
+                                      Short Link Added
+                                    </span>
+                                    <span className="text-[10px] text-white/60 mt-1">
+                                      Click &ldquo;Edit URL&rdquo; &rarr; &ldquo;Auto-Fetch Details&rdquo; to resolve stream ID
+                                    </span>
+                                  </div>
+                                )}
                                 <span
-                                  className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded text-white text-[9px] font-bold uppercase tracking-wider ${
-                                    platformLabel === 'TIKTOK'
+                                  className={`absolute top-1.5 left-1.5 z-20 px-2 py-0.5 rounded text-white text-[9px] font-bold uppercase tracking-wider pointer-events-none ${
+                                    platformLabel === 'INSTAGRAM'
+                                      ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500'
+                                      : platformLabel === 'TIKTOK'
                                       ? 'bg-black/85 border border-white/20'
                                       : platformLabel === 'YOUTUBE'
                                       ? 'bg-rose-600/90'
@@ -2211,6 +2399,10 @@ export default function ClinicDataManager() {
                                   }`}
                                 >
                                   {platformLabel} #{vIdx + 1}
+                                </span>
+                                <span className="absolute bottom-1.5 right-1.5 z-20 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[9px] font-bold uppercase pointer-events-none">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  Direct Stream
                                 </span>
                               </div>
                               <div className="font-bold text-slate-900 text-xs truncate">
@@ -4918,13 +5110,13 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                 </div>
               )}
 
-              {/* EDIT SOCIAL VIDEO (TIKTOK / YOUTUBE / MP4) FORM */}
+              {/* EDIT SOCIAL VIDEO (INSTAGRAM / TIKTOK / YOUTUBE / MP4) FORM */}
               {modalType === 'socialVideo' && socialVideoDraft && (
                 <div className="space-y-3.5 text-xs">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <label className="font-bold uppercase text-slate-700">
-                        TikTok / YouTube / Direct Video URL
+                        Instagram Reel / TikTok / YouTube / R2 Video URL (or &lt;iframe&gt; Code)
                       </label>
                       <button
                         type="button"
@@ -4936,7 +5128,7 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                       </button>
                     </div>
                     <input
-                      type="url"
+                      type="text"
                       value={socialVideoDraft.videoUrl}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -4957,11 +5149,28 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                           void handleAutoResolveDraftUrl(e.target.value);
                         }
                       }}
-                      placeholder="https://www.tiktok.com/@username/video/... or https://www.youtube.com/shorts/..."
+                      placeholder="https://www.instagram.com/reel/... or TikTok / YouTube / Cloudflare R2 .mp4 URL"
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                     />
                     <p className="text-[11px] text-slate-500">
-                      Paste a TikTok video link, YouTube Shorts / Watch link, or direct MP4 URL.
+                      Paste an Instagram Reel/Post link, TikTok link, YouTube Shorts link, raw &lt;iframe&gt; code, or Cloudflare R2 `.mp4` URL.
+                    </p>
+                  </div>
+
+                  {/* Optional Social Destination Link (useful when streaming fast from Cloudflare R2 while linking out to Instagram) */}
+                  <div className="space-y-1">
+                    <label className="font-bold uppercase text-slate-700">
+                      Social Media Post Link — &ldquo;Watch on Instagram / TikTok / YouTube&rdquo; (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={socialVideoDraft.socialPostUrl || ''}
+                      onChange={(e) => setSocialVideoDraft({ ...socialVideoDraft, socialPostUrl: e.target.value })}
+                      placeholder="https://www.instagram.com/reel/... (auto-used if main URL is already Instagram/TikTok/YouTube)"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
+                    />
+                    <p className="text-[11px] text-slate-500">
+                      If you host the `.mp4` on Cloudflare R2 for instant autoplay, paste the matching Instagram Reel link here so viewers can click <strong>Watch on Instagram</strong>.
                     </p>
                   </div>
 
@@ -4989,41 +5198,54 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <label className="font-bold uppercase text-slate-700">
-                        Cover Thumbnail Image (Auto-filled or Custom Upload)
+                        Cover Thumbnail Image (Auto-Generated 1st Frame or Custom Upload)
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const targetIdx =
-                            editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
-                              ? editingSocialVideoIndex
-                              : dataRef.current.socialVideos?.length || 0;
-                          const vidId = socialVideoDraft.id || `social-video-${targetIdx + 1}`;
-                          const slotId = getClinicSlotId('social-video', vidId);
-                          triggerImageUpload(
-                            async (newUrl) => {
-                              setSocialVideoDraft((prev) =>
-                                prev ? { ...prev, posterUrl: newUrl } : prev
-                              );
-                            },
-                            'social_video_modal_cover',
-                            socialVideoDraft.posterUrl,
-                            slotId
-                          );
-                        }}
-                        className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
-                      >
-                        {socialVideoDraft.posterUrl ? 'Replace Cover File' : '+ Upload Cover'}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {parseSocialVideoUrl(socialVideoDraft.videoUrl || '').platform === 'video' &&
+                          socialVideoDraft.videoUrl.trim() && (
+                            <button
+                              type="button"
+                              disabled={isResolvingSocialVideo}
+                              onClick={() => void handleAutoResolveDraftUrl(socialVideoDraft.videoUrl, true)}
+                              className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-teal-50 text-[#003334] border border-teal-200 hover:bg-teal-100 disabled:opacity-50 rounded cursor-pointer"
+                            >
+                              {isResolvingSocialVideo ? 'Capturing...' : 'Capture 1st Frame'}
+                            </button>
+                          )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const targetIdx =
+                              editingSocialVideoIndex !== null && editingSocialVideoIndex >= 0
+                                ? editingSocialVideoIndex
+                                : dataRef.current.socialVideos?.length || 0;
+                            const vidId = socialVideoDraft.id || `social-video-${targetIdx + 1}`;
+                            const slotId = getClinicSlotId('social-video', vidId);
+                            triggerImageUpload(
+                              async (newUrl) => {
+                                setSocialVideoDraft((prev) =>
+                                  prev ? { ...prev, posterUrl: newUrl } : prev
+                                );
+                              },
+                              'social_video_modal_cover',
+                              socialVideoDraft.posterUrl,
+                              slotId
+                            );
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider bg-[#003334] text-white hover:bg-[#002627] rounded cursor-pointer"
+                        >
+                          {socialVideoDraft.posterUrl ? 'Replace Cover File' : '+ Upload Cover'}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={socialVideoDraft.posterUrl || ''}
                         onChange={(e) => setSocialVideoDraft({ ...socialVideoDraft, posterUrl: e.target.value })}
-                        placeholder="Auto-fetched from YouTube/TikTok or upload custom cover image..."
+                        placeholder="Auto-captured from 1st video frame or social metadata..."
                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-900"
                       />
                       {socialVideoDraft.posterUrl && (
@@ -5036,24 +5258,83 @@ export const CLINIC_DATA = ${JSON.stringify(data, null, 2)};`}</pre>
                         </button>
                       )}
                     </div>
-                    <AdminSlotImageFieldPreview
-                      value={
-                        socialVideoDraft.posterUrl ||
-                        parseSocialVideoUrl(socialVideoDraft.videoUrl).autoPosterUrl
-                      }
-                      slotId={
-                        socialVideoDraft.posterUrl?.startsWith('/assets/')
-                          ? getClinicSlotId(
-                              'social-video',
-                              socialVideoDraft.id ||
-                                (editingSocialVideoIndex !== null
-                                  ? `social-video-${editingSocialVideoIndex + 1}`
-                                  : 'new')
-                            )
-                          : undefined
-                      }
-                      label={socialVideoDraft.handle || 'Video Cover Preview'}
-                    />
+                    {/* Live Direct Stream Preview in Modal (5-second preview loop + 1st-frame thumbnail) */}
+                    {(() => {
+                      const modalParsed = parseSocialVideoUrl(socialVideoDraft.videoUrl || '');
+                      const modalPoster = socialVideoDraft.posterUrl || modalParsed.autoPosterUrl || '';
+                      return (
+                        <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-slate-600">
+                              Live Stream Preview (5s Loop + Thumbnail)
+                            </span>
+                            {socialVideoDraft.videoUrl.trim() ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold uppercase">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                Direct {modalParsed.platform.toUpperCase()} Stream &middot; 5s Loop
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-bold uppercase">
+                                Paste Video URL Above
+                              </span>
+                            )}
+                          </div>
+                          {socialVideoDraft.videoUrl.trim() && (
+                            <div className="w-full max-w-[240px] h-72 mx-auto rounded-xl overflow-hidden bg-slate-950 border border-slate-300 relative">
+                              {modalParsed.platform === 'instagram' && modalParsed.videoId ? (
+                                <iframe
+                                  src={modalParsed.getEmbedModalUrl(true)}
+                                  title="Instagram Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                  allowFullScreen
+                                  className="w-full h-full border-0"
+                                />
+                              ) : modalParsed.platform === 'youtube' && modalParsed.videoId ? (
+                                <iframe
+                                  src={modalParsed.embedPreviewUrl}
+                                  title="YouTube Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full border-0"
+                                />
+                              ) : modalParsed.platform === 'tiktok' && modalParsed.videoId ? (
+                                <iframe
+                                  src={modalParsed.embedPreviewUrl}
+                                  title="TikTok Stream Preview"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="w-full h-full border-0"
+                                />
+                              ) : modalParsed.platform === 'video' ? (
+                                <video
+                                  src={`${modalParsed.canonicalUrl}#t=0.05,${PREVIEW_LOOP_DURATION_SECONDS}`}
+                                  poster={modalPoster || undefined}
+                                  autoPlay
+                                  muted
+                                  loop
+                                  playsInline
+                                  preload="metadata"
+                                  onTimeUpdate={(e) => {
+                                    if (e.currentTarget.currentTime >= PREVIEW_LOOP_DURATION_SECONDS) {
+                                      e.currentTarget.currentTime = 0;
+                                    }
+                                  }}
+                                  controls
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center p-4 text-center text-white/80 text-xs">
+                                  Click &ldquo;Auto-Fetch Details&rdquo; above to resolve short link stream.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

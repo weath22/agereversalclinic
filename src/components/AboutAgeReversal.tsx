@@ -14,7 +14,7 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
   return (
     <div className="bg-white min-h-screen flex flex-col relative z-10">
       {/* Header Title Hero element matching ServiceHero/Homepage style */}
-      <section className="relative bg-white overflow-hidden min-h-0 md:min-h-[75vh] flex items-center pt-16 pb-12 sm:pt-20 sm:pb-14 md:pt-24 md:pb-12 border-b border-silver-150">
+      <section className="relative bg-white overflow-hidden min-h-0 lg:min-h-[calc(100vh-140px)] flex items-center pt-16 pb-12 sm:pt-20 sm:pb-14 md:pt-20 md:pb-12 lg:pt-24 lg:pb-12 border-b border-silver-150 isolate transform-gpu">
         {/* Mobile Full-bleed Background Image */}
         <div className="absolute inset-0 w-full h-full overflow-hidden md:hidden z-0">
           <img
@@ -28,10 +28,10 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
         </div>
 
         {/* Breadcrumb Path */}
-        <div className="absolute top-4 sm:top-6 left-4 md:left-8 z-30 flex items-center text-[10px] sm:text-xs md:text-sm text-white/80 md:text-silver-400 font-sans tracking-wide">
-          <span className="font-semibold cursor-default text-white md:text-silver-500">Home</span>
-          <span className="mx-2 text-white/60 md:text-silver-300">&gt;</span>
-          <span className="text-rose-gold font-bold">About Age Reversal</span>
+        <div className="absolute top-4 sm:top-6 left-4 md:left-8 z-30 flex flex-wrap items-center gap-y-1 text-[10px] sm:text-xs md:text-sm text-white/80 md:text-silver-400 font-sans tracking-wide leading-relaxed max-w-[calc(100%-2rem)]">
+          <span className="font-semibold cursor-default text-white md:text-silver-500 shrink-0">Home</span>
+          <span className="mx-1 sm:mx-2 text-white/60 md:text-silver-300 shrink-0">&gt;</span>
+          <span className="text-rose-gold font-bold break-words">About Age Reversal</span>
         </div>
 
         {/* Desktop Full-bleed Right Half Image */}
@@ -50,7 +50,7 @@ export default function AboutAgeReversal({ onViewProfile }: AboutAgeReversalProp
         {/* Decorative background gradient on the left half (Desktop only) */}
         <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-silver-50/30 to-white pointer-events-none hidden md:block z-0" />
 
-        <div className="container mx-auto px-4 md:px-8 relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12 pt-6 pb-2 md:py-8">
+        <div className="w-full max-w-[1600px] mx-auto px-4 md:px-8 xl:px-12 relative z-10 flex flex-col md:flex-row min-h-0 lg:min-h-[calc(100vh-180px)] items-center gap-8 md:gap-12 pt-6 pb-2 md:py-6 lg:py-8">
           {/* Left Column: Heading, Category, Call to action */}
           <div className="w-full md:w-1/2 flex flex-col justify-center max-w-xl relative z-10 text-left">
             <div className="inline-flex items-center space-x-2 bg-white/20 md:bg-silver-100 text-white md:text-silver-700 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider w-fit mb-4 md:mb-6 border border-white/20 md:border-transparent">

@@ -6,6 +6,7 @@ import { ClinicData, ClinicSocialVideoItem } from "../data/clinicInfo";
 import {
   parseSocialVideoUrl,
   resolveSocialVideoMetadata,
+  getSocialPlatformLabel,
   ParsedSocialVideo,
 } from "../utils/socialVideoHelper";
 
@@ -13,6 +14,8 @@ interface EnrichedVideoItem extends ClinicSocialVideoItem {
   parsed: ParsedSocialVideo;
   effectivePoster: string;
   effectiveHandle: string;
+  externalSocialUrl: string;
+  socialLabel: string;
 }
 
 const PREVIEW_DURATION_SECONDS = 5;
@@ -38,7 +41,19 @@ export default function SocialVideoShowcase() {
     setClinicData(getClinicData());
     fetchRemoteClinicData()
       .then((remote) => {
-        if (remote) setClinicData(remote);
+        if (remote) {
+          setClinicData((prev) => {
+            // Preserve local socialVideos if remote hasn't persisted them yet
+            if (
+              Array.isArray(prev.socialVideos) &&
+              prev.socialVideos.length > 0 &&
+              (!Array.isArray(remote.socialVideos) || remote.socialVideos.length === 0)
+            ) {
+              return { ...remote, socialVideos: prev.socialVideos };
+            }
+            return remote;
+          });
+        }
       })
       .catch(() => {});
 
@@ -61,18 +76,20 @@ export default function SocialVideoShowcase() {
       : [];
   }, [clinicData.socialVideos]);
 
-  // Background resolve any TikTok/YouTube video that is missing a posterUrl or videoId (e.g. short links)
+  // Background resolve any video (including direct MP4/R2 first-frame thumbnail capture, Instagram, TikTok, or YouTube) that is missing a posterUrl or videoId
   useEffect(() => {
     let isCancelled = false;
     rawVideos.forEach((item) => {
       const parsed = parseSocialVideoUrl(item.videoUrl);
       const cached = resolvedMetaMap[item.id];
       const needsResolution =
+        (parsed.platform === "video" && !item.posterUrl) ||
+        (parsed.platform === "instagram" && !item.posterUrl) ||
         (parsed.platform === "tiktok" && (!item.posterUrl || !parsed.videoId)) ||
         (parsed.platform === "youtube" && !item.posterUrl && !parsed.autoPosterUrl);
 
       if (needsResolution && !cached) {
-        resolveSocialVideoMetadata(item.videoUrl)
+        resolveSocialVideoMetadata(item.videoUrl, { uploadFirstFrameToAssets: false })
           .then((meta) => {
             if (!isCancelled && meta.success) {
               setResolvedMetaMap((prev) => ({
@@ -101,9 +118,9 @@ export default function SocialVideoShowcase() {
       const parsed = parseSocialVideoUrl(targetUrl);
       if (cached?.videoId && !parsed.videoId && parsed.platform === "tiktok") {
         parsed.videoId = cached.videoId;
-        parsed.embedPreviewUrl = `https://www.tiktok.com/player/v1/${cached.videoId}?autoplay=1&mute=1&loop=1&controls=0&music_info=0&description=0&rel=0`;
+        parsed.embedPreviewUrl = `https://www.tiktok.com/player/v1/${cached.videoId}?embed_from=oembed&autoplay=1&muted=1&loop=1&controls=0&music_info=0&description=0&rel=0`;
         parsed.getEmbedModalUrl = (muted: boolean) =>
-          `https://www.tiktok.com/player/v1/${cached.videoId}?autoplay=1&mute=${muted ? 1 : 0}&loop=1&controls=1&music_info=1&description=1&rel=0`;
+          `https://www.tiktok.com/player/v1/${cached.videoId}?embed_from=oembed&autoplay=1&muted=${muted ? 1 : 0}&loop=1&controls=1&music_info=1&description=1&rel=0`;
       }
       const effectivePoster = (
         item.posterUrl ||
@@ -119,12 +136,22 @@ export default function SocialVideoShowcase() {
       ).trim();
       const effectiveHandle = rawHandle.startsWith("@") ? rawHandle : `@${rawHandle}`;
 
+      const externalSocialUrl = (
+        item.socialPostUrl ||
+        parsed.externalWatchUrl ||
+        item.videoUrl ||
+        ""
+      ).trim();
+      const socialLabel = getSocialPlatformLabel(externalSocialUrl, parsed.platform);
+
       return {
         ...item,
         id: item.id || `social-video-${idx + 1}`,
         parsed,
         effectivePoster,
         effectiveHandle,
+        externalSocialUrl,
+        socialLabel,
       };
     });
   }, [rawVideos, resolvedMetaMap]);
@@ -207,7 +234,7 @@ export default function SocialVideoShowcase() {
   }, []);
 
   const handleOpenVideo = useCallback((item: EnrichedVideoItem) => {
-    setIsBuffering(true);
+    setIsBuffering(item.parsed.platform === "video");
     setActiveVideo(item);
     setIsMuted(false);
   }, []);
@@ -241,13 +268,14 @@ export default function SocialVideoShowcase() {
       <div className="w-full max-w-full mx-auto overflow-hidden">
         <div className={`grid grid-cols-2 gap-1 sm:gap-1.5 ${desktopColsClass}`}>
           {enrichedVideos.map((item) => {
-            const { parsed, effectivePoster, effectiveHandle } = item;
+            const { parsed, effectivePoster, effectiveHandle, socialLabel } = item;
             const isDirectVideo = parsed.platform === "video";
+            const isInstagram = parsed.platform === "instagram";
             const isYouTube = parsed.platform === "youtube";
             const isTikTok = parsed.platform === "tiktok";
             const previewSrc =
               isDirectVideo && hasEnteredViewport
-                ? `${item.videoUrl}#t=0,${PREVIEW_DURATION_SECONDS}`
+                ? `${parsed.canonicalUrl}#t=0,${PREVIEW_DURATION_SECONDS}`
                 : undefined;
             const isVideoReady = Boolean(readyVideos[item.id]);
 
@@ -264,7 +292,7 @@ export default function SocialVideoShowcase() {
                 className="group relative h-64 min-h-[240px] sm:h-80 md:h-[460px] lg:h-[600px] w-full cursor-pointer overflow-hidden bg-[#0c0c10] select-none [contain:layout_paint] transform-gpu"
                 role="button"
                 tabIndex={0}
-                aria-label={`Play ${parsed.platform} video by ${effectiveHandle}`}
+                aria-label={`Play ${socialLabel} video by ${effectiveHandle}`}
               >
                 {/* Static Poster Layer */}
                 {effectivePoster ? (
@@ -303,17 +331,30 @@ export default function SocialVideoShowcase() {
                   />
                 )}
 
+                {/* Instagram Reel / Post Embed Preview in Card */}
+                {isInstagram && hasEnteredViewport && isInViewport && !activeVideo && parsed.embedPreviewUrl && (
+                  <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
+                    <iframe
+                      src={parsed.embedPreviewUrl}
+                      title={item.title || `Instagram video by ${effectiveHandle}`}
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                      onLoad={() => handleVideoLoadedData(item.id)}
+                      className="w-full h-full scale-[1.04] object-cover pointer-events-none border-0 opacity-95"
+                    />
+                  </div>
+                )}
+
                 {/* YouTube Muted Stream Preview in Card */}
                 {isYouTube && hasEnteredViewport && isInViewport && !activeVideo && parsed.embedPreviewUrl && (
                   <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
                     <iframe
                       src={parsed.embedPreviewUrl}
                       title={item.title || `YouTube video by ${effectiveHandle}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       onLoad={() => handleVideoLoadedData(item.id)}
-                      className={`w-full h-full scale-[1.35] object-cover pointer-events-none border-0 transition-opacity duration-500 ${
-                        isVideoReady ? "opacity-95" : "opacity-0"
-                      }`}
+                      className="w-full h-full scale-[1.35] object-cover pointer-events-none border-0 opacity-95"
                     />
                   </div>
                 )}
@@ -324,11 +365,10 @@ export default function SocialVideoShowcase() {
                     <iframe
                       src={parsed.embedPreviewUrl}
                       title={item.title || `TikTok video by ${effectiveHandle}`}
-                      allow="autoplay; encrypted-media;"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                       onLoad={() => handleVideoLoadedData(item.id)}
-                      className={`w-full h-full scale-[1.08] object-cover pointer-events-none border-0 transition-opacity duration-500 ${
-                        isVideoReady ? "opacity-95" : "opacity-0"
-                      }`}
+                      className="w-full h-full scale-[1.08] object-cover pointer-events-none border-0 opacity-95"
                     />
                   </div>
                 )}
@@ -341,7 +381,7 @@ export default function SocialVideoShowcase() {
                   {/* Top Platform Pill */}
                   <div className="flex justify-end">
                     <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-sans font-semibold uppercase tracking-[0.16em] text-white/90 bg-black/45 border border-white/20">
-                      {isTikTok ? "TikTok" : isYouTube ? "YouTube" : "Video"}
+                      {socialLabel === "Social Media" && isDirectVideo ? "Video" : socialLabel}
                     </span>
                   </div>
 
@@ -394,29 +434,35 @@ export default function SocialVideoShowcase() {
               {/* Top Controls */}
               <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 z-20 flex items-center justify-between gap-2 pointer-events-auto">
                 <a
-                  href={activeVideo.parsed.externalWatchUrl || activeVideo.videoUrl}
+                  href={activeVideo.externalSocialUrl || activeVideo.videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 truncate max-w-[62%] text-white hover:text-[#D8C2A3] text-xs sm:text-sm font-medium tracking-wide px-3.5 py-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.85)_0%,rgba(16,16,22,0.92)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-colors"
-                  title={`Open on ${activeVideo.parsed.platform === "tiktok" ? "TikTok" : activeVideo.parsed.platform === "youtube" ? "YouTube" : "new tab"}`}
+                  className="inline-flex items-center gap-1.5 truncate max-w-[68%] text-white hover:text-[#D8C2A3] text-xs sm:text-sm font-medium tracking-wide px-3.5 py-1.5 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.88)_0%,rgba(16,16,22,0.95)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-colors"
+                  title={`Watch on ${activeVideo.socialLabel}`}
                 >
-                  <span className="truncate">{activeVideo.effectiveHandle}</span>
-                  <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                  <span className="truncate">
+                    {activeVideo.socialLabel !== "Social Media"
+                      ? `Watch on ${activeVideo.socialLabel} · ${activeVideo.effectiveHandle}`
+                      : activeVideo.effectiveHandle}
+                  </span>
+                  <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-85" />
                 </a>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={handleToggleMute}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center hover:brightness-110 transition-all border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.82)_0%,rgba(16,16,22,0.88)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] cursor-pointer"
-                    aria-label={isMuted ? "Unmute video" : "Mute video"}
-                  >
-                    {isMuted ? (
-                      <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
-                    ) : (
-                      <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    )}
-                  </button>
+                  {activeVideo.parsed.platform !== "instagram" && (
+                    <button
+                      type="button"
+                      onClick={handleToggleMute}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center hover:brightness-110 transition-all border border-white/25 bg-[linear-gradient(135deg,rgba(38,38,46,0.82)_0%,rgba(16,16,22,0.88)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] cursor-pointer"
+                      aria-label={isMuted ? "Unmute video" : "Mute video"}
+                    >
+                      {isMuted ? (
+                        <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />
+                      ) : (
+                        <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      )}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setActiveVideo(null)}
@@ -437,12 +483,24 @@ export default function SocialVideoShowcase() {
                 </div>
               )}
 
-              {/* Modal Stream Player: YouTube, TikTok, or Direct MP4 */}
-              {activeVideo.parsed.platform === "youtube" && activeVideo.parsed.videoId ? (
+              {/* Modal Stream Player: Instagram, YouTube, TikTok, or Direct MP4 */}
+              {activeVideo.parsed.platform === "instagram" && activeVideo.parsed.videoId ? (
+                <iframe
+                  key={`ig-${activeVideo.parsed.videoId}`}
+                  src={activeVideo.parsed.getEmbedModalUrl(isMuted)}
+                  title={activeVideo.title || activeVideo.effectiveHandle}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  allowFullScreen
+                  onLoad={() => setIsBuffering(false)}
+                  className="w-full h-full border-0 flex-1 bg-white pt-12"
+                />
+              ) : activeVideo.parsed.platform === "youtube" && activeVideo.parsed.videoId ? (
                 <iframe
                   key={`yt-${activeVideo.parsed.videoId}-${isMuted ? "muted" : "unmuted"}`}
                   src={activeVideo.parsed.getEmbedModalUrl(isMuted)}
                   title={activeVideo.title || activeVideo.effectiveHandle}
+                  referrerPolicy="strict-origin-when-cross-origin"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   onLoad={() => setIsBuffering(false)}
@@ -453,7 +511,8 @@ export default function SocialVideoShowcase() {
                   key={`tt-${activeVideo.parsed.videoId}-${isMuted ? "muted" : "unmuted"}`}
                   src={activeVideo.parsed.getEmbedModalUrl(isMuted)}
                   title={activeVideo.title || activeVideo.effectiveHandle}
-                  allow="autoplay; encrypted-media; fullscreen;"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   onLoad={() => setIsBuffering(false)}
                   className="w-full h-full border-0 flex-1 bg-black"
@@ -472,21 +531,21 @@ export default function SocialVideoShowcase() {
                   onCanPlay={() => setIsBuffering(false)}
                   onPlaying={() => setIsBuffering(false)}
                   className="w-full h-full object-cover flex-1"
-                  src={activeVideo.videoUrl}
+                  src={activeVideo.parsed.canonicalUrl}
                 />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-white space-y-4">
                   <p className="text-sm text-white/80">
-                    Ready to watch on {activeVideo.parsed.platform === "tiktok" ? "TikTok" : "YouTube"}
+                    Ready to watch on {activeVideo.socialLabel}
                   </p>
                   <a
-                    href={activeVideo.videoUrl}
+                    href={activeVideo.externalSocialUrl || activeVideo.videoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setIsBuffering(false)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#D8C2A3] text-black text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors"
                   >
-                    <span>Open Video</span>
+                    <span>Watch on {activeVideo.socialLabel}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>

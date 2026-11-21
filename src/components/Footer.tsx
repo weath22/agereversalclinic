@@ -120,7 +120,7 @@ export default function Footer() {
                   THE LONDON
                 </span>
                 <span className="text-2xl font-serif font-light tracking-[0.15em] uppercase text-white mt-1">
-                  COSMETIC CLINIC
+                  MEDSPA CLINIC
                 </span>
               </div>
             </div>

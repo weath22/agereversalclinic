@@ -277,35 +277,35 @@ export const CLINIC_DATA: ClinicData = {
     {
       "id": "location-1791722960928",
       "name": "Age Reversal Clinic",
-      "address": "374 Baring Road, Grove Park, London, SE12 0EF",
+      "address": "Age Reversal Clinic Grove Park",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
-      "phone": "0208 857 2000",
+      "phone": "+44 (0) 20 88572000",
       "hours": "Mon – Sat: 09:00 AM – 6:00 PM",
       "directionsUrl": "",
       "latitude": 51.5173,
       "longitude": -0.1472,
       "parkingAvailable": false,
       "wheelchairAccessible": true,
-      "image": "/assets/clinic-location-1791722960928.webp?v=1793676129435",
+      "image": "/assets/clinic-location-1791722960928.webp?v=1795274705728",
       "imageAlt": ""
     },
     {
       "id": "location-1791728808656",
       "name": "374 Baring Road London UK",
-      "address": "Clyde Lodge Farm, Essex, CM13 3SL",
+      "address": "374 Baring Road Se12 0EF",
       "city": "London",
       "postalCode": "",
       "country": "United Kingdom",
-      "phone": "07984159517",
+      "phone": "+44 (0) 20 8857 2000",
       "hours": "Mon – Sat: 09:00 – 19:00",
       "directionsUrl": "https://www.bing.com/maps/search?mepi=0%7E%7EEmbedded%7EAddress_Link&ty=18&v=2&sV=1&FORM=MPSRPL&ss=id.ypid%3AYNA9A194E7369433C4&q=The+Age+Reversal+Clinic-+Hair-Beauty-Medical&ppois=51.430503845214844_0.021059999242424965_The+Age+Reversal+Clinic-+Hair-Beauty-Medical_YNA9A194E7369433C4%7E&cp=51.430504%7E0.021060&lvl=16&style=r",
       "latitude": 51.5173,
       "longitude": -0.1472,
       "parkingAvailable": false,
-      "wheelchairAccessible": true,
-      "image": "/assets/clinic-location-1791728808656.webp?v=1793676140294",
+      "wheelchairAccessible": false,
+      "image": "/assets/clinic-location-1791728808656.webp?v=1795274734101",
       "imageAlt": ""
     }
   ],
@@ -564,29 +564,29 @@ export const CLINIC_DATA: ClinicData = {
         "id": "room-1",
         "title": "Consultation Suite",
         "tag": "Private",
-        "image": "/assets/clinic-facility-1.webp?v=1793630163684",
+        "image": "/assets/clinic-facility-1.webp?v=1795274832073",
         "imageAlt": "Consultation Suite at Age Reversal Clinics"
       },
       {
         "id": "room-2",
         "title": "Treatment Room",
         "tag": "Clinical",
-        "image": "/assets/clinic-facility-2.webp?v=1793630163718",
+        "image": "/assets/clinic-facility-2.webp?v=1795274866506",
         "imageAlt": "Treatment Room at Age Reversal Clinics"
       },
       {
         "id": "room-3",
-        "title": "Laser & Diagnostic Suite",
+        "title": "Hair Studio",
         "tag": "Technology",
-        "image": "/assets/clinic-facility-3.webp?v=1793630164164",
+        "image": "/assets/clinic-facility-3.webp?v=1795274879621",
         "imageAlt": "Laser & Diagnostic Suite at Age Reversal Clinics"
       },
       {
         "id": "room-4",
         "title": "Executive Recovery Lounge",
         "tag": "Sanctuary",
-        "image": "/assets/clinic-facility-4.webp?v=1793630163764",
-        "imageAlt": "Executive Recovery Lounge at Age Reversal Clinics"
+        "image": "/assets/clinic-facility-4.webp?v=1795274903664",
+        "imageAlt": "Age Reversal Showcase"
       }
     ]
   },
@@ -631,7 +631,8 @@ export const CLINIC_DATA: ClinicData = {
     "heading": "Excellence guaranteed. Trusted globally.",
     "description": "We adhere to the highest international medical standards. Our facilities and practitioners are rigorously vetted by leading global dermatological and healthcare authorities.",
     "seoKeywords": []
-  }
+  },
+  "socialVideos": []
 };
 
 /**
